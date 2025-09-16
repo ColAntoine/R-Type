@@ -1,0 +1,6 @@
+There should be test within each directory where there is a cpp file:
+
+DIR
+    File.cpp
+    File.hpp
+    Tests.cpp
