@@ -1,6 +1,39 @@
 cmake_minimum_required(VERSION 3.10)
 project(R-Type)
 
+if(WIN32)
+    message(STATUS "Windows detected")
+    set(OS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/build.ps1")
+    execute_process(
+        COMMAND powershell -ExecutionPolicy Bypass -File "${OS_SCRIPT}"
+        RESULT_VARIABLE res
+        OUTPUT_VARIABLE out
+        ERROR_VARIABLE err
+    )
+elseif(UNIX OR APPLE)
+    message(STATUS "Linux/UNIX detected")
+    set(OS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/build.sh")
+    file(CHMOD "${OS_SCRIPT}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    execute_process(
+        COMMAND ${OS_SCRIPT}
+        RESULT_VARIABLE res
+        OUTPUT_VARIABLE out
+        ERROR_VARIABLE err
+    )
+else()
+    message(FATAL_ERROR "Unknown OS")
+endif()
+
+if(NOT res EQUAL 0)
+    message(FATAL_ERROR "Script ${OS_SCRIPT} failed with code ${res}\nError: ${err}")
+endif()
+
+
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/external/vcpkg/scripts/buildsystems/vcpkg.cmake"
+    CACHE STRING "Vcpkg toolchain file")
+
+find_package(raylib CONFIG REQUIRED)
+
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "__________        ________________.___._____________________")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "\\______   \\       \\__    ___/\\__  |   |\\______   \\_   _____/")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |       _/  ______ |    |    /   |   | |     ___|    __)_ ")
