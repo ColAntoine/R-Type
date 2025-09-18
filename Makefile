@@ -10,14 +10,15 @@
 all: build
 
 build:
+	@echo "Building the project..."
 	mkdir -p build && cd build && cmake .. && cmake --build .
 
 clean:
 	@echo "Removing object files (.o)..."
-	-find . -type f -name '*.o' -de    lete
+	-find . -type f -name '*.o' -delete
 
 fclean:
-	@echo "Removing lib directory, arcade binary, and build directory..."
-	rm -rf lib arcade build
+	@echo "Removing lib directory, rtype binary, and build directory..."
+	rm -rf lib rtype build
 
 re: fclean all
