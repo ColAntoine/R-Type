@@ -29,6 +29,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         endif()
         if(NOT bootstrap_result EQUAL 0)
             message(FATAL_ERROR "Failed to bootstrap vcpkg")
+        endif()
     endif()
     set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
