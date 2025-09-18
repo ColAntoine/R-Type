@@ -15,10 +15,20 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         endif()
         # Bootstrap vcpkg
         if(WIN32)
-            execute_process(COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat WORKING_DIRECTORY ${VCPKG_ROOT})
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
         else()
-            execute_process(COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.sh WORKING_DIRECTORY ${VCPKG_ROOT})
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.sh
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
         endif()
+        if(NOT bootstrap_result EQUAL 0)
+            message(FATAL_ERROR "Failed to bootstrap vcpkg")
     endif()
     set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
