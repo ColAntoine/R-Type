@@ -37,7 +37,8 @@ endif()
 
 project(R-Type)
 
-find_package(raylib CONFIG REQUIRED)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "__________        ________________.___._____________________")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "\\______   \\       \\__    ___/\\__  |   |\\______   \\_   _____/")
@@ -46,8 +47,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |    |   \\
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |____|_  /         |____|    / ______| |____|   /_______  /")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "        \\/                    \\/                         \\/ ")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(raylib CONFIG REQUIRED)
 
 # Build ECS as a shared library
 file(GLOB_RECURSE ECS_SOURCES "ECS/*.cpp")
@@ -61,6 +61,7 @@ file(GLOB_RECURSE GAME_SOURCES "Game/*.cpp")
 if(GAME_SOURCES)
     add_executable(r-type_client ${GAME_SOURCES})
     target_include_directories(r-type_client PRIVATE Game)
+    target_link_libraries(r-type_client raylib)
 
     # Link with ECS library if it exists
     if(TARGET ECS)
