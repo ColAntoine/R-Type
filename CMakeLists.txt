@@ -1,36 +1,41 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.21)
+
+# Check if vcpkg is available, if not set it up
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
+    if(NOT EXISTS "${VCPKG_ROOT}")
+        find_package(Git REQUIRED)
+        message(STATUS "Cloning vcpkg...")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} clone https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT}
+            RESULT_VARIABLE git_result
+        )
+        if(NOT git_result EQUAL 0)
+            message(FATAL_ERROR "Failed to clone vcpkg")
+        endif()
+        # Bootstrap vcpkg
+        if(WIN32)
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
+        else()
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.sh
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
+        endif()
+        if(NOT bootstrap_result EQUAL 0)
+            message(FATAL_ERROR "Failed to bootstrap vcpkg")
+        endif()
+    endif()
+    set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
+
 project(R-Type)
-
-if(WIN32)
-    message(STATUS "Windows detected")
-    set(OS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/build.ps1")
-    execute_process(
-        COMMAND powershell -ExecutionPolicy Bypass -File "${OS_SCRIPT}"
-        RESULT_VARIABLE res
-        OUTPUT_VARIABLE out
-        ERROR_VARIABLE err
-    )
-elseif(UNIX OR APPLE)
-    message(STATUS "Linux/UNIX detected")
-    set(OS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/build.sh")
-    file(CHMOD "${OS_SCRIPT}" PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-    execute_process(
-        COMMAND ${OS_SCRIPT}
-        RESULT_VARIABLE res
-        OUTPUT_VARIABLE out
-        ERROR_VARIABLE err
-    )
-else()
-    message(FATAL_ERROR "Unknown OS")
-endif()
-
-if(NOT res EQUAL 0)
-    message(FATAL_ERROR "Script ${OS_SCRIPT} failed with code ${res}\nError: ${err}")
-endif()
-
-
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/external/vcpkg/scripts/buildsystems/vcpkg.cmake"
-    CACHE STRING "Vcpkg toolchain file")
 
 find_package(raylib CONFIG REQUIRED)
 
