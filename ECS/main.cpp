@@ -107,14 +107,7 @@ void DemoApp::handle_events() {
 void DemoApp::update(float dt) {
     control_system(reg_);
     // Time-aware movement: iterate position/velocity and apply dt
-    if (auto *pos_arr = reg_.get_if<position>()) {
-        if (auto *vel_arr = reg_.get_if<velocity>()) {
-            for (auto [pos, vel, entity] : zipper(*pos_arr, *vel_arr)) {
-                pos.x += vel.vx * dt;
-                pos.y += vel.vy * dt;
-            }
-        }
-    }
+    position_system(reg_, dt);
     collision_system(reg_);
 }
 
