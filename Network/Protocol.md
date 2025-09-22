@@ -699,14 +699,36 @@ public:
 int main() {
     KPN::NetworkClient client;
 
-    // Set up message handler
-    client.SetMessageHandler([](const KPN::PacketHeader& header, const uint8_t* payload) {
+    // Lag mitigation components
+    ClientSidePrediction prediction;
+    EntityInterpolator interpolator;
+    InputPredictor input_predictor;
+
+    // Set up message handler with lag mitigation
+    client.SetMessageHandler([&](const KPN::PacketHeader& header, const uint8_t* payload) {
         switch (header.message_type) {
             case 0xC1: { // ENTITY_UPDATE
                 KPN::EntityUpdate update;
                 if (client.DeserializeMessage(payload, header.payload_size, update)) {
-                    // Update local entity representation
-                    UpdateLocalEntity(update.entity_id, update.position_x, update.position_y);
+                    if (update.entity_id == GetPlayerId()) {
+                        // Reconcile local prediction with server state
+                        prediction.ReconcileWithServer(update);
+                    } else {
+                        // Interpolate remote entity movement
+                        float current_x = GetEntityX(update.entity_id);
+                        float current_y = GetEntityY(update.entity_id);
+                        interpolator.StartInterpolation(update.entity_id,
+                                                     current_x, current_y,
+                                                     update.position_x, update.position_y,
+                                                     100); // 100ms interpolation
+                    }
+                }
+                break;
+            }
+            case 0xC8: { // PLAYER_INPUT (echoed back from server)
+                KPN::PlayerInput echoed_input;
+                if (client.DeserializeMessage(payload, header.payload_size, echoed_input)) {
+                    input_predictor.OnServerAcknowledgment(echoed_input.timestamp);
                 }
                 break;
             }
@@ -725,14 +747,9 @@ int main() {
     if (client.Connect("localhost", 4242, "Player1")) {
         std::cout << "Connected to server!" << std::endl;
 
-        // Game loop
+        // Game loop with lag mitigation
         while (client.IsConnected()) {
-            // Process input
-            if (IsKeyPressed(KEY_SPACE)) {
-                client.SendShootCommand(GetPlayerId(), GetPlayerX(), GetPlayerY(), 1.0f, 0.0f, 1);
-            }
-
-            // Send movement input
+            // Process input with prediction
             InputFlags flags = 0;
             int16_t move_x = 0, move_y = 0;
 
@@ -741,12 +758,23 @@ int main() {
             if (IsKeyDown(KEY_LEFT))  { flags |= InputFlags::MOVE_LEFT; move_x = -1000; }
             if (IsKeyDown(KEY_RIGHT)) { flags |= InputFlags::MOVE_RIGHT; move_x = 1000; }
 
-            client.SendPlayerInput(GetPlayerId(), flags, move_x, move_y);
+            // Apply input prediction immediately for responsive controls
+            if (flags != 0 || move_x != 0 || move_y != 0) {
+                input_predictor.SendPredictedInput(flags, move_x, move_y);
+            }
+
+            // Handle shooting (can also be predicted)
+            if (IsKeyPressed(KEY_SPACE)) {
+                client.SendShootCommand(GetPlayerId(), GetPlayerX(), GetPlayerY(), 1.0f, 0.0f, 1);
+            }
+
+            // Update interpolations for smooth remote entity movement
+            interpolator.UpdateInterpolations();
 
             // Process incoming messages
             client.ProcessIncomingPackets();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(16));
+            std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
         }
     }
 
@@ -912,6 +940,244 @@ enum class MessagePriority : uint8_t {
     NORMAL    = 1,  // Regular game updates
     HIGH      = 2,  // Player actions, important events
     CRITICAL  = 3   // Connection/error messages
+};
+```
+
+### Lag Mitigation and Real-time Gameplay
+
+For fast-paced multiplayer games like R-Type, network lag can severely impact gameplay quality. The protocol provides foundational support through timestamps and sequencing, but effective lag mitigation requires game-level implementation of the following techniques:
+
+#### Client-Side Prediction
+
+Clients predict their own movement immediately upon input, providing instant responsiveness:
+
+```cpp
+class ClientSidePrediction {
+private:
+    struct PredictedState {
+        uint32_t timestamp;
+        float position_x, position_y;
+        float velocity_x, velocity_y;
+        InputFlags last_input;
+    };
+
+    std::deque<PredictedState> prediction_history_;
+    uint32_t last_server_update_timestamp_;
+
+public:
+    void ApplyInput(InputFlags input, int16_t move_x, int16_t move_y) {
+        // Immediately update local player position
+        UpdateLocalPlayer(move_x, move_y);
+
+        // Store prediction for later reconciliation
+        prediction_history_.push_back({
+            GetCurrentTimestamp(),
+            GetPlayerX(), GetPlayerY(),
+            GetPlayerVelX(), GetPlayerVelY(),
+            input
+        });
+
+        // Send input to server with timestamp
+        client.SendPlayerInput(player_id_, input, move_x, move_y);
+    }
+
+    void ReconcileWithServer(const EntityUpdate& server_update) {
+        // Find corresponding prediction
+        auto it = std::find_if(prediction_history_.begin(), prediction_history_.end(),
+            [&](const PredictedState& pred) {
+                return pred.timestamp >= server_update.timestamp;
+            });
+
+        if (it != prediction_history_.end()) {
+            // Calculate position error
+            float error_x = server_update.position_x - it->position_x;
+            float error_y = server_update.position_y - it->position_y;
+
+            // Smoothly correct position (lerp over several frames)
+            if (std::abs(error_x) > 0.1f || std::abs(error_y) > 0.1f) {
+                StartPositionCorrection(error_x, error_y);
+            }
+
+            // Remove reconciled predictions
+            prediction_history_.erase(prediction_history_.begin(), it);
+        }
+    }
+};
+```
+
+#### Entity Interpolation
+
+Smooth movement between server updates prevents jerky motion:
+
+```cpp
+class EntityInterpolator {
+private:
+    struct InterpolationState {
+        uint32_t start_time;
+        float start_x, start_y;
+        float end_x, end_y;
+        float duration_ms;
+    };
+
+    std::unordered_map<uint32_t, InterpolationState> interpolating_entities_;
+
+public:
+    void StartInterpolation(uint32_t entity_id, float current_x, float current_y,
+                           float target_x, float target_y, uint32_t update_interval_ms) {
+        interpolating_entities_[entity_id] = {
+            GetCurrentTime(),
+            current_x, current_y,
+            target_x, target_y,
+            static_cast<float>(update_interval_ms)
+        };
+    }
+
+    void UpdateInterpolations() {
+        uint32_t current_time = GetCurrentTime();
+
+        for (auto it = interpolating_entities_.begin(); it != interpolating_entities_.end(); ) {
+            const auto& state = it->second;
+            float elapsed = current_time - state.start_time;
+            float t = std::min(elapsed / state.duration_ms, 1.0f);
+
+            // Smooth interpolation (ease-in-out)
+            t = t * t * (3.0f - 2.0f * t);
+
+            float interpolated_x = state.start_x + (state.end_x - state.start_x) * t;
+            float interpolated_y = state.start_y + (state.end_y - state.start_y) * t;
+
+            UpdateEntityPosition(it->first, interpolated_x, interpolated_y);
+
+            if (t >= 1.0f) {
+                it = interpolating_entities_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+};
+```
+
+#### Input Prediction and Reconciliation
+
+Send inputs ahead of time and reconcile when server confirms:
+
+```cpp
+class InputPredictor {
+private:
+    struct PendingInput {
+        uint32_t sequence_id;
+        uint32_t timestamp;
+        InputFlags input;
+        int16_t move_x, move_y;
+        bool acknowledged;
+    };
+
+    std::deque<PendingInput> input_buffer_;
+    uint32_t next_input_sequence_;
+
+public:
+    void SendPredictedInput(InputFlags input, int16_t move_x, int16_t move_y) {
+        PendingInput pending = {
+            next_input_sequence_++,
+            GetCurrentTimestamp(),
+            input, move_x, move_y,
+            false
+        };
+
+        input_buffer_.push_back(pending);
+
+        // Send to server
+        client.SendPlayerInput(player_id_, input, move_x, move_y);
+
+        // Apply locally immediately
+        ApplyInputLocally(input, move_x, move_y);
+    }
+
+    void OnServerAcknowledgment(uint32_t acknowledged_sequence) {
+        // Mark inputs as acknowledged up to this sequence
+        for (auto& input : input_buffer_) {
+            if (input.sequence_id <= acknowledged_sequence) {
+                input.acknowledged = true;
+            }
+        }
+
+        // Remove old acknowledged inputs
+        while (!input_buffer_.empty() && input_buffer_.front().acknowledged) {
+            input_buffer_.pop_front();
+        }
+    }
+
+    void OnServerCorrection(const EntityUpdate& server_state) {
+        // If server state differs significantly from prediction, rewind and replay
+        if (NeedsRewind(server_state)) {
+            RewindAndReplay(server_state);
+        }
+    }
+};
+```
+
+#### Lag Compensation Techniques
+
+##### Server-Side Lag Compensation
+
+```cpp
+class LagCompensation {
+private:
+    struct ClientHistory {
+        uint32_t client_id;
+        std::deque<EntityState> position_history_;
+        std::chrono::milliseconds history_length_{1000}; // Keep 1 second of history
+    };
+
+    std::unordered_map<uint32_t, ClientHistory> client_histories_;
+
+public:
+    void StoreClientPosition(uint32_t client_id, const EntityState& state) {
+        auto& history = client_histories_[client_id];
+        history.position_history_.push_back(state);
+
+        // Remove old entries
+        auto cutoff_time = std::chrono::steady_clock::now() - history.history_length_;
+        while (!history.position_history_.empty() &&
+               history.position_history_.front().timestamp < cutoff_time) {
+            history.position_history_.pop_front();
+        }
+    }
+
+    const EntityState* GetClientPositionAtTime(uint32_t client_id, uint32_t timestamp) const {
+        const auto& history = client_histories_.at(client_id);
+
+        // Find the state closest to the requested timestamp
+        for (auto it = history.position_history_.rbegin(); it != history.position_history_.rend(); ++it) {
+            if (it->timestamp <= timestamp) {
+                return &(*it);
+            }
+        }
+
+        return nullptr; // No suitable history found
+    }
+};
+```
+
+##### Implementation Guidelines
+
+1. **Always use client-side prediction** for the local player to ensure responsive controls
+2. **Implement entity interpolation** with 100-200ms buffers for smooth remote entity movement
+3. **Send inputs at fixed intervals** (e.g., 60Hz) regardless of server update rate
+4. **Use server reconciliation** to correct prediction errors without jarring the player
+5. **Consider lag compensation** on the server for fair hit detection in competitive scenarios
+6. **Test with artificial lag** (network simulators) to ensure smooth gameplay at 100-200ms latency
+
+##### Configuration Parameters
+
+```cpp
+struct LagConfig {
+    uint32_t max_prediction_time_ms = 100;    // How far ahead to predict
+    uint32_t interpolation_delay_ms = 100;    // Delay before interpolating
+    uint32_t reconciliation_smoothing_ms = 50; // How long to smooth corrections
+    float max_position_error = 5.0f;          // Max error before snapping
+    bool enable_lag_compensation = true;      // Server-side lag compensation
 };
 ```
 
