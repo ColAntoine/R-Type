@@ -14,7 +14,7 @@
 #include "ecs/components.hpp"
 
 // Position system: for every entity having both position and velocity, add velocity to position.
-void position_system(registry &r);
+void position_system(registry &r, float dt);
 
 // Control system: for entities with controllable and velocity, set velocity based on keyboard.
 void control_system(registry &r);

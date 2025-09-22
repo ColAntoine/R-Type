@@ -17,13 +17,13 @@
 #include "ecs/zipper.hpp"
 
 // Position system: for every entity having both position and velocity, add velocity to position.
-void position_system(registry &r) {
+void position_system(registry &r, float dt) {
     auto *pos_arr = r.get_if<position>();
     auto *vel_arr = r.get_if<velocity>();
     if (!pos_arr || !vel_arr) return;
     for (auto [pos, vel, entity] : zipper(*pos_arr, *vel_arr)) {
-        pos.x += vel.vx;
-        pos.y += vel.vy;
+        pos.x += vel.vx * dt;
+        pos.y += vel.vy * dt;
     }
 }
 
