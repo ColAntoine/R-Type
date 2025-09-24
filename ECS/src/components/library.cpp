@@ -26,11 +26,26 @@ collider::collider(float nw, float nh, float ox, float oy, bool trig) : w(nw), h
 
 class ComponentFactory : public IComponentFactory {
     public:
-        void create_position(registry& reg, const entity& e, float x, float y) override { reg.emplace_component<position>(e, x, y); }
-        void create_velocity(registry& reg, const entity& e, float vx, float vy) override { reg.emplace_component<velocity>(e, vx, vy); }
-        void create_drawable(registry& reg, const entity& e, float w, float h, unsigned char r, unsigned char g, unsigned char b, unsigned char a) override { reg.emplace_component<drawable>(e, w, h, r, g, b, a); }
-        void create_controllable(registry& reg, const entity& e, float speed) override { reg.emplace_component<controllable>(e, speed); }
-        void create_collider(registry& reg, const entity& e, float w, float h, float ox, float oy, bool trigger) override { reg.emplace_component<collider>(e, w, h, ox, oy, trigger); }
+        void create_position(registry& reg, const entity& e, float x, float y) override
+        {
+            reg.emplace_component<position>(e, x, y);
+        }
+        void create_velocity(registry& reg, const entity& e, float vx, float vy) override
+        {
+            reg.emplace_component<velocity>(e, vx, vy);
+        }
+        void create_drawable(registry& reg, const entity& e, float w, float h, unsigned char r, unsigned char g, unsigned char b, unsigned char a) override
+        {
+            reg.emplace_component<drawable>(e, w, h, r, g, b, a);
+        }
+        void create_controllable(registry& reg, const entity& e, float speed) override
+        {
+            reg.emplace_component<controllable>(e, speed);
+        }
+        void create_collider(registry& reg, const entity& e, float w, float h, float ox, float oy, bool trigger) override
+        {
+            reg.emplace_component<collider>(e, w, h, ox, oy, trigger);
+        }
 };
 
 static ComponentFactory factory_instance;
