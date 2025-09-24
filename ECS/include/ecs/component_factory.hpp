@@ -8,14 +8,14 @@
 class IComponentFactory {
 public:
     virtual ~IComponentFactory() = default;
-    
+
     // Factory methods for creating components
     virtual void create_position(registry& reg, const entity& e, float x, float y) = 0;
     virtual void create_velocity(registry& reg, const entity& e, float vx, float vy) = 0;
-    virtual void create_drawable(registry& reg, const entity& e, float w, float h, 
-                                unsigned char r = 255, unsigned char g = 255, 
+    virtual void create_drawable(registry& reg, const entity& e, float w, float h,
+                                unsigned char r = 255, unsigned char g = 255,
                                 unsigned char b = 255, unsigned char a = 255) = 0;
     virtual void create_controllable(registry& reg, const entity& e, float speed) = 0;
-    virtual void create_collider(registry& reg, const entity& e, float w, float h, 
+    virtual void create_collider(registry& reg, const entity& e, float w, float h,
                                 float ox = 0.f, float oy = 0.f, bool trigger = false) = 0;
 };

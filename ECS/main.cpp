@@ -1,123 +1,100 @@
 #include <iostream>
 #include <algorithm>
-#include <SFML/Graphics.hpp>
-#include <dlfcn.h>
+#include <raylib.h>
 
 #include "ecs/registry.hpp"
-#include "ecs/demo_app.hpp"
 #include "ecs/systems.hpp"
 #include "ecs/zipper.hpp"
 #include "ecs/component_factory.hpp"
+#include "ecs/rtype.hpp"
 
-using RegisterComponentsFunc = void (*)(registry &);
-using GetFactoryFunc = IComponentFactory* (*)();
-
-static IComponentFactory* g_factory = nullptr;
-
-void load_components_from_so(const std::string &so_path, registry &reg) {
-    void *handle = dlopen(so_path.c_str(), RTLD_LAZY);
-    if (!handle) {
-        std::cerr << "Failed to load shared library: " << dlerror() << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // Load the register_components function
-    auto register_components = (RegisterComponentsFunc)dlsym(handle, "register_components");
-    if (!register_components) {
-        std::cerr << "Failed to find register_components: " << dlerror() << std::endl;
-        dlclose(handle);
-        exit(EXIT_FAILURE);
-    }
-
-    // Load the factory getter function
-    auto get_factory = (GetFactoryFunc)dlsym(handle, "get_component_factory");
-    if (!get_factory) {
-        std::cerr << "Failed to find get_component_factory: " << dlerror() << std::endl;
-        dlclose(handle);
-        exit(EXIT_FAILURE);
-    }
-
-    // Call the function to register components
-    register_components(reg);
-
-    // Get the factory instance
-    g_factory = get_factory();
-}
-
-DemoApp::DemoApp()
-: window_{sf::VideoMode(800, 600), "ECS SFML Demo"}
+RType::RType()
 {
-    window_.setFramerateLimit(60);
+    InitWindow(800, 600, "ECS Raylib Demo");
+    SetTargetFPS(60);
 
-    load_components_from_so("./libcomponents.so", reg_);
+    if (!loader_.load_components_from_so("./libcomponents.so", reg_)) {
+        std::cerr << "Failed to load components library!" << std::endl;
+        exit(EXIT_FAILURE);
+    }
     setup_scene();
 }
 
-int DemoApp::run() {
-    sf::Clock clock;
-    while (window_.isOpen()) {
+int RType::run() {
+    while (!WindowShouldClose()) {
         handle_events();
-        float dt = clock.restart().asSeconds();
+        float dt = GetFrameTime();
         update(dt);
         render();
     }
+    CloseWindow();
     return 0;
 }
 
-void DemoApp::setup_scene() {
-    if (!g_factory) {
+void RType::setup_scene() {
+    auto factory = loader_.get_factory();
+    if (!factory) {
         std::cerr << "Factory not loaded!" << std::endl;
         return;
     }
 
-    auto e = reg_.spawn_entity();
-    g_factory->create_position(reg_, e, 100.f, 100.f);
-    g_factory->create_velocity(reg_, e, 0.f, 0.f);
-    g_factory->create_drawable(reg_, e, 40.f, 40.f, 200, 100, 100, 255);
-    g_factory->create_controllable(reg_, e, 300.f);
-    g_factory->create_collider(reg_, e, 40.f, 40.f, 0.f, 0.f, false);
+    create_player(factory, 100.f, 100.f, 40.f, 40.f, 300.f);
 
-    auto s1 = reg_.spawn_entity();
-    g_factory->create_position(reg_, s1, 200.f, 150.f);
-    g_factory->create_drawable(reg_, s1, 60.f, 60.f, 100, 255, 100, 255);
+    create_static_entity(factory, 200.f, 150.f, 60.f, 60.f, 100, 255, 100);
+    create_static_entity(factory, 400.f, 300.f, 80.f, 30.f, 255, 200, 50);
+    create_static_entity(factory, 600.f, 450.f, 50.f, 100.f, 120, 180, 240, true);
 
-    auto s2 = reg_.spawn_entity();
-    g_factory->create_position(reg_, s2, 400.f, 300.f);
-    g_factory->create_drawable(reg_, s2, 80.f, 30.f, 255, 200, 50, 255);
-
-    auto s3 = reg_.spawn_entity();
-    g_factory->create_position(reg_, s3, 600.f, 450.f);
-    g_factory->create_drawable(reg_, s3, 50.f, 100.f, 120, 180, 240, 255);
-    g_factory->create_collider(reg_, s3, 50.f, 100.f, 0.f, 0.f, false);
-
-    auto mover = reg_.spawn_entity();
-    g_factory->create_position(reg_, mover, 50.f, 500.f);
-    g_factory->create_velocity(reg_, mover, 80.f, 0.f);
-    g_factory->create_drawable(reg_, mover, 30.f, 30.f, 255, 255, 0, 255);
-    g_factory->create_collider(reg_, mover, 30.f, 30.f, 0.f, 0.f, false);
+    create_moving_entity(factory, 50.f, 500.f, 30.f, 30.f, 80.f, 0.f, 255, 255, 0);
 }
 
-void DemoApp::handle_events() {
-    sf::Event event;
-    while (window_.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) window_.close();
+void RType::create_player(IComponentFactory* factory, float x, float y, float w, float h, float speed) {
+    auto entity = reg_.spawn_entity();
+    factory->create_position(reg_, entity, x, y);
+    factory->create_velocity(reg_, entity, 0.f, 0.f);
+    factory->create_drawable(reg_, entity, w, h, 200, 100, 100, 255);
+    factory->create_controllable(reg_, entity, speed);
+    factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
+}
+
+void RType::create_static_entity(IComponentFactory* factory, float x, float y, float w, float h,
+                                uint8_t r, uint8_t g, uint8_t b, bool has_collider) {
+    auto entity = reg_.spawn_entity();
+    factory->create_position(reg_, entity, x, y);
+    factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
+    if (has_collider) {
+        factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
     }
 }
 
-void DemoApp::update(float dt) {
+void RType::create_moving_entity(IComponentFactory* factory, float x, float y, float w, float h,
+                               float vx, float vy, uint8_t r, uint8_t g, uint8_t b) {
+    auto entity = reg_.spawn_entity();
+    factory->create_position(reg_, entity, x, y);
+    factory->create_velocity(reg_, entity, vx, vy);
+    factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
+    factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
+}
+
+void RType::handle_events() {
+    // Event handling is done by Raylib's WindowShouldClose() in the main loop
+    // Additional input handling can be added here if needed
+}
+
+void RType::update(float dt) {
     control_system(reg_);
     // Time-aware movement: iterate position/velocity and apply dt
     position_system(reg_, dt);
     collision_system(reg_);
 }
 
-void DemoApp::render() {
-    window_.clear(sf::Color::Black);
-    draw_system(reg_, window_);
-    window_.display();
+void RType::render() {
+    BeginDrawing();
+    ClearBackground(BLACK);
+    draw_system(reg_);
+    EndDrawing();
 }
 
 int main() {
-    DemoApp app;
+    RType app;
     return app.run();
 }
