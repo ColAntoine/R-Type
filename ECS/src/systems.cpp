@@ -5,7 +5,7 @@
 ** ssad
 */
 
-#include <SFML/Graphics.hpp>
+#include <raylib.h>
 #include <iostream>
 #include <algorithm>
 #include <array>
@@ -35,26 +35,23 @@ void control_system(registry &r) {
     for (auto [vel, ctrl, entity] : zipper(*vel_arr, *ctrl_arr)) {
         float speed = ctrl.speed;
         float vx = 0.f, vy = 0.f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) vx += speed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))  vx -= speed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down))  vy += speed;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))    vy -= speed;
+        if (IsKeyDown(KEY_RIGHT)) vx += speed;
+        if (IsKeyDown(KEY_LEFT))  vx -= speed;
+        if (IsKeyDown(KEY_DOWN))  vy += speed;
+        if (IsKeyDown(KEY_UP))    vy -= speed;
         vel.vx = vx;
         vel.vy = vy;
     }
 }
 
-// Draw system: for entities with position and drawable, render rectangles onto the target.
-void draw_system(registry &r, sf::RenderTarget &target) {
+// Draw system: for entities with position and drawable, render rectangles.
+void draw_system(registry &r) {
     auto *pos_arr = r.get_if<position>();
     auto *draw_arr = r.get_if<drawable>();
     if (!pos_arr || !draw_arr) return;
-    sf::RectangleShape shape;
     for (auto [p, d, entity] : zipper(*pos_arr, *draw_arr)) {
-        shape.setSize(sf::Vector2f(d.w, d.h));
-        shape.setPosition(p.x, p.y);
-        shape.setFillColor(sf::Color(d.r, d.g, d.b, d.a));
-        target.draw(shape);
+        DrawRectangle((int)p.x, (int)p.y, (int)d.w, (int)d.h, 
+                     (Color){d.r, d.g, d.b, d.a});
     }
 }
 
