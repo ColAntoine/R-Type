@@ -94,7 +94,7 @@ void RType::render() {
     EndDrawing();
 }
 
-int main() {
-    RType app;
-    return app.run();
-}
+// int main() {
+//     RType app;
+//     return app.run();
+// }
