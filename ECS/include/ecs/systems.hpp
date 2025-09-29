@@ -27,4 +27,10 @@ void draw_system(registry &r);
 // by moving the first entity out of overlap along the smallest axis.
 void collision_system(registry &r);
 
+// Spawn system: spawns enemies based on spawner components
+void spawn_system(registry &r, float dt, int window_width, int window_height);
+
+// Lifetime system: manages entity lifetime and removes expired entities
+void lifetime_system(registry &r, float dt, int window_width, int window_height);
+
 #endif /* !asd */
