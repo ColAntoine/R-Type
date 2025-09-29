@@ -48,6 +48,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |____|_  / 
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "        \\/                    \\/                         \\/ ")
 
 find_package(raylib CONFIG REQUIRED)
+find_package(asio CONFIG REQUIRED)
 
 # Build ECS as a shared library
 file(GLOB_RECURSE ECS_SOURCES "ECS/*.cpp")
@@ -58,9 +59,14 @@ endif()
 
 # Build Game executable (r-type_client)
 file(GLOB_RECURSE GAME_SOURCES "Game/*.cpp")
+# Add Network protocol sources for the client
+file(GLOB NETWORK_PROTOCOL_SOURCES "Network/src/protocol.cpp")
 if(GAME_SOURCES)
-    add_executable(r-type_client ${GAME_SOURCES})
-    target_include_directories(r-type_client PRIVATE Game)
+    add_executable(r-type_client ${GAME_SOURCES} ${NETWORK_PROTOCOL_SOURCES})
+    target_include_directories(r-type_client PRIVATE 
+        Game
+        Network/include
+    )
     
     # Link with raylib and required dependencies
     target_link_libraries(r-type_client raylib)
@@ -79,7 +85,19 @@ endif()
 file(GLOB_RECURSE NETWORK_SOURCES "Network/*.cpp")
 if(NETWORK_SOURCES)
     add_executable(r-type_server ${NETWORK_SOURCES})
-    target_include_directories(r-type_server PRIVATE Network)
+    target_include_directories(r-type_server PRIVATE 
+        Network 
+        Network/include
+    )
+    
+    # Link with required system libraries for Asio
+    find_package(Threads REQUIRED)
+    target_link_libraries(r-type_server 
+        Threads::Threads
+        asio::asio
+    )
+    
+    # Note: Server doesn't link with ECS to avoid raylib dependency
 endif()
 
 # Set output directories
