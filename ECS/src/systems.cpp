@@ -9,12 +9,15 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <vector>
+#include <cstdlib>
 
 
 #include "ecs/registry.hpp"
 #include "ecs/components.hpp"
 #include "ecs/systems.hpp"
 #include "ecs/zipper.hpp"
+#include "ecs/entity.hpp"
 
 // Position system: for every entity having both position and velocity, add velocity to position.
 void position_system(registry &r, float dt) {
@@ -50,7 +53,7 @@ void draw_system(registry &r) {
     auto *draw_arr = r.get_if<drawable>();
     if (!pos_arr || !draw_arr) return;
     for (auto [p, d, entity] : zipper(*pos_arr, *draw_arr)) {
-        DrawRectangle((int)p.x, (int)p.y, (int)d.w, (int)d.h, 
+        DrawRectangle((int)p.x, (int)p.y, (int)d.w, (int)d.h,
                      (Color){d.r, d.g, d.b, d.a});
     }
 }
@@ -99,5 +102,59 @@ void collision_system(registry &r) {
             }
             resolve_penetration(pi, a, pj, b);
         }
+    }
+}
+
+// Spawn system: DISABLED - enemies are now spawned server-side
+// Client-side spawning would cause desynchronization in multiplayer
+void spawn_system(registry &r, float dt, int window_width, int window_height) {
+    // This function is disabled for multiplayer synchronization
+    // Enemies are now managed by the server and sent to clients via ENTITY_UPDATE messages
+    return;
+}
+
+// Lifetime system: manages entity lifetime and removes expired entities
+void lifetime_system(registry &r, float dt, int window_width, int window_height) {
+    auto *lifetime_arr = r.get_if<lifetime>();
+    auto *pos_arr = r.get_if<position>();
+    auto *spawner_arr = r.get_if<spawner>();
+
+    if (!lifetime_arr || !pos_arr) return;
+
+    std::vector<entity> entities_to_remove;
+
+    for (auto [life_comp, pos_comp, ent] : zipper(*lifetime_arr, *pos_arr)) {
+        life_comp.current_time += dt;
+        
+        bool should_destroy = false;
+        
+        // Check if lifetime expired
+        if (life_comp.current_time >= life_comp.max_lifetime) {
+            should_destroy = true;
+        }
+        
+        // Check if entity is offscreen and should be destroyed
+        if (life_comp.destroy_offscreen) {
+            if (pos_comp.x < -100 || pos_comp.x > window_width + 100 ||
+                pos_comp.y < -100 || pos_comp.y > window_height + 100) {
+                should_destroy = true;
+            }
+        }
+        
+        if (should_destroy) {
+            entities_to_remove.push_back(entity(ent));
+        }
+    }    // Remove expired entities and update spawner counts
+    for (entity ent : entities_to_remove) {
+        // If entity was an enemy, decrease spawner count
+        if (r.get_if<enemy>() && r.get_if<enemy>()->size() > static_cast<size_t>(ent)) {
+            if (spawner_arr) {
+                for (auto [spawn_comp, spawn_entity] : zipper(*spawner_arr)) {
+                    spawn_comp.current_count = std::max(0, spawn_comp.current_count - 1);
+                }
+            }
+        }
+
+        r.kill_entity(ent);
     }
 }

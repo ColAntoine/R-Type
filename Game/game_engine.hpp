@@ -18,6 +18,7 @@ class GameEngine {
         bool initialized;
         int local_player_id;
         std::unordered_map<int, entity> remote_players;
+        std::unordered_map<uint32_t, entity> enemies; // Track server enemies
 
         void setup_entities();
         void update_systems(float dt);
@@ -28,6 +29,8 @@ class GameEngine {
         void update_remote_player(int player_id, float x, float y);
         entity create_remote_player(int player_id, float x, float y);
         void remove_remote_player(int player_id);
+        void update_enemy(uint32_t enemy_id, float x, float y, float vx, float vy);
+        entity create_enemy(uint32_t enemy_id, float x, float y);
 
     public:
         GameEngine();

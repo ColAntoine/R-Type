@@ -7,11 +7,14 @@
 #include <sys/time.h>
 #include <chrono>
 
-// Initialize static counter
+// Initialize static counters
 int UDPServer::next_player_id = 1;
+uint32_t UDPServer::next_entity_id = 1000; // Start enemies at 1000 to avoid conflict with player IDs
 
 UDPServer::UDPServer() : socket_fd(-1), port(0), running(false) {
     memset(&server_address, 0, sizeof(server_address));
+    last_spawn_time = std::chrono::steady_clock::now();
+    last_network_update = std::chrono::steady_clock::now();
 }
 
 UDPServer::~UDPServer() {
@@ -95,10 +98,19 @@ void UDPServer::server_loop() {
     sockaddr_in client_address;
     socklen_t client_len = sizeof(client_address);
     time_t last_cleanup = time(nullptr);
+    auto last_game_update = std::chrono::steady_clock::now();
 
     std::cout << "Server loop started" << std::endl;
 
     while (running.load()) {
+        auto current_time_chrono = std::chrono::steady_clock::now();
+        auto dt = std::chrono::duration<float>(current_time_chrono - last_game_update).count();
+        last_game_update = current_time_chrono;
+
+        // Update game logic
+        update_enemies(dt);
+        check_collisions();
+
         time_t current_time = time(nullptr);
         if (current_time - last_cleanup > 5) {
             cleanup_disconnected_clients();
@@ -331,5 +343,134 @@ void UDPServer::send_existing_players_to_client(const std::string& client_key) {
                                                         &update, sizeof(update));
             send_to_client(client_key, reinterpret_cast<const char*>(buffer), packet_size);
         }
+    }
+}
+
+void UDPServer::update_enemies(float dt) {
+    auto current_time = std::chrono::steady_clock::now();
+    
+    // Spawn enemies every 3 seconds
+    if (std::chrono::duration<float>(current_time - last_spawn_time).count() >= 3.0f && enemies.size() < 5) {
+        spawn_enemy();
+        last_spawn_time = current_time;
+    }
+    
+    // Update enemy positions and remove expired ones
+    std::vector<uint32_t> enemies_to_remove;
+    
+    for (auto& [enemy_id, enemy] : enemies) {
+        // Update position
+        enemy.x += enemy.vx * dt;
+        enemy.y += enemy.vy * dt;
+        
+        // Check if enemy should be removed (offscreen or expired)
+        float lifetime = std::chrono::duration<float>(current_time - enemy.spawn_time).count();
+        if (enemy.x < -50 || lifetime > 15.0f) {
+            enemies_to_remove.push_back(enemy_id);
+        }
+    }
+    
+    // Only broadcast enemy positions at 20 FPS to reduce network traffic
+    float network_dt = std::chrono::duration<float>(current_time - last_network_update).count();
+    if (network_dt >= 0.05f) { // 20 FPS (1/20 = 0.05 seconds)
+        for (auto& [enemy_id, enemy] : enemies) {
+            if (std::find(enemies_to_remove.begin(), enemies_to_remove.end(), enemy_id) == enemies_to_remove.end()) {
+                // Broadcast enemy position to all clients
+                Protocol::EntityUpdate update;
+                update.entity_id = enemy_id;
+                update.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    current_time.time_since_epoch()).count();
+                update.position_x = enemy.x;
+                update.position_y = enemy.y;
+                update.velocity_x = enemy.vx;
+                update.velocity_y = enemy.vy;
+                update.state_flags = 1; // Flag to indicate this is an enemy
+                
+                uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::EntityUpdate)];
+                size_t packet_size = Protocol::create_packet(buffer, 
+                                                            static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_UPDATE),
+                                                            &update, sizeof(update));
+                
+                for (const auto& client_pair : clients) {
+                    send_to_client(client_pair.first, reinterpret_cast<const char*>(buffer), packet_size);
+                }
+            }
+        }
+        last_network_update = current_time;
+    }
+    
+    // Remove expired enemies
+    for (uint32_t enemy_id : enemies_to_remove) {
+        // Send destruction notification to all clients
+        Protocol::EntityDestroy destroy;
+        destroy.entity_id = enemy_id;
+        destroy.entity_type = 1; // Enemy
+        
+        uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::EntityDestroy)];
+        size_t packet_size = Protocol::create_packet(buffer, 
+                                                    static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_DESTROY),
+                                                    &destroy, sizeof(destroy));
+        
+        for (const auto& client_pair : clients) {
+            send_to_client(client_pair.first, reinterpret_cast<const char*>(buffer), packet_size);
+        }
+        
+        enemies.erase(enemy_id);
+        std::cout << "Destroyed enemy " << enemy_id << std::endl;
+    }
+}
+
+void UDPServer::spawn_enemy() {
+    Enemy enemy;
+    enemy.entity_id = next_entity_id++;
+    enemy.x = 850; // Spawn off-screen right
+    enemy.y = 50 + (rand() % 500); // Random Y position
+    enemy.vx = -100.0f; // Move left
+    enemy.vy = 0.0f;
+    enemy.health = 1.0f;
+    enemy.enemy_type = 0;
+    enemy.spawn_time = std::chrono::steady_clock::now();
+    
+    enemies[enemy.entity_id] = enemy;
+    
+    std::cout << "Spawned enemy " << enemy.entity_id << " at (" << enemy.x << ", " << enemy.y << ")" << std::endl;
+}
+
+void UDPServer::check_collisions() {
+    std::vector<uint32_t> enemies_to_remove;
+    
+    // Check player-enemy collisions
+    for (const auto& [client_key, client_info] : clients) {
+        for (const auto& [enemy_id, enemy] : enemies) {
+            float dx = client_info.x - enemy.x;
+            float dy = client_info.y - enemy.y;
+            float distance_sq = dx * dx + dy * dy;
+            
+            // Simple collision detection (assuming 40x40 player and 30x30 enemy)
+            if (distance_sq < (35 * 35)) { // Collision threshold
+                enemies_to_remove.push_back(enemy_id);
+                std::cout << "Collision: Player " << client_info.player_id << " hit enemy " << enemy_id << std::endl;
+            }
+        }
+    }
+    
+    // Remove collided enemies
+    for (uint32_t enemy_id : enemies_to_remove) {
+        // Send destruction notification to all clients
+        Protocol::EntityDestroy destroy;
+        destroy.entity_id = enemy_id;
+        destroy.entity_type = 1; // Enemy
+        
+        uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::EntityDestroy)];
+        size_t packet_size = Protocol::create_packet(buffer, 
+                                                    static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_DESTROY),
+                                                    &destroy, sizeof(destroy));
+        
+        for (const auto& client_pair : clients) {
+            send_to_client(client_pair.first, reinterpret_cast<const char*>(buffer), packet_size);
+        }
+        
+        enemies.erase(enemy_id);
+        std::cout << "Enemy " << enemy_id << " destroyed by collision" << std::endl;
     }
 }

@@ -33,6 +33,9 @@ bool GameEngine::initialize(GameWindow* game_window, UDPClient* network_client) 
     ecs_registry.register_component<controllable>();
     ecs_registry.register_component<collider>();
     ecs_registry.register_component<remote_player>();
+    ecs_registry.register_component<enemy>();
+    ecs_registry.register_component<lifetime>();
+    ecs_registry.register_component<spawner>();
 
     setup_entities();
 
@@ -55,23 +58,14 @@ void GameEngine::setup_entities() {
     ecs_registry.add_component(player_entity, controllable(200.0f)); // Speed of 200
     ecs_registry.add_component(player_entity, collider(40.0f, 40.0f));
 
-    // Create some static entities for testing
-    entity wall1 = ecs_registry.spawn_entity();
-    ecs_registry.add_component(wall1, position(300.0f, 200.0f));
-    ecs_registry.add_component(wall1, drawable(100.0f, 50.0f, 128, 128, 128, 255)); // Gray wall
-    ecs_registry.add_component(wall1, collider(100.0f, 50.0f));
-
-    entity wall2 = ecs_registry.spawn_entity();
-    ecs_registry.add_component(wall2, position(500.0f, 400.0f));
-    ecs_registry.add_component(wall2, drawable(80.0f, 80.0f, 0, 255, 0, 255)); // Green wall
-    ecs_registry.add_component(wall2, collider(80.0f, 80.0f));
 }
 
 void GameEngine::update_systems(float dt) {
     // Run ECS systems in order
-    control_system(ecs_registry);           // Handle player input
-    position_system(ecs_registry, dt);      // Update positions based on velocity
-    collision_system(ecs_registry);         // Handle collisions
+    control_system(ecs_registry);                                    // Handle player input
+    position_system(ecs_registry, dt);                               // Update positions based on velocity
+    collision_system(ecs_registry);                                  // Handle collisions
+    lifetime_system(ecs_registry, dt, window->get_width(), window->get_height()); // Handle entity lifetime
 }
 
 void GameEngine::render_ui() {
@@ -164,8 +158,29 @@ void GameEngine::handle_binary_message(const Protocol::PacketHeader& header, con
         if (header.payload_size >= sizeof(Protocol::EntityUpdate)) {
             const Protocol::EntityUpdate* update = reinterpret_cast<const Protocol::EntityUpdate*>(payload);
 
-            if (static_cast<int>(update->entity_id) != local_player_id) {
-                update_remote_player(update->entity_id, update->position_x, update->position_y);
+            // Check if this is an enemy (state_flags = 1) or player (state_flags = 0)
+            if (update->state_flags == 1) {
+                // This is an enemy update
+                update_enemy(update->entity_id, update->position_x, update->position_y, update->velocity_x, update->velocity_y);
+            } else {
+                // This is a player update
+                if (static_cast<int>(update->entity_id) != local_player_id) {
+                    update_remote_player(update->entity_id, update->position_x, update->position_y);
+                }
+            }
+        }
+    }
+    else if (header.message_type == static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_DESTROY)) {
+        if (header.payload_size >= sizeof(Protocol::EntityDestroy)) {
+            const Protocol::EntityDestroy* destroy = reinterpret_cast<const Protocol::EntityDestroy*>(payload);
+            
+            if (destroy->entity_type == 1) { // Enemy
+                auto it = enemies.find(destroy->entity_id);
+                if (it != enemies.end()) {
+                    ecs_registry.kill_entity(it->second);
+                    enemies.erase(it);
+                    std::cout << "Removed enemy " << destroy->entity_id << std::endl;
+                }
             }
         }
     }
@@ -189,7 +204,7 @@ entity GameEngine::create_remote_player(int player_id, float x, float y) {
     entity remote = ecs_registry.spawn_entity();
     ecs_registry.add_component(remote, position(x, y));
     ecs_registry.add_component(remote, collider(40.0f, 40.0f));
-    ecs_registry.add_component(remote, drawable(40.0f, 40.0f, 128, 0, 128, 255)); // Purple for remote players
+    ecs_registry.add_component(remote, drawable(40.0f, 40.0f, 0, 100, 255, 255)); // Blue for remote players (same size as local player)
     ecs_registry.add_component(remote, remote_player(std::to_string(player_id)));
     // Note: Remote players don't have controllable or velocity components
     return remote;
@@ -201,6 +216,35 @@ void GameEngine::remove_remote_player(int player_id) {
         ecs_registry.kill_entity(it->second);
         remote_players.erase(it);
     }
+}
+
+void GameEngine::update_enemy(uint32_t enemy_id, float x, float y, float vx, float vy) {
+    auto it = enemies.find(enemy_id);
+    if (it != enemies.end()) {
+        // Update existing enemy position and velocity
+        auto *pos_arr = ecs_registry.get_if<position>();
+        auto *vel_arr = ecs_registry.get_if<velocity>();
+        if (pos_arr && pos_arr->size() > static_cast<size_t>(it->second)) {
+            (*pos_arr)[static_cast<size_t>(it->second)] = position(x, y);
+        }
+        if (vel_arr && vel_arr->size() > static_cast<size_t>(it->second)) {
+            (*vel_arr)[static_cast<size_t>(it->second)] = velocity(vx, vy);
+        }
+    } else {
+        // Create new enemy
+        enemies[enemy_id] = create_enemy(enemy_id, x, y);
+    }
+}
+
+entity GameEngine::create_enemy(uint32_t enemy_id, float x, float y) {
+    entity enemy_entity = ecs_registry.spawn_entity();
+    ecs_registry.add_component(enemy_entity, position(x, y));
+    ecs_registry.add_component(enemy_entity, velocity(-100.0f, 0.0f)); // Default left movement
+    ecs_registry.add_component(enemy_entity, collider(30.0f, 30.0f));
+    ecs_registry.add_component(enemy_entity, drawable(30.0f, 30.0f, 255, 165, 0, 255)); // Orange enemy
+    ecs_registry.add_component(enemy_entity, enemy(0, 1.0f)); // Type 0, health 1
+    // Note: Enemies don't have controllable component - they're not player controlled
+    return enemy_entity;
 }
 
 void GameEngine::shutdown() {

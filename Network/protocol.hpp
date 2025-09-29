@@ -23,6 +23,7 @@ namespace Protocol {
 
     enum class RTypeMessage : uint8_t {
         ENTITY_UPDATE   = 0xC1,
+        ENTITY_DESTROY  = 0xC2,
         POSITION_UPDATE = 0xC7,
     };
 
@@ -50,6 +51,11 @@ namespace Protocol {
         float velocity_x;
         float velocity_y;
         uint8_t state_flags;
+    } __attribute__((packed));
+
+    struct EntityDestroy {
+        uint32_t entity_id;
+        uint8_t entity_type; // 0 = player, 1 = enemy
     } __attribute__((packed));
 
     inline size_t create_packet(uint8_t* buffer, uint8_t message_type, const void* payload, uint16_t payload_size) {
