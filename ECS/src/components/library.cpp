@@ -24,6 +24,9 @@ controllable::controllable(float s) : speed(s) {}
 collider::collider() {}
 collider::collider(float nw, float nh, float ox, float oy, bool trig) : w(nw), h(nh), offset_x(ox), offset_y(oy), is_trigger(trig) {}
 
+remote_player::remote_player() {}
+remote_player::remote_player(const std::string& id) : client_id(id) {}
+
 class ComponentFactory : public IComponentFactory {
     public:
         void create_position(registry& reg, const entity& e, float x, float y) override
@@ -56,6 +59,7 @@ extern "C" void register_components(registry &r) {
     r.register_component<drawable>();
     r.register_component<controllable>();
     r.register_component<collider>();
+    r.register_component<remote_player>();
 }
 
 extern "C" IComponentFactory* get_component_factory() {

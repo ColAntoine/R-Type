@@ -1,58 +1,34 @@
 #include <iostream>
 #include <csignal>
-#include <thread>
-#include <chrono>
 #include "client.hpp"
+#include "game_window.hpp"
+#include "game_engine.hpp"
 
+// Global instances for signal handling
 UDPClient* client_instance = nullptr;
+GameWindow* window_instance = nullptr;
+GameEngine* engine_instance = nullptr;
 
 void signal_handler(int signal) {
-    std::cout << "\nReceived signal " << signal << ". Disconnecting client..." << std::endl;
+    std::cout << "\nReceived signal " << signal << ". Shutting down..." << std::endl;
+    if (engine_instance) {
+        engine_instance->shutdown();
+    }
     if (client_instance) {
         client_instance->disconnect();
     }
-}
-
-void print_help() {
-    std::cout << "=== R-Type UDP Client ===" << std::endl;
-    std::cout << "Commands:" << std::endl;
-    std::cout << "  'info' - Show client information" << std::endl;
-    std::cout << "  'msg <message>' - Send message to server" << std::endl;
-    std::cout << "  'help' - Show this help" << std::endl;
-    std::cout << "  'quit' - Disconnect and exit" << std::endl;
-    std::cout << std::endl;
-}
-
-void commands_loop(UDPClient& client) {
-    std::string input;
-    while (client.is_connected() && std::getline(std::cin, input)) {
-        if (input == "quit") {
-            std::cout << "Disconnecting..." << std::endl;
-            break;
-        } else if (input == "info") {
-            client.print_client_info();
-        } else if (input == "help") {
-            print_help();
-        } else if (input.substr(0, 4) == "msg " && input.length() > 4) {
-            std::string message = input.substr(4);
-            client.send_message(message);
-            std::cout << "Sent: " << message << std::endl;
-        } else if (!input.empty()) {
-            // Send any other input as a message
-            client.send_message(input);
-            std::cout << "Sent: " << input << std::endl;
-        }
+    if (window_instance) {
+        window_instance->close();
     }
 }
 
 int main(int argc, char* argv[]) {
     std::cout << "=== R-Type UDP Client ===" << std::endl;
 
-    // Default server connection
+    // Parse command line arguments
     std::string server_ip = "127.0.0.1";
     int server_port = 8080;
 
-    // Check command line arguments for custom server
     if (argc > 1) {
         server_ip = argv[1];
     }
@@ -64,21 +40,54 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Set up signal handling
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
+    // Create core components
     UDPClient client;
-    client_instance = &client;
+    GameWindow window(1000, 860, "R-Type Client");
+    GameEngine engine;
 
+    // Set global instances for signal handling
+    client_instance = &client;
+    window_instance = &window;
+    engine_instance = &engine;
+
+    // Connect to server
+    std::cout << "Connecting to server " << server_ip << ":" << server_port << "..." << std::endl;
     if (!client.connect_to_server(server_ip, server_port)) {
         std::cerr << "Failed to connect to server " << server_ip << ":" << server_port << std::endl;
         return 1;
     }
+    std::cout << "Successfully connected to server!" << std::endl;
+
+    // Initialize graphics window
+    if (!window.initialize()) {
+        std::cerr << "Failed to initialize game window" << std::endl;
+        client.disconnect();
+        return 1;
+    }
+
+    // Initialize game engine BEFORE starting networking to set up callback
+    if (!engine.initialize(&window, &client)) {
+        std::cerr << "Failed to initialize game engine" << std::endl;
+        client.disconnect();
+        window.close();
+        return 1;
+    }
+
+    // Start networking AFTER callback is set up
     client.start_receiving();
-    print_help();
-    std::cout << "Connected to server. Type messages or commands:" << std::endl;
-    commands_loop(client);
+
+    // Run the game
+    engine.run();
+
+    // Clean shutdown
+    engine.shutdown();
     client.disconnect();
+    window.close();
+
     std::cout << "Client shut down successfully." << std::endl;
     return 0;
 }

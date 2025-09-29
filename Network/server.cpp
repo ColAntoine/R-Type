@@ -5,6 +5,10 @@
 #include <ctime>
 #include <cerrno>
 #include <sys/time.h>
+#include <chrono>
+
+// Initialize static counter
+int UDPServer::next_player_id = 1;
 
 UDPServer::UDPServer() : socket_fd(-1), port(0), running(false) {
     memset(&server_address, 0, sizeof(server_address));
@@ -90,10 +94,16 @@ void UDPServer::server_loop() {
     char buffer[1024];
     sockaddr_in client_address;
     socklen_t client_len = sizeof(client_address);
+    time_t last_cleanup = time(nullptr);
 
     std::cout << "Server loop started" << std::endl;
 
     while (running.load()) {
+        time_t current_time = time(nullptr);
+        if (current_time - last_cleanup > 5) {
+            cleanup_disconnected_clients();
+            last_cleanup = current_time;
+        }
         memset(buffer, 0, sizeof(buffer));
         memset(&client_address, 0, sizeof(client_address));
 
@@ -130,17 +140,18 @@ std::string UDPServer::get_client_key(const sockaddr_in& client_addr) {
 
 void UDPServer::handle_client_message(const char* buffer, int length, const sockaddr_in& client_addr) {
     std::string client_key = get_client_key(client_addr);
-    std::string message(buffer, length);
 
-    std::cout << "Received from " << client_key << ": " << message << std::endl;
+    // Try to parse as binary packet first
+    Protocol::PacketHeader header;
+    const uint8_t* payload;
 
-    // Echo the message back to the client
-    std::string response = "Echo: " + message;
-    send_to_client(client_key, response.c_str(), response.length());
-
-    // If client sends "quit", remove them
-    if (message == "quit") {
-        remove_client(client_key);
+    if (Protocol::parse_packet(reinterpret_cast<const uint8_t*>(buffer), length, header, payload)) {
+        if (header.message_type == static_cast<uint8_t>(Protocol::RTypeMessage::POSITION_UPDATE)) {
+            if (header.payload_size >= sizeof(Protocol::PositionUpdate)) {
+                const Protocol::PositionUpdate* pos_update = reinterpret_cast<const Protocol::PositionUpdate*>(payload);
+                handle_position_update(client_key, *pos_update);
+            }
+        }
     }
 }
 
@@ -157,22 +168,93 @@ void UDPServer::add_client(const sockaddr_in& client_addr) {
     client_info.connected = true;
     client_info.last_ping = time(nullptr);
 
+    client_info.x = 100.0f;
+    client_info.y = 100.0f;
+    client_info.player_id = next_player_id++;
     clients[client_key] = client_info;
 
-    std::cout << "New client connected: " << client_key << std::endl;
+    std::cout << "New client connected: " << client_key << " (Player ID: " << client_info.player_id << ")" << std::endl;
     std::cout << "Total clients: " << clients.size() << std::endl;
 
-    // Send welcome message
-    std::string welcome = "Welcome to R-Type server!";
-    send_to_client(client_key, welcome.c_str(), welcome.length());
+    Protocol::ServerAccept accept_msg;
+    accept_msg.player_id = client_info.player_id;
+    accept_msg.server_version = 1;
+    accept_msg.server_capabilities = 0;
+
+    uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::ServerAccept)];
+    size_t packet_size = Protocol::create_packet(buffer,
+                                                static_cast<uint8_t>(Protocol::SystemMessage::SERVER_ACCEPT),
+                                                &accept_msg, sizeof(accept_msg));
+    send_to_client(client_key, reinterpret_cast<const char*>(buffer), packet_size);
+    send_existing_players_to_client(client_key);
+}
+
+void UDPServer::handle_position_update(const std::string& client_key, const Protocol::PositionUpdate& pos_update) {
+    auto client_it = clients.find(client_key);
+    if (client_it == clients.end()) return;
+
+    clients[client_key].x = pos_update.position_x;
+    clients[client_key].y = pos_update.position_y;
+
+    Protocol::EntityUpdate update;
+    update.entity_id = clients[client_key].player_id;
+    update.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now().time_since_epoch()).count();
+    update.position_x = pos_update.position_x;
+    update.position_y = pos_update.position_y;
+    update.velocity_x = 0.0f;
+    update.velocity_y = 0.0f;
+    update.state_flags = 0;
+
+    uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::EntityUpdate)];
+    size_t packet_size = Protocol::create_packet(buffer,
+                                                static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_UPDATE),
+                                                &update, sizeof(update));
+
+    for (const auto& client_pair : clients) {
+        if (client_pair.first != client_key) {
+            send_to_client(client_pair.first, reinterpret_cast<const char*>(buffer), packet_size);
+        }
+    }
 }
 
 void UDPServer::remove_client(const std::string& client_key) {
     auto it = clients.find(client_key);
     if (it != clients.end()) {
+        int disconnected_player_id = it->second.player_id;
+
+        Protocol::PlayerDisconnect disconnect_msg;
+        disconnect_msg.player_id = disconnected_player_id;
+
+        uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::PlayerDisconnect)];
+        size_t packet_size = Protocol::create_packet(buffer,
+                                                    static_cast<uint8_t>(Protocol::SystemMessage::PLAYER_DISCONNECT),
+                                                    &disconnect_msg, sizeof(disconnect_msg));
+
+        for (const auto& client_pair : clients) {
+            if (client_pair.first != client_key) {
+                send_to_client(client_pair.first, reinterpret_cast<const char*>(buffer), packet_size);
+            }
+        }
+
         clients.erase(it);
-        std::cout << "Client disconnected: " << client_key << std::endl;
+        std::cout << "Client disconnected: " << client_key << " (Player ID: " << disconnected_player_id << ")" << std::endl;
         std::cout << "Total clients: " << clients.size() << std::endl;
+    }
+}
+
+void UDPServer::cleanup_disconnected_clients() {
+    time_t current_time = time(nullptr);
+    const int TIMEOUT_SECONDS = 10;
+    std::vector<std::string> clients_to_remove;
+    for (const auto& client_pair : clients) {
+        if (current_time - client_pair.second.last_ping > TIMEOUT_SECONDS) {
+            clients_to_remove.push_back(client_pair.first);
+        }
+    }
+    for (const std::string& client_key : clients_to_remove) {
+        std::cout << "Removing inactive client: " << client_key << std::endl;
+        remove_client(client_key);
     }
 }
 
@@ -228,4 +310,26 @@ void UDPServer::print_server_info() const {
         }
     }
     std::cout << "======================" << std::endl;
+}
+
+void UDPServer::send_existing_players_to_client(const std::string& client_key) {
+    for (const auto& client_pair : clients) {
+        if (client_pair.first != client_key) {
+            Protocol::EntityUpdate update;
+            update.entity_id = client_pair.second.player_id;
+            update.timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count();
+            update.position_x = client_pair.second.x;
+            update.position_y = client_pair.second.y;
+            update.velocity_x = 0.0f;
+            update.velocity_y = 0.0f;
+            update.state_flags = 0;
+
+            uint8_t buffer[sizeof(Protocol::PacketHeader) + sizeof(Protocol::EntityUpdate)];
+            size_t packet_size = Protocol::create_packet(buffer,
+                                                        static_cast<uint8_t>(Protocol::RTypeMessage::ENTITY_UPDATE),
+                                                        &update, sizeof(update));
+            send_to_client(client_key, reinterpret_cast<const char*>(buffer), packet_size);
+        }
+    }
 }

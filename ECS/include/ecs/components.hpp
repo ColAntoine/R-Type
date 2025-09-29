@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <string>
 #include "ecs/registry.hpp"
 #include "ecs/icomponent.hpp"
 
@@ -48,6 +49,13 @@ struct collider : public IComponent {
 
     collider();
     collider(float nw, float nh, float ox = 0.f, float oy = 0.f, bool trig = false);
+};
+
+struct remote_player : public IComponent {
+    std::string client_id;
+
+    remote_player();
+    remote_player(const std::string& id);
 };
 
 extern "C" {
