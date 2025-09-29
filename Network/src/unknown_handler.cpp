@@ -20,7 +20,7 @@ bool UnknownMessageHandler::handle_message(std::shared_ptr<Session> session, con
 
     // Print first few bytes for debugging
     std::cout << "Data: ";
-    for (size_t i = 0; i < std::min(size, size_t(16)); ++i) {
+    for (size_t i = 0; i < std::min(size, static_cast<size_t>(16)); ++i) {
         std::cout << "0x" << std::hex << std::uppercase << std::setfill('0') << std::setw(2)
                   << static_cast<int>(static_cast<uint8_t>(data[i])) << " ";
     }
