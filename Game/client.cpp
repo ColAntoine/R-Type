@@ -192,9 +192,6 @@ void UDPClient::receive_loop() {
         buffer[bytes_received] = '\0';
         std::string message(buffer, bytes_received);
 
-        // Print received message
-        std::cout << "Received: " << message << std::endl;
-
         // Call callback if set
         if (on_message_received) {
             on_message_received(message);
