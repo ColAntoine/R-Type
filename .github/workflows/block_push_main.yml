@@ -1,0 +1,14 @@
+name: Guard — No direct pushes to main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  block-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if pushed directly to main
+        run: |
+          echo "❌ Les push directs sur 'main' sont interdits. Ouvre une Pull Request."
+          exit 1
