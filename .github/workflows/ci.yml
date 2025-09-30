@@ -1,0 +1,48 @@
+name: CI — Build & Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }} / ${{ matrix.build_type }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        build_type: [Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (Optionnel) Prérequis Linux — runners ont déjà CMake/Ninja,
+      # mais ce bloc ne fait rien sur Windows.
+      - name: Install deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        shell: bash
+
+      - name: Build
+        run: |
+          cmake --build build --config ${{ matrix.build_type }} -- -j 2
+        shell: bash
+
+      - name: Run tests (ctest)
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ctest --test-dir build -C ${{ matrix.build_type }} --output-on-failure
+          else
+            ctest --test-dir build --output-on-failure
+          fi
+        shell: bash
