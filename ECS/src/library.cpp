@@ -9,34 +9,6 @@
 #include "ecs/registry.hpp"
 #include "ecs/component_factory.hpp"
 
-position::position() : x(0), y(0) {}
-position::position(float nx, float ny) : x(nx), y(ny) {}
-
-velocity::velocity() : vx(0), vy(0) {}
-velocity::velocity(float nvx, float nvy) : vx(nvx), vy(nvy) {}
-
-drawable::drawable() {}
-drawable::drawable(float nw, float nh, unsigned char nr, unsigned char ng, unsigned char nb, unsigned char na) : r(nr), g(ng), b(nb), a(na), w(nw), h(nh) {}
-
-controllable::controllable() {}
-controllable::controllable(float s) : speed(s) {}
-
-collider::collider() {}
-collider::collider(float nw, float nh, float ox, float oy, bool trig) : w(nw), h(nh), offset_x(ox), offset_y(oy), is_trigger(trig) {}
-
-remote_player::remote_player() {}
-remote_player::remote_player(const std::string& id) : client_id(id) {}
-
-enemy::enemy() {}
-enemy::enemy(int type, float hp) : enemy_type(type), health(hp) {}
-
-lifetime::lifetime() {}
-lifetime::lifetime(float max_time, bool collision_destroy, bool offscreen_destroy) 
-    : max_lifetime(max_time), destroy_on_collision(collision_destroy), destroy_offscreen(offscreen_destroy) {}
-
-spawner::spawner() {}
-spawner::spawner(float interval, int max_ents) : spawn_interval(interval), max_entities(max_ents) {}
-
 class ComponentFactory : public IComponentFactory {
     public:
         void create_position(registry& reg, const entity& e, float x, float y) override
@@ -61,7 +33,7 @@ class ComponentFactory : public IComponentFactory {
         }
 };
 
-static ComponentFactory factory_instance;
+static ComponentFactory factory_instance;           // TODO: singletone
 
 extern "C" void register_components(registry &r) {
     r.register_component<position>();
