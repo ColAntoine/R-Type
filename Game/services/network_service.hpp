@@ -44,6 +44,7 @@ class NetworkService : public IService {
         void handle_player_join(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_player_leave(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_entity_create(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
+        void handle_entity_update(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_entity_destroy(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         uint32_t get_current_timestamp();
 };

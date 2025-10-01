@@ -48,6 +48,30 @@ struct PlayerLeaveEvent : Event {
     PlayerLeaveEvent(int id) : player_id(id) {}
 };
 
+// Enemy Events
+struct EnemySpawnEvent : Event {
+    int enemy_id;
+    int enemy_type;
+    float x, y;
+    float health;
+    EnemySpawnEvent(int id, int type, float x_, float y_, float hp = 100.0f) 
+        : enemy_id(id), enemy_type(type), x(x_), y(y_), health(hp) {}
+};
+
+struct EnemyUpdateEvent : Event {
+    int enemy_id;
+    float x, y;
+    float vx, vy;
+    float health;
+    EnemyUpdateEvent(int id, float x_, float y_, float vx_, float vy_, float hp) 
+        : enemy_id(id), x(x_), y(y_), vx(vx_), vy(vy_), health(hp) {}
+};
+
+struct EnemyDestroyEvent : Event {
+    int enemy_id;
+    EnemyDestroyEvent(int id) : enemy_id(id) {}
+};
+
 struct EntityCreateEvent : Event {
     int entity_id;
     int entity_type;
