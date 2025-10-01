@@ -21,3 +21,6 @@ fclean:
 	rm -rf lib rtype build
 
 re: fclean all
+
+test: build
+	cd build && ctest --output-on-failure
