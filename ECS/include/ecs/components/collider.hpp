@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct collider : public IComponent {
     float w{10.f}, h{10.f};

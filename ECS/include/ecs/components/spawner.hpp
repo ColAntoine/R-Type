@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct spawner : public IComponent {
     float spawn_interval{2.0f};   // Time between spawns (seconds)

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct lifetime : public IComponent {
     float max_lifetime{10.0f};          // Maximum time to live (seconds)

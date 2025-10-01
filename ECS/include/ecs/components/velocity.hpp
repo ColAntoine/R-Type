@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct velocity : public IComponent {
     float vx{};

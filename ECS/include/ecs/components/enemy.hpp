@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct enemy : public IComponent {
     int enemy_type{0};  // 0=basic, 1=fast, 2=heavy, etc.

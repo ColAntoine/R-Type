@@ -8,7 +8,7 @@
 #pragma once
 
 #include <string>
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 
 struct remote_player : public IComponent {
     std::string client_id;
