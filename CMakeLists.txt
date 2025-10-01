@@ -55,6 +55,7 @@ file(GLOB_RECURSE ECS_SOURCES "ECS/*.cpp")
 if(ECS_SOURCES)
     add_library(ECS SHARED ${ECS_SOURCES})
     target_include_directories(ECS PUBLIC ECS ECS/include)
+    target_link_libraries(ECS PUBLIC raylib::raylib)
 endif()
 
 # Build Game executable (r-type_client)
@@ -72,7 +73,7 @@ if(GAME_SOURCES)
     target_link_libraries(r-type_client raylib)
     
     # Find and link GLFW explicitly
-    find_package(glfw3 CONFIG REQUIRED)
+    target_link_libraries(r-type_client PRIVATE raylib::raylib)
     target_link_libraries(r-type_client glfw)
 
     # Link with ECS library if it exists
