@@ -6,6 +6,8 @@
 #include "ecs/components.hpp"
 #include "ecs/entity.hpp"
 #include "../Network/include/protocol.hpp"
+#include "ecs/dlloader.hpp"
+
 #include <unordered_map>
 #include <string>
 
@@ -35,6 +37,7 @@ class GameEngine {
         std::unordered_map<int, entity> remote_players;
         std::unordered_map<int, RemoteState> remote_states;
         std::unordered_map<uint32_t, entity> enemies; // Track server enemies
+        DLLoader dll_loader;
 
         void setup_entities();
         void update_systems(float dt);
@@ -48,6 +51,7 @@ class GameEngine {
         void remove_remote_player(int player_id);
         void update_enemy(uint32_t enemy_id, float x, float y, float vx, float vy);
         entity create_enemy(uint32_t enemy_id, float x, float y);
+        bool load_components_and_systems();
 
         // Interpolation helper
         void interpolate_remote_players(float dt);

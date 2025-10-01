@@ -1,5 +1,4 @@
 #include "game_engine.hpp"
-#include "ecs/systems.hpp"
 #include <iostream>
 #include <sstream>
 #include <chrono>
@@ -26,6 +25,13 @@ bool GameEngine::initialize(GameWindow* game_window, UDPClient* network_client) 
         return false;
     }
 
+    if (!load_components_and_systems()) {
+        std::cerr << "Failed to load components and systems" << std::endl;
+        return false;
+    }
+
+    setup_entities();
+
     // Register ECS component types
     ecs_registry.register_component<position>();
     ecs_registry.register_component<velocity>();
@@ -50,6 +56,36 @@ bool GameEngine::initialize(GameWindow* game_window, UDPClient* network_client) 
     initialized = true;
     std::cout << "Game engine initialized successfully" << std::endl;
     return true;
+}
+
+bool GameEngine::load_components_and_systems() {
+    // Load components first
+    if (!dll_loader.load_components_from_so("lib/libECS.so", ecs_registry)) {
+        std::cerr << "Failed to load components library" << std::endl;
+        return false;
+    }
+
+    // TODO: find a way to make them selectable either in compilation or runtime if engine
+
+    // Load individual system libraries
+    std::vector<std::string> system_libraries = {
+        "lib/systems/libposition_system.so",
+        "lib/systems/libcontrol_system.so",
+        "lib/systems/libdraw_system.so",
+        "lib/systems/libcollision_system.so",
+        "lib/systems/liblifetime_system.so"
+    };
+
+    bool all_loaded = true;
+    for (const std::string& lib_path : system_libraries) {
+        if (!dll_loader.load_system_from_so(lib_path)) {
+            std::cerr << "Failed to load system: " << lib_path << std::endl;
+            all_loaded = false;
+        }
+    }
+
+    std::cout << "Loaded " << dll_loader.get_system_count() << " systems" << std::endl;
+    return all_loaded;
 }
 
 void GameEngine::setup_entities() {
@@ -127,13 +163,6 @@ void GameEngine::interpolate_remote_players(float dt) {
             }
         }
     }
-}
-
-void GameEngine::update_systems(float dt) {
-    // Run ECS systems in order
-    control_system(ecs_registry);                                    // Handle player input
-    position_system(ecs_registry, dt);                               // Update positions based on velocity
-    collision_system(ecs_registry);                                  // Handle collisions
 }
 
 void GameEngine::render_ui() {
@@ -231,15 +260,16 @@ void GameEngine::run() {
             std::cout << "ESC pressed - closing game" << std::endl;
             break;
         }
-        update_systems(dt);
+        dll_loader.update_all_systems(ecs_registry, dt);
         send_player_position();
-
-        // Interpolate remote players for smooth rendering
         interpolate_remote_players(dt);
 
         window->begin_drawing();
         window->clear_background(DARKBLUE);
-        draw_system(ecs_registry);
+
+        // Use DLLoader for drawing
+        // dll_loader.update_system_by_name("DrawSystem", ecs_registry, dt);
+
         render_ui();
         window->end_drawing();
     }
