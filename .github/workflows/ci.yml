@@ -26,16 +26,19 @@ jobs:
           restore-keys: |
             v1-${{ runner.os }}-vcpkg-
 
-      - name: Install system deps (OpenGL/X11 for raylib, etc.)
+      - name: Install system deps (OpenGL/X11 + headless)
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build pkg-config xorg-dev libglu1-mesa-dev
-
+          sudo apt-get install -y \
+            build-essential cmake ninja-build pkg-config \
+            xorg-dev libglu1-mesa-dev xvfb
+      
       - name: Configure (CMake)
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-
+      
       - name: Build
         run: cmake --build build --config Release -- -j 3
-
-      - name: Run tests (ctest)
-        run: ctest --test-dir build --output-on-failure
+      
+      - name: Run tests (ctest under Xvfb)
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" ctest --test-dir build --output-on-failure
+            
