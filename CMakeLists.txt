@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # ------------------------------------------------------------------
-# vcpkg bootstrap si aucun toolchain n'est fourni à CMake
+# Automatically initialize vcpkg if no toolchain is provided
 # ------------------------------------------------------------------
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
@@ -16,7 +16,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             message(FATAL_ERROR "Failed to clone vcpkg")
         endif()
 
-        # Bootstrap vcpkg
+        # Bootstrap vcpkg (Windows or Unix)
         if(WIN32)
             execute_process(
                 COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat
@@ -36,6 +36,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         endif()
     endif()
 
+    # Set the toolchain file so CMake uses vcpkg
     set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
@@ -45,7 +46,9 @@ project(R-Type)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Petit ASCII art :)
+# ------------------------------------------------------------------
+# Fun ASCII art 🎨
+# ------------------------------------------------------------------
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "__________        ________________.___._____________________")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "\\______   \\       \\__    ___/\\__  |   |\\______   \\_   _____/")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |       _/  ______ |    |    /   |   | |     ___|    __)_ ")
@@ -54,35 +57,35 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |____|_  / 
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "        \\/                    \\/                         \\/ ")
 
 # ------------------------------------------------------------------
-# Dépendances via vcpkg (ou système)
+# Dependencies declared through vcpkg (or system)
 # ------------------------------------------------------------------
 find_package(raylib CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
-# Tests (doctest)
+# Unit tests (doctest)
 find_package(doctest CONFIG REQUIRED)
 include(doctest)
 include(CTest)
 
 # ------------------------------------------------------------------
-# ECS : bibliothèque partagée
+# ECS: Shared library
 # ------------------------------------------------------------------
 file(GLOB_RECURSE ECS_SOURCES "ECS/*.cpp")
-# Exclure les fichiers de test et le main
+# Exclude test files and main.cpp
 list(FILTER ECS_SOURCES EXCLUDE REGEX ".*/ECS/test/.*")
 list(FILTER ECS_SOURCES EXCLUDE REGEX ".*/ECS/main\\.cpp$")
 
 if(ECS_SOURCES)
     add_library(ECS SHARED ${ECS_SOURCES})
     target_include_directories(ECS PUBLIC ECS ECS/include)
-    # ECS appelle des fonctions raylib/glfw => on exporte les dépendances
+    # ECS depends on raylib and glfw → export them too
     target_link_libraries(ECS PUBLIC raylib glfw)
 endif()
 
 # ------------------------------------------------------------------
-# Client (r-type_client)
+# Client executable (r-type_client)
 # ------------------------------------------------------------------
 file(GLOB_RECURSE GAME_SOURCES "Game/*.cpp")
 list(FILTER GAME_SOURCES EXCLUDE REGEX ".*/Game/test/.*")
@@ -96,7 +99,7 @@ if(GAME_SOURCES)
         Network/include
     )
     if(TARGET ECS)
-        # ECS exporte déjà raylib+glfw → inutile de les relier deux fois
+        # No need to link raylib+glfw twice: already linked in ECS
         target_link_libraries(r-type_client PRIVATE ECS)
     else()
         target_link_libraries(r-type_client PRIVATE raylib glfw)
@@ -104,7 +107,7 @@ if(GAME_SOURCES)
 endif()
 
 # ------------------------------------------------------------------
-# Serveur (r-type_server)
+# Server executable (r-type_server)
 # ------------------------------------------------------------------
 file(GLOB_RECURSE NETWORK_SOURCES "Network/*.cpp")
 list(FILTER NETWORK_SOURCES EXCLUDE REGEX ".*/Network/test/.*")
@@ -123,7 +126,7 @@ if(NETWORK_SOURCES)
 endif()
 
 # ------------------------------------------------------------------
-# Dossiers de sortie
+# Output directories for binaries and libraries
 # ------------------------------------------------------------------
 foreach(target r-type_client r-type_server ECS)
     if(TARGET ${target})
@@ -136,11 +139,13 @@ foreach(target r-type_client r-type_server ECS)
 endforeach()
 
 # ------------------------------------------------------------------
-# Tests
+# Unit test configuration
 # ------------------------------------------------------------------
 enable_testing()
 
+# ------------------------
 # ECS tests
+# ------------------------
 file(GLOB ECS_TEST_SOURCES "ECS/test/*.cpp")
 if(ECS_TEST_SOURCES)
     add_executable(test_ecs ${ECS_TEST_SOURCES})
@@ -148,45 +153,49 @@ if(ECS_TEST_SOURCES)
     if(TARGET ECS)
         target_link_libraries(test_ecs PRIVATE ECS)
     endif()
-    # ⚠️ Choisis UNE des deux selon ta config doctest
+    # Choose one of the following lines depending on your doctest config
     target_link_libraries(test_ecs PRIVATE doctest::doctest)
     # target_link_libraries(test_ecs PRIVATE doctest::doctest_with_main)
     doctest_discover_tests(test_ecs)
 endif()
 
+# ------------------------
 # Game tests
+# ------------------------
 file(GLOB GAME_TEST_SOURCES "Game/test/*.cpp")
 if(GAME_TEST_SOURCES)
     add_executable(test_game ${GAME_TEST_SOURCES})
     target_include_directories(test_game PRIVATE Game)
 
-    # ⬇️ AJOUTE CETTE LIGNE pour compiler l'implémentation de GameWindow dans le test
+    # Add GameWindow implementation for tests
     target_sources(test_game PRIVATE Game/game_window.cpp)
 
     if(TARGET ECS)
         target_link_libraries(test_game PRIVATE ECS)
     endif()
 
-    # le test appelle raylib via GameWindow
+    # Tests call raylib through GameWindow
     target_link_libraries(test_game PRIVATE raylib glfw)
 
-    # un seul main doctest (fourni par le test via DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN)
+    # Assume main is provided in the tests via DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
     target_link_libraries(test_game PRIVATE doctest::doctest)
     doctest_discover_tests(test_game)
 endif()
 
+# ------------------------
 # Network tests
+# ------------------------
 file(GLOB NETWORK_TEST_SOURCES "Network/test/*.cpp")
 if(NETWORK_TEST_SOURCES)
     add_executable(test_network ${NETWORK_TEST_SOURCES})
     target_include_directories(test_network PRIVATE Network Network/include)
 
-    # 👇 Ajouter l'implémentation testée
+    # Add required source files for network tests
     target_sources(test_network PRIVATE
         Network/src/connection.cpp
     )
 
-    # Liens nécessaires pour Asio
+    # Link Asio and doctest
     target_link_libraries(test_network
         PRIVATE
             asio::asio
@@ -194,7 +203,7 @@ if(NETWORK_TEST_SOURCES)
             doctest::doctest
     )
 
-    # Si certains tests réseau utilisent ECS, décommente :
+    # Uncomment this section if some network tests depend on ECS:
     # if(TARGET ECS)
     #     target_link_libraries(test_network PRIVATE ECS)
     # endif()
