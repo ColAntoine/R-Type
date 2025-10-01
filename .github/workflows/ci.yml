@@ -81,31 +81,58 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]   # ajoute macos-latest si besoin
         build_type: [Release]
+
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 2
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # (Optionnel) Prérequis Linux — runners ont déjà CMake/Ninja,
-      # mais ce bloc ne fait rien sur Windows.
-      - name: Install deps (Linux)
+      # --- Linux toolchain ---
+      - name: Install toolchain (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential pkg-config
+          # make/gcc/g++/pkg-config + ninja + git pour vcpkg
+          sudo apt-get install -y build-essential gcc g++ pkg-config ninja-build git
 
-      - name: Configure CMake
+      # --- Windows toolchain ---
+      # windows-latest a déjà MSVC, Ninja et Git, mais on force Ninja Multi-Config
+      - name: Print tool versions
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        shell: bash
+          cmake --version
+          ninja --version || true
+          git --version
 
-      - name: Build
+      # --- Configure ---
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
+        env:
+          CC: gcc
+          CXX: g++
         run: |
-          cmake --build build --config ${{ matrix.build_type }} -- -j 2
-        shell: bash
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S . -B build -G "Ninja Multi-Config"
+
+      # --- Build ---
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      # --- Tests ---
       - name: Run tests (ctest)
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
