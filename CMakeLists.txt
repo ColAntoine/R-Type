@@ -177,7 +177,6 @@ if(GAME_TEST_SOURCES)
     # Tests call raylib through GameWindow
     target_link_libraries(test_game PRIVATE raylib glfw)
 
-    # Assume main is provided in the tests via DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
     target_link_libraries(test_game PRIVATE doctest::doctest)
     doctest_discover_tests(test_game)
 endif()
