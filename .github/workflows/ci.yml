@@ -1,11 +1,10 @@
-name: CI (Makefile)
+name: CI - Build & Test
 
 on:
   pull_request:
     branches: [ main ]
   push:
-    branches-ignore:
-      - main
+    branches-ignore: [ main ]  # on peut builder les branches de feature aussi si tu veux
 
 jobs:
   build-and-test:
@@ -15,53 +14,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install build deps
-        run: |
-          sudo apt-get update
-          # Outils de build + cmake + ninja + pkg-config
-          sudo apt-get install -y build-essential cmake ninja-build pkg-config git
-          # Headers graphiques utiles pour glfw/raylib côté Linux (sécurise la toolchain)
-          sudo apt-get install -y xorg-dev libglu1-mesa-dev
-
-      # vcpkg est géré par ton CMake (external/vcpkg). On le met en cache.
-      - name: Cache vcpkg directory
+      # (Optionnel mais recommandé) Cache de vcpkg cloné par ton CMake
+      - name: Cache vcpkg folder
         uses: actions/cache@v4
         with:
           path: |
-            external/vcpkg
-          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'CMakeLists.txt', '**/CMakeLists.txt') }}
+            external/vcpkg/installed
+            external/vcpkg/buildtrees
+            external/vcpkg/downloads
+          key: v1-${{ runner.os }}-vcpkg-${{ hashFiles('**/CMakeLists.txt') }}
           restore-keys: |
-            vcpkg-${{ runner.os }}-
+            v1-${{ runner.os }}-vcpkg-
 
-      - name: Build (Makefile) with Ninja generator
-        env:
-          # Force CMake à générer pour Ninja même si le Makefile appelle "cmake .."
-          CMAKE_GENERATOR: Ninja
-          # Active les features utiles de vcpkg en CI
-          VCPKG_FEATURE_FLAGS: manifests,binarycaching
+      - name: Install system deps (OpenGL/X11 for raylib, etc.)
         run: |
-          make build
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config xorg-dev libglu1-mesa-dev
+
+      - name: Configure (CMake)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build --config Release -- -j 3
 
       - name: Run tests (ctest)
         run: ctest --test-dir build --output-on-failure
-
-      # Si ça casse, on affiche d'abord le log vcpkg, puis on uploade le build pour debug
-      - name: Print vcpkg log on failure
-        if: failure()
-        run: |
-          LOG="build/vcpkg-manifest-install.log"
-          if [ -f "$LOG" ]; then
-            echo "===== vcpkg-manifest-install.log (tail) ====="
-            tail -n 200 "$LOG" || true
-            echo "===== vcpkg-manifest-install.log (full head) ====="
-            head -n 200 "$LOG" || true
-          else
-            echo "No vcpkg log found at $LOG"
-          fi
-
-      - name: Upload build dir on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: build
