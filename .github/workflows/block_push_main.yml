@@ -1,14 +1,13 @@
-name: Guard — No direct pushes to main
+name: Guard Main
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
-  block-direct-push:
+  deny-direct-push:
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if pushed directly to main
-        run: |
-          echo "❌ Les push directs sur 'main' sont interdits. Ouvre une Pull Request."
+      - run: |
+          echo "Push direct sur 'main' détecté. Active les Branch Protection Rules pour empêcher ça."
           exit 1
