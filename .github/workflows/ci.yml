@@ -13,58 +13,66 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]   # ajoute macos-latest si besoin
+        os: [ubuntu-latest, windows-latest]     # ajoute macos-latest si besoin
         build_type: [Release]
 
     env:
       CMAKE_BUILD_PARALLEL_LEVEL: 2
+      # Aide vcpkg à utiliser les binaires système présents dans le runner
+      VCPKG_FORCE_SYSTEM_BINARIES: 1
+      VCPKG_FEATURE_FLAGS: manifests,binarycaching
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # --- Linux toolchain ---
-      - name: Install toolchain (Linux)
+      # ---------- Linux ----------
+      - name: Install toolchain + Ninja (Linux)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          # make/gcc/g++/pkg-config + ninja + git pour vcpkg
+          # Toolchain + Ninja + Git (pour vcpkg)
           sudo apt-get install -y build-essential gcc g++ pkg-config ninja-build git
+          # Libs X11/GL/ALSA utiles quand raylib se linke (selon triplet)
+          sudo apt-get install -y \
+            libx11-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev \
+            libgl1-mesa-dev libasound2-dev libpulse-dev
 
-      # --- Windows toolchain ---
-      # windows-latest a déjà MSVC, Ninja et Git, mais on force Ninja Multi-Config
-      - name: Print tool versions
+      - name: Show tools (Linux)
+        if: runner.os == 'Linux'
         run: |
-          cmake --version
+          which ninja || true
           ninja --version || true
-          git --version
+          cmake --version
+          gcc --version
+          g++ --version
 
-      # --- Configure ---
+      # ---------- Windows ----------
+      - name: Show tools (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          where ninja || ver
+          cmake --version
+
+      # ---------- Configure ----------
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
         env:
           CC: gcc
           CXX: g++
         run: |
-          cmake -S . -B build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
       - name: Configure CMake (Windows)
         if: runner.os == 'Windows'
         run: |
           cmake -S . -B build -G "Ninja Multi-Config"
 
-      # --- Build ---
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
+      # ---------- Build ----------
+      - name: Build
         run: cmake --build build --config ${{ matrix.build_type }}
 
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
-        run: cmake --build build --config ${{ matrix.build_type }}
-
-      # --- Tests ---
+      # ---------- Tests ----------
       - name: Run tests (ctest)
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
@@ -73,3 +81,15 @@ jobs:
             ctest --test-dir build --output-on-failure
           fi
         shell: bash
+
+      # ---------- Debug artifacts si échec ----------
+      - name: Upload vcpkg/CMake logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.os }}
+          path: |
+            build/vcpkg-manifest-install.log
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
+          if-no-files-found: ignore
