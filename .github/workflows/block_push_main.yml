@@ -1,0 +1,13 @@
+name: Guard Main
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deny-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Push direct sur 'main' détecté. Active les Branch Protection Rules pour empêcher ça."
+          exit 1
