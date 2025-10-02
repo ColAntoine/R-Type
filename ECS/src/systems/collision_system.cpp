@@ -1,0 +1,64 @@
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** Collision System Implementation
+*/
+
+#include <iostream>
+#include <algorithm>
+#include <array>
+#include "ecs/systems/collision_system.hpp"
+#include "ecs/registry.hpp"
+#include "ecs/components.hpp"
+#include "ecs/zipper.hpp"
+
+using Rect = std::array<float,4>; // {minx, miny, maxx, maxy}
+
+static inline Rect make_rect(const position &p, const collider &c)
+{
+    float x = p.x + c.offset_x;
+    float y = p.y + c.offset_y;
+    return { x, y, x + c.w, y + c.h };
+}
+
+static inline bool rect_overlap(const Rect &a, const Rect &b)
+{
+    return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+}
+
+static inline void resolve_penetration(position &pi, const Rect &a, position & /*pj*/, const Rect &b)
+{
+    float overlap_x = std::min(a[2], b[2]) - std::max(a[0], b[0]);
+    float overlap_y = std::min(a[3], b[3]) - std::max(a[1], b[1]);
+
+    if (overlap_x < overlap_y) {
+        if (a[0] < b[0]) pi.x -= overlap_x; else pi.x += overlap_x;
+    } else {
+        if (a[1] < b[1]) pi.y -= overlap_y; else pi.y += overlap_y;
+    }
+}
+
+void CollisionSystem::update(registry& r, float dt) {
+    auto *pos_arr = r.get_if<position>();
+    auto *col_arr = r.get_if<collider>();
+    if (!pos_arr || !col_arr) return;
+
+    for (auto [pi, ci, entity_i] : zipper(*pos_arr, *col_arr)) {
+        Rect a = make_rect(pi, ci);
+        for (auto [pj, cj, entity_j] : zipper(*pos_arr, *col_arr)) {
+            if (entity_i == entity_j) continue;
+            Rect b = make_rect(pj, cj);
+            if (!rect_overlap(a, b)) continue;
+            if (ci.is_trigger || cj.is_trigger) {
+                std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
+                continue;
+            }
+            resolve_penetration(pi, a, pj, b);
+        }
+    }
+}
+
+std::unique_ptr<ISystem> create_system() {
+    return std::make_unique<CollisionSystem>();
+}

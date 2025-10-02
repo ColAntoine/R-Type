@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ecs/icomponent.hpp"
+#include "ecs/components/icomponent.hpp"
 #include "ecs/entity.hpp"
 #include "ecs/registry.hpp"
 #include <memory>

@@ -22,6 +22,7 @@ class RType {
     int run();
 
   private:
+    void load_systems();
     void setup_scene();
     void handle_events();
     void update(float dt);

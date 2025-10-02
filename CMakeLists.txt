@@ -73,6 +73,8 @@ include(CTest)
 # ECS: Shared library
 # ------------------------------------------------------------------
 file(GLOB_RECURSE ECS_SOURCES "ECS/*.cpp")
+file(GLOB_RECURSE SYSTEM_SOURCES "ECS/src/systems/*.cpp")
+list(REMOVE_ITEM ECS_SOURCES ${SYSTEM_SOURCES})
 # Exclude test files and main.cpp
 list(FILTER ECS_SOURCES EXCLUDE REGEX ".*/ECS/test/.*")
 list(FILTER ECS_SOURCES EXCLUDE REGEX ".*/ECS/main\\.cpp$")
@@ -80,8 +82,33 @@ list(FILTER ECS_SOURCES EXCLUDE REGEX ".*/ECS/main\\.cpp$")
 if(ECS_SOURCES)
     add_library(ECS SHARED ${ECS_SOURCES})
     target_include_directories(ECS PUBLIC ECS ECS/include)
-    # ECS depends on raylib and glfw → export them too
-    target_link_libraries(ECS PUBLIC raylib glfw)
+    target_link_libraries(ECS raylib glfw dl)
+endif()
+
+# Build individual system libraries
+file(GLOB SYSTEM_FILES "ECS/src/systems/*.cpp")
+foreach(SYSTEM_FILE ${SYSTEM_FILES})
+    get_filename_component(SYSTEM_NAME ${SYSTEM_FILE} NAME_WE)
+    add_library(${SYSTEM_NAME} SHARED ${SYSTEM_FILE})
+    target_include_directories(${SYSTEM_NAME} PUBLIC ECS ECS/include)
+    target_link_libraries(${SYSTEM_NAME} ECS raylib glfw)
+
+    # Set output directory for system libraries
+    set_target_properties(${SYSTEM_NAME} PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems
+    )
+endforeach()
+
+add_custom_target(copy_libs ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/lib/systems
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/lib ${CMAKE_BINARY_DIR}/bin/lib
+    DEPENDS ${SYSTEM_FILES}
+    COMMENT "Copying system libraries to binary directory"
+)
+
+if(TARGET r-type_client)
+    add_dependencies(r-type_client copy_libs)
+
 endif()
 
 # ------------------------------------------------------------------
@@ -98,6 +125,11 @@ if(GAME_SOURCES)
         Game
         Network/include
     )
+    
+    # Link with raylib and required dependencies
+    target_link_libraries(r-type_client raylib glfw dl)
+
+    # Link with ECS library if it exists
     if(TARGET ECS)
         # No need to link raylib+glfw twice: already linked in ECS
         target_link_libraries(r-type_client PRIVATE ECS)

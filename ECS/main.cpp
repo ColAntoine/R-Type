@@ -3,7 +3,7 @@
 #include <raylib.h>
 
 #include "ecs/registry.hpp"
-#include "ecs/systems.hpp"
+#include "ecs/dlloader.hpp"  // Changed from systems.hpp to dlloader.hpp
 #include "ecs/zipper.hpp"
 #include "ecs/component_factory.hpp"
 #include "ecs/rtype.hpp"
@@ -17,6 +17,9 @@ RType::RType()
         std::cerr << "Failed to load components library!" << std::endl;
         exit(EXIT_FAILURE);
     }
+
+    // Load system libraries
+    load_systems();
     setup_scene();
 }
 
@@ -29,6 +32,24 @@ int RType::run() {
     }
     CloseWindow();
     return 0;
+}
+
+void RType::load_systems() {
+    // Load individual system libraries
+    std::vector<std::string> system_libraries = {
+        "./lib/systems/libcontrol_system.so",
+        "./lib/systems/libposition_system.so",
+        "./lib/systems/libcollision_system.so",
+        "./lib/systems/libdraw_system.so"
+    };
+
+    for (const std::string& lib_path : system_libraries) {
+        if (!loader_.load_system_from_so(lib_path)) {
+            std::cerr << "Failed to load system: " << lib_path << std::endl;
+        }
+    }
+
+    std::cout << "Loaded " << loader_.get_system_count() << " systems" << std::endl;
 }
 
 void RType::setup_scene() {
@@ -81,16 +102,18 @@ void RType::handle_events() {
 }
 
 void RType::update(float dt) {
-    control_system(reg_);
-    // Time-aware movement: iterate position/velocity and apply dt
-    position_system(reg_, dt);
-    collision_system(reg_);
+    // Use DLLoader to update all systems in order
+    loader_.update_all_systems(reg_, dt);
 }
 
 void RType::render() {
     BeginDrawing();
     ClearBackground(BLACK);
-    draw_system(reg_);
+    
+    // Drawing is now handled by the draw system in update_all_systems
+    // But if you want to separate rendering, you can call:
+    // loader_.update_system_by_name("DrawSystem", reg_, 0.0f);
+    
     EndDrawing();
 }
 
