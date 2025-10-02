@@ -110,7 +110,8 @@ void NetworkSystem::update(registry& ecs_registry, float delta_time) {
 
     // Send position updates periodically
     send_position_updates(ecs_registry);
-}void NetworkSystem::handle_connected(int player_id) {
+}
+void NetworkSystem::handle_connected(int player_id) {
     // Player connected to server
     std::cout << "NetworkSystem: Local player " << player_id << " connected to server" << std::endl;
 }
