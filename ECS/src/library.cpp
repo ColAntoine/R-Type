@@ -11,6 +11,12 @@
 
 class ComponentFactory : public IComponentFactory {
     public:
+        static ComponentFactory &getInstance() {
+            static ComponentFactory instance;
+
+            return instance;
+        }
+
         void create_position(registry& reg, const entity& e, float x, float y) override
         {
             reg.emplace_component<position>(e, x, y);
@@ -31,9 +37,11 @@ class ComponentFactory : public IComponentFactory {
         {
             reg.emplace_component<collider>(e, w, h, ox, oy, trigger);
         }
-};
 
-static ComponentFactory factory_instance;           // TODO: singletone
+    private:
+        ComponentFactory() = default;
+        ~ComponentFactory() = default;
+};
 
 extern "C" void register_components(registry &r) {
     r.register_component<position>();
@@ -48,5 +56,5 @@ extern "C" void register_components(registry &r) {
 }
 
 extern "C" IComponentFactory* get_component_factory() {
-    return &factory_instance;
+    return &ComponentFactory::getInstance();
 }
