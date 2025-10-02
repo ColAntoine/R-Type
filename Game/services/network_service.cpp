@@ -143,8 +143,8 @@ void NetworkService::handle_entity_create(const RType::Protocol::PacketHeader& h
         const auto* create = reinterpret_cast<const RType::Protocol::EntityCreate*>(payload);
 
         // Determine if this is an enemy based on entity_type or entity_id range
-        // Assuming entity_type: 0 = player, 1 = enemy, etc.
-        if (create->entity_type == 1) { // Enemy
+        // Enemy types: 1, 2, 3, 4
+        if (create->entity_type >= 1 && create->entity_type <= 4) { // Enemy
             event_manager_->emit(EnemySpawnEvent(create->entity_id, create->entity_type,
                                                create->x, create->y, create->health));
         } else {
