@@ -1,14 +1,15 @@
 #include "application.hpp"
 
-// Forward declarations for external ECS systems
-extern void position_system(registry &r, float dt);
-extern void collision_system(registry &r);
-extern void lifetime_system(registry &r, float dt, int window_width, int window_height);
-
 bool Application::initialize(const std::string& server_ip, int server_port) {
     try {
         // Register ECS components
         setup_ecs();
+
+        // Load ECS systems from shared libraries
+        system_loader_.load_system_from_so("lib/systems/libposition_system.so");
+        system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
+        system_loader_.load_system_from_so("lib/systems/liblifetime_system.so");
+        system_loader_.load_system_from_so("lib/systems/libdraw_system.so");
 
         // Register services
         service_manager_.register_service<InputService>(&event_manager_);
@@ -83,16 +84,10 @@ void Application::shutdown() {
 }
 
 void Application::setup_ecs() {
-    // Register ECS component types
-    ecs_registry_.register_component<position>();
-    ecs_registry_.register_component<velocity>();
-    ecs_registry_.register_component<drawable>();
-    ecs_registry_.register_component<controllable>();
-    ecs_registry_.register_component<collider>();
-    ecs_registry_.register_component<remote_player>();
-    ecs_registry_.register_component<enemy>();
-    ecs_registry_.register_component<lifetime>();
-    ecs_registry_.register_component<spawner>();
+    // Load ECS component types from shared library
+    if (!system_loader_.load_components_from_so("lib/libECS.so", ecs_registry_)) {
+        throw std::runtime_error("Failed to load ECS components from lib/libECS.so");
+    }
 
     // Create local player entity
     local_player_entity_ = ecs_registry_.spawn_entity();
@@ -131,11 +126,8 @@ void Application::update_ecs_systems(float delta_time) {
 }
 
 void Application::update_traditional_ecs_systems(float delta_time) {
-    position_system(ecs_registry_, delta_time);
-    collision_system(ecs_registry_);
-
-    auto& render_service = service_manager_.get_service<RenderService>();
-    lifetime_system(ecs_registry_, delta_time, render_service.get_width(), render_service.get_height());
+    // Update all loaded systems through the DLLoader
+    system_loader_.update_all_systems(ecs_registry_, delta_time);
 }
 
 void Application::render_frame() {
@@ -145,8 +137,8 @@ void Application::render_frame() {
     // Begin frame
     render_service.begin_frame();
 
-    // Render entities
-    render_service.render_entities(ecs_registry_);
+    // Render entities through the draw system
+    system_loader_.update_system_by_name("DrawSystem", ecs_registry_, 0.0f);
 
     // Render UI
     std::ostringstream status;

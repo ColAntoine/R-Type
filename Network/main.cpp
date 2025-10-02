@@ -18,25 +18,25 @@ std::shared_ptr<EnemyManager> g_enemy_manager = nullptr;
 void game_loop() {
     const float target_fps = 60.0f;
     const auto frame_duration = std::chrono::milliseconds(static_cast<long>(1000.0f / target_fps));
-    
+
     auto last_time = std::chrono::high_resolution_clock::now();
-    
+
     std::cout << "Game loop started (60 FPS)" << std::endl;
-    
+
     while (g_network_manager && g_network_manager->is_running()) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto delta_time = std::chrono::duration<float>(current_time - last_time).count();
         last_time = current_time;
-        
+
         // Update enemy manager
         if (g_enemy_manager) {
             g_enemy_manager->update(delta_time);
         }
-        
+
         // Sleep to maintain target FPS
         std::this_thread::sleep_for(frame_duration);
     }
-    
+
     std::cout << "Game loop stopped" << std::endl;
 }
 
@@ -192,34 +192,34 @@ int main(int ac, char** av) {
             return 1;
         }
         setup_message_handlers(g_network_manager->get_server());
-        
+
         // Initialize enemy manager
         g_enemy_manager = std::make_shared<EnemyManager>(g_network_manager->get_server());
-        
+
         size_t thread_count = std::max(2u, std::thread::hardware_concurrency());
         if (!g_network_manager->start(thread_count)) {
             std::cerr << "Failed to start network manager" << std::endl;
             return 1;
         }
-        
+
         print_instructions(port);
-        
+
         // Start game loop in a separate thread
         std::thread game_thread(game_loop);
-        
+
         commands_loop(g_network_manager);
-        
+
         // Cleanup
         if (g_enemy_manager) {
             g_enemy_manager->clear_all_enemies();
             g_enemy_manager.reset();
         }
-        
+
         // Wait for game thread to finish
         if (game_thread.joinable()) {
             game_thread.join();
         }
-        
+
         g_network_manager->stop();
         std::cout << "Server shut down successfully." << std::endl;
 

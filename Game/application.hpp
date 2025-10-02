@@ -11,6 +11,7 @@
 #include "ecs/registry.hpp"
 #include "ecs/components.hpp"
 #include "ecs/entity.hpp"
+#include "ecs/dlloader.hpp"
 #include <memory>
 #include <sstream>
 #include <iostream>
@@ -24,6 +25,7 @@ class Application {
         // ECS
         registry ecs_registry_;
         entity local_player_entity_;
+        DLLoader system_loader_;
 
         // ECS Systems
         std::unique_ptr<InputSystem> input_system_;

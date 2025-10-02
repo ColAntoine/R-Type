@@ -7,8 +7,11 @@
 DLLoader::DLLoader() : library_handle_(nullptr), factory_(nullptr) {}
 
 DLLoader::~DLLoader() {
-    // Clean up systems first
+    // Clean up systems - destroy objects before unloading libraries
     for (auto& loaded_sys : systems_) {
+        // Explicitly reset the unique_ptr to destroy the system object first
+        loaded_sys.system.reset();
+        // Now it's safe to close the library handle
         if (loaded_sys.handle) {
             dlclose(loaded_sys.handle);
         }

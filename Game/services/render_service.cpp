@@ -1,8 +1,5 @@
 #include "render_service.hpp"
 
-// Need forward declaration for draw_system
-extern void draw_system(registry &r);
-
 RenderService::RenderService(EventManager* event_manager) : event_manager_(event_manager) {
 }
 
@@ -40,9 +37,8 @@ void RenderService::end_frame() {
 }
 
 void RenderService::render_entities(registry& ecs_registry) {
-    if (window_) {
-        draw_system(ecs_registry);
-    }
+    // Entity rendering is now handled by the draw_system through DLLoader
+    // This method is kept for compatibility but does nothing
 }
 
 void RenderService::render_ui(const std::string& status_text) {
