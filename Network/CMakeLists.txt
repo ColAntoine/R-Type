@@ -46,6 +46,7 @@ set(NETWORK_SOURCES
     src/message_handler.cpp
     src/protocol.cpp
     src/game_handlers.cpp
+    src/enemy_manager.cpp
 )
 
 # Header files (for IDE support)

@@ -3,16 +3,49 @@
 #include "message_handler.hpp"
 #include "game_handlers.hpp"
 #include "protocol.hpp"
+#include "enemy_manager.hpp"
 #include <iostream>
 #include <csignal>
 #include <string>
+#include <chrono>
+#include <thread>
 
 using namespace RType::Network;
 
 std::shared_ptr<NetworkManager> g_network_manager = nullptr;
+std::shared_ptr<EnemyManager> g_enemy_manager = nullptr;
+
+void game_loop() {
+    const float target_fps = 60.0f;
+    const auto frame_duration = std::chrono::milliseconds(static_cast<long>(1000.0f / target_fps));
+    
+    auto last_time = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "Game loop started (60 FPS)" << std::endl;
+    
+    while (g_network_manager && g_network_manager->is_running()) {
+        auto current_time = std::chrono::high_resolution_clock::now();
+        auto delta_time = std::chrono::duration<float>(current_time - last_time).count();
+        last_time = current_time;
+        
+        // Update enemy manager
+        if (g_enemy_manager) {
+            g_enemy_manager->update(delta_time);
+        }
+        
+        // Sleep to maintain target FPS
+        std::this_thread::sleep_for(frame_duration);
+    }
+    
+    std::cout << "Game loop stopped" << std::endl;
+}
 
 void signal_handler(int signal) {
     std::cout << "\nReceived signal " << signal << ". Shutting down server..." << std::endl;
+    if (g_enemy_manager) {
+        g_enemy_manager->clear_all_enemies();
+        g_enemy_manager.reset();
+    }
     if (g_network_manager) {
         g_network_manager->stop();
     }
@@ -104,8 +137,44 @@ void commands_loop(std::shared_ptr<NetworkManager> network_manager) {
             std::cout << "Total clients: " << server->get_client_count() << std::endl;
             std::cout << std::endl;
         }
+        else if (input == "enemies") {
+            if (g_enemy_manager) {
+                std::cout << "=== Enemy Information ===" << std::endl;
+                std::cout << "Active enemies: " << g_enemy_manager->get_enemy_count() << std::endl;
+                std::cout << "Max enemies: " << g_enemy_manager->get_max_enemies() << std::endl;
+                std::cout << "Spawn interval: " << g_enemy_manager->get_spawn_interval() << "s" << std::endl;
+                std::cout << std::endl;
+            } else {
+                std::cout << "Enemy manager not initialized" << std::endl;
+            }
+        }
+        else if (input.substr(0, 6) == "spawn ") {
+            if (g_enemy_manager) {
+                try {
+                    int enemy_type = std::stoi(input.substr(6));
+                    if (enemy_type >= 1 && enemy_type <= 4) {
+                        g_enemy_manager->spawn_enemy(enemy_type, 1024.0f, 400.0f);
+                        std::cout << "Spawned enemy type " << enemy_type << std::endl;
+                    } else {
+                        std::cout << "Invalid enemy type. Use 1-4." << std::endl;
+                    }
+                } catch (const std::exception&) {
+                    std::cout << "Usage: spawn <type> (1-4)" << std::endl;
+                }
+            } else {
+                std::cout << "Enemy manager not initialized" << std::endl;
+            }
+        }
+        else if (input == "clear") {
+            if (g_enemy_manager) {
+                g_enemy_manager->clear_all_enemies();
+                std::cout << "Cleared all enemies" << std::endl;
+            } else {
+                std::cout << "Enemy manager not initialized" << std::endl;
+            }
+        }
         else if (!input.empty()) {
-            std::cout << "Unknown command. Available: info, clients, quit" << std::endl;
+            std::cout << "Unknown command. Available: info, clients, enemies, spawn <type>, clear, quit" << std::endl;
         }
     }
 }
@@ -123,13 +192,34 @@ int main(int ac, char** av) {
             return 1;
         }
         setup_message_handlers(g_network_manager->get_server());
+        
+        // Initialize enemy manager
+        g_enemy_manager = std::make_shared<EnemyManager>(g_network_manager->get_server());
+        
         size_t thread_count = std::max(2u, std::thread::hardware_concurrency());
         if (!g_network_manager->start(thread_count)) {
             std::cerr << "Failed to start network manager" << std::endl;
             return 1;
         }
+        
         print_instructions(port);
+        
+        // Start game loop in a separate thread
+        std::thread game_thread(game_loop);
+        
         commands_loop(g_network_manager);
+        
+        // Cleanup
+        if (g_enemy_manager) {
+            g_enemy_manager->clear_all_enemies();
+            g_enemy_manager.reset();
+        }
+        
+        // Wait for game thread to finish
+        if (game_thread.joinable()) {
+            game_thread.join();
+        }
+        
         g_network_manager->stop();
         std::cout << "Server shut down successfully." << std::endl;
 

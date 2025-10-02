@@ -108,6 +108,8 @@ void NetworkService::handle_network_message(const std::string& message) {
         handle_player_leave(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_CREATE)) {
         handle_entity_create(header, payload);
+    } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_UPDATE)) {
+        handle_entity_update(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_DESTROY)) {
         handle_entity_destroy(header, payload);
     }
@@ -139,14 +141,50 @@ void NetworkService::handle_position_update(const RType::Protocol::PacketHeader&
 void NetworkService::handle_entity_create(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
     if (header.payload_size >= sizeof(RType::Protocol::EntityCreate)) {
         const auto* create = reinterpret_cast<const RType::Protocol::EntityCreate*>(payload);
-        event_manager_->emit(EntityCreateEvent(create->entity_id, 0, 0, 0)); // Default position
+
+        // Determine if this is an enemy based on entity_type or entity_id range
+        // Enemy types: 1, 2, 3, 4
+        if (create->entity_type >= 1 && create->entity_type <= 4) { // Enemy
+            event_manager_->emit(EnemySpawnEvent(create->entity_id, create->entity_type,
+                                               create->x, create->y, create->health));
+        } else {
+            // Generic entity creation
+            event_manager_->emit(EntityCreateEvent(create->entity_id, create->entity_type,
+                                                 create->x, create->y));
+        }
+    }
+}
+
+void NetworkService::handle_entity_update(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
+    if (header.payload_size >= sizeof(RType::Protocol::PositionUpdate)) {
+        const auto* update = reinterpret_cast<const RType::Protocol::PositionUpdate*>(payload);
+
+        // Check if this is an enemy entity (you'd need to track entity types)
+        // For now, assume entities with ID > 10000 are enemies
+        if (update->entity_id > 10000) {
+            event_manager_->emit(EnemyUpdateEvent(update->entity_id,
+                                                update->x, update->y,
+                                                update->vx, update->vy,
+                                                100.0f)); // Default health since PositionUpdate doesn't have it
+        } else if (update->entity_id != static_cast<uint32_t>(local_player_id_)) {
+            // This is another player
+            event_manager_->emit(PlayerMoveEvent(update->entity_id,
+                                               update->x, update->y,
+                                               update->vx, update->vy));
+        }
     }
 }
 
 void NetworkService::handle_entity_destroy(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
     if (header.payload_size >= sizeof(RType::Protocol::EntityDestroy)) {
         const auto* destroy = reinterpret_cast<const RType::Protocol::EntityDestroy*>(payload);
-        event_manager_->emit(EntityDestroyEvent(destroy->entity_id));
+
+        // Check if this is an enemy entity
+        if (destroy->entity_id > 10000) {
+            event_manager_->emit(EnemyDestroyEvent(destroy->entity_id));
+        } else {
+            event_manager_->emit(EntityDestroyEvent(destroy->entity_id));
+        }
     }
 }
 
