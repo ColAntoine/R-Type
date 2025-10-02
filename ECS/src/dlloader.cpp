@@ -138,6 +138,7 @@ bool DLLoader::load_components_from_so(const std::string &so_path, registry &reg
     }
 
     // Load get_component_factory function
+    // * This is a pointer to a singletone so that is okay
     typedef IComponentFactory* (*get_factory_t)();
     get_factory_t get_factory = reinterpret_cast<get_factory_t>(
         dlsym(library_handle_, "get_component_factory"));
