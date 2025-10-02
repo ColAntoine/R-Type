@@ -15,10 +15,6 @@ void SpawnSystem::update(registry& r, float dt) {
     return;
 }
 
-extern "C" ISystem* create_system() {
-    return new SpawnSystem();
-}
-
-extern "C" void destroy_system(ISystem* system) {
-    delete system;
+std::unique_ptr<ISystem> create_system() {
+    return std::make_unique<SpawnSystem>();
 }

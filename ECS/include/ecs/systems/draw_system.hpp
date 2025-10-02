@@ -16,6 +16,5 @@ public:
 };
 
 extern "C" {
-    ISystem* create_system();
-    void destroy_system(ISystem* system);
+    std::unique_ptr<ISystem> create_system();
 }

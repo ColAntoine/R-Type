@@ -55,6 +55,7 @@ extern "C" void register_components(registry &r) {
     r.register_component<spawner>();
 }
 
-extern "C" IComponentFactory* get_component_factory() {
+extern "C"
+IComponentFactory* get_component_factory() {
     return &ComponentFactory::getInstance();
 }

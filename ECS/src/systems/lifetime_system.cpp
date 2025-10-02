@@ -59,10 +59,6 @@ void LifetimeSystem::update(registry& r, float dt) {
     }
 }
 
-extern "C" ISystem* create_system() {
-    return new LifetimeSystem();
-}
-
-extern "C" void destroy_system(ISystem* system) {
-    delete system;
+std::unique_ptr<ISystem> create_system() {
+    return std::make_unique<LifetimeSystem>();
 }

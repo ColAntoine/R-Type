@@ -46,11 +46,9 @@ class DLLoader {
         IComponentFactory* factory_;     // For components
         std::vector<LoadedSystem> systems_; // For systems
 
-        // Non-copyable
+        // Non-copyable, movable
         DLLoader(const DLLoader&) = delete;
         DLLoader& operator=(const DLLoader&) = delete;
-
-        // Movable
         DLLoader(DLLoader&& other) noexcept;
         DLLoader& operator=(DLLoader&& other) noexcept;
 };

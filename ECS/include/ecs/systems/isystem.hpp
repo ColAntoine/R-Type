@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <memory>
+
 class registry;
 
 class ISystem {
@@ -17,5 +19,4 @@ public:
 };
 
 // Factory function type for creating systems
-typedef ISystem* (*create_system_t)();
-typedef void (*destroy_system_t)(ISystem*);
+typedef std::unique_ptr<ISystem> (*create_system_t)();

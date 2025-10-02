@@ -22,10 +22,6 @@ void DrawSystem::update(registry& r, float dt) {
     }
 }
 
-extern "C" ISystem* create_system() {
-    return new DrawSystem();
-}
-
-extern "C" void destroy_system(ISystem* system) {
-    delete system;
+std::unique_ptr<ISystem> create_system() {
+    return std::make_unique<DrawSystem>();
 }
