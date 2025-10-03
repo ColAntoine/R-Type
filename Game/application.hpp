@@ -9,9 +9,9 @@
 #include "systems/input_system.hpp"
 #include "systems/network_systems.hpp"
 #include "ecs/registry.hpp"
-#include "ecs/components.hpp"
 #include "ecs/entity.hpp"
 #include "ecs/dlloader.hpp"
+#include "ecs/component_factory.hpp"
 #include <memory>
 #include <sstream>
 #include <iostream>
@@ -26,6 +26,7 @@ class Application {
         registry ecs_registry_;
         entity local_player_entity_;
         DLLoader system_loader_;
+        IComponentFactory* component_factory_;
 
         // ECS Systems
         std::unique_ptr<InputSystem> input_system_;
@@ -36,7 +37,7 @@ class Application {
         int local_player_id_ = 0;
 
     public:
-        Application() = default;
+        Application() : component_factory_(nullptr) {}
         ~Application() = default;
 
         bool initialize(const std::string& server_ip = "127.0.0.1", int server_port = 8080);
@@ -45,6 +46,7 @@ class Application {
 
     private:
         void setup_ecs();
+        void load_systems();
         void setup_event_handlers();
         void update_ecs_systems(float delta_time);
         void update_traditional_ecs_systems(float delta_time);
