@@ -20,4 +20,5 @@ public:
                                 float ox = 0.f, float oy = 0.f, bool trigger = false) = 0;
     virtual void create_sprite(registry& reg, const entity& e, const std::string& texture_path,
                               float w, float h, float scale_x = 1.0f, float scale_y = 1.0f) = 0;
+    virtual void create_enemy(registry& reg, const entity& e, int enemy_type, float health = 1.0f) = 0;
 };

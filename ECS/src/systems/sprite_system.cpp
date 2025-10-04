@@ -28,7 +28,7 @@ Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
     } else {
         std::cout << "Loaded texture: " << path << " (ID: " << texture.id << ")" << std::endl;
     }
-    
+
     texture_cache_[path] = texture;
     return texture;
 }
@@ -36,6 +36,9 @@ Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
 void SpriteRenderSystem::update(registry& r, float dt) {
     auto *pos_arr = r.get_if<position>();
     auto *sprite_arr = r.get_if<sprite>();
+    auto *collider_arr = r.get_if<collider>();
+    Vector2 origin = {0.0f, 0.0f};
+    Rectangle dest;
     if (!pos_arr || !sprite_arr) return;
 
     for (auto [p, s, entity] : zipper(*pos_arr, *sprite_arr)) {
@@ -44,18 +47,31 @@ void SpriteRenderSystem::update(registry& r, float dt) {
         Texture2D texture = load_texture(s.texture_path);
         if (texture.id == 0) continue; // Failed to load
 
+        // Use the exact dimensions specified in the sprite component
+        float display_width = s.width * s.scale_x;
+        float display_height = s.height * s.scale_y;
+
         Rectangle source = {
             (float)s.frame_x, (float)s.frame_y,
             (s.frame_x == 0 && s.frame_y == 0) ? (float)texture.width : s.width,
             (s.frame_x == 0 && s.frame_y == 0) ? (float)texture.height : s.height
         };
 
-        Rectangle dest = {
-            p.x, p.y,
-            s.width * s.scale_x, s.height * s.scale_y
-        };
-
-        Vector2 origin = {0.0f, 0.0f}; // Top-left origin
+        if (collider_arr && collider_arr->size() > static_cast<size_t>(entity)) {
+            auto& collider_comp = (*collider_arr)[static_cast<size_t>(entity)];
+            float collider_center_x = p.x + collider_comp.offset_x + collider_comp.w / 2.0f;
+            float collider_center_y = p.y + collider_comp.offset_y + collider_comp.h / 2.0f;
+            dest = {
+                collider_center_x - display_width / 2.0f,
+                collider_center_y - display_height / 2.0f,
+                display_width, display_height
+            };
+        } else {
+            dest = {
+                p.x, p.y,
+                display_width, display_height
+            };
+        }
 
         DrawTexturePro(texture, source, dest, origin, s.rotation, WHITE);
     }

@@ -35,7 +35,7 @@ bool Application::initialize(const std::string& server_ip, int server_port) {
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
         network_system_ = std::make_unique<NetworkSystem>(&event_manager_,
-            &service_manager_.get_service<NetworkService>());
+            &service_manager_.get_service<NetworkService>(), component_factory_);
 
         // Subscribe to application events
         setup_event_handlers();
@@ -112,10 +112,10 @@ void Application::setup_ecs() {
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_position(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_velocity(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
-    // component_factory_->create_drawable(ecs_registry_, local_player_entity_, 40.0f, 40.0f, 255, 0, 0, 255); // Red - Commented out to use sprite instead
+    component_factory_->create_drawable(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 0, 0, 255); // Red
+    component_factory_->create_collider(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT); // Aspect ratio similar to 1920:1080
     component_factory_->create_controllable(ecs_registry_, local_player_entity_, 200.0f);
-    component_factory_->create_collider(ecs_registry_, local_player_entity_, 40.0f, 40.0f);
-    component_factory_->create_sprite(ecs_registry_, local_player_entity_, "../../assets/REAPER_ICON.png", 100.0f, 64.0f, 1.0f, 1.0f);
+    component_factory_->create_sprite(ecs_registry_, local_player_entity_, "../../assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 
 void Application::setup_event_handlers() {

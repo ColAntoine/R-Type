@@ -16,6 +16,9 @@
 #include <sstream>
 #include <iostream>
 
+#define PLAYER_WIDTH 40.0f
+#define PLAYER_HEIGHT 40.0f
+
 class Application {
     private:
         // Core systems

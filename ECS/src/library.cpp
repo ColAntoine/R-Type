@@ -41,6 +41,10 @@ class ComponentFactory : public IComponentFactory {
         {
             reg.emplace_component<sprite>(e, texture_path, w, h, scale_x, scale_y);
         }
+        void create_enemy(registry& reg, const entity& e, int enemy_type, float health) override
+        {
+            reg.emplace_component<enemy>(e, enemy_type, health);
+        }
 
     private:
         ComponentFactory() = default;
