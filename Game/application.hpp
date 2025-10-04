@@ -50,6 +50,7 @@ class Application {
     private:
         void setup_ecs();
         void load_systems();
+        void service_setup();
         void setup_event_handlers();
         void update_ecs_systems(float delta_time);
         void update_traditional_ecs_systems(float delta_time);

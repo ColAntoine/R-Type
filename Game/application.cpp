@@ -2,35 +2,26 @@
 
 
 void Application::load_systems() {
-    // Load core ECS systems from shared libraries
     system_loader_.load_system_from_so("lib/systems/libposition_system.so");
     system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
     system_loader_.load_system_from_so("lib/systems/liblifetime_system.so");
     system_loader_.load_system_from_so("lib/systems/libdraw_system.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+}
 
-    // TODO: Add more systems here as they are developed
-    // Examples for future systems:
-    // system_loader_.load_system_from_so("lib/systems/libweapon_system.so");
-    // system_loader_.load_system_from_so("lib/systems/libenemy_ai_system.so");
-    // system_loader_.load_system_from_so("lib/systems/libparticle_system.so");
+void Application::service_setup() {
+    // Setup services
+    service_manager_.register_service<InputService>(&event_manager_);
+    service_manager_.register_service<NetworkService>(&event_manager_);
+    service_manager_.register_service<RenderService>(&event_manager_);
+    service_manager_.initialize();
 }
 
 bool Application::initialize(const std::string& server_ip, int server_port) {
     try {
-        // Register ECS components
         setup_ecs();
-
-        // Load ECS systems from shared libraries
         load_systems();
-
-        // Register services
-        service_manager_.register_service<InputService>(&event_manager_);
-        service_manager_.register_service<NetworkService>(&event_manager_);
-        service_manager_.register_service<RenderService>(&event_manager_);
-
-        // Initialize services
-        service_manager_.initialize();
+        service_setup();
 
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
@@ -169,7 +160,5 @@ void Application::render_frame() {
     }
 
     render_service.render_ui(status.str());
-
-    // End frame
     render_service.end_frame();
 }
