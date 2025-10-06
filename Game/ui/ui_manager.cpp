@@ -128,7 +128,7 @@ void UIManager::cleanup_removed_components() {
     // Remove any null pointers that might have been left behind
     components_.erase(
         std::remove_if(components_.begin(), components_.end(),
-            [](const std::weak_ptr<IUIComponent>& ptr) { return ptr.expired(); }),
+            [](const std::shared_ptr<IUIComponent>& ptr) { return ptr == nullptr; }),
         components_.end()
     );
 }

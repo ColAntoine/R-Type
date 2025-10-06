@@ -31,7 +31,6 @@ void UIButton::handle_input() {
     // Handle click event
     if (is_pressed && on_click_) {
         on_click_();
-        std::cout << "Button clicked: " << text_ << std::endl;
     }
 }
 

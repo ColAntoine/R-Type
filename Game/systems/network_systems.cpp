@@ -22,9 +22,9 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
         handle_player_move(e);
     });
 
-    // event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
-    //     handle_enemy_spawn(e);
-    // });
+    event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
+        handle_enemy_spawn(e);
+    });
 
     event_manager_->subscribe<EnemyUpdateEvent>([this](const EnemyUpdateEvent& e) {
         handle_enemy_update(e);

@@ -12,6 +12,7 @@
 #include "ecs/entity.hpp"
 #include "ecs/dlloader.hpp"
 #include "ecs/component_factory.hpp"
+#include "states/game_state_manager.hpp"
 #include <memory>
 #include <sstream>
 #include <iostream>
@@ -35,6 +36,9 @@ class Application {
         std::unique_ptr<InputSystem> input_system_;
         std::unique_ptr<NetworkSystem> network_system_;
 
+        // Game State Management
+        GameStateManager state_manager_;
+
         // Game state
         bool running_ = false;
         int local_player_id_ = 0;
@@ -52,7 +56,19 @@ class Application {
         void load_systems();
         void service_setup();
         void setup_event_handlers();
+        void setup_game_states();
+
+    public:
+        // Getters for states to access application systems
+        EventManager& get_event_manager() { return event_manager_; }
+        ServiceManager& get_service_manager() { return service_manager_; }
+        registry& get_ecs_registry() { return ecs_registry_; }
+        IComponentFactory* get_component_factory() { return component_factory_; }
+        entity get_local_player_entity() const { return local_player_entity_; }
+        int get_local_player_id() const { return local_player_id_; }
+        DLLoader& get_system_loader() { return system_loader_; }
+
+        // ECS update methods for states to use
         void update_ecs_systems(float delta_time);
         void update_traditional_ecs_systems(float delta_time);
-        void render_frame();
 };
