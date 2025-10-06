@@ -22,15 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache vcpkg
+      - name: Cache vcpkg binary archives
         uses: actions/cache@v4
         with:
-          path: |
-            external/vcpkg/installed
-            external/vcpkg/buildtrees
-            external/vcpkg/downloads
-            ~/.cache/vcpkg/archives
-          key: v1-${{ runner.os }}-vcpkg-${{ hashFiles('**/CMakeLists.txt', '**/vcpkg.json', '**/vcpkg*.txt') }}
+          path: ~/.cache/vcpkg/archives
+          key: v1-${{ runner.os }}-vcpkg-${{ hashFiles('**/CMakeLists.txt', '**/vcpkg*.{json,txt}') }}
           restore-keys: |
             v1-${{ runner.os }}-vcpkg-
 
@@ -48,12 +44,25 @@ jobs:
           key: rtype-${{ runner.os }}
 
       - name: Configure (CMake + Ninja)
+        shell: bash
         run: |
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DOpenGL_GL_PREFERENCE=GLVND
+
+      - name: Dump configure context on failure
+        if: failure()
+        shell: bash
+        run: |
+          echo "::group::Tree build/"
+          ls -la build || true
+          echo "::endgroup::"
+          echo "::group::CMakeFiles logs"
+          [ -f build/CMakeFiles/CMakeOutput.log ] && tail -n +1 -v build/CMakeFiles/CMakeOutput.log || true
+          [ -f build/CMakeFiles/CMakeError.log ] && tail -n +1 -v build/CMakeFiles/CMakeError.log || true
+          echo "::endgroup::"
 
       - name: Build
         run: cmake --build build --config ${CMAKE_BUILD_TYPE}
