@@ -158,9 +158,9 @@ if(ECS_TEST_SOURCES)
     doctest_discover_tests(test_ecs)
 endif()
 
-# ------------------------
+# ------------------------------------------------------------------
 # Game tests
-# ------------------------
+# ------------------------------------------------------------------
 file(GLOB GAME_TEST_SOURCES "Game/test/*.cpp")
 if(GAME_TEST_SOURCES)
     add_executable(test_game ${GAME_TEST_SOURCES})
@@ -181,9 +181,9 @@ if(GAME_TEST_SOURCES)
     doctest_discover_tests(test_game)
 endif()
 
-# ------------------------
+# ------------------------------------------------------------------
 # Network tests
-# ------------------------
+# ------------------------------------------------------------------
 file(GLOB NETWORK_TEST_SOURCES "Network/test/*.cpp")
 if(NETWORK_TEST_SOURCES)
     add_executable(test_network ${NETWORK_TEST_SOURCES})
