@@ -12,7 +12,12 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
     env:
       CMAKE_BUILD_TYPE: Release
       CTEST_OUTPUT_ON_FAILURE: 1
@@ -24,7 +29,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Cache vcpkg binary archives
+      # --- CACHES VCPKG BINARIES (diffère selon l'OS) ---
+      - name: Cache vcpkg archives (Linux)
+        if: runner.os == 'Linux'
         uses: actions/cache@v4
         with:
           path: ~/.cache/vcpkg/archives
@@ -32,7 +39,18 @@ jobs:
           restore-keys: |
             v1-${{ runner.os }}-vcpkg-
 
-      - name: Install system deps (OpenGL/X11 + headless)
+      - name: Cache vcpkg archives (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.LOCALAPPDATA }}\vcpkg\archives
+          key: v1-${{ runner.os }}-vcpkg-${{ hashFiles('**/CMakeLists.txt', '**/vcpkg*.{json,txt}') }}
+          restore-keys: |
+            v1-${{ runner.os }}-vcpkg-
+
+      # --- OS DEPS ---
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -40,7 +58,15 @@ jobs:
             xorg-dev libglu1-mesa-dev xvfb \
             libasound2-dev libpulse-dev libxi-dev libxrandr-dev libxinerama-dev libxcursor-dev libudev-dev
 
-      - name: Prepare vcpkg (clone + bootstrap if needed)
+      - name: Install system deps (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install ninja -y
+
+      # --- PREP VCPKG (clone + bootstrap) ---
+      - name: Prepare vcpkg (Linux)
+        if: runner.os == 'Linux'
         shell: bash
         run: |
           set -euxo pipefail
@@ -49,22 +75,26 @@ jobs:
             git clone https://github.com/microsoft/vcpkg.git "${VCPKG_ROOT}"
             "${VCPKG_ROOT}/bootstrap-vcpkg.sh" -disableMetrics
           fi
-          # Sanity check
           test -f "${VCPKG_TOOLCHAIN}"
 
-      - name: Setup ccache
-        uses: hendrikmuhs/ccache-action@v1
-        with:
-          key: rtype-${{ runner.os }}
+      - name: Prepare vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${env:VCPKG_TOOLCHAIN}")) {
+            if (Test-Path "${env:VCPKG_ROOT}") { Remove-Item -Recurse -Force "${env:VCPKG_ROOT}" }
+            git clone https://github.com/microsoft/vcpkg.git "${env:VCPKG_ROOT}"
+            & "${env:VCPKG_ROOT}\bootstrap-vcpkg.bat" -disableMetrics
+          }
+          if (!(Test-Path "${env:VCPKG_TOOLCHAIN}")) { throw "vcpkg toolchain not found" }
 
+      # --- CONFIGURE (Ninja sur les 2 OS) ---
       - name: Configure (CMake + Ninja)
         shell: bash
         run: |
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
             -DCMAKE_TOOLCHAIN_FILE="${VCPKG_TOOLCHAIN}" \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DOpenGL_GL_PREFERENCE=GLVND
 
       - name: Dump configure context on failure
@@ -79,19 +109,27 @@ jobs:
           [ -f build/CMakeFiles/CMakeError.log ] && tail -n +1 -v build/CMakeFiles/CMakeError.log || true
           echo "::endgroup::"
 
+      # --- BUILD ---
       - name: Build
         run: cmake --build build --config "${CMAKE_BUILD_TYPE}"
 
-      - name: Run tests (ctest under Xvfb)
+      # --- TESTS ---
+      - name: Run tests (Linux headless with Xvfb)
+        if: runner.os == 'Linux'
         run: |
           xvfb-run -a -s "-screen 0 1920x1080x24" \
             ctest --test-dir build --output-on-failure -C "${CMAKE_BUILD_TYPE}"
 
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        run: ctest --test-dir build --output-on-failure -C "${CMAKE_BUILD_TYPE}"
+
+      # --- LOGS EN CAS D'ÉCHEC ---
       - name: Upload build/test logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs
+          name: build-logs-${{ matrix.os }}
           path: |
             build/Testing
             build/CMakeFiles/CMakeOutput.log
