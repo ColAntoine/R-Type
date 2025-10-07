@@ -7,8 +7,12 @@
 
 #include "lobby_state.hpp"
 #include "game_state_manager.hpp"
+#include "../application.hpp"
 #include <iostream>
 #include <raylib.h>
+
+LobbyState::LobbyState(Application* app) : app_(app) {
+}
 
 void LobbyState::enter() {
     std::cout << "Entering Lobby State" << std::endl;
@@ -143,22 +147,35 @@ void LobbyState::cleanup_ui() {
 }
 
 void LobbyState::on_connect_clicked() {
-    std::cout << "Connect button clicked - connecting to " << server_ip_ << ":" << server_port_ << std::endl;
-    
     // Update status
     auto status_label = ui_manager_.get_component<UIText>("status_label");
     if (status_label) {
         status_label->set_text("Status: Connecting...");
         status_label->set_text_color({255, 255, 100, 255}); // Yellow
     }
-    
-    // Transition to game state
-    if (state_manager_) {
-        std::cout << "Transitioning to InGame state" << std::endl;
-        state_manager_->change_state("InGame");
+
+    // Actually connect to the server using Application
+    if (app_ && app_->connect_to_server(server_ip_, server_port_)) {
+        // Update status to connected
+        if (status_label) {
+            status_label->set_text("Status: Connected - Entering lobby");
+            status_label->set_text_color({100, 255, 100, 255}); // Green
+        }
+
+        // Transition to waiting lobby to show players and ready status
+        if (state_manager_) {
+            state_manager_->change_state("WaitingLobby");
+        }
+    } else {
+        // Update status to connection failed with helpful message
+        if (status_label) {
+            status_label->set_text("Status: Server not available - Try again");
+            status_label->set_text_color({255, 100, 100, 255}); // Red
+        }
     }
-}void LobbyState::on_back_clicked() {
-    std::cout << "Back button clicked - returning to main menu" << std::endl;
+}
+
+void LobbyState::on_back_clicked() {
     if (state_manager_) {
         state_manager_->change_state("MainMenu");
     }

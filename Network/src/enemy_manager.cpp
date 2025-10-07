@@ -8,11 +8,14 @@ namespace RType::Network {
     EnemyManager::EnemyManager(std::shared_ptr<UdpServer> server)
         : server_(server), next_enemy_id_(10001), spawn_timer_(0.0f),
         spawn_interval_(3.0f), max_enemies_(10), world_width_(1024.0f), world_height_(768.0f) {
-        std::cout << "EnemyManager initialized - spawn interval: " << spawn_interval_
-                << "s, max enemies: " << max_enemies_ << std::endl;
     }
 
     void EnemyManager::update(float delta_time) {
+        // Only update if we should run game logic (at least one client connected and all are ready)
+        if (!server_ || !server_->should_run_game_logic()) {
+            return; // Don't update enemies if no clients are ready
+        }
+
         // Update spawn timer
         spawn_timer_ += delta_time;
 
@@ -102,9 +105,6 @@ namespace RType::Network {
 
         // Broadcast spawn to all clients
         broadcast_enemy_spawn(enemy);
-
-        std::cout << "Spawned enemy " << enemy_id << " (type " << (int)enemy_type
-                << ") at (" << x << ", " << y << ")" << std::endl;
     }
 
     void EnemyManager::destroy_enemy(uint32_t enemy_id) {
@@ -112,8 +112,6 @@ namespace RType::Network {
         if (it != enemies_.end()) {
             // Broadcast destruction to all clients
             broadcast_enemy_destroy(enemy_id);
-
-            std::cout << "Destroyed enemy " << enemy_id << std::endl;
             enemies_.erase(it);
         }
     }
@@ -123,7 +121,6 @@ namespace RType::Network {
             broadcast_enemy_destroy(enemy_id);
         }
         enemies_.clear();
-        std::cout << "Cleared all enemies" << std::endl;
     }
 
     void EnemyManager::update_enemy_ai(Enemy& enemy, float delta_time) {

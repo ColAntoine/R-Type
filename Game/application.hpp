@@ -42,14 +42,19 @@ class Application {
         // Game state
         bool running_ = false;
         int local_player_id_ = 0;
+        std::string player_name_ = "Player";
 
     public:
         Application() : component_factory_(nullptr) {}
         ~Application() = default;
 
-        bool initialize(const std::string& server_ip = "127.0.0.1", int server_port = 8080);
+        bool initialize();
         void run();
         void shutdown();
+
+        // Connection management (moved from initialize)
+        bool connect_to_server(const std::string& server_ip, int server_port);
+        void send_ready_signal(bool ready);
 
     private:
         void setup_ecs();
@@ -66,6 +71,15 @@ class Application {
         IComponentFactory* get_component_factory() { return component_factory_; }
         entity get_local_player_entity() const { return local_player_entity_; }
         int get_local_player_id() const { return local_player_id_; }
+        const std::string& get_player_name() const { return player_name_; }
+        void set_player_name(const std::string& name) { 
+            // Limit player name to 31 characters (32-1 for null terminator)
+            if (name.length() > 31) {
+                player_name_ = name.substr(0, 31);
+            } else {
+                player_name_ = name.empty() ? "Player" : name;
+            }
+        }
         DLLoader& get_system_loader() { return system_loader_; }
 
         // ECS update methods for states to use

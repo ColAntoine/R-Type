@@ -7,28 +7,28 @@
 
 #include "settings_state.hpp"
 #include "game_state_manager.hpp"
+#include "../application.hpp"
 #include <iostream>
 #include <raylib.h>
 
+SettingsState::SettingsState(Application* app) : app_(app) {
+}
+
 void SettingsState::enter() {
-    std::cout << "Entering Settings State" << std::endl;
     setup_ui();
     initialized_ = true;
 }
 
 void SettingsState::exit() {
-    std::cout << "Exiting Settings State" << std::endl;
     cleanup_ui();
     initialized_ = false;
 }
 
 void SettingsState::pause() {
-    std::cout << "Pausing Settings State" << std::endl;
     ui_manager_.set_all_visible(false);
 }
 
 void SettingsState::resume() {
-    std::cout << "Resuming Settings State" << std::endl;
     ui_manager_.set_all_visible(true);
 }
 
@@ -113,8 +113,6 @@ void SettingsState::setup_ui() {
     );
     back_button->set_on_click([this]() { on_back_clicked(); });
     ui_manager_.add_component("back_button", back_button);
-
-    std::cout << "Settings UI setup complete" << std::endl;
 }
 
 void SettingsState::cleanup_ui() {
@@ -128,6 +126,8 @@ void SettingsState::on_back_clicked() {
 }
 
 void SettingsState::on_player_name_changed(const std::string& name) {
-    std::cout << "Player name changed to: " << name << std::endl;
-    // Here you would save the setting to a config file or global settings
+    // Store the player name in the application
+    if (app_ && !name.empty()) {
+        app_->set_player_name(name);
+    }
 }

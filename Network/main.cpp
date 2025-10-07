@@ -87,7 +87,17 @@ void setup_message_handlers(std::shared_ptr<UdpServer> server) {
     // Register message handlers
     dispatcher->register_handler(
         static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_CONNECT),
-        std::make_shared<ConnectionHandler>()
+        std::make_shared<ConnectionHandler>(server)
+    );
+
+    dispatcher->register_handler(
+        static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_READY),
+        std::make_shared<ClientReadyHandler>(server)
+    );
+
+    dispatcher->register_handler(
+        static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT),
+        std::make_shared<ClientDisconnectHandler>(server)
     );
 
     dispatcher->register_handler(
@@ -109,10 +119,12 @@ void setup_message_handlers(std::shared_ptr<UdpServer> server) {
     });
 
     std::cout << "Message handlers registered:" << std::endl;
-    std::cout << "  ✓ Connection Handler" << std::endl;
-    std::cout << "  ✓ Position Update Handler" << std::endl;
-    std::cout << "  ✓ Ping Handler" << std::endl;
-    std::cout << "  ✓ Player Shoot Handler" << std::endl;
+    std::cout << "  \032[1;32m✓ Connection Handler\032[0m" << std::endl;
+    std::cout << "  \032[1;31m✓ Client Ready Handler\032[0m" << std::endl;
+    std::cout << "  \032[1;33m✓ Client Disconnect Handler\032[0m" << std::endl;
+    std::cout << "  \032[1;34m✓ Position Update Handler\032[0m" << std::endl;
+    std::cout << "  \032[1;35m✓ Ping Handler\032[0m" << std::endl;
+    std::cout << "  \032[1;36m✓ Player Shoot Handler\032[0m" << std::endl;
     std::cout << std::endl;
 }
 
@@ -173,8 +185,21 @@ void commands_loop(std::shared_ptr<NetworkManager> network_manager) {
                 std::cout << "Enemy manager not initialized" << std::endl;
             }
         }
+        else if (input == "ready") {
+            auto server = g_network_manager->get_server();
+            if (server) {
+                std::cout << "=== Client Readiness Status ===" << std::endl;
+                std::cout << "Total clients: " << server->get_client_count() << std::endl;
+                std::cout << "Ready clients: " << server->get_ready_client_count() << std::endl;
+                std::cout << "All clients ready: " << (server->are_all_clients_ready() ? "Yes" : "No") << std::endl;
+                std::cout << "Game logic running: " << (server->should_run_game_logic() ? "Yes" : "No") << std::endl;
+                std::cout << std::endl;
+            } else {
+                std::cout << "Server not initialized" << std::endl;
+            }
+        }
         else if (!input.empty()) {
-            std::cout << "Unknown command. Available: info, clients, enemies, spawn <type>, clear, quit" << std::endl;
+            std::cout << "Unknown command. Available: info, clients, enemies, spawn <type>, clear, ready, quit" << std::endl;
         }
     }
 }

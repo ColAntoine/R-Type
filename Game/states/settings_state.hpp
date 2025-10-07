@@ -15,13 +15,16 @@
 #include "../ui/components/ui_input_field.hpp"
 #include <memory>
 
+class Application;
+
 class SettingsState : public IGameState {
 private:
+    Application* app_;
     UIManager ui_manager_;
     bool initialized_{false};
 
 public:
-    SettingsState() = default;
+    SettingsState(Application* app);
     ~SettingsState() override = default;
 
     // IGameState implementation

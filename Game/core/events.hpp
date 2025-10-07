@@ -93,6 +93,18 @@ struct NetworkConnectedEvent : Event {
 
 struct NetworkDisconnectedEvent : Event {};
 
+struct PlayerListEvent : Event {
+    struct PlayerInfo {
+        uint32_t player_id;
+        bool is_ready;
+        std::string name;
+        bool is_local_player;
+    };
+    
+    std::vector<PlayerInfo> players;
+    PlayerListEvent(const std::vector<PlayerInfo>& player_list) : players(player_list) {}
+};
+
 struct NetworkMessageEvent : Event {
     std::vector<uint8_t> data;
     NetworkMessageEvent(const std::vector<uint8_t>& d) : data(d) {}
@@ -109,4 +121,9 @@ struct GameStateChangeEvent : Event {
 struct FrameUpdateEvent : Event {
     float delta_time;
     FrameUpdateEvent(float dt) : delta_time(dt) {}
+};
+
+struct StartGameEvent : Event {
+    uint32_t timestamp;
+    StartGameEvent(uint32_t ts) : timestamp(ts) {}
 };

@@ -148,9 +148,7 @@ entity NetworkSystem::create_remote_player(registry& ecs_registry, int player_id
     component_factory_->create_velocity(ecs_registry, remote_entity, 0.0f, 0.0f);
     component_factory_->create_drawable(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
     component_factory_->create_collider(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT);
-
-    // Note: remote_player component doesn't have a factory method yet - we might need to add it or use direct creation
-    ecs_registry.add_component(remote_entity, remote_player("Remote_" + std::to_string(player_id)));
+    component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
 
     std::cout << "Created remote player entity " << remote_entity << " for player " << player_id << std::endl;
     return remote_entity;
@@ -167,8 +165,6 @@ void NetworkSystem::update_remote_player_position(registry& ecs_registry, int pl
 }
 
 void NetworkSystem::handle_enemy_spawn(const EnemySpawnEvent& e) {
-    std::cout << "NetworkSystem: Enemy " << e.enemy_id << " (type " << e.enemy_type << ") spawned at ("
-              << e.x << ", " << e.y << ") with " << e.health << " health" << std::endl;
     pending_enemy_spawns_.push_back(e);
 }
 

@@ -2,6 +2,7 @@
 #include "states/main_menu_state.hpp"
 #include "states/settings_state.hpp"
 #include "states/lobby_state.hpp"
+#include "states/waiting_lobby_state.hpp"
 #include "states/ingame_state.hpp"
 
 
@@ -21,7 +22,7 @@ void Application::service_setup() {
     service_manager_.initialize();
 }
 
-bool Application::initialize(const std::string& server_ip, int server_port) {
+bool Application::initialize() {
     try {
         setup_ecs();
         load_systems();
@@ -38,13 +39,6 @@ bool Application::initialize(const std::string& server_ip, int server_port) {
         // Setup game states
         setup_game_states();
 
-        // Connect to server
-        auto& network_service = service_manager_.get_service<NetworkService>();
-        if (!network_service.connect_to_server(server_ip, server_port)) {
-            std::cerr << "Failed to connect to server" << std::endl;
-            return false;
-        }
-
         running_ = true;
         return true;
 
@@ -52,6 +46,19 @@ bool Application::initialize(const std::string& server_ip, int server_port) {
         std::cerr << "Application initialization failed: " << e.what() << std::endl;
         return false;
     }
+}
+
+bool Application::connect_to_server(const std::string& server_ip, int server_port) {
+    auto& network_service = service_manager_.get_service<NetworkService>();
+    if (!network_service.connect_to_server(server_ip, server_port, player_name_)) {
+        return false;
+    }
+    return true;
+}
+
+void Application::send_ready_signal(bool ready) {
+    auto& network_service = service_manager_.get_service<NetworkService>();
+    network_service.send_ready_signal(ready);
 }
 
 void Application::run() {
@@ -152,8 +159,21 @@ void Application::update_traditional_ecs_systems(float delta_time) {
 void Application::setup_game_states() {
     // Register all game states with factory functions
     state_manager_.register_state<MainMenuState>("MainMenu");
-    state_manager_.register_state<SettingsState>("Settings");
-    state_manager_.register_state<LobbyState>("Lobby");
+    
+    // Register Settings state with Application pointer using custom factory
+    state_manager_.register_state_with_factory("Settings", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<SettingsState>(this);
+    });
+    
+    // Register Lobby state with Application pointer using custom factory
+    state_manager_.register_state_with_factory("Lobby", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<LobbyState>(this);
+    });
+
+    // Register Waiting Lobby state with Application pointer using custom factory
+    state_manager_.register_state_with_factory("WaitingLobby", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<WaitingLobbyState>(this);
+    });
 
     // Register InGame state with Application pointer using custom factory
     state_manager_.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {

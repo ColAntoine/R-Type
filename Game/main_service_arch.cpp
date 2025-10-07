@@ -12,13 +12,13 @@ void signal_handler(int signal) {
     }
 }
 
-int start_app(const std::string& server_ip, int server_port)
+int start_app()
 {
     Application app;
     app_instance = &app;
 
     try {
-        if (!app.initialize(server_ip, server_port)) {
+        if (!app.initialize()) {
             std::cerr << "Failed to initialize application" << std::endl;
             return 1;
         }
@@ -37,22 +37,12 @@ int start_app(const std::string& server_ip, int server_port)
 
 int main(int argc, char* argv[]) {
     std::cout << "=== R-Type Service Architecture Client ===" << std::endl;
-
-    std::string server_ip = "127.0.0.1";
-    int server_port = 8080;
-    if (argc >= 2) {
-        server_ip = argv[1];
-    }
-    if (argc >= 3) {
-        server_port = std::atoi(argv[2]);
-    }
-
-    std::cout << "Connecting to server: " << server_ip << ":" << server_port << std::endl;
+    std::cout << "Starting in offline mode - use UI to connect to server" << std::endl;
 
     // Set up signal handling
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
 
-    // Create and run application
-    return start_app(server_ip, server_port);
+    // Create and run application (no auto-connection)
+    return start_app();
 }

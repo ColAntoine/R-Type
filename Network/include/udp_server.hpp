@@ -5,6 +5,7 @@
 #include <functional>
 #include <asio.hpp>
 #include "connection.hpp"
+#include "protocol.hpp"
 
 namespace RType::Network {
 
@@ -81,6 +82,36 @@ namespace RType::Network {
         size_t get_client_count() const;
 
         /**
+         * @brief Get number of ready clients
+         */
+        size_t get_ready_client_count() const;
+
+        /**
+         * @brief Check if all connected clients are ready
+         */
+        bool are_all_clients_ready() const;
+
+        /**
+         * @brief Check if we should run game logic (at least one client connected and all are ready)
+         */
+        bool should_run_game_logic() const;
+
+        /**
+         * @brief Broadcast current player list to all connected clients
+         */
+        void broadcast_player_list();
+
+        /**
+         * @brief Send current player list to a specific client
+         */
+        void send_player_list_to_client(const std::string& session_id);
+
+        /**
+         * @brief Check if all connected players are ready and start game if so
+         */
+        void check_all_players_ready();
+
+        /**
          * @brief Get session by connection ID
          */
         std::shared_ptr<Session> get_session(const std::string& connection_id);
@@ -95,6 +126,7 @@ namespace RType::Network {
         void handle_receive(const std::error_code& ec, size_t bytes_received);
         std::shared_ptr<Session> get_or_create_session(const endpoint_type& endpoint);
         void setup_cleanup_timer();
+        RType::Protocol::ClientListUpdate generate_player_list();
 
         asio::io_context& io_context_;
         asio::ip::udp::socket socket_;

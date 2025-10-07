@@ -11,6 +11,7 @@ Session::Session(std::shared_ptr<Connection> connection)
     , session_id_(generate_session_id())
     , player_id_(-1)  // -1 indicates no player ID assigned yet
     , authenticated_(false)
+    , ready_(false)  // Clients start as not ready
     , last_activity_(clock_type::now()) {
 }
 

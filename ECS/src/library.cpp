@@ -45,6 +45,10 @@ class ComponentFactory : public IComponentFactory {
         {
             reg.emplace_component<enemy>(e, enemy_type, health);
         }
+        void create_remote_player(registry& reg, const entity& e, const std::string& client_id) override
+        {
+            reg.emplace_component<remote_player>(e, client_id);
+        }
 
     private:
         ComponentFactory() = default;
