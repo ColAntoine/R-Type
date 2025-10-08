@@ -3,3 +3,7 @@ vcpkg_installed/
 .vscode
 
 external/vcpkg/
+
+lib/
+
+r-type_*

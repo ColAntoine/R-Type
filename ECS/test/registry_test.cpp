@@ -1,6 +1,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
-#include "ecs/registry.hpp"
+#include "ECS/Registry.hpp"
 #include <cstddef>
 
 // Helpers sûrs : on ne suppose pas la valeur de départ des IDs.

@@ -7,10 +7,10 @@
 
 #include <raylib.h>
 #include <iostream>
-#include "ecs/systems/sprite_system.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/components.hpp"
-#include "ecs/zipper.hpp"
+#include "ECS/Systems/Sprite.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Zipper.hpp"
 
 Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
     auto it = texture_cache_.find(path);
