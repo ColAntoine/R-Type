@@ -9,10 +9,10 @@
 #include "Core/Systems/Input/Input.hpp"
 #include "Core/Systems/Network/Network.hpp"
 #include "Core/States/GameStateManager.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/entity.hpp"
-#include "ecs/dlloader.hpp"
-#include "ecs/component_factory.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Entity.hpp"
+#include "ECS/DLLoader.hpp"
+#include "ECS/ComponentFactory.hpp"
 #include <memory>
 #include <sstream>
 #include <iostream>

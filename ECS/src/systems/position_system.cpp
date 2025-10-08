@@ -5,10 +5,10 @@
 ** Position System Implementation
 */
 
-#include "ecs/systems/position_system.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/components.hpp"
-#include "ecs/zipper.hpp"
+#include "ECS/Systems/Position.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Zipper.hpp"
 
 void PositionSystem::update(registry& r, float dt) {
     auto *pos_arr = r.get_if<position>();

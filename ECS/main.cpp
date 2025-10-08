@@ -2,11 +2,11 @@
 #include <algorithm>
 #include <raylib.h>
 
-#include "ecs/registry.hpp"
-#include "ecs/dlloader.hpp"  // Changed from systems.hpp to dlloader.hpp
-#include "ecs/zipper.hpp"
-#include "ecs/component_factory.hpp"
-#include "ecs/rtype.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/DLLoader.hpp"  // Changed from systems.hpp to dlloader.hpp
+#include "ECS/Zipper.hpp"
+#include "ECS/ComponentFactory.hpp"
+#include "ECS/RType.hpp"
 
 RType::RType()
 {
@@ -72,8 +72,8 @@ void RType::create_player(IComponentFactory* factory, float x, float y, float w,
     auto entity = reg_.spawn_entity();
     factory->create_position(reg_, entity, x, y);
     factory->create_velocity(reg_, entity, 0.f, 0.f);
-    factory->create_drawable(reg_, entity, w, h, 200, 100, 100, 255);
-    factory->create_controllable(reg_, entity, speed);
+    // factory->create_drawable(reg_, entity, w, h, 200, 100, 100, 255);
+    // factory->create_controllable(reg_, entity, speed);
     factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
 }
 
@@ -81,7 +81,7 @@ void RType::create_static_entity(IComponentFactory* factory, float x, float y, f
                                 uint8_t r, uint8_t g, uint8_t b, bool has_collider) {
     auto entity = reg_.spawn_entity();
     factory->create_position(reg_, entity, x, y);
-    factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
+    // factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
     if (has_collider) {
         factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
     }
@@ -92,7 +92,7 @@ void RType::create_moving_entity(IComponentFactory* factory, float x, float y, f
     auto entity = reg_.spawn_entity();
     factory->create_position(reg_, entity, x, y);
     factory->create_velocity(reg_, entity, vx, vy);
-    factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
+    // factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
     factory->create_collider(reg_, entity, w, h, 0.f, 0.f, false);
 }
 
@@ -109,11 +109,11 @@ void RType::update(float dt) {
 void RType::render() {
     BeginDrawing();
     ClearBackground(BLACK);
-    
+
     // Drawing is now handled by the draw system in update_all_systems
     // But if you want to separate rendering, you can call:
     // loader_.update_system_by_name("DrawSystem", reg_, 0.0f);
-    
+
     EndDrawing();
 }
 

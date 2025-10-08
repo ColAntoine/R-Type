@@ -1,5 +1,5 @@
-#include "ecs/dlloader.hpp"
-#include "ecs/registry.hpp"
+#include "ECS/DLLoader.hpp"
+#include "ECS/Registry.hpp"
 #include <dlfcn.h>
 #include <iostream>
 #include <filesystem>

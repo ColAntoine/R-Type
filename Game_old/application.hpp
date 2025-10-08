@@ -8,10 +8,10 @@
 #include "services/render_service.hpp"
 #include "systems/input_system.hpp"
 #include "systems/network_systems.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/entity.hpp"
-#include "ecs/dlloader.hpp"
-#include "ecs/component_factory.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Entity.hpp"
+#include "ECS/DLLoader.hpp"
+#include "ECS/ComponentFactory.hpp"
 #include "states/game_state_manager.hpp"
 #include <memory>
 #include <sstream>

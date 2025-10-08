@@ -10,7 +10,7 @@
 all: build
 
 build:
-	mkdir -p build && cd build && cmake .. && cmake --build .
+	mkdir -p build && cd build && cmake .. && cmake --build . && cp -r bin/* ../
 
 clean:
 	@echo "Removing object files (.o)..."
@@ -18,7 +18,7 @@ clean:
 
 fclean:
 	@echo "Removing lib directory, rtype binary, and build directory..."
-	rm -rf lib rtype build
+	rm -rf lib rtype build r-type_client r-type_server lib
 
 re: fclean all
 

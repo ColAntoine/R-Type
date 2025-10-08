@@ -1,4 +1,5 @@
 #include "Core/Systems/Network/Network.hpp"
+#include "Entity/Components/Drawable/Drawable.hpp"
 #include <iostream>
 
 // NetworkSystem implementation
@@ -146,9 +147,9 @@ entity NetworkSystem::create_remote_player(registry& ecs_registry, int player_id
     // Use factory methods instead of direct component creation
     component_factory_->create_position(ecs_registry, remote_entity, x, y);
     component_factory_->create_velocity(ecs_registry, remote_entity, 0.0f, 0.0f);
-    component_factory_->create_drawable(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
+    component_factory_->create_component<drawable>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
     component_factory_->create_collider(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT);
-    component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
+    // component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
 
     std::cout << "Created remote player entity " << remote_entity << " for player " << player_id << std::endl;
     return remote_entity;
@@ -186,17 +187,17 @@ entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int ene
 
     // Different enemy types have different appearance
     if (enemy_type == 1) {
-        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 0, 255, 255); // Magenta
+        component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 0, 255, 255); // Magenta
     } else if (enemy_type == 2) {
-        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 255, 0, 255); // Yellow
+        component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 255, 0, 255); // Yellow
     } else if (enemy_type == 3) {
-        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 0, 255, 255, 255); // Cyan
+        component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 0, 255, 255, 255); // Cyan
     } else {
-        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 165, 0, 255); // Orange default
+        component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 165, 0, 255); // Orange default
     }
 
     component_factory_->create_collider(ecs_registry, enemy_entity, 30.0f, 30.0f);
-    component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);
+    // component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);
 
     std::cout << "Created enemy entity " << enemy_entity << " for enemy " << enemy_id << " (type " << enemy_type << ")" << std::endl;
     return enemy_entity;

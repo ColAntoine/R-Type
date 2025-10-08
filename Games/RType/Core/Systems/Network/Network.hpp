@@ -4,10 +4,11 @@
 #include "Core/Events.hpp"
 #include "Core/Services/Input/Input.hpp"
 #include "Core/Services/Network/Network.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/components.hpp"
-#include "ecs/entity.hpp"
-#include "ecs/component_factory.hpp"
+#include "Entity/Components/Enemy/Enemy.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Entity.hpp"
+#include "ECS/ComponentFactory.hpp"
 #include <unordered_map>
 
 #define PLAYER_WIDTH 40.0f

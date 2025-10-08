@@ -4,7 +4,7 @@
 #include "core/event_manager.hpp"
 #include "core/events.hpp"
 #include "game_window.hpp"
-#include "ecs/registry.hpp"
+#include "ECS/Registry.hpp"
 #include <memory>
 
 class RenderService : public IService {

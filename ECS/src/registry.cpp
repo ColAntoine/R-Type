@@ -5,7 +5,7 @@
 ** asd
 */
 
-#include "ecs/registry.hpp"
+#include "ECS/Registry.hpp"
 
 #include <algorithm>
 

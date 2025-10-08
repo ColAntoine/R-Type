@@ -4,14 +4,15 @@
 #include "States/Lobby/Lobby.hpp"
 #include "States/WaitingLobby/WaitingLobby.hpp"
 #include "States/InGame/InGame.hpp"
+#include "Entity/Components/Drawable/Drawable.hpp"
 
 
 void Application::load_systems() {
-    system_loader_.load_system_from_so("build/lib/systems/libposition_system.so");
-    system_loader_.load_system_from_so("build/lib/systems/libcollision_system.so");
-    system_loader_.load_system_from_so("build/lib/systems/liblifetime_system.so");
-    system_loader_.load_system_from_so("build/lib/systems/libdraw_system.so");
-    system_loader_.load_system_from_so("build/lib/systems/libsprite_system.so");
+    system_loader_.load_system_from_so("lib/systems/libposition_system.so");
+    system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
+    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
 }
 
 void Application::service_setup() {
@@ -117,12 +118,14 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
+    
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_position(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_velocity(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_collider(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
-    component_factory_->create_controllable(ecs_registry_, local_player_entity_, 200.0f);
+    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
+    // component_factory_->create_controllable(ecs_registry_, local_player_entity_, 200.0f);
     component_factory_->create_sprite(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 
@@ -154,6 +157,7 @@ void Application::update_ecs_systems(float delta_time) {
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
     system_loader_.update_all_systems(ecs_registry_, delta_time);
+    
 }
 
 void Application::setup_game_states() {

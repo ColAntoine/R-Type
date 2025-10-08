@@ -8,10 +8,10 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
-#include "ecs/systems/collision_system.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/components.hpp"
-#include "ecs/zipper.hpp"
+#include "ECS/Systems/Collision.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Zipper.hpp"
 
 using Rect = std::array<float,4>; // {minx, miny, maxx, maxy}
 

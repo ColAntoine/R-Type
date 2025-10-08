@@ -4,9 +4,9 @@
 #include "Core/Events.hpp"
 #include "Core/Services/Input/Input.hpp"
 #include "Core/Services/Network/Network.hpp"
-#include "ecs/registry.hpp"
-#include "ecs/components.hpp"
-#include "ecs/entity.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/Entity.hpp"
 #include <unordered_map>
 
 // ECS System that handles input events and updates player velocity

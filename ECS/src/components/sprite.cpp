@@ -5,7 +5,7 @@
 ** sprite
 */
 
-#include "ecs/components/sprite.hpp"
+#include "ECS/Components/Sprite.hpp"
 
 sprite::sprite() : texture_path(""), width(64.0f), height(64.0f) {}
 
