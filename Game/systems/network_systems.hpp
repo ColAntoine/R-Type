@@ -7,13 +7,18 @@
 #include "ecs/registry.hpp"
 #include "ecs/components.hpp"
 #include "ecs/entity.hpp"
+#include "ecs/component_factory.hpp"
 #include <unordered_map>
+
+#define PLAYER_WIDTH 40.0f
+#define PLAYER_HEIGHT 40.0f
 
 // ECS System that handles network events
 class NetworkSystem {
     private:
         EventManager* event_manager_;
         NetworkService* network_service_;
+        IComponentFactory* component_factory_;
         std::unordered_map<int, entity> remote_players_;
         std::unordered_map<int, entity> enemies_; // Track enemy entities
 
@@ -28,7 +33,7 @@ class NetworkSystem {
         std::vector<EnemyDestroyEvent> pending_enemy_destroys_;
 
         public:
-                NetworkSystem(EventManager* event_manager, NetworkService* network_service);
+                NetworkSystem(EventManager* event_manager, NetworkService* network_service, IComponentFactory* component_factory);
                 void update(registry& ecs_registry, float delta_time);
 
         private:

@@ -49,12 +49,14 @@ namespace RType::Protocol {
         SERVER_ACCEPT     = 0x02,
         CLIENT_DISCONNECT = 0x03,
         SERVER_DISCONNECT = 0x04,
+        CLIENT_READY      = 0x07,
         PING              = 0x05,
         PONG              = 0x06,
 
         // Server info
         SERVER_INFO       = 0x10,
         CLIENT_LIST       = 0x11,
+        START_GAME        = 0x12,
     };
 
     /**
@@ -97,6 +99,46 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Assigned player ID
         uint32_t session_id;     ///< Session identifier
         float spawn_x, spawn_y;  ///< Initial spawn position
+    } __attribute__((packed));
+
+    /**
+     * @brief Client ready signal
+     */
+    struct ClientReady {
+        uint32_t player_id;      ///< Player ID confirming readiness
+        uint8_t ready_state;     ///< 1 = ready, 0 = not ready
+    } __attribute__((packed));
+
+    /**
+     * @brief Client disconnect signal
+     */
+    struct ClientDisconnect {
+        uint32_t player_id;      ///< Player ID disconnecting
+        uint8_t reason;          ///< Disconnect reason (0=voluntary, 1=timeout, 2=error)
+    } __attribute__((packed));
+
+    /**
+     * @brief Player information for client list
+     */
+    struct PlayerInfo {
+        uint32_t player_id;      ///< Player ID
+        uint8_t ready_state;     ///< 1 = ready, 0 = not ready
+        char name[32];           ///< Player name (null-terminated)
+    } __attribute__((packed));
+
+    /**
+     * @brief Client list update message
+     */
+    struct ClientListUpdate {
+        uint8_t player_count;    ///< Number of players in the list
+        PlayerInfo players[8];   ///< Array of player info (max 8 players)
+    } __attribute__((packed));
+
+    /**
+     * @brief Start game signal message
+     */
+    struct StartGame {
+        uint32_t timestamp;      ///< Server timestamp when game starts
     } __attribute__((packed));
 
     /**

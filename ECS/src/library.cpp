@@ -37,6 +37,18 @@ class ComponentFactory : public IComponentFactory {
         {
             reg.emplace_component<collider>(e, w, h, ox, oy, trigger);
         }
+        void create_sprite(registry& reg, const entity& e, const std::string& texture_path, float w, float h, float scale_x, float scale_y) override
+        {
+            reg.emplace_component<sprite>(e, texture_path, w, h, scale_x, scale_y);
+        }
+        void create_enemy(registry& reg, const entity& e, int enemy_type, float health) override
+        {
+            reg.emplace_component<enemy>(e, enemy_type, health);
+        }
+        void create_remote_player(registry& reg, const entity& e, const std::string& client_id) override
+        {
+            reg.emplace_component<remote_player>(e, client_id);
+        }
 
     private:
         ComponentFactory() = default;
@@ -53,6 +65,7 @@ extern "C" void register_components(registry &r) {
     r.register_component<enemy>();
     r.register_component<lifetime>();
     r.register_component<spawner>();
+    r.register_component<sprite>();
 }
 
 extern "C"

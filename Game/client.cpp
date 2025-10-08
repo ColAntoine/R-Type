@@ -1,4 +1,5 @@
 #include "client.hpp"
+#include "../Network/include/protocol.hpp"
 #include <iostream>
 #include <cstring>
 #include <unistd.h>
@@ -88,8 +89,6 @@ bool UDPClient::connect_to_server(const std::string& ip, int port) {
 
 void UDPClient::disconnect() {
     if (connected.load()) {
-        // Send disconnect message
-        send_message("quit");
         connected.store(false);
     }
 

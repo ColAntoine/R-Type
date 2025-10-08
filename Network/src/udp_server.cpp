@@ -2,6 +2,10 @@
 #include "session.hpp"
 #include "protocol.hpp"
 #include <iostream>
+#include <cstring>
+#include <chrono>
+#include <ctime>
+#include <vector>
 
 namespace RType::Network {
 
@@ -100,6 +104,139 @@ namespace RType::Network {
         return count;
     }
 
+    size_t UdpServer::get_ready_client_count() const {
+        size_t count = 0;
+        for (const auto& [id, session] : sessions_) {
+            if (session->is_connected() && session->is_authenticated() && session->is_ready()) {
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    bool UdpServer::are_all_clients_ready() const {
+        if (sessions_.empty()) {
+            return false; // No clients connected
+        }
+
+        for (const auto& [id, session] : sessions_) {
+            if (session->is_connected() && session->is_authenticated()) {
+                if (!session->is_ready()) {
+                    return false; // Found a connected client that is not ready
+                }
+            }
+        }
+        return true; // All connected clients are ready
+    }
+
+    bool UdpServer::should_run_game_logic() const {
+        size_t connected_count = 0;
+        size_t ready_count = 0;
+
+        for (const auto& [id, session] : sessions_) {
+            if (session->is_connected() && session->is_authenticated()) {
+                connected_count++;
+                if (session->is_ready()) {
+                    ready_count++;
+                }
+            }
+        }
+
+        // Run game logic only if we have clients connected and all are ready
+        return connected_count > 0 && connected_count == ready_count;
+    }
+
+    RType::Protocol::ClientListUpdate UdpServer::generate_player_list() {
+        Protocol::ClientListUpdate client_list;
+        client_list.player_count = 0;
+
+        // Collect all connected and authenticated players
+        for (const auto& [id, session] : sessions_) {
+            if (session->is_connected() && session->is_authenticated() &&
+                client_list.player_count < 8) { // Max 8 players
+
+                auto& player_info = client_list.players[client_list.player_count];
+                player_info.player_id = session->get_player_id();
+                player_info.ready_state = session->is_ready() ? 1 : 0;
+
+                // Use the custom player name stored in the session
+                const std::string& custom_name = session->get_player_name();
+                if (!custom_name.empty()) {
+                    strncpy(player_info.name, custom_name.c_str(), 31);
+                } else {
+                    // Fallback to default format if no custom name
+                    strncpy(player_info.name, ("Player " + std::to_string(session->get_player_id())).c_str(), 31);
+                }
+                player_info.name[31] = '\0'; // Ensure null termination
+
+                client_list.player_count++;
+            }
+        }
+
+        return client_list;
+    }
+
+    void UdpServer::broadcast_player_list() {
+        auto client_list = generate_player_list();
+
+        // Create packet using utility function
+        auto packet = Protocol::create_packet(
+            static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_LIST),
+            client_list
+        );
+
+        // Broadcast to all clients
+        broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+    }
+
+    void UdpServer::send_player_list_to_client(const std::string& session_id) {
+        auto session = get_session(session_id);
+        if (!session || !session->is_connected() || !session->is_authenticated()) {
+            return;
+        }
+
+        auto client_list = generate_player_list();
+
+        // Create packet using utility function
+        auto packet = Protocol::create_packet(
+            static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_LIST),
+            client_list
+        );
+
+        // Send to specific client
+        session->send(reinterpret_cast<const char*>(packet.data()), packet.size());
+    }
+
+    void UdpServer::check_all_players_ready() {
+        uint32_t connected_players = 0;
+        uint32_t ready_players = 0;
+
+        // Count connected and ready players
+        for (const auto& [session_id, session] : sessions_) {
+            if (session->is_connected() && session->is_authenticated()) {
+                connected_players++;
+                if (session->is_ready()) {
+                    ready_players++;
+                }
+            }
+        }
+
+        // Need at least 1 player and all connected players must be ready
+        if (connected_players > 0 && ready_players == connected_players) {
+            // Create START_GAME message
+            Protocol::StartGame start_game;
+            start_game.timestamp = static_cast<uint32_t>(std::time(nullptr));
+
+            auto packet = Protocol::create_packet(
+                static_cast<uint8_t>(Protocol::SystemMessage::START_GAME),
+                start_game
+            );
+
+            // Broadcast to all connected clients
+            broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+        }
+    }
+
     std::shared_ptr<Session> UdpServer::get_session(const std::string& connection_id) {
         auto it = sessions_.find(connection_id);
         return (it != sessions_.end()) ? it->second : nullptr;
@@ -170,8 +307,19 @@ void UdpServer::handle_receive(const std::error_code& ec, size_t bytes_received)
 
                     message_handler_(session, dispatcher_data.data(), dispatcher_data.size());
                 } else {
-                    std::cerr << "Payload size mismatch: expected " << header->payload_size
-                              << ", got " << actual_payload_size << std::endl;
+                    // Check if this might be a disconnect scenario (payload size 0)
+                    if (actual_payload_size == 0) {
+                        // Handle potential disconnect - mark session as disconnected
+                        std::cout << "Client " << remote_endpoint_.address().to_string() 
+                                  << ":" << remote_endpoint_.port() << " appears to have disconnected (zero payload)" << std::endl;
+                        if (session) {
+                            session->disconnect();
+                        }
+                    } else {
+                        std::cerr << "Payload size mismatch: expected " << header->payload_size
+                                  << ", got " << actual_payload_size << " from " 
+                                  << remote_endpoint_.address().to_string() << ":" << remote_endpoint_.port() << std::endl;
+                    }
                 }
             } else {
                 std::cerr << "Packet too small for header: " << bytes_received << " bytes" << std::endl;

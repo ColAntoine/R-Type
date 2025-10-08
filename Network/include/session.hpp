@@ -54,6 +54,26 @@ namespace RType::Network {
         void set_authenticated(bool auth) { authenticated_ = auth; }
 
         /**
+         * @brief Check if client is ready to receive game updates
+         */
+        bool is_ready() const { return ready_; }
+
+        /**
+         * @brief Set client ready status
+         */
+        void set_ready(bool ready) { ready_ = ready; }
+
+        /**
+         * @brief Get player name
+         */
+        const std::string& get_player_name() const { return player_name_; }
+
+        /**
+         * @brief Set player name
+         */
+        void set_player_name(const std::string& name) { player_name_ = name; }
+
+        /**
          * @brief Get player position
          */
         void get_position(float& x, float& y) const { x = pos_x_; y = pos_y_; }
@@ -108,6 +128,8 @@ namespace RType::Network {
         std::string session_id_;
         int player_id_;
         bool authenticated_;
+        bool ready_;
+        std::string player_name_;
 
         // Player state
         std::atomic<float> pos_x_{0.0f};

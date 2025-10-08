@@ -17,6 +17,7 @@
 #include "ecs/components/enemy.hpp"
 #include "ecs/components/lifetime.hpp"
 #include "ecs/components/spawner.hpp"
+#include "ecs/components/sprite.hpp"
 
 extern "C" {
     void register_components(registry &r);

@@ -10,6 +10,8 @@ namespace RType::Network {
  */
 class ConnectionHandler : public TypedMessageHandler<RType::Protocol::ClientConnect> {
     public:
+        explicit ConnectionHandler(std::shared_ptr<class UdpServer> server) : server_(server) {}
+
         uint8_t get_message_type() const override {
             return static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_CONNECT);
         }
@@ -20,6 +22,53 @@ class ConnectionHandler : public TypedMessageHandler<RType::Protocol::ClientConn
             const RType::Protocol::ClientConnect& message,
             const char* payload,
             size_t payload_size) override;
+
+    private:
+        std::shared_ptr<class UdpServer> server_;
+};
+
+/**
+ * @brief Handler for client ready messages
+ */
+class ClientReadyHandler : public TypedMessageHandler<RType::Protocol::ClientReady> {
+    public:
+        explicit ClientReadyHandler(std::shared_ptr<class UdpServer> server) : server_(server) {}
+
+        uint8_t get_message_type() const override {
+            return static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_READY);
+        }
+
+    protected:
+        bool handle_typed_message(
+            std::shared_ptr<Session> session,
+            const RType::Protocol::ClientReady& message,
+            const char* payload,
+            size_t payload_size) override;
+
+    private:
+        std::shared_ptr<class UdpServer> server_;
+};
+
+/**
+ * @brief Handler for client disconnect messages
+ */
+class ClientDisconnectHandler : public TypedMessageHandler<RType::Protocol::ClientDisconnect> {
+    public:
+        explicit ClientDisconnectHandler(std::shared_ptr<class UdpServer> server) : server_(server) {}
+
+        uint8_t get_message_type() const override {
+            return static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT);
+        }
+
+    protected:
+        bool handle_typed_message(
+            std::shared_ptr<Session> session,
+            const RType::Protocol::ClientDisconnect& message,
+            const char* payload,
+            size_t payload_size) override;
+
+    private:
+        std::shared_ptr<class UdpServer> server_;
 };
 
 /**

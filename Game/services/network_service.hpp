@@ -14,11 +14,13 @@ class NetworkService : public IService {
         EventManager* event_manager_;
         std::unique_ptr<UDPClient> client_;
         std::atomic<bool> connected_{false};
+        std::atomic<bool> connection_confirmed_{false};  // Set when SERVER_ACCEPT received
         std::atomic<int> local_player_id_{0};
 
         // Connection settings
         std::string server_ip_ = "127.0.0.1";
         int server_port_ = 8080;
+        std::string player_name_ = "Player";
 
     public:
         NetworkService(EventManager* event_manager);
@@ -28,18 +30,21 @@ class NetworkService : public IService {
         void update(float delta_time) override;
 
         // Connection management
-        bool connect_to_server(const std::string& ip, int port);
+        bool connect_to_server(const std::string& ip, int port, const std::string& player_name = "Player");
         void disconnect();
         bool is_connected() const;
         int get_local_player_id() const;
 
         // Send messages
         void send_player_position(float x, float y, float vx, float vy);
+        void send_ready_signal(bool ready = true);
 
     private:
         void send_connection_request();
         void handle_network_message(const std::string& message);
         void handle_server_accept(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
+        void handle_client_list(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
+        void handle_start_game(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_position_update(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_player_join(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_player_leave(const RType::Protocol::PacketHeader& header, const uint8_t* payload);

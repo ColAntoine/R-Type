@@ -1,4 +1,5 @@
 #include "network_service.hpp"
+#include <iostream>
 
 NetworkService::NetworkService(EventManager* event_manager) : event_manager_(event_manager) {
 }
@@ -24,9 +25,11 @@ void NetworkService::update(float delta_time) {
     // All communication is event-driven
 }
 
-bool NetworkService::connect_to_server(const std::string& ip, int port) {
+bool NetworkService::connect_to_server(const std::string& ip, int port, const std::string& player_name) {
     server_ip_ = ip;
     server_port_ = port;
+    player_name_ = player_name;
+    connection_confirmed_.store(false);
 
     if (client_->connect_to_server(ip, port)) {
         client_->start_receiving();
@@ -34,13 +37,39 @@ bool NetworkService::connect_to_server(const std::string& ip, int port) {
 
         // Send connection request
         send_connection_request();
-        return true;
+
+        // Wait for server response with timeout (2 seconds)
+        auto start_time = std::chrono::steady_clock::now();
+        const auto timeout = std::chrono::seconds(2);
+
+        while (std::chrono::steady_clock::now() - start_time < timeout) {
+            if (connection_confirmed_.load()) {
+                return true;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        // Timeout - no response from server
+        disconnect();
+        return false;
     }
     return false;
 }
 
 void NetworkService::disconnect() {
     if (client_ && connected_) {
+        // Send proper disconnect message before disconnecting
+        RType::Protocol::ClientDisconnect disconnect_msg;
+        disconnect_msg.player_id = local_player_id_.load();
+        disconnect_msg.reason = 0; // Voluntary disconnect
+
+        auto packet = RType::Protocol::create_packet(
+            static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT),
+            disconnect_msg
+        );
+
+        client_->send_data(reinterpret_cast<const char*>(packet.data()), packet.size());
+        
         client_->disconnect();
         connected_ = false;
         event_manager_->emit(NetworkDisconnectedEvent());
@@ -75,9 +104,37 @@ void NetworkService::send_player_position(float x, float y, float vx, float vy) 
         reinterpret_cast<const char*>(packet.data()), packet.size()));
 }
 
+void NetworkService::send_ready_signal(bool ready) {
+    if (!is_connected() || local_player_id_ <= 0) {
+        return;
+    }
+
+    RType::Protocol::ClientReady ready_msg;
+    ready_msg.player_id = local_player_id_;
+    ready_msg.ready_state = ready ? 1 : 0;
+
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_READY),
+        ready_msg
+    );
+
+    client_->send_message(std::string(
+        reinterpret_cast<const char*>(packet.data()), packet.size()));
+}
+
 void NetworkService::send_connection_request() {
     RType::Protocol::ClientConnect connect_msg;
-    strncpy(connect_msg.player_name, "Player", sizeof(connect_msg.player_name) - 1);
+    
+    // Ensure player name fits in the buffer (31 chars + null terminator)
+    std::string safe_name = player_name_;
+    if (safe_name.length() > 31) {
+        safe_name = safe_name.substr(0, 31);
+    }
+    if (safe_name.empty()) {
+        safe_name = "Player";
+    }
+    
+    strncpy(connect_msg.player_name, safe_name.c_str(), sizeof(connect_msg.player_name) - 1);
     connect_msg.player_name[sizeof(connect_msg.player_name) - 1] = '\0';
     connect_msg.client_version = 1;
 
@@ -100,6 +157,10 @@ void NetworkService::handle_network_message(const std::string& message) {
 
     if (header.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
         handle_server_accept(header, payload);
+    } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_LIST)) {
+        handle_client_list(header, payload);
+    } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::START_GAME)) {
+        handle_start_game(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::POSITION_UPDATE)) {
         handle_position_update(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_JOIN)) {
@@ -119,7 +180,39 @@ void NetworkService::handle_server_accept(const RType::Protocol::PacketHeader& h
     if (header.payload_size >= sizeof(RType::Protocol::ServerAccept)) {
         const auto* accept = reinterpret_cast<const RType::Protocol::ServerAccept*>(payload);
         local_player_id_ = accept->player_id;
+        connection_confirmed_.store(true);  // Mark connection as confirmed
         event_manager_->emit(NetworkConnectedEvent(accept->player_id));
+    }
+}
+
+void NetworkService::handle_client_list(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
+    if (header.payload_size >= sizeof(RType::Protocol::ClientListUpdate)) {
+        const auto* client_list = reinterpret_cast<const RType::Protocol::ClientListUpdate*>(payload);
+
+        // Create PlayerList event with the received data
+        std::vector<PlayerListEvent::PlayerInfo> players;
+        for (int i = 0; i < client_list->player_count && i < 8; ++i) {
+            const auto& server_player = client_list->players[i];
+            PlayerListEvent::PlayerInfo player_info;
+            player_info.player_id = server_player.player_id;
+            player_info.is_ready = (server_player.ready_state == 1);
+            player_info.name = std::string(server_player.name, 32);
+            player_info.is_local_player = (server_player.player_id == local_player_id_.load());
+
+            players.push_back(player_info);
+        }
+
+        // Emit event for UI update
+        event_manager_->emit(PlayerListEvent(players));
+    }
+}
+
+void NetworkService::handle_start_game(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
+    if (header.payload_size >= sizeof(RType::Protocol::StartGame)) {
+        const auto* start_game = reinterpret_cast<const RType::Protocol::StartGame*>(payload);
+        
+        // Emit start game event to trigger state transition
+        event_manager_->emit(StartGameEvent(start_game->timestamp));
     }
 }
 

@@ -2,8 +2,8 @@
 #include <iostream>
 
 // NetworkSystem implementation
-NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* network_service)
-    : event_manager_(event_manager), network_service_(network_service) {
+NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* network_service, IComponentFactory* component_factory)
+    : event_manager_(event_manager), network_service_(network_service), component_factory_(component_factory) {
 
     // Subscribe to network events
     event_manager_->subscribe<NetworkConnectedEvent>([this](const NetworkConnectedEvent& e) {
@@ -142,11 +142,13 @@ void NetworkSystem::handle_entity_destroy(const EntityDestroyEvent& e) {
 
 entity NetworkSystem::create_remote_player(registry& ecs_registry, int player_id, float x, float y) {
     entity remote_entity = ecs_registry.spawn_entity();
-    ecs_registry.add_component(remote_entity, position(x, y));
-    ecs_registry.add_component(remote_entity, velocity(0.0f, 0.0f));
-    ecs_registry.add_component(remote_entity, drawable(40.0f, 40.0f, 0, 100, 255, 255)); // Blue for remote players
-    ecs_registry.add_component(remote_entity, collider(40.0f, 40.0f));
-    ecs_registry.add_component(remote_entity, remote_player("Remote_" + std::to_string(player_id)));
+
+    // Use factory methods instead of direct component creation
+    component_factory_->create_position(ecs_registry, remote_entity, x, y);
+    component_factory_->create_velocity(ecs_registry, remote_entity, 0.0f, 0.0f);
+    component_factory_->create_drawable(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
+    component_factory_->create_collider(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT);
+    component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
 
     std::cout << "Created remote player entity " << remote_entity << " for player " << player_id << std::endl;
     return remote_entity;
@@ -163,8 +165,6 @@ void NetworkSystem::update_remote_player_position(registry& ecs_registry, int pl
 }
 
 void NetworkSystem::handle_enemy_spawn(const EnemySpawnEvent& e) {
-    std::cout << "NetworkSystem: Enemy " << e.enemy_id << " (type " << e.enemy_type << ") spawned at ("
-              << e.x << ", " << e.y << ") with " << e.health << " health" << std::endl;
     pending_enemy_spawns_.push_back(e);
 }
 
@@ -179,18 +179,24 @@ void NetworkSystem::handle_enemy_destroy(const EnemyDestroyEvent& e) {
 
 entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, float health) {
     entity enemy_entity = ecs_registry.spawn_entity();
-    ecs_registry.add_component(enemy_entity, position(x, y));
-    ecs_registry.add_component(enemy_entity, velocity(0.0f, 0.0f));
+
+    // Use factory methods instead of direct component creation
+    component_factory_->create_position(ecs_registry, enemy_entity, x, y);
+    component_factory_->create_velocity(ecs_registry, enemy_entity, 0.0f, 0.0f);
 
     // Different enemy types have different appearance
-    Color enemy_color = {255, 165, 0, 255}; // Orange default
-    if (enemy_type == 1) enemy_color = {255, 0, 255, 255};   // Magenta
-    if (enemy_type == 2) enemy_color = {255, 255, 0, 255};   // Yellow
-    if (enemy_type == 3) enemy_color = {0, 255, 255, 255};   // Cyan
+    if (enemy_type == 1) {
+        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 0, 255, 255); // Magenta
+    } else if (enemy_type == 2) {
+        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 255, 0, 255); // Yellow
+    } else if (enemy_type == 3) {
+        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 0, 255, 255, 255); // Cyan
+    } else {
+        component_factory_->create_drawable(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 165, 0, 255); // Orange default
+    }
 
-    ecs_registry.add_component(enemy_entity, drawable(30.0f, 30.0f, enemy_color.r, enemy_color.g, enemy_color.b, enemy_color.a));
-    ecs_registry.add_component(enemy_entity, collider(30.0f, 30.0f));
-    ecs_registry.add_component(enemy_entity, enemy(enemy_type, health));
+    component_factory_->create_collider(ecs_registry, enemy_entity, 30.0f, 30.0f);
+    component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);
 
     std::cout << "Created enemy entity " << enemy_entity << " for enemy " << enemy_id << " (type " << enemy_type << ")" << std::endl;
     return enemy_entity;
