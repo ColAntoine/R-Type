@@ -87,25 +87,44 @@ if(TARGET r-type_client)
     add_dependencies(r-type_client copy_libs)
 endif()
 
+# Add subdirectories for modular builds
+add_subdirectory(Games/RType)
+
 # Build Game executable (r-type_client)
-file(GLOB_RECURSE GAME_SOURCES "Game/*.cpp")
-list(FILTER GAME_SOURCES EXCLUDE REGEX ".*/Game/test/.*")
+# Check if main file exists in Games directory (for backwards compatibility)
+set(MAIN_SOURCE "")
+if(EXISTS "${CMAKE_SOURCE_DIR}/Games/main.cpp")
+    set(MAIN_SOURCE "${CMAKE_SOURCE_DIR}/Games/main.cpp")
+elseif(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main.cpp")
+    set(MAIN_SOURCE "${CMAKE_SOURCE_DIR}/Games/RType/main.cpp")
+endif()
+
 # Add Network protocol sources for the client
 file(GLOB NETWORK_PROTOCOL_SOURCES "Network/src/protocol.cpp")
-if(GAME_SOURCES)
-    add_executable(r-type_client ${GAME_SOURCES} ${NETWORK_PROTOCOL_SOURCES})
-    target_include_directories(r-type_client PRIVATE
-        Game
-        Network/include
-    )
 
-    # Link with raylib and required dependencies
-    target_link_libraries(r-type_client raylib glfw dl)
+if(MAIN_SOURCE)
+    add_executable(r-type_client ${MAIN_SOURCE} ${NETWORK_PROTOCOL_SOURCES})
+    
+    # Link with RType library
+    target_link_libraries(r-type_client PRIVATE
+        RType
+        raylib
+        glfw
+        dl
+    )
+    
+    target_include_directories(r-type_client PRIVATE
+        Games/RType
+        Network/include
+        ${RTYPE_INCLUDE_DIRS}
+    )
 
     # Link with ECS library if it exists
     if(TARGET ECS)
-        target_link_libraries(r-type_client ECS)
+        target_link_libraries(r-type_client PRIVATE ECS)
     endif()
+else()
+    message(WARNING "No main.cpp found for r-type_client")
 endif()
 
 # Build Network executable (r-type_server)
@@ -153,22 +172,31 @@ if(ECS_TEST_SOURCES)
     add_test(NAME ECS_Tests COMMAND test_ecs)
 endif()
 
-file(GLOB GAME_TEST_SOURCES "Game/test/*.cpp")
+file(GLOB GAME_TEST_SOURCES "Games/test/*.cpp")
 if(GAME_TEST_SOURCES)
-    # Add necessary Game source files for testing (excluding main)
-    file(GLOB_RECURSE GAME_IMPL_SOURCES "Game/*.cpp")
-    list(FILTER GAME_IMPL_SOURCES EXCLUDE REGEX ".*/Game/test/.*")
-    list(FILTER GAME_IMPL_SOURCES EXCLUDE REGEX ".*/Game/main_service_arch.cpp")
-
     # Add Network protocol sources for the test
     file(GLOB NETWORK_PROTOCOL_SOURCES "Network/src/protocol.cpp")
 
-    add_executable(test_game ${GAME_TEST_SOURCES} ${GAME_IMPL_SOURCES} ${NETWORK_PROTOCOL_SOURCES})
-    target_include_directories(test_game PRIVATE Game Network/include)
-    target_link_libraries(test_game raylib glfw dl)
+    add_executable(test_game ${GAME_TEST_SOURCES} ${NETWORK_PROTOCOL_SOURCES})
+    
+    # Link with RType library and its dependencies
+    target_link_libraries(test_game PRIVATE
+        RType
+        raylib
+        glfw
+        dl
+    )
+    
+    target_include_directories(test_game PRIVATE
+        Games/RType
+        Network/include
+        ${RTYPE_INCLUDE_DIRS}
+    )
+    
     if(TARGET ECS)
-        target_link_libraries(test_game ECS)
+        target_link_libraries(test_game PRIVATE ECS)
     endif()
+    
     add_test(NAME Game_Tests COMMAND test_game)
 endif()
 
