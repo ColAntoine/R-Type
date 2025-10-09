@@ -17,39 +17,6 @@ class ComponentFactory : public IComponentFactory {
             return instance;
         }
 
-        void create_position(registry& reg, const entity& e, float x, float y) override
-        {
-            reg.emplace_component<position>(e, x, y);
-        }
-        void create_velocity(registry& reg, const entity& e, float vx, float vy) override
-        {
-            reg.emplace_component<velocity>(e, vx, vy);
-        }
-        void create_collider(registry& reg, const entity& e, float w, float h, float ox, float oy, bool trigger) override
-        {
-            reg.emplace_component<collider>(e, w, h, ox, oy, trigger);
-        }
-        void create_sprite(registry& reg, const entity& e, const std::string& texture_path, float w, float h, float scale_x, float scale_y) override
-        {
-            reg.emplace_component<sprite>(e, texture_path, w, h, scale_x, scale_y);
-        }
-        // void create_drawable(registry& reg, const entity& e, float w, float h, unsigned char r, unsigned char g, unsigned char b, unsigned char a) override
-        // {
-        //     reg.emplace_component<drawable>(e, w, h, r, g, b, a);
-        // }
-        // void create_controllable(registry& reg, const entity& e, float speed) override
-        // {
-        //     reg.emplace_component<controllable>(e, speed);
-        // }
-        // void create_enemy(registry& reg, const entity& e, int enemy_type, float health) override
-        // {
-        //     reg.emplace_component<enemy>(e, enemy_type, health);
-        // }
-        // void create_remote_player(registry& reg, const entity& e, const std::string& client_id) override
-        // {
-        //     reg.emplace_component<remote_player>(e, client_id);
-        // }
-
     private:
         ComponentFactory() = default;
         ~ComponentFactory() = default;
