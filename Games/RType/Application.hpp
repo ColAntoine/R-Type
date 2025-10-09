@@ -1,88 +1,82 @@
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** Application (Client)
+*/
+
 #pragma once
 
-#include "Core/EventManager.hpp"
+#include "Core/GameCore.hpp"
+#include "Core/Client/EventManager.hpp"
 #include "Core/Services/ServiceManager.hpp"
-#include "Core/Events.hpp"
 #include "Core/Services/Input/Input.hpp"
 #include "Core/Services/Network/Network.hpp"
 #include "Core/Services/Render/Render.hpp"
+#include "Core/States/GameStateManager.hpp"
 #include "Core/Systems/Input/Input.hpp"
 #include "Core/Systems/Network/Network.hpp"
-#include "Core/States/GameStateManager.hpp"
-#include "ECS/Registry.hpp"
-#include "ECS/Entity.hpp"
-#include "ECS/DLLoader.hpp"
-#include "ECS/ComponentFactory.hpp"
 #include <memory>
-#include <sstream>
-#include <iostream>
+#include <string>
 
-#define PLAYER_WIDTH 40.0f
-#define PLAYER_HEIGHT 40.0f
+/**
+ * @brief Client application (with UI, rendering, input)
+ */
+class Application : public GameCore {
+private:
+    // Client-specific
+    EventManager event_manager_;
+    ServiceManager service_manager_;
+    GameStateManager state_manager_;
 
-class Application {
-    private:
-        // Core systems
-        EventManager event_manager_;
-        ServiceManager service_manager_;
+    std::unique_ptr<InputSystem> input_system_;
+    std::unique_ptr<NetworkSystem> network_system_;
 
-        // ECS
-        registry ecs_registry_;
-        entity local_player_entity_;
-        DLLoader system_loader_;
-        IComponentFactory* component_factory_;
+    entity local_player_entity_;
+    int local_player_id_{0};
+    std::string player_name_{"Player"};
+    bool running_{false};
 
-        // ECS Systems
-        std::unique_ptr<InputSystem> input_system_;
-        std::unique_ptr<NetworkSystem> network_system_;
+public:
+    Application() = default;
+    ~Application() override = default;
 
-        // Game State Management
-        GameStateManager state_manager_;
+    bool initialize();
+    void run();
+    void shutdown();
 
-        // Game state
-        bool running_ = false;
-        int local_player_id_ = 0;
-        std::string player_name_ = "Player";
+    // Network
+    bool connect_to_server(const std::string& server_ip, int server_port);
+    void send_ready_signal(bool ready);
 
-    public:
-        Application() : component_factory_(nullptr) {}
-        ~Application() = default;
+    // Getters
+    EventManager& get_event_manager() { return event_manager_; }
+    ServiceManager& get_service_manager() { return service_manager_; }
+    GameStateManager& get_state_manager() { return state_manager_; }
 
-        bool initialize();
-        void run();
-        void shutdown();
+    entity get_local_player() const { return local_player_entity_; }
+    entity get_local_player_entity() const { return local_player_entity_; }  // ✅ Alias
+    int get_local_player_id() const { return local_player_id_; }
 
-        // Connection management (moved from initialize)
-        bool connect_to_server(const std::string& server_ip, int server_port);
-        void send_ready_signal(bool ready);
+    registry& get_ecs_registry() { return ecs_registry_; }
+    const registry& get_ecs_registry() const { return ecs_registry_; }
 
-    private:
-        void setup_ecs();
-        void load_systems();
-        void service_setup();
-        void setup_event_handlers();
-        void setup_game_states();
+    const std::string& get_player_name() const { return player_name_; }
+    void set_player_name(const std::string& name) { player_name_ = name; }
 
-    public:
-        // Getters for states to access application systems
-        EventManager& get_event_manager() { return event_manager_; }
-        ServiceManager& get_service_manager() { return service_manager_; }
-        registry& get_ecs_registry() { return ecs_registry_; }
-        IComponentFactory* get_component_factory() { return component_factory_; }
-        entity get_local_player_entity() const { return local_player_entity_; }
-        int get_local_player_id() const { return local_player_id_; }
-        const std::string& get_player_name() const { return player_name_; }
-        void set_player_name(const std::string& name) { 
-            // Limit player name to 31 characters (32-1 for null terminator)
-            if (name.length() > 31) {
-                player_name_ = name.substr(0, 31);
-            } else {
-                player_name_ = name.empty() ? "Player" : name;
-            }
-        }
-        DLLoader& get_system_loader() { return system_loader_; }
+    // ECS update methods
+    void update_ecs_systems(float delta_time);
+    void update_traditional_ecs_systems(float delta_time);
 
-        // ECS update methods for states to use
-        void update_ecs_systems(float delta_time);
-        void update_traditional_ecs_systems(float delta_time);
+protected:
+    /**
+     * @brief Load client-specific systems (override from GameCore)
+     */
+    void load_specific_systems() override;
+
+private:
+    void service_setup();
+    void setup_event_handlers();
+    void setup_game_states();
+    void setup_player_entity();
 };

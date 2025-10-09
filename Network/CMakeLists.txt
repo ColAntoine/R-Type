@@ -1,11 +1,15 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 project(RType_Network VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find packages
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+# ============================================================================
+# Find Dependencies
+# ============================================================================
 find_package(Threads REQUIRED)
 
 # Try to find Asio (standalone or Boost.Asio)
@@ -29,15 +33,9 @@ else()
     message(STATUS "Using standalone Asio from: ${ASIO_INCLUDE_DIR}")
 endif()
 
-# Include directories
-include_directories(include)
-
-if(USE_STANDALONE_ASIO)
-    include_directories(${ASIO_INCLUDE_DIR})
-    add_definitions(-DASIO_STANDALONE)
-endif()
-
-# Source files
+# ============================================================================
+# Source Files (Transport Layer only)
+# ============================================================================
 set(NETWORK_SOURCES
     src/network_manager.cpp
     src/connection.cpp
@@ -46,10 +44,8 @@ set(NETWORK_SOURCES
     src/message_handler.cpp
     src/protocol.cpp
     src/game_handlers.cpp
-    src/enemy_manager.cpp
 )
 
-# Header files (for IDE support)
 set(NETWORK_HEADERS
     include/network_manager.hpp
     include/connection.hpp
@@ -60,11 +56,19 @@ set(NETWORK_HEADERS
     include/game_handlers.hpp
 )
 
-# Create the network library
+# ============================================================================
+# Network Library (Transport Layer)
+# ============================================================================
 add_library(rtype_network STATIC ${NETWORK_SOURCES} ${NETWORK_HEADERS})
 
-# Set target properties
-target_include_directories(rtype_network PUBLIC include)
+set_target_properties(rtype_network PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
+
+# Include directories
+target_include_directories(rtype_network PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 if(USE_STANDALONE_ASIO)
     target_include_directories(rtype_network PUBLIC ${ASIO_INCLUDE_DIR})
@@ -78,35 +82,32 @@ if(USE_BOOST_ASIO)
     target_link_libraries(rtype_network PUBLIC Boost::system)
 endif()
 
-# Create the server executable
-add_executable(rtype_server main.cpp)
-target_link_libraries(rtype_server PRIVATE rtype_network)
-
-# Compiler flags
+# ============================================================================
+# Compiler Flags
+# ============================================================================
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(rtype_network PRIVATE -Wall -Wextra -Wpedantic)
-    target_compile_options(rtype_server PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(rtype_network PRIVATE -Wall -Wextra -Wpedantic -fPIC)
 endif()
 
 # Enable debug symbols in debug builds
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 
+# ============================================================================
 # Installation (optional)
-install(TARGETS rtype_server rtype_network
-    RUNTIME DESTINATION bin
+# ============================================================================
+install(TARGETS rtype_network
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
 )
 
 install(DIRECTORY include/ DESTINATION include/rtype_network)
 
-# Print configuration summary
+# ============================================================================
+# Print Configuration Summary
+# ============================================================================
 message(STATUS "=== RType Network Configuration ===")
-message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
-message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
-if(USE_STANDALONE_ASIO)
-    message(STATUS "Asio: Standalone (${ASIO_INCLUDE_DIR})")
-else()
-    message(STATUS "Asio: Boost.Asio ${Boost_VERSION}")
-endif()
-message(STATUS "====================================")
+message(STATUS "  Transport Layer Only (no game logic)")
+message(STATUS "  ASIO: ${USE_STANDALONE_ASIO}")
+message(STATUS "  Boost.ASIO: ${USE_BOOST_ASIO}")
+message(STATUS "  Sources: ${NETWORK_SOURCES}")
+message(STATUS "===================================")

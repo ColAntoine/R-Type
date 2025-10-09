@@ -154,8 +154,8 @@ void InGameState::update_hud() {
         if (position_text) {
             auto& ecs_registry = app_->get_ecs_registry();
             if (auto* pos_arr = ecs_registry.get_if<position>();
-                pos_arr && pos_arr->size() > static_cast<size_t>(app_->get_local_player_entity())) {
-                auto& player_pos = (*pos_arr)[static_cast<size_t>(app_->get_local_player_entity())];
+                pos_arr && pos_arr->size() > static_cast<size_t>(app_->get_local_player())) {
+                auto& player_pos = (*pos_arr)[static_cast<size_t>(app_->get_local_player())];
                 position_text->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
             }
         }

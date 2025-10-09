@@ -7,12 +7,12 @@
 
 #pragma once
 
-#include "GameState.hpp"
+#include "Core/States/GameState.hpp"
 #include "UI/UIManager.hpp"
 #include "UI/Components/UIButton.hpp"
 #include "UI/Components/UIText.hpp"
 #include "UI/Components/UIPanel.hpp"
-#include "Core/Events.hpp"
+#include "Core/Client/Events.hpp"
 #include <vector>
 #include <string>
 

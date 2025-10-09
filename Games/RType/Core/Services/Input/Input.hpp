@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Services/ServiceManager.hpp"
-#include "Core/EventManager.hpp"
-#include "Core/Events.hpp"
+#include "Core/Client/EventManager.hpp"
+#include "Core/Client/Events.hpp"
 #include <raylib.h>
 
 class InputService : public IService {

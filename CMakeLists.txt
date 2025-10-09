@@ -127,24 +127,49 @@ else()
     message(WARNING "No main.cpp found for r-type_client")
 endif()
 
-# Build Network executable (r-type_server)
-file(GLOB_RECURSE NETWORK_SOURCES "Network/*.cpp")
-list(FILTER NETWORK_SOURCES EXCLUDE REGEX ".*/Network/test/.*")
-if(NETWORK_SOURCES)
-    add_executable(r-type_server ${NETWORK_SOURCES})
+# ============================================================================
+# Build r-type_server Executable
+# ============================================================================
+# ✅ NOUVEAU: Utiliser Games/RType/Core/Server/server_main.cpp comme point d'entrée
+if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/Core/Server/server_main.cpp")
+    # Collecter UNIQUEMENT les sources Network (SANS main.cpp qui n'existe plus)
+    file(GLOB_RECURSE NETWORK_SOURCES "Network/src/*.cpp")
+    file(GLOB_RECURSE NETWORK_INCLUDE "Network/include/*.hpp")
+    
+    # Exclure les tests
+    list(FILTER NETWORK_SOURCES EXCLUDE REGEX ".*/Network/test/.*")
+    
+    # ✅ Créer l'exécutable avec server_main.cpp + Network sources
+    add_executable(r-type_server 
+        "${CMAKE_SOURCE_DIR}/Games/RType/Core/Server/server_main.cpp"
+        ${NETWORK_SOURCES}
+    )
+
     target_include_directories(r-type_server PRIVATE
         Network
         Network/include
+        Games/RType
+        Games/RType/Core
+        Games/RType/Core/Server
+        ECS/include
     )
 
-    # Link with required system libraries for Asio
+    # Link avec les dépendances nécessaires
     find_package(Threads REQUIRED)
-    target_link_libraries(r-type_server
+    target_link_libraries(r-type_server PRIVATE
+        RType
         Threads::Threads
         asio::asio
     )
 
-    # Note: Server doesn't link with ECS to avoid raylib dependency
+    # ✅ Link avec ECS si le serveur en a besoin
+    if(TARGET ECS)
+        target_link_libraries(r-type_server PRIVATE ECS)
+    endif()
+
+    message(STATUS "✅ r-type_server configured with Games/RType/Core/Server/server_main.cpp")
+else()
+    message(FATAL_ERROR "❌ Games/RType/Core/Server/server_main.cpp NOT FOUND!")
 endif()
 
 # Set output directories
@@ -202,10 +227,9 @@ endif()
 
 file(GLOB NETWORK_TEST_SOURCES "Network/test/*.cpp")
 if(NETWORK_TEST_SOURCES)
-    # Add necessary Network source files for testing (excluding main)
-    file(GLOB_RECURSE NETWORK_IMPL_SOURCES "Network/*.cpp")
+    # Add necessary Network source files for testing
+    file(GLOB_RECURSE NETWORK_IMPL_SOURCES "Network/src/*.cpp")
     list(FILTER NETWORK_IMPL_SOURCES EXCLUDE REGEX ".*/Network/test/.*")
-    list(FILTER NETWORK_IMPL_SOURCES EXCLUDE REGEX ".*/Network/main.cpp")
 
     add_executable(test_network ${NETWORK_TEST_SOURCES} ${NETWORK_IMPL_SOURCES})
     target_include_directories(test_network PRIVATE Network Network/include)

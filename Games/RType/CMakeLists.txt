@@ -125,10 +125,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Find required dependencies when building standalone
     find_package(raylib CONFIG REQUIRED)
     find_package(glfw3 CONFIG REQUIRED)
-    
-    # Check if main.cpp exists
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-        add_executable(${RTYPE_PROJECT_NAME}_exe ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+
+    # Check if main_server.cpp exists
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/server_main.cpp")
+        add_executable(${RTYPE_PROJECT_NAME}_exe ${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/server_main.cpp)
         target_link_libraries(${RTYPE_PROJECT_NAME}_exe PRIVATE ${RTYPE_PROJECT_NAME})
         set_target_properties(${RTYPE_PROJECT_NAME}_exe PROPERTIES
             OUTPUT_NAME "r-type_client"

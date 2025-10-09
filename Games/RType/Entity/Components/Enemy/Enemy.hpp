@@ -8,11 +8,21 @@
 #pragma once
 
 #include "ECS/Components/IComponent.hpp"
+#include <cstdint>
+
+enum EnemyAIType : uint8_t {
+    BASIC = 1,
+    SINE_WAVE = 2,
+    FAST = 3,
+    ZIGZAG = 4
+};
 
 struct enemy : public IComponent {
-    int enemy_type{0};  // 0=basic, 1=fast, 2=heavy, etc.
-    float health{1.0f};
+    EnemyAIType enemy_type{BASIC};
+    float timer{0.0f};
+    float movement_pattern{0.0f};
 
-    enemy();
-    enemy(int type, float hp = 1.0f);
+    enemy() = default;
+    enemy(EnemyAIType type) : enemy_type(type) {}
+    enemy(uint8_t type) : enemy_type(static_cast<EnemyAIType>(type)) {}
 };
