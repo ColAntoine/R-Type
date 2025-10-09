@@ -41,6 +41,7 @@ set(RTYPE_INCLUDE_DIRS
 
 # Create RType library
 add_library(${RTYPE_PROJECT_NAME} STATIC ${RTYPE_SOURCES})
+set_target_properties(${RTYPE_PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)  # <--- add this
 
 # Set include directories for the library
 target_include_directories(${RTYPE_PROJECT_NAME} PUBLIC
@@ -91,6 +92,7 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC
         raylib
         glfw
+        ${RTYPE_PROJECT_NAME}          # <--- add this
     )
     
     # Link with ECS library if available

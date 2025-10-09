@@ -7,6 +7,7 @@
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Projectile/Projectile.hpp"
 
 
 void Application::load_systems() {
@@ -16,6 +17,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
 }
 
 void Application::service_setup() {
@@ -35,7 +37,7 @@ bool Application::initialize() {
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
         network_system_ = std::make_unique<NetworkSystem>(&event_manager_,
-            &service_manager_.get_service<NetworkService>(), component_factory_);
+        &service_manager_.get_service<NetworkService>(), component_factory_);
 
         // Subscribe to application events
         setup_event_handlers();
@@ -121,15 +123,15 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
+    // Create local player entity using factory methods
+    local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_component<controllable>(ecs_registry_, local_player_entity_, 200.0f);
     component_factory_->create_component<Weapon>(ecs_registry_, local_player_entity_);
 
-    // Create local player entity using factory methods
-    local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_position(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_velocity(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_collider(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
-    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
+    // component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
     // component_factory_->create_controllable(ecs_registry_, local_player_entity_, 200.0f);
     component_factory_->create_sprite(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }

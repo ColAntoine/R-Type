@@ -19,6 +19,6 @@ struct Projectile : public IComponent {
     float _radius{4.0f};   // collision radius
     bool _friendly{true};  // whether it should hit enemies or players
 
-    Projectile() = default;
+    Projectile();
     Projectile(int owner, int dmg, float spd, float dx, float dy, float life = 5.0f, float rad = 4.0f, bool friendly = true);
 };

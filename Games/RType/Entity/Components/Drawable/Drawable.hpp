@@ -15,5 +15,5 @@ struct drawable : public IComponent {
 
     drawable();
     drawable(float nw, float nh, unsigned char nr = 255, unsigned char ng = 255,
-             unsigned char nb = 255, unsigned char na = 255);
+            unsigned char nb = 255, unsigned char na = 255);
 };

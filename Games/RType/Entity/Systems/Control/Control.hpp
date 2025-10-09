@@ -13,9 +13,6 @@ class ControlSystem : public ISystem {
 public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "ControlSystem"; }
-
-private:
-    void checkShoot(registry& r);
 };
 
 extern "C" {

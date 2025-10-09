@@ -29,21 +29,6 @@ void ControlSystem::update(registry& r, float dt) {
         vel.vx = vx;
         vel.vy = vy;
     }
-    checkShoot(r);
-}
-
-void ControlSystem::checkShoot(registry &r)
-{
-    auto *weaponArr = r.get_if<Weapon>();
-
-    if (!weaponArr) return;
-
-    for (auto [weapon, entity] : zipper(*weaponArr)) {
-        if (IsKeyDown(KEY_SPACE)) {
-            weapon._wantsToFire = true;
-            std::cout << "want to shoot" << std::endl;
-        }
-    }
 }
 
 std::unique_ptr<ISystem> create_system() {
