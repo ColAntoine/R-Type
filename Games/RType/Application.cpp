@@ -5,6 +5,8 @@
 #include "States/WaitingLobby/WaitingLobby.hpp"
 #include "States/InGame/InGame.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
 
 
 void Application::load_systems() {
@@ -13,6 +15,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
 }
 
 void Application::service_setup() {
@@ -118,7 +121,9 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
-    
+    component_factory_->create_component<controllable>(ecs_registry_, local_player_entity_, 200.0f);
+    component_factory_->create_component<Weapon>(ecs_registry_, local_player_entity_);
+
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_position(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
@@ -157,7 +162,6 @@ void Application::update_ecs_systems(float delta_time) {
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
     system_loader_.update_all_systems(ecs_registry_, delta_time);
-    
 }
 
 void Application::setup_game_states() {

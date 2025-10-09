@@ -9,7 +9,6 @@
 
 #include "Projectile.hpp"
 
-Projectile::Projectile() {}
 Projectile::Projectile(int owner, int dmg, float spd, float dx, float dy, float life, float rad, bool isFriendly)
 : _ownerId(owner),
 _damage(dmg),

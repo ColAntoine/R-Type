@@ -19,6 +19,7 @@ struct Weapon : public IComponent {
     float _projectileSpeed{400.0f};          // default projectile speed
     int _ammo{-1};                           // -1 = infinite
     bool _automatic{false};                  // hold to fire
+    bool _wantsToFire{false};                // request to fire set by input/system
 
     Weapon() = default;
     Weapon(int owner, const std::string &projType, float rate, int dmg, float projSpeed, int am = -1, bool autoFire = false);

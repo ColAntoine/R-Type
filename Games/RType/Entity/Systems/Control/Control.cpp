@@ -5,8 +5,10 @@
 ** Control System Implementation
 */
 
+#include <iostream>
 #include <raylib.h>
 #include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Systems/Control/Control.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
@@ -26,6 +28,21 @@ void ControlSystem::update(registry& r, float dt) {
         if (IsKeyDown(KEY_UP))    vy -= speed;
         vel.vx = vx;
         vel.vy = vy;
+    }
+    checkShoot(r);
+}
+
+void ControlSystem::checkShoot(registry &r)
+{
+    auto *weaponArr = r.get_if<Weapon>();
+
+    if (!weaponArr) return;
+
+    for (auto [weapon, entity] : zipper(*weaponArr)) {
+        if (IsKeyDown(KEY_SPACE)) {
+            weapon._wantsToFire = true;
+            std::cout << "want to shoot" << std::endl;
+        }
     }
 }
 
