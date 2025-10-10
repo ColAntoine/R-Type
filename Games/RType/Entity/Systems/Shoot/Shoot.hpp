@@ -12,6 +12,7 @@
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+#include "Entity/Components/Health/Health.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 
@@ -24,6 +25,11 @@ class Shoot : public ISystem {
 public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "Shoot"; }
+
+private:
+    void spawnProjectiles(registry &r, float dt);
+    void checkShootIntention(registry & r);
+    void checkEnnemyHits(registry & r);
 };
 
 extern "C" {

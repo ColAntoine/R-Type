@@ -8,14 +8,15 @@
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
+#include "Entity/Components/Health/Health.hpp"
 
 
 void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libposition_system.so");
     system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
+    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
-    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
 }
@@ -26,6 +27,24 @@ void Application::service_setup() {
     service_manager_.register_service<NetworkService>(&event_manager_);
     service_manager_.register_service<RenderService>(&event_manager_);
     service_manager_.initialize();
+
+    try {
+        int screen_w = 1024;
+        int screen_h = 768;
+
+        constexpr float SQUARE_SIZE = 64.0f;
+        float cx = static_cast<float>(screen_w) / 2.0f;
+        float cy = static_cast<float>(screen_h) / 2.0f;
+
+        // spawn entity and add components
+        auto test_square = ecs_registry_.spawn_entity();
+        component_factory_->create_position(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
+        component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
+        component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
+        component_factory_->create_component<Health>(ecs_registry_, test_square);
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
+    }
 }
 
 bool Application::initialize() {

@@ -11,8 +11,8 @@
 
 class LifetimeSystem : public ISystem {
 private:
-    int window_width = 800;
-    int window_height = 600;
+    int window_width = 1024;
+    int window_height = 768;
 
 public:
     void update(registry& r, float dt = 0.0f) override;
