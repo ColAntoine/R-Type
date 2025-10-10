@@ -69,10 +69,9 @@ void UIPanel::clear_children() {
 
 void UIPanel::arrange_children_vertically(float spacing, float margin) {
     float current_y = position_.y + margin;
-    
+
     for (auto& child : children_) {
         if (child && child->is_visible()) {
-            Vector2 child_pos = child->get_position();
             child->set_position(position_.x + margin, current_y);
             current_y += child->get_size().y + spacing;
         }
@@ -81,10 +80,9 @@ void UIPanel::arrange_children_vertically(float spacing, float margin) {
 
 void UIPanel::arrange_children_horizontally(float spacing, float margin) {
     float current_x = position_.x + margin;
-    
+
     for (auto& child : children_) {
         if (child && child->is_visible()) {
-            Vector2 child_pos = child->get_position();
             child->set_position(current_x, position_.y + margin);
             current_x += child->get_size().x + spacing;
         }

@@ -14,6 +14,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+    system_loader_.load_system_from_so("lib/systems/libanimation_system.so");
 }
 
 void Application::service_setup() {
@@ -119,14 +120,15 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
-    
+
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_component<position>(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_component<velocity>(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
-    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
-    component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
+    component_factory_->create_component<animation>(ecs_registry_, local_player_entity_, "assets/dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25);
+    // component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
+    // component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 
 void Application::setup_event_handlers() {
@@ -143,7 +145,7 @@ void Application::setup_event_handlers() {
     });
 
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](const NetworkDisconnectedEvent& e) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this](__attribute_maybe_unused__ const NetworkDisconnectedEvent& e) {
         running_ = false;
     });
 }
@@ -157,7 +159,7 @@ void Application::update_ecs_systems(float delta_time) {
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
     system_loader_.update_all_systems(ecs_registry_, delta_time);
-    
+
 }
 
 void Application::setup_game_states() {

@@ -23,17 +23,17 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
         handle_player_move(e);
     });
 
-    // event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
-    //     handle_enemy_spawn(e);
-    // });
+    event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
+        handle_enemy_spawn(e);
+    });
 
-    // event_manager_->subscribe<EnemyUpdateEvent>([this](const EnemyUpdateEvent& e) {
-    //     handle_enemy_update(e);
-    // });
+    event_manager_->subscribe<EnemyUpdateEvent>([this](const EnemyUpdateEvent& e) {
+        handle_enemy_update(e);
+    });
 
-    // event_manager_->subscribe<EnemyDestroyEvent>([this](const EnemyDestroyEvent& e) {
-    //     handle_enemy_destroy(e);
-    // });
+    event_manager_->subscribe<EnemyDestroyEvent>([this](const EnemyDestroyEvent& e) {
+        handle_enemy_destroy(e);
+    });
 
     event_manager_->subscribe<EntityCreateEvent>([this](const EntityCreateEvent& e) {
         handle_entity_create(e);
@@ -44,7 +44,7 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
     });
 }
 
-void NetworkSystem::update(registry& ecs_registry, float delta_time) {
+void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
     // Process pending player joins
     for (const auto& join_event : pending_joins_) {
         auto it = remote_players_.find(join_event.player_id);
@@ -178,7 +178,7 @@ void NetworkSystem::handle_enemy_destroy(const EnemyDestroyEvent& e) {
     pending_enemy_destroys_.push_back(e);
 }
 
-entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, float health) {
+entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, __attribute_maybe_unused__ float health) {
     entity enemy_entity = ecs_registry.spawn_entity();
 
     // Use factory methods instead of direct component creation
