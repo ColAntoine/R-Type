@@ -5,6 +5,7 @@
 #include "Core/Services/Input/Input.hpp"
 #include "Core/Services/Network/Network.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/LifeTime/LifeTime.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Entity.hpp"

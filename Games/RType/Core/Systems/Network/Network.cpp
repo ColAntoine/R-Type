@@ -23,17 +23,17 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
         handle_player_move(e);
     });
 
-    event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
-        handle_enemy_spawn(e);
-    });
+    // event_manager_->subscribe<EnemySpawnEvent>([this](const EnemySpawnEvent& e) {
+    //     handle_enemy_spawn(e);
+    // });
 
-    event_manager_->subscribe<EnemyUpdateEvent>([this](const EnemyUpdateEvent& e) {
-        handle_enemy_update(e);
-    });
+    // event_manager_->subscribe<EnemyUpdateEvent>([this](const EnemyUpdateEvent& e) {
+    //     handle_enemy_update(e);
+    // });
 
-    event_manager_->subscribe<EnemyDestroyEvent>([this](const EnemyDestroyEvent& e) {
-        handle_enemy_destroy(e);
-    });
+    // event_manager_->subscribe<EnemyDestroyEvent>([this](const EnemyDestroyEvent& e) {
+    //     handle_enemy_destroy(e);
+    // });
 
     event_manager_->subscribe<EntityCreateEvent>([this](const EntityCreateEvent& e) {
         handle_entity_create(e);
@@ -197,6 +197,8 @@ entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int ene
     }
 
     component_factory_->create_component<collider>(ecs_registry, enemy_entity, 30.0f, 30.0f);
+    // Add lifetime component so enemies can be cleaned up by Lifetime system
+    // component_factory_->create_component<lifetime>(ecs_registry, enemy_entity, 10.0f, false, true);
     // component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);
 
     std::cout << "Created enemy entity " << enemy_entity << " for enemy " << enemy_id << " (type " << enemy_type << ")" << std::endl;

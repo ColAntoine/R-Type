@@ -1,4 +1,5 @@
 #include "Application.hpp"
+#include "States/Loading/Loading.hpp"
 #include "States/MainMenu/MainMenu.hpp"
 #include "States/Settings/Settings.hpp"
 #include "States/Lobby/Lobby.hpp"
@@ -70,8 +71,8 @@ void Application::run() {
 
     auto& render_service = service_manager_.get_service<RenderService>();
 
-    // Start with main menu
-    state_manager_.push_state("MainMenu");
+    // Start with loading screen
+    state_manager_.push_state("Loading");
 
     while (running_ && !render_service.should_close() && !state_manager_.is_empty()) {
         float delta_time = render_service.get_frame_time();
@@ -161,6 +162,7 @@ void Application::update_traditional_ecs_systems(float delta_time) {
 
 void Application::setup_game_states() {
     // Register all game states with factory functions
+    state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
 
     // Register Settings state with Application pointer using custom factory
