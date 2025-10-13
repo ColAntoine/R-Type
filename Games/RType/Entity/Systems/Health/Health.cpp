@@ -89,7 +89,7 @@ void HealthSys::addScore(registry &r)
 
     // increment the score by 1
     scoreArr = r.get_if<Score>();
-    if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size()) {
+    if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size() && r.has<Score>(scoreEnt)) {
         (*scoreArr)[static_cast<size_t>(scoreEnt)]._score += 1;
     }
 }
