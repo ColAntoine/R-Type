@@ -109,6 +109,10 @@ void InGameState::setup_hud() {
     auto position_text = std::make_shared<UIText>(10, 85, "Position: (0, 0)", 20);
     position_text->set_text_color({200, 200, 200, 255}); // Light gray
     ui_manager_.add_component("position_text", position_text);
+
+    auto scoreText = std::make_shared<UIText>(10, 100, "Score: 0", 20);
+    scoreText->set_text_color({200, 200, 200, 255});
+    ui_manager_.add_component("score_text", scoreText);
 }
 
 void InGameState::cleanup_hud() {
@@ -158,6 +162,11 @@ void InGameState::update_hud() {
                 auto& player_pos = (*pos_arr)[static_cast<size_t>(app_->get_local_player_entity())];
                 position_text->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
             }
+        }
+
+        auto scoreText = ui_manager_.get_component<UIText>("score_text");
+        if (scoreText) {
+            scoreText->set_text("Score: " + app_->getScore());
         }
     } catch (const std::exception& e) {
         std::cerr << "Exception in update_hud(): " << e.what() << std::endl;
