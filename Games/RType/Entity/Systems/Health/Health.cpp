@@ -16,7 +16,7 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 
-void HealthSys::update(registry& r, float dt) {
+void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
 }
