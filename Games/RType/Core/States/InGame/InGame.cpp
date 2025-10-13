@@ -8,6 +8,7 @@
 #include "InGame.hpp"
 #include "Application.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "Entity/Components/Score/Score.hpp"
 #include <iostream>
 #include <raylib.h>
 
@@ -166,7 +167,14 @@ void InGameState::update_hud() {
 
         auto scoreText = ui_manager_.get_component<UIText>("score_text");
         if (scoreText) {
-            scoreText->set_text("Score: " + app_->getScore());
+            auto& ecs_registry = app_->get_ecs_registry();
+            auto* score_arr = ecs_registry.get_if<Score>();
+            if (score_arr) {
+                if (score_arr->size() > 0) {
+                    unsigned value = (*score_arr)[0]._score;
+                    scoreText->set_text("Score: " + std::to_string(value));
+                }
+            }
         }
     } catch (const std::exception& e) {
         std::cerr << "Exception in update_hud(): " << e.what() << std::endl;

@@ -114,14 +114,6 @@ void Application::run() {
         // Process events
         event_manager_.process_events();
 
-        auto* score_ar = ecs_registry_.get_if<Score>();
-        if (score_ar) {
-            for (auto [score, ent] : zipper(*score_ar)) {
-                _score = score._score;
-                break;
-            }
-        }
-
         // Update state manager
         state_manager_.update(delta_time);
 

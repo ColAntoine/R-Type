@@ -43,7 +43,6 @@ class Application {
         bool running_ = false;
         int local_player_id_ = 0;
         std::string player_name_ = "Player";
-        unsigned _score = 0;
 
     public:
         Application() : component_factory_(nullptr) {}
@@ -73,8 +72,7 @@ class Application {
         entity get_local_player_entity() const { return local_player_entity_; }
         int get_local_player_id() const { return local_player_id_; }
         const std::string& get_player_name() const { return player_name_; }
-        unsigned getScore() { return _score; };
-        void set_player_name(const std::string& name) { 
+        void set_player_name(const std::string& name) {
             // Limit player name to 31 characters (32-1 for null terminator)
             if (name.length() > 31) {
                 player_name_ = name.substr(0, 31);
