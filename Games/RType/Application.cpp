@@ -5,6 +5,11 @@
 #include "States/WaitingLobby/WaitingLobby.hpp"
 #include "States/InGame/InGame.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Projectile/Projectile.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Score/Score.hpp"
 
 
 void Application::load_systems() {
@@ -19,6 +24,8 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_EnemySpawnSystem.so");
     system_loader_.load_system_from_so("lib/systems/libgame_NetworkSyncSystem.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Spawn.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
 }
 
 void Application::service_setup() {
@@ -27,6 +34,25 @@ void Application::service_setup() {
     service_manager_.register_service<NetworkService>(&event_manager_);
     service_manager_.register_service<RenderService>(&event_manager_);
     service_manager_.initialize();
+
+    try {
+        int screen_w = 1024;
+        int screen_h = 768;
+
+        constexpr float SQUARE_SIZE = 64.0f;
+        float cx = static_cast<float>(screen_w) / 2.0f;
+        float cy = static_cast<float>(screen_h) / 2.0f;
+
+        // spawn entity and add components
+        auto test_square = ecs_registry_.spawn_entity();
+        component_factory_->create_component<position>(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
+        component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
+        component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
+        component_factory_->create_component<Health>(ecs_registry_, test_square, 10);
+        component_factory_->create_component<Enemy>(ecs_registry_, test_square);
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
+    }
 }
 
 bool Application::initialize() {
@@ -38,7 +64,7 @@ bool Application::initialize() {
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
         network_system_ = std::make_unique<NetworkSystem>(&event_manager_,
-            &service_manager_.get_service<NetworkService>(), component_factory_);
+        &service_manager_.get_service<NetworkService>(), component_factory_);
 
         // Subscribe to application events
         setup_event_handlers();
@@ -67,6 +93,8 @@ void Application::send_ready_signal(bool ready) {
     auto& network_service = service_manager_.get_service<NetworkService>();
     network_service.send_ready_signal(ready);
 }
+
+#include "ECS/Zipper.hpp"
 
 void Application::run() {
     if (!running_) {
@@ -124,9 +152,13 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
-    
+    auto score_entity = ecs_registry_.spawn_entity();
+    component_factory_->create_component<Score>(ecs_registry_, score_entity, 0);
+
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
+    component_factory_->create_component<controllable>(ecs_registry_, local_player_entity_, 200.0f);
+    component_factory_->create_component<Weapon>(ecs_registry_, local_player_entity_);
     component_factory_->create_component<position>(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_component<velocity>(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
@@ -148,7 +180,9 @@ void Application::setup_event_handlers() {
     });
 
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](const NetworkDisconnectedEvent& e) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this](
+        __attribute_maybe_unused__ const NetworkDisconnectedEvent& e
+    ) {
         running_ = false;
     });
 }
@@ -162,7 +196,6 @@ void Application::update_ecs_systems(float delta_time) {
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
     system_loader_.update_all_systems(ecs_registry_, delta_time);
-    
 }
 
 void Application::setup_game_states() {

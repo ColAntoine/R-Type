@@ -5,8 +5,10 @@
 ** Control System Implementation
 */
 
+#include <iostream>
 #include <raylib.h>
 #include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Systems/Control/Control.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"

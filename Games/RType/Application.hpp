@@ -72,7 +72,7 @@ class Application {
         entity get_local_player_entity() const { return local_player_entity_; }
         int get_local_player_id() const { return local_player_id_; }
         const std::string& get_player_name() const { return player_name_; }
-        void set_player_name(const std::string& name) { 
+        void set_player_name(const std::string& name) {
             // Limit player name to 31 characters (32-1 for null terminator)
             if (name.length() > 31) {
                 player_name_ = name.substr(0, 31);
@@ -85,4 +85,5 @@ class Application {
         // ECS update methods for states to use
         void update_ecs_systems(float delta_time);
         void update_traditional_ecs_systems(float delta_time);
+
 };

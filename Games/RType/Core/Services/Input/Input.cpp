@@ -15,7 +15,7 @@ void InputService::shutdown() {
     // Nothing to clean up
 }
 
-void InputService::update(float delta_time) {
+void InputService::update(__attribute_maybe_unused__ float delta_time) {
     // Update key states and emit events
     update_keyboard();
     update_mouse();

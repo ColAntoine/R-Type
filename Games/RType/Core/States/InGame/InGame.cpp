@@ -8,6 +8,7 @@
 #include "InGame.hpp"
 #include "Application.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "Entity/Components/Score/Score.hpp"
 #include <iostream>
 #include <raylib.h>
 
@@ -109,6 +110,10 @@ void InGameState::setup_hud() {
     auto position_text = std::make_shared<UIText>(10, 85, "Position: (0, 0)", 20);
     position_text->set_text_color({200, 200, 200, 255}); // Light gray
     ui_manager_.add_component("position_text", position_text);
+
+    auto scoreText = std::make_shared<UIText>(10, 100, "Score: 0", 20);
+    scoreText->set_text_color({200, 200, 200, 255});
+    ui_manager_.add_component("score_text", scoreText);
 }
 
 void InGameState::cleanup_hud() {
@@ -153,10 +158,24 @@ void InGameState::update_hud() {
         auto position_text = ui_manager_.get_component<UIText>("position_text");
         if (position_text) {
             auto& ecs_registry = app_->get_ecs_registry();
-            if (auto* pos_arr = ecs_registry.get_if<position>();
-                pos_arr && pos_arr->size() > static_cast<size_t>(app_->get_local_player_entity())) {
-                auto& player_pos = (*pos_arr)[static_cast<size_t>(app_->get_local_player_entity())];
-                position_text->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
+                if (auto* pos_arr = ecs_registry.get_if<position>(); pos_arr) {
+                    size_t ent_idx = static_cast<size_t>(app_->get_local_player_entity());
+                    if (pos_arr->has(ent_idx)) {
+                        auto& player_pos = pos_arr->get(ent_idx);
+                        position_text->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
+                    }
+                }
+        }
+
+        auto scoreText = ui_manager_.get_component<UIText>("score_text");
+        if (scoreText) {
+            auto& ecs_registry = app_->get_ecs_registry();
+            auto* score_arr = ecs_registry.get_if<Score>();
+            if (score_arr) {
+                if (score_arr->has(0)) {
+                    unsigned value = (*score_arr)[0]._score;
+                    scoreText->set_text("Score: " + std::to_string(value));
+                }
             }
         }
     } catch (const std::exception& e) {

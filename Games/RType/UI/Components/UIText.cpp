@@ -7,7 +7,7 @@
 
 #include "UIText.hpp"
 
-void UIText::update(float delta_time) {
+void UIText::update(__attribute_maybe_unused__ float delta_time) {
     // Text components typically don't need per-frame updates
     // but we keep this for consistency with the UI interface
 }

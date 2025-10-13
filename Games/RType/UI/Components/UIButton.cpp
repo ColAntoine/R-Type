@@ -8,9 +8,9 @@
 #include "UIButton.hpp"
 #include <iostream>
 
-void UIButton::update(float delta_time) {
+void UIButton::update(__attribute_maybe_unused__ float delta_time) {
     if (!visible_) return;
-    
+
     update_state();
 }
 

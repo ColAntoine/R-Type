@@ -17,6 +17,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
+#include "Entity/Components/Health/Health.hpp"
 #include <random>
 #include <memory>
 

@@ -8,7 +8,7 @@
 #pragma once
 
 #include "ECS/Components/IComponent.hpp"
-#include <cstdint>
+#include <cstdint>w
 
 class Enemy : public IComponent {
 public:
