@@ -8,6 +8,8 @@
 #include "NetworkSyncSystem.hpp"
 #include <iostream>
 
+// TODO: IS NOT ALREADY SYNC WITH THE SERVER BUT WE SHOULD USE IT TO COMMUNICATE
+
 NetworkSyncSystem::NetworkSyncSystem(std::shared_ptr<RType::Network::UdpServer> server)
     : server_(server)
 {
