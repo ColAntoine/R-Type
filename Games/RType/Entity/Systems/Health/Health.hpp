@@ -10,6 +10,7 @@
 #include "ECS/Systems/ISystem.hpp"
 
 #include "Components/Health/Health.hpp"
+#include "Components/Score/Score.hpp"
 
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
@@ -21,6 +22,7 @@ public:
     const char* get_name() const override { return "Health"; }
 private:
     void checkAndKill(registry &r);
+    void addScore(registry &r);
 };
 
 extern "C" {

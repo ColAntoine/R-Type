@@ -9,6 +9,7 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Score/Score.hpp"
 
 
 void Application::load_systems() {
@@ -42,7 +43,7 @@ void Application::service_setup() {
         component_factory_->create_position(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
         component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
         component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
-        component_factory_->create_component<Health>(ecs_registry_, test_square);
+        component_factory_->create_component<Health>(ecs_registry_, test_square, 10);
         component_factory_->create_component<enemy>(ecs_registry_, test_square);
     } catch (const std::exception& e) {
         std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
@@ -143,6 +144,9 @@ void Application::setup_ecs() {
     if (!component_factory_) {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
+
+    auto score_entity = ecs_registry_.spawn_entity();
+    component_factory_->create_component<Score>(ecs_registry_, score_entity, 0);
 
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
