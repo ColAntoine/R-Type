@@ -172,7 +172,7 @@ void InGameState::update_hud() {
             auto& ecs_registry = app_->get_ecs_registry();
             auto* score_arr = ecs_registry.get_if<Score>();
             if (score_arr) {
-                if (score_arr->size() > 0) {
+                if (score_arr->has(0)) {
                     unsigned value = (*score_arr)[0]._score;
                     scoreText->set_text("Score: " + std::to_string(value));
                 }
