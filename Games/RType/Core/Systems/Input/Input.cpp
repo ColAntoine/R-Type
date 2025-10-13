@@ -14,7 +14,7 @@ InputSystem::InputSystem(EventManager* event_manager, entity player_entity)
     });
 }
 
-void InputSystem::update(registry& ecs_registry, float delta_time) {
+void InputSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
     // Calculate velocity based on input state
     float vx = 0.0f;
     float vy = 0.0f;

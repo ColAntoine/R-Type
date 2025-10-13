@@ -171,7 +171,9 @@ void Application::setup_event_handlers() {
     });
 
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](const NetworkDisconnectedEvent& e) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this](
+        __attribute_maybe_unused__ const NetworkDisconnectedEvent& e
+    ) {
         running_ = false;
     });
 }
