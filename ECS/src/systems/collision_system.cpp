@@ -15,6 +15,9 @@
 
 using Rect = std::array<float,4>; // {minx, miny, maxx, maxy}
 
+// TODO: create a new system for the penetration maybe call it impactable or smth
+// TODO: but the collider system should only turn the boolean to true
+// (move the respolve pene function to a new sys and add a component for it)
 static inline Rect make_rect(const position &p, const collider &c)
 {
     float x = p.x + c.offset_x;
@@ -54,7 +57,6 @@ void CollisionSystem::update(registry& r, float dt) {
                 std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
                 continue;
             }
-            resolve_penetration(pi, a, pj, b);
         }
     }
 }

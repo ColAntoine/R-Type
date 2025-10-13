@@ -101,10 +101,10 @@ namespace RType::Network {
         enemy.max_health = enemy.health;
 
         // Add to tracking
-        enemies_.emplace(enemy_id, enemy);
+        // enemies_.emplace(enemy_id, enemy);
 
         // Broadcast spawn to all clients
-        broadcast_enemy_spawn(enemy);
+        // broadcast_enemy_spawn(enemy);
     }
 
     void EnemyManager::destroy_enemy(uint32_t enemy_id) {

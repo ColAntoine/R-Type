@@ -20,7 +20,7 @@ void NetworkService::shutdown() {
     connected_ = false;
 }
 
-void NetworkService::update(float delta_time) {
+void NetworkService::update(__attribute_maybe_unused__ float delta_time) {
     // Network service doesn't need regular updates
     // All communication is event-driven
 }

@@ -35,7 +35,7 @@ int start_app()
     return 0;
 }
 
-int main(int argc, char* argv[]) {
+int main(__attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* argv[]) {
     std::cout << "=== R-Type Service Architecture Client ===" << std::endl;
     std::cout << "Starting in offline mode - use UI to connect to server" << std::endl;
 

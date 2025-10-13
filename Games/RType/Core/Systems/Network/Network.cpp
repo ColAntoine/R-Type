@@ -44,7 +44,7 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
     });
 }
 
-void NetworkSystem::update(registry& ecs_registry, float delta_time) {
+void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
     // Process pending player joins
     for (const auto& join_event : pending_joins_) {
         auto it = remote_players_.find(join_event.player_id);
@@ -178,7 +178,7 @@ void NetworkSystem::handle_enemy_destroy(const EnemyDestroyEvent& e) {
     pending_enemy_destroys_.push_back(e);
 }
 
-entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, float health) {
+entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, __attribute_maybe_unused__ float health) {
     entity enemy_entity = ecs_registry.spawn_entity();
 
     // Use factory methods instead of direct component creation
@@ -213,13 +213,14 @@ void NetworkSystem::update_enemy_position(registry& ecs_registry, int enemy_id, 
     }
 }
 
-void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id, float health) {
+void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id,
+    __attribute_maybe_unused__ float health) {
     auto it = enemies_.find(enemy_id);
     if (it != enemies_.end()) {
         auto* enemy_array = ecs_registry.get_if<enemy>();
         if (enemy_array && enemy_array->size() > static_cast<size_t>(it->second)) {
-            auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
-            enemy_comp.health = health;
+            // auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
+            // enemy_comp.health = health;
         }
     }
 }
