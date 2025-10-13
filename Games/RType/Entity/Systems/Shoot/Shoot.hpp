@@ -13,6 +13,7 @@
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Enemy/Enemy.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 

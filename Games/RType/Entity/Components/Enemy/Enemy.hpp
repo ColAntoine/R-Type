@@ -11,8 +11,7 @@
 
 struct enemy : public IComponent {
     int enemy_type{0};  // 0=basic, 1=fast, 2=heavy, etc.
-    float health{1.0f};
 
     enemy();
-    enemy(int type, float hp = 1.0f);
+    enemy(int type);
 };

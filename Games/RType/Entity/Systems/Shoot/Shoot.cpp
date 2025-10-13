@@ -74,9 +74,10 @@ void Shoot::checkEnnemyHits(registry &r)
     auto *posArr = r.get_if<position>();
     auto *healthArr = r.get_if<Health>();
     auto *colArr = r.get_if<collider>();
+    auto *enemyArr = r.get_if<enemy>();
     std::vector<entity> entityToKill;
 
-    if (!projArr || !posArr || !healthArr) return;
+    if (!projArr || !posArr || !healthArr || !enemyArr || !colArr) return;
 
     // Iterate projectiles that have a position
     for (auto [proj, ppos, projEntity] : zipper(*projArr, *posArr)) {
@@ -91,28 +92,26 @@ void Shoot::checkEnnemyHits(registry &r)
 
         // If we have collider data for targets, iterate only entities that have Health+Position+Collider.
         // Use direct AABB extents (no half-width computation).
-        if (colArr) {
-            for (auto [hlt, hpos, c, targetEntity] : zipper(*healthArr, *posArr, *colArr)) {
-                if (projEntity == targetEntity) continue;
+        for (auto [hlt, hpos, c, enemyEnt, targetEntity] : zipper(*healthArr, *posArr, *colArr, *enemyArr)) {
+            if (projEntity == targetEntity) continue;
 
-                // Treat collider as top-left (hpos.x, hpos.y) with width c.w and height c.h
-                float left   = hpos.x;
-                float right  = hpos.x + c.w;
-                float top    = hpos.y;
-                float bottom = hpos.y + c.h;
+            // Treat collider as top-left (hpos.x, hpos.y) with width c.w and height c.h
+            float left   = hpos.x;
+            float right  = hpos.x + c.w;
+            float top    = hpos.y;
+            float bottom = hpos.y + c.h;
 
-                // clamp projectile center to rectangle
-                float closestX = std::max(left, std::min(pcenterX, right));
-                float closestY = std::max(top, std::min(pcenterY, bottom));
-                float dx = pcenterX - closestX;
-                float dy = pcenterY - closestY;
-                float dist2 = dx * dx + dy * dy;
+            // clamp projectile center to rectangle
+            float closestX = std::max(left, std::min(pcenterX, right));
+            float closestY = std::max(top, std::min(pcenterY, bottom));
+            float dx = pcenterX - closestX;
+            float dy = pcenterY - closestY;
+            float dist2 = dx * dx + dy * dy;
 
-                if (dist2 <= pr * pr) {
-                    hlt._health -= pdmg;
-                    entityToKill.push_back(entity(projEntity));
-                    break;
-                }
+            if (dist2 <= pr * pr) {
+                hlt._health -= pdmg;
+                entityToKill.push_back(entity(projEntity));
+                break;
             }
         }
     }

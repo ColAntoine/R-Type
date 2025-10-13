@@ -43,6 +43,7 @@ void Application::service_setup() {
         component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
         component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
         component_factory_->create_component<Health>(ecs_registry_, test_square);
+        component_factory_->create_component<enemy>(ecs_registry_, test_square);
     } catch (const std::exception& e) {
         std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
     }

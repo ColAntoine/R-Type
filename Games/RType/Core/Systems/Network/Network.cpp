@@ -219,7 +219,7 @@ void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id, fl
         auto* enemy_array = ecs_registry.get_if<enemy>();
         if (enemy_array && enemy_array->size() > static_cast<size_t>(it->second)) {
             auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
-            enemy_comp.health = health;
+            // enemy_comp.health = health;
         }
     }
 }
