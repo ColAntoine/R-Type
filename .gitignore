@@ -7,3 +7,4 @@ external/vcpkg/
 lib/
 
 r-type_*
+scripts/
