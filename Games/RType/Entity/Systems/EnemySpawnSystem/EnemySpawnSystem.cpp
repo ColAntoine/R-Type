@@ -18,9 +18,9 @@ EnemySpawnSystem::EnemySpawnSystem()
 void EnemySpawnSystem::initialize_if_needed(registry& r) {
     if (initialized_) return;
 
-    // Récupérer factory depuis le registry (via DLLoader)
-    // Note: On suppose que le registry a une méthode pour accéder à la factory
-    // Sinon, il faut passer factory au constructeur
+    // Retrieve factory from the registry (via DLLoader)
+    // Note: We assume the registry has a method to access the factory
+    // Otherwise, the factory must be passed to the constructor
 
     initialized_ = true;
 }
