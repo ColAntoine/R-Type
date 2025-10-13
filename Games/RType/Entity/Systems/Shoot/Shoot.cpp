@@ -31,6 +31,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 {
     auto *weaponArr = r.get_if<Weapon>();
     auto *posArr = r.get_if<position>();
+    auto *colArr = r.get_if<collider>();
 
     if (!weaponArr || !posArr) return;
 
@@ -47,19 +48,24 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         float spawnX = pos.x;
         float spawnY = pos.y;
 
-        auto projectile = r.spawn_entity();
-
         float dirX = 1.0f;
         float dirY = 0.0f;
 
         float life = 5.0f;
         float radius = 4.0f;
 
+        if (colArr && colArr->has(static_cast<size_t>(entity))) {
+            auto &col = colArr->get(static_cast<size_t>(entity));
+            spawnX = pos.x + col.offset_x + col.w;
+            spawnY = pos.y + col.offset_y + col.h / 2.0f - radius;
+        }
+
+        auto projectile = r.spawn_entity();
+
         r.emplace_component<Projectile>(projectile, Projectile(entity, weapon._damage, weapon._projectileSpeed, dirX, dirY, life, radius, true));
         r.emplace_component<position>(projectile, spawnX, spawnY);
         r.emplace_component<velocity>(projectile, dirX * weapon._projectileSpeed, dirY * weapon._projectileSpeed);
         r.emplace_component<drawable>(projectile);
-        r.emplace_component<collider>(projectile);
         r.emplace_component<lifetime>(projectile);
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;

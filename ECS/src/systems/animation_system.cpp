@@ -87,8 +87,8 @@ void AnimationSystem::update(registry& r, float dt) {
 
             // Destination rectangle (where to draw on screen)
             Rectangle dest;
-            if (collider_arr && collider_arr->size() > static_cast<size_t>(entity)) {
-                auto& collider_comp = (*collider_arr)[static_cast<size_t>(entity)];
+            if (collider_arr && collider_arr->has(static_cast<size_t>(entity))) {
+                auto& collider_comp = collider_arr->get(static_cast<size_t>(entity));
                 float collider_center_x = pos.x + collider_comp.offset_x + collider_comp.w / 2.0f;
                 float collider_center_y = pos.y + collider_comp.offset_y + collider_comp.h / 2.0f;
                 dest = {

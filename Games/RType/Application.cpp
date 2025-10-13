@@ -37,25 +37,6 @@ void Application::service_setup() {
     service_manager_.register_service<NetworkService>(&event_manager_);
     service_manager_.register_service<RenderService>(&event_manager_);
     service_manager_.initialize();
-
-    try {
-        int screen_w = 1024;
-        int screen_h = 768;
-
-        constexpr float SQUARE_SIZE = 64.0f;
-        float cx = static_cast<float>(screen_w) / 2.0f;
-        float cy = static_cast<float>(screen_h) / 2.0f;
-
-        // spawn entity and add components
-        auto test_square = ecs_registry_.spawn_entity();
-        component_factory_->create_component<position>(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
-        component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
-        component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
-        component_factory_->create_component<Health>(ecs_registry_, test_square, 10);
-        component_factory_->create_component<Enemy>(ecs_registry_, test_square);
-    } catch (const std::exception& e) {
-        std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
-    }
 }
 
 bool Application::initialize() {
@@ -166,7 +147,7 @@ void Application::setup_ecs() {
     component_factory_->create_component<velocity>(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
     component_factory_->create_component<animation>(ecs_registry_, local_player_entity_, "assets/dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25);
-    // component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
+    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
     // component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 

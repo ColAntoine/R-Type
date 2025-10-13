@@ -159,8 +159,8 @@ void NetworkSystem::update_remote_player_position(registry& ecs_registry, int pl
     auto it = remote_players_.find(player_id);
     if (it != remote_players_.end()) {
         auto* pos_array = ecs_registry.get_if<position>();
-        if (pos_array && pos_array->size() > static_cast<size_t>(it->second)) {
-            (*pos_array)[static_cast<size_t>(it->second)] = position(x, y);
+        if (pos_array && pos_array->has(static_cast<size_t>(it->second))) {
+            pos_array->get(static_cast<size_t>(it->second)) = position(x, y);
         }
     }
 }
@@ -209,8 +209,8 @@ void NetworkSystem::update_enemy_position(registry& ecs_registry, int enemy_id, 
     auto it = enemies_.find(enemy_id);
     if (it != enemies_.end()) {
         auto* pos_array = ecs_registry.get_if<position>();
-        if (pos_array && pos_array->size() > static_cast<size_t>(it->second)) {
-            (*pos_array)[static_cast<size_t>(it->second)] = position(x, y);
+        if (pos_array && pos_array->has(static_cast<size_t>(it->second))) {
+            pos_array->get(static_cast<size_t>(it->second)) = position(x, y);
         }
     }
 }
@@ -220,8 +220,8 @@ void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id,
     auto it = enemies_.find(enemy_id);
     if (it != enemies_.end()) {
         auto* enemy_array = ecs_registry.get_if<Enemy>();
-        if (enemy_array && enemy_array->size() > static_cast<size_t>(it->second)) {
-            // auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
+        if (enemy_array && enemy_array->has(static_cast<size_t>(it->second))) {
+            // auto& enemy_comp = enemy_array->get(static_cast<size_t>(it->second));
             // enemy_comp.health = health;
         }
     }

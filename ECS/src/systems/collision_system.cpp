@@ -57,6 +57,7 @@ void CollisionSystem::update(registry& r, float dt) {
                 std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
                 continue;
             }
+            resolve_penetration(pi, a, pj, b);
         }
     }
 }
