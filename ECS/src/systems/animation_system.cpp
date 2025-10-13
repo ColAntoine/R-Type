@@ -50,22 +50,35 @@ void AnimationSystem::update(registry& r, float dt) {
             }
         }
 
-        // Update animation timer
-        anim.frame_timer += dt;
+        // Update animation timer only if allowed by play_on_movement flag
+        bool should_advance = true;
+        if (anim.play_on_movement) {
+            // If play_on_movement is enabled, check velocity component
+            auto *vel_arr = r.get_if<velocity>();
+            if (!vel_arr || !vel_arr->has(static_cast<size_t>(entity))) {
+                should_advance = false;
+            } else {
+                auto &vel = vel_arr->get(static_cast<size_t>(entity));
+                should_advance = (vel.vx != 0.0f || vel.vy != 0.0f);
+            }
+        }
+        if (should_advance) {
+            anim.frame_timer += dt;
 
-        // Check if it's time to advance to the next frame
-        if (anim.frame_timer >= anim.frame_time) {
-            anim.frame_timer = 0.0f; // Reset timer
+            // Check if it's time to advance to the next frame
+            if (anim.frame_timer >= anim.frame_time) {
+                anim.frame_timer = 0.0f; // Reset timer
 
-            // Advance to next frame
-            anim.current_frame++;
+                // Advance to next frame
+                anim.current_frame++;
 
-            // Handle looping
-            if (anim.current_frame >= anim.frame_count) {
-                if (anim.loop) {
-                    anim.current_frame = 0; // Loop back to first frame
-                } else {
-                    anim.current_frame = anim.frame_count - 1; // Stay on last frame
+                // Handle looping
+                if (anim.current_frame >= anim.frame_count) {
+                    if (anim.loop) {
+                        anim.current_frame = 0; // Loop back to first frame
+                    } else {
+                        anim.current_frame = anim.frame_count - 1; // Stay on last frame
+                    }
                 }
             }
         }

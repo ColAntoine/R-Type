@@ -69,7 +69,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         r.emplace_component<Projectile>(projectile, Projectile(entity, weapon._damage, weapon._projectileSpeed, dirX, dirY, life, radius, true));
         r.emplace_component<position>(projectile, spawnX, spawnY);
         r.emplace_component<velocity>(projectile, dirX * weapon._projectileSpeed, dirY * weapon._projectileSpeed);
-        r.emplace_component<animation>(projectile, "assets/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f);
+        r.emplace_component<animation>(projectile, "assets/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
         r.emplace_component<lifetime>(projectile);
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;

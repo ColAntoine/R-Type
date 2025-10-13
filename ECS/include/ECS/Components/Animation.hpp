@@ -32,11 +32,13 @@ struct animation : public IComponent {
     float frame_timer{0.0f};
     // Whether animation loops back to start after last frame
     bool loop{true};
+    // If true the animation only advances while the entity is moving (velocity != 0)
+    bool play_on_movement{false};
 
 
     animation() = default;
-    animation(const std::string &path, float fw, float fh, int fc = 0)
-        : texture_path(path), frame_width(fw), frame_height(fh), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true) {}
-    animation(const std::string &path, float fw, float fh, float sx, float sy, int fc = 0)
-        : texture_path(path), frame_width(fw), frame_height(fh), scale_x(sx), scale_y(sy), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true) {}
+    animation(const std::string &path, float fw, float fh, int fc = 0, bool playOnMovement = false)
+        : texture_path(path), frame_width(fw), frame_height(fh), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true), play_on_movement(playOnMovement) {}
+    animation(const std::string &path, float fw, float fh, float sx, float sy, int fc = 0, bool playOnMovement = false)
+        : texture_path(path), frame_width(fw), frame_height(fh), scale_x(sx), scale_y(sy), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true), play_on_movement(playOnMovement) {}
 };
