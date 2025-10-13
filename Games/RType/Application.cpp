@@ -145,10 +145,8 @@ void Application::setup_ecs() {
     component_factory_->create_component<Weapon>(ecs_registry_, local_player_entity_);
     component_factory_->create_component<position>(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_component<velocity>(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
-    component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
+    component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, -PLAYER_WIDTH/2.0f, -PLAYER_HEIGHT/2.0f);
     component_factory_->create_component<animation>(ecs_registry_, local_player_entity_, "assets/dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25);
-    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
-    // component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 
 void Application::setup_event_handlers() {

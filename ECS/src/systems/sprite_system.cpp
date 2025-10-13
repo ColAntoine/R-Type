@@ -67,8 +67,10 @@ void SpriteRenderSystem::update(registry& r, float dt) {
                 display_width, display_height
             };
         } else {
+            // No collider: treat position as center and draw centered
             dest = {
-                p.x, p.y,
+                p.x - display_width / 2.0f,
+                p.y - display_height / 2.0f,
                 display_width, display_height
             };
         }

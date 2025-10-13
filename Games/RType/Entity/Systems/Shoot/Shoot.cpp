@@ -12,6 +12,8 @@
 
 #include "Shoot.hpp"
 
+#include <raylib.h>
+#include <cmath>
 void Shoot::checkShootIntention(registry & r)
 {
     auto *ctrl_arr = r.get_if<controllable>();
@@ -56,8 +58,10 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
         if (colArr && colArr->has(static_cast<size_t>(entity))) {
             auto &col = colArr->get(static_cast<size_t>(entity));
+            // With centered colliders (offset_x = -w/2), pos.x + offset_x + w == pos.x + w/2 (right edge)
             spawnX = pos.x + col.offset_x + col.w;
-            spawnY = pos.y + col.offset_y + col.h / 2.0f - radius;
+            // Spawn projectile vertically centered on entity position
+            spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
 
         auto projectile = r.spawn_entity();
@@ -65,7 +69,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         r.emplace_component<Projectile>(projectile, Projectile(entity, weapon._damage, weapon._projectileSpeed, dirX, dirY, life, radius, true));
         r.emplace_component<position>(projectile, spawnX, spawnY);
         r.emplace_component<velocity>(projectile, dirX * weapon._projectileSpeed, dirY * weapon._projectileSpeed);
-        r.emplace_component<drawable>(projectile);
+        r.emplace_component<animation>(projectile, "assets/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f);
         r.emplace_component<lifetime>(projectile);
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;
@@ -91,8 +95,8 @@ void Shoot::checkEnnemyHits(registry &r)
         int pdmg = proj._damage;        // projectile damage
         std::size_t owner = proj._ownerId;  // projectile owner id (skip friendly fire)
 
-        // Compute projectile collision center including projectile offset along its direction
-        // (moves collision origin forward by radius so collision matches visual projectile tip)
+    // Compute projectile collision center including projectile offset along its direction
+    // (moves collision origin forward by radius so collision matches visual projectile tip)
         float pcenterX = ppos.x + proj._dirX * pr;
         float pcenterY = ppos.y + proj._dirY * pr;
 
@@ -101,13 +105,12 @@ void Shoot::checkEnnemyHits(registry &r)
         for (auto [hlt, hpos, c, enemyEnt, targetEntity] : zipper(*healthArr, *posArr, *colArr, *enemyArr)) {
             if (projEntity == targetEntity) continue;
 
-            // Treat collider as top-left (hpos.x, hpos.y) with width c.w and height c.h
-            float left   = hpos.x;
-            float right  = hpos.x + c.w;
-            float top    = hpos.y;
-            float bottom = hpos.y + c.h;
+            // Treat collider using its offset relative to the entity position
+            float left   = hpos.x + c.offset_x;
+            float right  = hpos.x + c.offset_x + c.w;
+            float top    = hpos.y + c.offset_y;
+            float bottom = hpos.y + c.offset_y + c.h;
 
-            // clamp projectile center to rectangle
             float closestX = std::max(left, std::min(pcenterX, right));
             float closestY = std::max(top, std::min(pcenterY, bottom));
             float dx = pcenterX - closestX;

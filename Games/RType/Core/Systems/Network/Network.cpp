@@ -148,7 +148,7 @@ entity NetworkSystem::create_remote_player(registry& ecs_registry, int player_id
     component_factory_->create_component<position>(ecs_registry, remote_entity, x, y);
     component_factory_->create_component<velocity>(ecs_registry, remote_entity, 0.0f, 0.0f);
     component_factory_->create_component<drawable>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
-    component_factory_->create_component<collider>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT);
+    component_factory_->create_component<collider>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, -PLAYER_WIDTH/2.0f, -PLAYER_HEIGHT/2.0f);
     // component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
 
     std::cout << "Created remote player entity " << remote_entity << " for player " << player_id << std::endl;
@@ -196,7 +196,7 @@ entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int ene
         component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 165, 0, 255); // Orange default
     }
 
-    component_factory_->create_component<collider>(ecs_registry, enemy_entity, 30.0f, 30.0f);
+    component_factory_->create_component<collider>(ecs_registry, enemy_entity, 30.0f, 30.0f, -15.0f, -15.0f);
     // Add lifetime component so enemies can be cleaned up by Lifetime system
     // component_factory_->create_component<lifetime>(ecs_registry, enemy_entity, 10.0f, false, true);
     // component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);

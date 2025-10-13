@@ -15,19 +15,28 @@
 #include "ECS/Zipper.hpp"
 
 void ControlSystem::update(registry& r, float dt) {
-    auto *vel_arr = r.get_if<velocity>();
     auto *ctrl_arr = r.get_if<controllable>();
-    if (!vel_arr || !ctrl_arr) return;
+    if (!ctrl_arr) return;
 
-    for (auto [vel, ctrl, entity] : zipper(*vel_arr, *ctrl_arr)) {
+    // Iterate all controllable entities and set/create their velocity component
+    for (std::size_t i = 0; i < ctrl_arr->size(); ++i) {
+        auto ent_idx = ctrl_arr->entity_at(i);
+        entity ent(ent_idx);
+        auto &ctrl = (*ctrl_arr)[i];
+
         float speed = ctrl.speed;
         float vx = 0.f, vy = 0.f;
         if (IsKeyDown(KEY_RIGHT)) vx += speed;
         if (IsKeyDown(KEY_LEFT))  vx -= speed;
         if (IsKeyDown(KEY_DOWN))  vy += speed;
         if (IsKeyDown(KEY_UP))    vy -= speed;
-        vel.vx = vx;
-        vel.vy = vy;
+
+        auto *vel_arr = r.get_if<velocity>();
+        if (vel_arr && vel_arr->has(ent)) {
+            vel_arr->get(ent) = velocity(vx, vy);
+        } else {
+            r.emplace_component<velocity>(ent, vx, vy);
+        }
     }
 }
 

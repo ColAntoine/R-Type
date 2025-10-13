@@ -15,29 +15,9 @@ InputSystem::InputSystem(EventManager* event_manager, entity player_entity)
 }
 
 void InputSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
-    // Calculate velocity based on input state
-    float vx = 0.0f;
-    float vy = 0.0f;
-
-    if (move_left_) vx -= movement_speed_;
-    if (move_right_) vx += movement_speed_;
-    if (move_up_) vy -= movement_speed_;
-    if (move_down_) vy += movement_speed_;
-
-    // Update player velocity component
-    auto* vel_array = ecs_registry.get_if<velocity>();
-    size_t ent_idx = static_cast<size_t>(player_entity_);
-    if (vel_array) {
-        if (vel_array->has(ent_idx)) {
-            vel_array->get(ent_idx) = velocity(vx, vy);
-        } else {
-            // add the velocity component for the player entity
-            ecs_registry.emplace_component<velocity>(player_entity_, vx, vy);
-        }
-    } else {
-        // register and emplace via registry API
-        ecs_registry.emplace_component<velocity>(player_entity_, vx, vy);
-    }
+    // InputSystem only tracks key state and emits events; actual movement
+    // is handled by the ControlSystem which reads `controllable` components.
+    // No velocity modifications here.
 }
 
 void InputSystem::handle_key_press(int key) {

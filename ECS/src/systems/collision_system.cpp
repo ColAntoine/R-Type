@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <raylib.h>
 #include "ECS/Systems/Collision.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
