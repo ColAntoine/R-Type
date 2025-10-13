@@ -19,6 +19,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
 }
 
 void Application::service_setup() {
