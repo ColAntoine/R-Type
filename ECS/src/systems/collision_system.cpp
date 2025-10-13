@@ -59,6 +59,7 @@ void CollisionSystem::update(registry& r, float dt) {
     }
 }
 
+extern "C"
 std::unique_ptr<ISystem> create_system() {
     return std::make_unique<CollisionSystem>();
 }

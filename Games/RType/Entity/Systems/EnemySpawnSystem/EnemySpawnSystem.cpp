@@ -50,15 +50,19 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
 
     switch (static_cast<EnemyAIType>(enemy_type)) {
         case EnemyAIType::BASIC:
+            r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 0, 0, 255);
             r.emplace_component<velocity>(e, -80.0f, 0.0f);
             break;
         case EnemyAIType::SINE_WAVE:
+            r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 255, 0, 255);
             r.emplace_component<velocity>(e, -60.0f, 0.0f);
             break;
         case EnemyAIType::FAST:
+            r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 0, 255, 255);
             r.emplace_component<velocity>(e, -120.0f, 0.0f);
             break;
         case EnemyAIType::ZIGZAG:
+            r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 255, 0, 255);
             r.emplace_component<velocity>(e, -70.0f, 50.0f);
             break;
     }

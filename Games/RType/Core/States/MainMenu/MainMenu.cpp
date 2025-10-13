@@ -110,7 +110,7 @@ void MainMenuState::cleanup_ui() {
 
 void MainMenuState::on_play_clicked() {
     if (state_manager_) {
-        state_manager_->push_state("Lobby");
+        state_manager_->change_state("Lobby");
     }
 }
 

@@ -7,4 +7,6 @@
 
 #include "Entity/Components/NetworkSync/NetworkSync.hpp"
 
-// Nothing to implement (inline methods in .hpp)
+network_sync::network_sync(uint32_t id) : network_id(id) {}
+void network_sync::mark_dirty() { dirty = true; }
+bool network_sync::needs_broadcast() const { return dirty || broadcast_timer >= broadcast_interval; }

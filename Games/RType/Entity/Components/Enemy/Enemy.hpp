@@ -23,6 +23,6 @@ struct enemy : public IComponent {
     float movement_pattern{0.0f};
 
     enemy() = default;
-    enemy(EnemyAIType type) : enemy_type(type) {}
-    enemy(uint8_t type) : enemy_type(static_cast<EnemyAIType>(type)) {}
+    enemy(EnemyAIType type);
+    enemy(uint8_t type);
 };

@@ -17,8 +17,8 @@ struct network_sync : public IComponent {
     bool dirty{false};                 // Nécessite un broadcast
 
     network_sync() = default;
-    explicit network_sync(uint32_t id) : network_id(id) {}
+    explicit network_sync(uint32_t id);
 
-    void mark_dirty() { dirty = true; }
-    bool needs_broadcast() const { return dirty || broadcast_timer >= broadcast_interval; }
+    void mark_dirty();
+    bool needs_broadcast() const;
 };

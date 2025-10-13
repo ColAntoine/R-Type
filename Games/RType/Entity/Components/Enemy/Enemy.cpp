@@ -7,4 +7,5 @@
 
 #include "Entity/Components/Enemy/Enemy.hpp"
 
-// Nothing to implement (all inline in .hpp)
+enemy::enemy(EnemyAIType type) : enemy_type(type) {}
+enemy::enemy(uint8_t type) : enemy_type(static_cast<EnemyAIType>(type)) {}

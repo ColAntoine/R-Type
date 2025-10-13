@@ -214,7 +214,7 @@ void NetworkSystem::update_enemy_position(registry& ecs_registry, int enemy_id, 
 }
 
 void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id, float health) {
-    // TODO: uncomment it when health component is implemented in enemy
+    // TODO: Implement health update when health component is defined
     // auto it = enemies_.find(enemy_id);
     // if (it != enemies_.end()) {
     //     auto* enemy_array = ecs_registry.get_if<enemy>();

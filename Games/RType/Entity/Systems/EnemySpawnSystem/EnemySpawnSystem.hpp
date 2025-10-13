@@ -12,6 +12,7 @@
 #include "ECS/ComponentFactory.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/NetworkSync/NetworkSync.hpp"
+#include "Entity/Components/Drawable/Drawable.hpp"
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Core/Client/EventManager.hpp"
-#include "Core/Client/Events.hpp"
+#include "Core/EventManager.hpp"
+#include "Core/Events.hpp"
 #include "Core/Services/Input/Input.hpp"
 #include "Core/Services/Network/Network.hpp"
 #include "ECS/Registry.hpp"
