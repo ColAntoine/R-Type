@@ -22,6 +22,11 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
     system_loader_.load_system_from_so("lib/systems/libanimation_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_EnemyAI.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_EnemyCleanup.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_EnemySpawnSystem.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_NetworkSyncSystem.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_Spawn.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
 }
@@ -43,11 +48,11 @@ void Application::service_setup() {
 
         // spawn entity and add components
         auto test_square = ecs_registry_.spawn_entity();
-        component_factory_->create_position(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
+        component_factory_->create_component<position>(ecs_registry_, test_square, cx - SQUARE_SIZE / 2.0f, cy - SQUARE_SIZE / 2.0f);
         component_factory_->create_component<collider>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE);
         component_factory_->create_component<drawable>(ecs_registry_, test_square, SQUARE_SIZE, SQUARE_SIZE, 255, 0, 0, 255);
         component_factory_->create_component<Health>(ecs_registry_, test_square, 10);
-        component_factory_->create_component<enemy>(ecs_registry_, test_square);
+        component_factory_->create_component<Enemy>(ecs_registry_, test_square);
     } catch (const std::exception& e) {
         std::cerr << "Failed to spawn test square: " << e.what() << std::endl;
     }

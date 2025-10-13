@@ -3,7 +3,6 @@
 #include "message_handler.hpp"
 #include "game_handlers.hpp"
 #include "protocol.hpp"
-#include "enemy_manager.hpp"
 #include <iostream>
 #include <csignal>
 #include <string>
@@ -13,7 +12,6 @@
 using namespace RType::Network;
 
 std::shared_ptr<NetworkManager> g_network_manager = nullptr;
-std::shared_ptr<EnemyManager> g_enemy_manager = nullptr;
 
 void game_loop() {
     const float target_fps = 60.0f;
@@ -28,10 +26,8 @@ void game_loop() {
         auto delta_time = std::chrono::duration<float>(current_time - last_time).count();
         last_time = current_time;
 
-        // Update enemy manager
-        if (g_enemy_manager) {
-            g_enemy_manager->update(delta_time);
-        }
+        // Enemy systems are handled by the ECS (EnemyAI / EnemySpawnSystem / NetworkSyncSystem)
+        // Server keeps running network logic here; ECS systems run within their own context.
 
         // Sleep to maintain target FPS
         std::this_thread::sleep_for(frame_duration);
@@ -42,10 +38,7 @@ void game_loop() {
 
 void signal_handler(int signal) {
     std::cout << "\nReceived signal " << signal << ". Shutting down server..." << std::endl;
-    if (g_enemy_manager) {
-        g_enemy_manager->clear_all_enemies();
-        g_enemy_manager.reset();
-    }
+    // Enemies are managed by ECS systems; no explicit enemy manager cleanup here.
     if (g_network_manager) {
         g_network_manager->stop();
     }
@@ -150,40 +143,14 @@ void commands_loop(std::shared_ptr<NetworkManager> network_manager) {
             std::cout << std::endl;
         }
         else if (input == "enemies") {
-            if (g_enemy_manager) {
-                std::cout << "=== Enemy Information ===" << std::endl;
-                std::cout << "Active enemies: " << g_enemy_manager->get_enemy_count() << std::endl;
-                std::cout << "Max enemies: " << g_enemy_manager->get_max_enemies() << std::endl;
-                std::cout << "Spawn interval: " << g_enemy_manager->get_spawn_interval() << "s" << std::endl;
-                std::cout << std::endl;
-            } else {
-                std::cout << "Enemy manager not initialized" << std::endl;
-            }
+            std::cout << "Enemy info is managed by ECS systems (EnemyAI / EnemySpawnSystem / EnemyCleanup)." << std::endl;
+            std::cout << "Use the ECS tools or connect a game instance to inspect enemies." << std::endl;
         }
         else if (input.substr(0, 6) == "spawn ") {
-            if (g_enemy_manager) {
-                try {
-                    int enemy_type = std::stoi(input.substr(6));
-                    if (enemy_type >= 1 && enemy_type <= 4) {
-                        g_enemy_manager->spawn_enemy(enemy_type, 1024.0f, 400.0f);
-                        std::cout << "Spawned enemy type " << enemy_type << std::endl;
-                    } else {
-                        std::cout << "Invalid enemy type. Use 1-4." << std::endl;
-                    }
-                } catch (const std::exception&) {
-                    std::cout << "Usage: spawn <type> (1-4)" << std::endl;
-                }
-            } else {
-                std::cout << "Enemy manager not initialized" << std::endl;
-            }
+            std::cout << "Manual spawn via server CLI is deprecated. Use ECS spawn system or send a game message to request a spawn." << std::endl;
         }
         else if (input == "clear") {
-            if (g_enemy_manager) {
-                g_enemy_manager->clear_all_enemies();
-                std::cout << "Cleared all enemies" << std::endl;
-            } else {
-                std::cout << "Enemy manager not initialized" << std::endl;
-            }
+            std::cout << "Clearing enemies is handled by ECS systems. No action taken from server CLI." << std::endl;
         }
         else if (input == "ready") {
             auto server = g_network_manager->get_server();
@@ -218,8 +185,8 @@ int main(int ac, char** av) {
         }
         setup_message_handlers(g_network_manager->get_server());
 
-        // Initialize enemy manager
-        g_enemy_manager = std::make_shared<EnemyManager>(g_network_manager->get_server());
+    // Enemy management moved to ECS systems (EnemyAI, EnemySpawnSystem, EnemyCleanup, NetworkSyncSystem)
+    // No local EnemyManager is instantiated here anymore.
 
         size_t thread_count = std::max(2u, std::thread::hardware_concurrency());
         if (!g_network_manager->start(thread_count)) {
@@ -234,11 +201,7 @@ int main(int ac, char** av) {
 
         commands_loop(g_network_manager);
 
-        // Cleanup
-        if (g_enemy_manager) {
-            g_enemy_manager->clear_all_enemies();
-            g_enemy_manager.reset();
-        }
+        // Cleanup: ECS-managed systems should handle entity cleanup. Nothing to do here.
 
         // Wait for game thread to finish
         if (game_thread.joinable()) {

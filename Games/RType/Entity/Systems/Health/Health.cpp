@@ -24,7 +24,7 @@ void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
 void HealthSys::checkAndKillEnemy(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
-    auto *enemyArr = r.get_if<enemy>();
+    auto *enemyArr = r.get_if<Enemy>();
     std::vector<entity> entToKill;
 
     if (!healthArr || !enemyArr) return;
@@ -89,7 +89,7 @@ void HealthSys::addScore(registry &r)
 
     // increment the score by 1
     scoreArr = r.get_if<Score>();
-    if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size() && r.has<Score>(scoreEnt)) {
+    if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size()) {
         (*scoreArr)[static_cast<size_t>(scoreEnt)]._score += 1;
     }
 }

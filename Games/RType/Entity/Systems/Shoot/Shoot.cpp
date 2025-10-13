@@ -74,7 +74,7 @@ void Shoot::checkEnnemyHits(registry &r)
     auto *posArr = r.get_if<position>();
     auto *healthArr = r.get_if<Health>();
     auto *colArr = r.get_if<collider>();
-    auto *enemyArr = r.get_if<enemy>();
+    auto *enemyArr = r.get_if<Enemy>();
     std::vector<entity> entityToKill;
 
     if (!projArr || !posArr || !healthArr || !enemyArr || !colArr) return;

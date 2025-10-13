@@ -51,7 +51,7 @@ void LifetimeSystem::update(registry& r, float dt) {
     // Remove expired entities and update spawner counts
     for (entity ent : entities_to_remove) {
         // If entity was an enemy, decrease spawner count
-        if (r.get_if<enemy>() && r.get_if<enemy>()->size() > static_cast<size_t>(ent)) {
+        if (r.get_if<Enemy>() && r.get_if<Enemy>()->size() > static_cast<size_t>(ent)) {
             if (spawner_arr) {
                 for (auto [spawn_comp, spawn_entity] : zipper(*spawner_arr)) {
                     spawn_comp.current_count = std::max(0, spawn_comp.current_count - 1);
