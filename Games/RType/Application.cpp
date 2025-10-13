@@ -17,7 +17,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_EnemyAI.so");
     system_loader_.load_system_from_so("lib/systems/libgame_EnemyCleanup.so");
     system_loader_.load_system_from_so("lib/systems/libgame_EnemySpawnSystem.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_NetworkSync.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_NetworkSyncSystem.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Spawn.so");
 }
 
@@ -32,8 +32,8 @@ void Application::service_setup() {
 bool Application::initialize() {
     try {
         setup_ecs();
-        service_setup();  // Initialize services (including RenderService/Window) FIRST
-        load_systems();   // Then load systems that depend on the window
+        load_systems();
+        service_setup();
 
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
@@ -78,10 +78,6 @@ void Application::run() {
 
     // Start with main menu
     state_manager_.push_state("MainMenu");
-
-    // Wait one frame to ensure window is fully ready
-    render_service.begin_frame();
-    render_service.end_frame();
 
     while (running_ && !render_service.should_close() && !state_manager_.is_empty()) {
         float delta_time = render_service.get_frame_time();
@@ -128,6 +124,7 @@ void Application::setup_ecs() {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
 
+    
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_component<position>(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
@@ -165,6 +162,7 @@ void Application::update_ecs_systems(float delta_time) {
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
     system_loader_.update_all_systems(ecs_registry_, delta_time);
+    
 }
 
 void Application::setup_game_states() {

@@ -1,54 +1,112 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.16)
 project(RType_Network VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ============================================================================
-# Find Dependencies
-# ============================================================================
+# Find packages
 find_package(Threads REQUIRED)
-find_package(asio CONFIG REQUIRED)
 
-# ============================================================================
-# Collect Source Files for Server
-# ============================================================================
-file(GLOB_RECURSE NETWORK_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+# Try to find Asio (standalone or Boost.Asio)
+find_path(ASIO_INCLUDE_DIR 
+    NAMES asio.hpp
+    PATHS /usr/include /usr/local/include /opt/homebrew/include
+    PATH_SUFFIXES asio standalone_asio
 )
 
-# Filter out test files
-list(FILTER NETWORK_SOURCES EXCLUDE REGEX ".*/test/.*")
-
-# ============================================================================
-# Build r-type_server Executable
-# ============================================================================
-add_executable(r-type_server ${NETWORK_SOURCES})
+if(NOT ASIO_INCLUDE_DIR)
+    # Fallback to Boost.Asio
+    find_package(Boost REQUIRED COMPONENTS system)
+    if(Boost_FOUND)
+        set(USE_BOOST_ASIO ON)
+        message(STATUS "Using Boost.Asio")
+    else()
+        message(FATAL_ERROR "Neither standalone Asio nor Boost.Asio found")
+    endif()
+else()
+    set(USE_STANDALONE_ASIO ON)
+    message(STATUS "Using standalone Asio from: ${ASIO_INCLUDE_DIR}")
+endif()
 
 # Include directories
-target_include_directories(r-type_server PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}
+include_directories(include)
+
+if(USE_STANDALONE_ASIO)
+    include_directories(${ASIO_INCLUDE_DIR})
+    add_definitions(-DASIO_STANDALONE)
+endif()
+
+# Source files
+set(NETWORK_SOURCES
+    src/network_manager.cpp
+    src/connection.cpp
+    src/session.cpp
+    src/udp_server.cpp
+    src/message_handler.cpp
+    src/protocol.cpp
+    src/game_handlers.cpp
+    src/enemy_manager.cpp
 )
+
+# Header files (for IDE support)
+set(NETWORK_HEADERS
+    include/network_manager.hpp
+    include/connection.hpp
+    include/session.hpp
+    include/udp_server.hpp
+    include/message_handler.hpp
+    include/protocol.hpp
+    include/game_handlers.hpp
+)
+
+# Create the network library
+add_library(rtype_network STATIC ${NETWORK_SOURCES} ${NETWORK_HEADERS})
+
+# Set target properties
+target_include_directories(rtype_network PUBLIC include)
+
+if(USE_STANDALONE_ASIO)
+    target_include_directories(rtype_network PUBLIC ${ASIO_INCLUDE_DIR})
+    target_compile_definitions(rtype_network PUBLIC ASIO_STANDALONE)
+endif()
 
 # Link libraries
-target_link_libraries(r-type_server PRIVATE
-    Threads::Threads
-    asio::asio
-)
+target_link_libraries(rtype_network PUBLIC Threads::Threads)
 
-# Set output directory
-set_target_properties(r-type_server PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+if(USE_BOOST_ASIO)
+    target_link_libraries(rtype_network PUBLIC Boost::system)
+endif()
+
+# Create the server executable
+add_executable(rtype_server main.cpp)
+target_link_libraries(rtype_server PRIVATE rtype_network)
 
 # Compiler flags
-target_compile_options(r-type_server PRIVATE
-    $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra -Wpedantic>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra -Wpedantic>
-    $<$<CXX_COMPILER_ID:MSVC>:/W4>
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(rtype_network PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(rtype_server PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+# Enable debug symbols in debug builds
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+
+# Installation (optional)
+install(TARGETS rtype_server rtype_network
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
 )
 
-message(STATUS "Building r-type_server with sources: ${NETWORK_SOURCES}")
+install(DIRECTORY include/ DESTINATION include/rtype_network)
+
+# Print configuration summary
+message(STATUS "=== RType Network Configuration ===")
+message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+if(USE_STANDALONE_ASIO)
+    message(STATUS "Asio: Standalone (${ASIO_INCLUDE_DIR})")
+else()
+    message(STATUS "Asio: Boost.Asio ${Boost_VERSION}")
+endif()
+message(STATUS "====================================")

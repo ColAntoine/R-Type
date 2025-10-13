@@ -1,5 +1,5 @@
 #include "Client.hpp"
-#include "protocol.hpp"
+#include "../Network/include/protocol.hpp"
 #include <iostream>
 #include <cstring>
 #include <unistd.h>

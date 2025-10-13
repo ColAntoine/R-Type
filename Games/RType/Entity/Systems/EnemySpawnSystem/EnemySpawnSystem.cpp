@@ -28,7 +28,7 @@ void EnemySpawnSystem::initialize_if_needed(registry& r) {
 void EnemySpawnSystem::update(registry& r, float dt) {
     initialize_if_needed(r);
 
-    auto* enemies = r.get_if<enemy>();
+    auto* enemies = r.get_if<Enemy>();
     size_t current_count = enemies ? enemies->size() : 0;
 
     spawn_timer_ += dt;
@@ -45,23 +45,23 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
 
     r.emplace_component<position>(e, x, y);
     r.emplace_component<collider>(e, 30.0f, 30.0f, 0.0f, 0.0f, false);
-    r.emplace_component<enemy>(e, static_cast<EnemyAIType>(enemy_type));
+    r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
     r.emplace_component<network_sync>(e, net_id);
 
-    switch (static_cast<EnemyAIType>(enemy_type)) {
-        case EnemyAIType::BASIC:
+    switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
+        case Enemy::EnemyAIType::BASIC:
             r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 0, 0, 255);
             r.emplace_component<velocity>(e, -80.0f, 0.0f);
             break;
-        case EnemyAIType::SINE_WAVE:
+        case Enemy::EnemyAIType::SINE_WAVE:
             r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 255, 0, 255);
             r.emplace_component<velocity>(e, -60.0f, 0.0f);
             break;
-        case EnemyAIType::FAST:
+        case Enemy::EnemyAIType::FAST:
             r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 0, 255, 255);
             r.emplace_component<velocity>(e, -120.0f, 0.0f);
             break;
-        case EnemyAIType::ZIGZAG:
+        case Enemy::EnemyAIType::ZIGZAG:
             r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 255, 0, 255);
             r.emplace_component<velocity>(e, -70.0f, 50.0f);
             break;

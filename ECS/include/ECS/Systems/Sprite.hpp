@@ -15,7 +15,6 @@ class SpriteRenderSystem : public ISystem {
     private:
         std::unordered_map<std::string, Texture2D> texture_cache_;
 
-        Texture2D get_default_texture();
         Texture2D load_texture(const std::string& path);
 
     public:

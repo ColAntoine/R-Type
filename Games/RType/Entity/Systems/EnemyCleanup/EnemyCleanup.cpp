@@ -15,7 +15,7 @@ EnemyCleanupSystem::EnemyCleanupSystem(NetworkSyncSystem* net_sync)
 }
 
 void EnemyCleanupSystem::update(registry& r, float dt) {
-    auto* enemies = r.get_if<enemy>();
+    auto* enemies = r.get_if<Enemy>();
     auto* positions = r.get_if<position>();
     auto* sync_comps = r.get_if<network_sync>();
 

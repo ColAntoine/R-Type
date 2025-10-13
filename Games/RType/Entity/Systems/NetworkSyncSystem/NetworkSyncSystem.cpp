@@ -21,7 +21,7 @@ void NetworkSyncSystem::update(registry& r, float dt) {
 
     if (!sync_comps || !positions) return;
 
-    auto* enemies = r.get_if<enemy>();
+    auto* enemies = r.get_if<Enemy>();
 
     // Broadcast entity updates
     for (auto [sync, pos, index] : zipper(*sync_comps, *positions)) {
@@ -60,7 +60,7 @@ void NetworkSyncSystem::broadcast_spawn(registry& r, entity e) {
 
     auto* sync_comps = r.get_if<network_sync>();
     auto* positions = r.get_if<position>();
-    auto* enemies = r.get_if<enemy>();
+    auto* enemies = r.get_if<Enemy>();
 
     if (!sync_comps || !positions) return;
     if (e >= sync_comps->size() || e >= positions->size()) return;

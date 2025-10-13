@@ -9,7 +9,7 @@
 #include <cmath>
 
 void EnemyAISystem::update(registry& r, float dt) {
-    auto* enemies = r.get_if<enemy>();
+    auto* enemies = r.get_if<Enemy>();
     auto* velocities = r.get_if<velocity>();
     auto* positions = r.get_if<position>();
 
@@ -18,15 +18,15 @@ void EnemyAISystem::update(registry& r, float dt) {
     for (auto [enm, vel, pos, entity] : zipper(*enemies, *velocities, *positions)) {
         enm.timer += dt;
         switch (enm.enemy_type) {
-            case EnemyAIType::BASIC:
+            case Enemy::EnemyAIType::BASIC:
                 break;
-            case EnemyAIType::SINE_WAVE:
+            case Enemy::EnemyAIType::SINE_WAVE:
                 enm.movement_pattern += dt * 3.0f; // Frequency
                 vel.vy = std::sin(enm.movement_pattern) * 80.0f; // Amplitude
                 break;
-            case EnemyAIType::FAST:
+            case Enemy::EnemyAIType::FAST:
                 break;
-            case EnemyAIType::ZIGZAG:
+            case Enemy::EnemyAIType::ZIGZAG:
                 enm.movement_pattern += dt;
                 if (static_cast<int>(enm.movement_pattern * 2.0f) % 2 == 0) {
                     if (vel.vy < 0) vel.vy = -vel.vy;
