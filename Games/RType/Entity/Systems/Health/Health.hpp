@@ -21,7 +21,8 @@ public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "Health"; }
 private:
-    void checkAndKill(registry &r);
+    void checkAndKillEnemy(registry &r);
+    void checkAndKillPlayer(registry &r);
     void addScore(registry &r);
 };
 

@@ -17,30 +17,21 @@
 #include "ECS/Registry.hpp"
 
 void HealthSys::update(registry& r, float dt) {
-    checkAndKill(r);
+    checkAndKillEnemy(r);
+    checkAndKillPlayer(r);
 }
 
-void HealthSys::checkAndKill(registry &r)
+void HealthSys::checkAndKillEnemy(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
     auto *enemyArr = r.get_if<enemy>();
     std::vector<entity> entToKill;
 
-    if (!healthArr) return;
+    if (!healthArr || !enemyArr) return;
 
-    // If we have enemy components, iterate only entities that are both Health + enemy
-    if (enemyArr) {
-        for (auto [healthEnt, enemyComp, ent] : zipper(*healthArr, *enemyArr)) {
-            if (healthEnt._health <= 0) {
-                entToKill.push_back(entity(ent));
-            }
-        }
-    } else {
-        // fallback: no enemy component present, collect dead health entities anyway
-        for (auto [healthEnt, ent] : zipper(*healthArr)) {
-            if (healthEnt._health <= 0) {
-                entToKill.push_back(entity(ent));
-            }
+    for (auto [healthEnt, enemyComp, ent] : zipper(*healthArr, *enemyArr)) {
+        if (healthEnt._health <= 0) {
+            entToKill.push_back(entity(ent));
         }
     }
 
@@ -49,11 +40,30 @@ void HealthSys::checkAndKill(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            // if we iterated via enemyArr (above), these are enemies -> increment score
-            if (enemyArr) {
-                addScore(r);
-            }
-            std::cout << "ennemy killed" << std::endl;
+            addScore(r);
+            r.kill_entity(ent);
+        }
+    }
+}
+
+void HealthSys::checkAndKillPlayer(registry &r)
+{
+    auto *healthArr = r.get_if<Health>();
+    std::vector<entity> entToKill;
+
+    if (!healthArr) return;
+
+    for (auto [healthEnt, ent] : zipper(*healthArr)) {
+        if (healthEnt._health <= 0) {
+            entToKill.push_back(entity(ent));
+        }
+    }
+
+    if (!entToKill.empty()) {
+        std::sort(entToKill.begin(), entToKill.end());
+        entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
+
+        for (auto ent : entToKill) {
             r.kill_entity(ent);
         }
     }
@@ -81,7 +91,6 @@ void HealthSys::addScore(registry &r)
     scoreArr = r.get_if<Score>();
     if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size()) {
         (*scoreArr)[static_cast<size_t>(scoreEnt)]._score += 1;
-        std::cout << "score += 1" << std::endl;
     }
 }
 
