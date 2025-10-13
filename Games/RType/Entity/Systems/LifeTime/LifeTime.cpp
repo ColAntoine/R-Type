@@ -37,7 +37,7 @@ void LifetimeSystem::update(registry& r, float dt) {
 
         // Check if entity is offscreen and should be destroyed
         if (life_comp.destroy_offscreen) {
-            if (pos_comp.x < -100 || pos_comp.x > 700.f) {
+            if (pos_comp.x < -100 || pos_comp.x > 1200.f) {
                 should_destroy = true;
             }
         }

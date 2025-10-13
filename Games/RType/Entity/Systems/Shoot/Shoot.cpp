@@ -68,14 +68,12 @@ void Shoot::spawnProjectiles(registry &r, float dt)
     }
 }
 
-// ...existing code...
 void Shoot::checkEnnemyHits(registry &r)
 {
-    // get arrays
     auto *projArr = r.get_if<Projectile>();
     auto *posArr = r.get_if<position>();
     auto *healthArr = r.get_if<Health>();
-    auto *colArr = r.get_if<collider>(); // optional, used if targets have colliders/rects
+    auto *colArr = r.get_if<collider>();
     std::vector<entity> entityToKill;
 
     if (!projArr || !posArr || !healthArr) return;
@@ -83,7 +81,7 @@ void Shoot::checkEnnemyHits(registry &r)
     // Iterate projectiles that have a position
     for (auto [proj, ppos, projEntity] : zipper(*projArr, *posArr)) {
         float pr = proj._radius;        // projectile collision radius
-        int pdmg = proj._damage;       // projectile damage
+        int pdmg = proj._damage;        // projectile damage
         std::size_t owner = proj._ownerId;  // projectile owner id (skip friendly fire)
 
         // Compute projectile collision center including projectile offset along its direction
@@ -91,16 +89,11 @@ void Shoot::checkEnnemyHits(registry &r)
         float pcenterX = ppos.x + proj._dirX * pr;
         float pcenterY = ppos.y + proj._dirY * pr;
 
-        // TODO: remove
-        if (pcenterX > 700.f) {
-            entityToKill.push_back(entity(projEntity));
-        }
         // If we have collider data for targets, iterate only entities that have Health+Position+Collider.
         // Use direct AABB extents (no half-width computation).
         if (colArr) {
             for (auto [hlt, hpos, c, targetEntity] : zipper(*healthArr, *posArr, *colArr)) {
                 if (projEntity == targetEntity) continue;
-                // if (targetEntity == static_cast<decltype(targetEntity)>(owner)) continue;
 
                 // Treat collider as top-left (hpos.x, hpos.y) with width c.w and height c.h
                 float left   = hpos.x;
@@ -117,25 +110,7 @@ void Shoot::checkEnnemyHits(registry &r)
 
                 if (dist2 <= pr * pr) {
                     hlt._health -= pdmg;
-                    std::cout << "HIT target=" << targetEntity << " dmg=" << pdmg << " hp=" << hlt._health << std::endl;
                     entityToKill.push_back(entity(projEntity));
-                    break; // stop testing this projectile after a hit
-                }
-            }
-        } else {
-            // No collider component available: treat targets as points (Health+Position)
-            for (auto [hlt, hpos, targetEntity] : zipper(*healthArr, *posArr)) {
-                if (projEntity == targetEntity) continue;
-                if (targetEntity == static_cast<decltype(targetEntity)>(owner)) continue;
-
-                float dx = pcenterX - hpos.x;
-                float dy = pcenterY - hpos.y;
-                float dist2 = dx * dx + dy * dy;
-
-                if (dist2 <= pr * pr) {
-                    hlt._health -= pdmg;
-                    entityToKill.push_back(entity(projEntity));
-                    std::cout << "HIT point target=" << targetEntity << " dmg=" << pdmg << " hp=" << hlt._health << std::endl;
                     break;
                 }
             }
@@ -152,7 +127,7 @@ void Shoot::checkEnnemyHits(registry &r)
         }
     }
 }
-// ...existing code...
+
 void Shoot::update(registry& r, float dt) {
     checkShootIntention(r);
     spawnProjectiles(r, dt);
