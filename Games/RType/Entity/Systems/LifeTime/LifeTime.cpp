@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <iostream>
 
 #include "Entity/Systems/LifeTime/LifeTime.hpp"
 #include "Entity/Components/LifeTime/LifeTime.hpp"
@@ -37,7 +38,7 @@ void LifetimeSystem::update(registry& r, float dt) {
 
         // Check if entity is offscreen and should be destroyed
         if (life_comp.destroy_offscreen) {
-            if (pos_comp.x < -100 || pos_comp.x > 1200.f) {
+            if (pos_comp.x < -100 || pos_comp.x > window_width + 100) {
                 should_destroy = true;
             }
         }

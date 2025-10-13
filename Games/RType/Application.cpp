@@ -1,4 +1,5 @@
 #include "Application.hpp"
+#include "States/Loading/Loading.hpp"
 #include "States/MainMenu/MainMenu.hpp"
 #include "States/Settings/Settings.hpp"
 #include "States/Lobby/Lobby.hpp"
@@ -18,6 +19,8 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
+    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+    system_loader_.load_system_from_so("lib/systems/libanimation_system.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
@@ -99,8 +102,8 @@ void Application::run() {
 
     auto& render_service = service_manager_.get_service<RenderService>();
 
-    // Start with main menu
-    state_manager_.push_state("MainMenu");
+    // Start with loading screen
+    state_manager_.push_state("Loading");
 
     while (running_ && !render_service.should_close() && !state_manager_.is_empty()) {
         float delta_time = render_service.get_frame_time();
@@ -157,8 +160,9 @@ void Application::setup_ecs() {
     component_factory_->create_component<position>(ecs_registry_, local_player_entity_, 100.0f, 300.0f);
     component_factory_->create_component<velocity>(ecs_registry_, local_player_entity_, 0.0f, 0.0f);
     component_factory_->create_component<collider>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT);
-    component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
-    component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
+    component_factory_->create_component<animation>(ecs_registry_, local_player_entity_, "assets/dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25);
+    // component_factory_->create_component<drawable>(ecs_registry_, local_player_entity_, PLAYER_WIDTH, PLAYER_HEIGHT, 255, 255, 255, 255);
+    // component_factory_->create_component<sprite>(ecs_registry_, local_player_entity_, "assets/REAPER_ICON.png", 128.0f, 64.0f, 1.0f, 1.0f);
 }
 
 void Application::setup_event_handlers() {
@@ -175,9 +179,7 @@ void Application::setup_event_handlers() {
     });
 
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](
-        __attribute_maybe_unused__ const NetworkDisconnectedEvent& e
-    ) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this](__attribute_maybe_unused__ const NetworkDisconnectedEvent& e) {
         running_ = false;
     });
 }
@@ -195,6 +197,7 @@ void Application::update_traditional_ecs_systems(float delta_time) {
 
 void Application::setup_game_states() {
     // Register all game states with factory functions
+    state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
 
     // Register Settings state with Application pointer using custom factory

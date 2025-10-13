@@ -12,6 +12,7 @@
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
 #include "ECS/Components/Sprite.hpp"
+#include "ECS/Components/Animation.hpp"
 
 extern "C" {
     void register_components(registry &r);

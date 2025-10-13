@@ -33,6 +33,7 @@ extern "C" void register_components(registry &r) {
     // r.register_component<lifetime>();
     // r.register_component<spawner>();
     r.register_component<sprite>();
+    r.register_component<animation>();
 }
 
 extern "C"
