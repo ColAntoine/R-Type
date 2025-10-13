@@ -215,13 +215,14 @@ void NetworkSystem::update_enemy_position(registry& ecs_registry, int enemy_id, 
     }
 }
 
-void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id, float health) {
+void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id,
+    __attribute_maybe_unused__ float health) {
     auto it = enemies_.find(enemy_id);
     if (it != enemies_.end()) {
         auto* enemy_array = ecs_registry.get_if<enemy>();
         if (enemy_array && enemy_array->size() > static_cast<size_t>(it->second)) {
-            auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
-            enemy_comp.health = health;
+            // auto& enemy_comp = (*enemy_array)[static_cast<size_t>(it->second)];
+            // enemy_comp.health = health;
         }
     }
 }

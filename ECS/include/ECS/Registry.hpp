@@ -37,7 +37,7 @@ class registry {
                     auto *arr = this->get_if<Component>();
                     if (!arr) return;
                     auto idx = static_cast<typename sparse_set<Component>::size_type>(static_cast<size_t>(e));
-                    if (idx < arr->size()) arr->erase(idx);
+                    if (arr->has(idx)) arr->erase(idx);
                 });
             }
             return std::any_cast<sparse_set<Component>&>(it->second);

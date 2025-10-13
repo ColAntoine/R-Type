@@ -8,4 +8,4 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 
 enemy::enemy() {}
-enemy::enemy(int type, float hp) : enemy_type(type), health(hp) {}
+enemy::enemy(int type) : enemy_type(type) {}

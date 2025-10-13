@@ -26,8 +26,17 @@ void InputSystem::update(registry& ecs_registry, __attribute_maybe_unused__ floa
 
     // Update player velocity component
     auto* vel_array = ecs_registry.get_if<velocity>();
-    if (vel_array && vel_array->size() > static_cast<size_t>(player_entity_)) {
-        (*vel_array)[static_cast<size_t>(player_entity_)] = velocity(vx, vy);
+    size_t ent_idx = static_cast<size_t>(player_entity_);
+    if (vel_array) {
+        if (vel_array->has(ent_idx)) {
+            vel_array->get(ent_idx) = velocity(vx, vy);
+        } else {
+            // add the velocity component for the player entity
+            ecs_registry.emplace_component<velocity>(player_entity_, vx, vy);
+        }
+    } else {
+        // register and emplace via registry API
+        ecs_registry.emplace_component<velocity>(player_entity_, vx, vy);
     }
 }
 
