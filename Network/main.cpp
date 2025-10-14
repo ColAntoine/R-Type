@@ -3,6 +3,9 @@
 #include "message_handler.hpp"
 #include "game_handlers.hpp"
 #include "protocol.hpp"
+#include "ECS/DLLoader.hpp"
+#include "ECS/Registry.hpp"
+#include "enemy_manager.hpp"
 #include <iostream>
 #include <csignal>
 #include <string>
@@ -12,6 +15,11 @@
 using namespace RType::Network;
 
 std::shared_ptr<NetworkManager> g_network_manager = nullptr;
+std::unique_ptr<RType::Network::ServerEnemyManager> g_enemy_manager = nullptr;
+
+// Server-side ECS (for authoritative enemy spawning)
+static registry g_server_ecs_registry;
+static DLLoader g_server_dl_loader;
 
 void game_loop() {
     const float target_fps = 60.0f;
@@ -26,8 +34,10 @@ void game_loop() {
         auto delta_time = std::chrono::duration<float>(current_time - last_time).count();
         last_time = current_time;
 
-        // Enemy systems are handled by the ECS (EnemyAI / EnemySpawnSystem / NetworkSyncSystem)
-        // Server keeps running network logic here; ECS systems run within their own context.
+        // Update server-side enemy manager (spawns and broadcasts entity create messages)
+        if (g_enemy_manager) {
+            g_enemy_manager->update(delta_time);
+        }
 
         // Sleep to maintain target FPS
         std::this_thread::sleep_for(frame_duration);
@@ -105,20 +115,11 @@ void setup_message_handlers(std::shared_ptr<UdpServer> server) {
 
     dispatcher->register_handler(
         static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
-        std::make_shared<PlayerShootHandler>()
+        std::make_shared<PlayerShootHandler>(server)
     );    // Set the message handler for the server
     server->set_message_handler([dispatcher](std::shared_ptr<Session> session, const char* data, size_t size) {
         dispatcher->dispatch_message(session, data, size);
     });
-
-    std::cout << "Message handlers registered:" << std::endl;
-    std::cout << "  \032[1;32m✓ Connection Handler\032[0m" << std::endl;
-    std::cout << "  \032[1;31m✓ Client Ready Handler\032[0m" << std::endl;
-    std::cout << "  \032[1;33m✓ Client Disconnect Handler\032[0m" << std::endl;
-    std::cout << "  \032[1;34m✓ Position Update Handler\032[0m" << std::endl;
-    std::cout << "  \032[1;35m✓ Ping Handler\032[0m" << std::endl;
-    std::cout << "  \032[1;36m✓ Player Shoot Handler\032[0m" << std::endl;
-    std::cout << std::endl;
 }
 
 void commands_loop(std::shared_ptr<NetworkManager> network_manager) {
@@ -184,6 +185,16 @@ int main(int ac, char** av) {
             return 1;
         }
         setup_message_handlers(g_network_manager->get_server());
+
+    // Load ECS component definitions into the server registry so server can spawn entities
+    if (!g_server_dl_loader.load_components_from_so("lib/libECS.so", g_server_ecs_registry)) {
+        std::cerr << "Warning: Failed to load ECS components for server; enemy spawning will still broadcast but server entities may not be tracked." << std::endl;
+    }
+    IComponentFactory* server_factory = g_server_dl_loader.get_factory();
+
+    // Create server-side enemy manager and configure bounds (pass registry + factory)
+    g_enemy_manager = std::make_unique<RType::Network::ServerEnemyManager>(g_network_manager->get_server(), &g_server_ecs_registry, server_factory);
+    g_enemy_manager->set_world_bounds(1024.0f, 768.0f);
 
     // Enemy management moved to ECS systems (EnemyAI, EnemySpawnSystem, EnemyCleanup, NetworkSyncSystem)
     // No local EnemyManager is instantiated here anymore.

@@ -33,10 +33,12 @@ void EnemySpawnSystem::update(registry& r, float dt) {
 
     spawn_timer_ += dt;
 
-    if (spawn_timer_ >= spawn_interval_ && current_count < max_enemies_) {
-        spawn_random_enemy(r);
-        spawn_timer_ = 0.0f;
-    }
+    // Automatic spawning is disabled on clients — server is authoritative for enemy spawning.
+    // Keep the logic here commented so it can be re-enabled easily if needed.
+    // if (spawn_timer_ >= spawn_interval_ && current_count < max_enemies_) {
+    //     spawn_random_enemy(r);
+    //     spawn_timer_ = 0.0f;
+    // }
 }
 
 entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, float y) {
