@@ -73,54 +73,69 @@ target_compile_options(${RTYPE_PROJECT_NAME} PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
-# Build individual game system libraries as .so files
+# --- Determine shared library output directory depending on the platform ---
+if (WIN32)
+    # On Windows, DLLs are considered RUNTIME files
+    set(GAME_SYSTEMS_BUILD_DIR "${CMAKE_BINARY_DIR}/bin/lib/systems")
+else()
+    # On Linux/macOS, shared libraries are considered LIBRARY files
+    set(GAME_SYSTEMS_BUILD_DIR "${CMAKE_BINARY_DIR}/lib/systems")
+endif()
+
+# Automatically export all symbols on Windows (no need for __declspec(dllexport))
+if (WIN32)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
+# --- Build each game system as a shared library ---
 foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     get_filename_component(SYSTEM_NAME ${SYSTEM_FILE} NAME_WE)
-    
-    # Create a unique name for game systems to avoid conflicts with ECS systems
     set(GAME_SYSTEM_NAME "game_${SYSTEM_NAME}")
-    
+
     add_library(${GAME_SYSTEM_NAME} SHARED ${SYSTEM_FILE})
-    
-    # Set include directories for the system
+
+    # Include directories for each system
     target_include_directories(${GAME_SYSTEM_NAME} PUBLIC
         ${RTYPE_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/Network/include
     )
-    
-    # Link with dependencies
+
+    # Link dependencies
     target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC
         raylib
         glfw
-        ${RTYPE_PROJECT_NAME}          # <--- add this
+        ${RTYPE_PROJECT_NAME}
     )
-    
-    # Link with ECS library if available
+
+    # Link ECS if available
     if(TARGET ECS)
         target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC ECS)
         target_include_directories(${GAME_SYSTEM_NAME} PUBLIC
             ${CMAKE_SOURCE_DIR}/ECS/include
         )
     endif()
-    
-    # Set C++ standard for systems
+
+    # Require C++20
     target_compile_features(${GAME_SYSTEM_NAME} PUBLIC cxx_std_20)
-    
-    # Set output directory for game system libraries
+
+    # Set output directories for all platforms
     set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems
+        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"   # .a or .lib import files
+        LIBRARY_OUTPUT_DIRECTORY "${GAME_SYSTEMS_BUILD_DIR}"         # .so / .dylib
+        RUNTIME_OUTPUT_DIRECTORY "${GAME_SYSTEMS_BUILD_DIR}"         # .dll (Windows)
     )
-    
+
     message(STATUS "Building game system: ${GAME_SYSTEM_NAME} from ${SYSTEM_FILE}")
 endforeach()
 
-# Add custom target to copy game system libraries to binary directory
+# --- Copy shared libraries to the runtime directory ---
 add_custom_target(copy_game_systems ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/lib/systems
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/lib/systems ${CMAKE_BINARY_DIR}/bin/lib/systems
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${GAME_SYSTEMS_BUILD_DIR} ${CMAKE_BINARY_DIR}/bin/lib/systems
     DEPENDS ${GAME_SYSTEM_SOURCES}
     COMMENT "Copying game system libraries to binary directory"
 )
+
 
 # Create executable if this is built as standalone
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

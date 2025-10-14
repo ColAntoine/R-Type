@@ -3,7 +3,6 @@
 #include <raylib.h>
 
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"  // Changed from systems.hpp to dlloader.hpp
 #include "ECS/Zipper.hpp"
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/RType.hpp"
@@ -13,10 +12,10 @@ RType::RType()
     InitWindow(800, 600, "ECS Raylib Demo");
     SetTargetFPS(60);
 
-    if (!loader_.load_components_from_so("./libcomponents.so", reg_)) {
-        std::cerr << "Failed to load components library!" << std::endl;
-        exit(EXIT_FAILURE);
-    }
+    // if (!loader_.load_components_from_so("./libcomponents.so", reg_)) {
+    //     std::cerr << "Failed to load components library!" << std::endl;
+    //     exit(EXIT_FAILURE);
+    // }
 
     // Load system libraries
     load_systems();
@@ -44,16 +43,16 @@ void RType::load_systems() {
     };
 
     for (const std::string& lib_path : system_libraries) {
-        if (!loader_.load_system_from_so(lib_path)) {
+        if (!loader_->load_system(lib_path)) {
             std::cerr << "Failed to load system: " << lib_path << std::endl;
         }
     }
 
-    std::cout << "Loaded " << loader_.get_system_count() << " systems" << std::endl;
+    std::cout << "Loaded " << loader_->get_system_count() << " systems" << std::endl;
 }
 
 void RType::setup_scene() {
-    auto factory = loader_.get_factory();
+    auto factory = loader_->get_factory();
     if (!factory) {
         std::cerr << "Factory not loaded!" << std::endl;
         return;
@@ -103,7 +102,7 @@ void RType::handle_events() {
 
 void RType::update(float dt) {
     // Use DLLoader to update all systems in order
-    loader_.update_all_systems(reg_, dt);
+    loader_->update_all_systems(reg_, dt);
 }
 
 void RType::render() {

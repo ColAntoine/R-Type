@@ -1,0 +1,50 @@
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** ALoader
+*/
+
+#pragma once
+
+#include "ILoader.hpp"
+
+#include <exception>
+#include <iostream>
+
+class ALoader : public ILoader{
+    public:
+        ALoader() = default;
+        ~ALoader() override = default;
+
+        ALoader(const ALoader&) = delete;
+        ALoader& operator=(const ALoader&) = delete;
+        ALoader(ALoader&& other) noexcept;
+        ALoader& operator=(ALoader&& other) noexcept;
+
+        //Need to implemented in every different loader
+        bool load_components(const std::string& so_path, registry& reg) override = 0;
+        bool load_system(const std::string& so_path) override = 0;
+        
+        
+        
+        IComponentFactory* get_factory() const override;
+        void update_all_systems(registry& r, float dt) override;
+        void update_system_by_name(const std::string& name, registry& r, float dt) override;
+        bool is_loaded() const override;
+        size_t get_system_count() const override;
+        std::vector<std::string> get_system_names() const override;
+
+    protected:
+        struct LoadedSystem {
+            void* handle;
+            std::unique_ptr<ISystem> system;
+            std::string name;
+        };
+
+        void* library_handle_;           // For components
+        IComponentFactory* factory_;     // For components
+        std::vector<LoadedSystem> systems_; // For systems
+    
+};
+
