@@ -37,11 +37,20 @@ class ALoader : public ILoader{
 
     protected:
         struct LoadedSystem {
-            void* handle;
+            #ifdef _WIN32
+                    HMODULE handle; //Windows
+            #else
+                    void* handle; //linux and macos
+            #endif
             std::unique_ptr<ISystem> system;
             std::string name;
         };
 
+        #ifdef _WIN32
+            HMODULE library_handle_ = nullptr;
+        #else
+            void* library_handle_ = nullptr;
+        #endif
         IComponentFactory* factory_ = nullptr;     // For components
         std::vector<LoadedSystem> systems_; // For systems
     
