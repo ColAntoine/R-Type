@@ -14,6 +14,7 @@
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/Gravity/Gravity.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 
