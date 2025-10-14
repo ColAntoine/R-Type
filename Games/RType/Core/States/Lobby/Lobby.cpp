@@ -10,12 +10,30 @@
 #include "Application.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <random>
+
+// ASCII background for Lobby
+static std::vector<std::string> lobby_ascii_grid;
+static int lobby_ascii_cols = 0;
+static int lobby_ascii_rows = 0;
+static int lobby_ascii_font_size = 12;
+static float lobby_ascii_timer = 0.0f;
+static float lobby_ascii_interval = 0.04f;
+static std::mt19937 lobby_ascii_rng((unsigned)time(nullptr));
+static std::string lobby_ascii_charset = " .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 LobbyState::LobbyState(Application* app) : app_(app) {
 }
 
 void LobbyState::enter() {
     std::cout << "Entering Lobby State" << std::endl;
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    lobby_ascii_font_size = 12;
+    lobby_ascii_cols = std::max(10, sw / (lobby_ascii_font_size / 2));
+    lobby_ascii_rows = std::max(8, sh / lobby_ascii_font_size);
+    lobby_ascii_grid.assign(lobby_ascii_rows, std::string(lobby_ascii_cols, ' '));
+
     setup_ui();
     initialized_ = true;
 }
@@ -39,16 +57,42 @@ void LobbyState::resume() {
 void LobbyState::update(float delta_time) {
     if (!initialized_) return;
     ui_manager_.update(delta_time);
+
+    lobby_ascii_timer += delta_time;
+    if (lobby_ascii_timer >= lobby_ascii_interval) {
+        lobby_ascii_timer = 0.0f;
+        std::uniform_int_distribution<int> row_dist(0, lobby_ascii_rows - 1);
+        std::uniform_int_distribution<int> col_dist(0, lobby_ascii_cols - 1);
+        std::uniform_int_distribution<int> char_dist(0, (int)lobby_ascii_charset.size() - 1);
+        int changes = std::max(1, (lobby_ascii_cols * lobby_ascii_rows) / 60);
+        for (int i = 0; i < changes; ++i) {
+            int r = row_dist(lobby_ascii_rng);
+            int c = col_dist(lobby_ascii_rng);
+            lobby_ascii_grid[r][c] = lobby_ascii_charset[char_dist(lobby_ascii_rng)];
+        }
+    }
 }
 
 void LobbyState::render() {
     if (!initialized_) return;
 
-    // Draw background
-    ClearBackground({30, 30, 50, 255});
+    // ASCII background
+    ClearBackground({8, 10, 12, 255});
+    Color ascii_color = {0, 229, 255, 90};
+    int start_x = 10;
+    int start_y = 30;
+    for (int r = 0; r < lobby_ascii_rows; ++r) {
+        for (int c = 0; c < lobby_ascii_cols; ++c) {
+            char ch = lobby_ascii_grid[r][c];
+            if (ch == ' ') continue;
+            int x = start_x + c * (lobby_ascii_font_size / 2);
+            int y = start_y + r * lobby_ascii_font_size;
+            DrawText(std::string(1, ch).c_str(), x, y, lobby_ascii_font_size, ascii_color);
+        }
+    }
 
-    // Draw lobby title
-    DrawText("SERVER LOBBY", GetScreenWidth()/2 - 140, 80, 40, RAYWHITE);
+    // Title
+    DrawText("SERVER LOBBY", GetScreenWidth()/2 - 140, 80, 40, {0, 229, 255, 200});
 
     // Render UI
     ui_manager_.render();

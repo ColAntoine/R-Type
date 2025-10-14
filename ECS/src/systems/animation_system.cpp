@@ -34,8 +34,8 @@ Texture2D AnimationSystem::load_texture(const std::string& path) {
 void AnimationSystem::update(registry& r, float dt) {
     auto *anim_arr = r.get_if<animation>();
     auto *pos_arr = r.get_if<position>();
-    auto *collider_arr = r.get_if<collider>();
-    
+    // Animation system centers on collider if present, otherwise centers on pos
+
     if (!anim_arr || !pos_arr) return;
 
     for (auto [anim, pos, entity] : zipper(*anim_arr, *pos_arr)) {
@@ -50,22 +50,35 @@ void AnimationSystem::update(registry& r, float dt) {
             }
         }
 
-        // Update animation timer
-        anim.frame_timer += dt;
+        // Update animation timer only if allowed by play_on_movement flag
+        bool should_advance = true;
+        if (anim.play_on_movement) {
+            // If play_on_movement is enabled, check velocity component
+            auto *vel_arr = r.get_if<velocity>();
+            if (!vel_arr || !vel_arr->has(static_cast<size_t>(entity))) {
+                should_advance = false;
+            } else {
+                auto &vel = vel_arr->get(static_cast<size_t>(entity));
+                should_advance = (vel.vx != 0.0f || vel.vy != 0.0f);
+            }
+        }
+        if (should_advance) {
+            anim.frame_timer += dt;
 
-        // Check if it's time to advance to the next frame
-        if (anim.frame_timer >= anim.frame_time) {
-            anim.frame_timer = 0.0f; // Reset timer
-            
-            // Advance to next frame
-            anim.current_frame++;
-            
-            // Handle looping
-            if (anim.current_frame >= anim.frame_count) {
-                if (anim.loop) {
-                    anim.current_frame = 0; // Loop back to first frame
-                } else {
-                    anim.current_frame = anim.frame_count - 1; // Stay on last frame
+            // Check if it's time to advance to the next frame
+            if (anim.frame_timer >= anim.frame_time) {
+                anim.frame_timer = 0.0f; // Reset timer
+
+                // Advance to next frame
+                anim.current_frame++;
+
+                // Handle looping
+                if (anim.current_frame >= anim.frame_count) {
+                    if (anim.loop) {
+                        anim.current_frame = 0; // Loop back to first frame
+                    } else {
+                        anim.current_frame = anim.frame_count - 1; // Stay on last frame
+                    }
                 }
             }
         }
@@ -81,31 +94,18 @@ void AnimationSystem::update(registry& r, float dt) {
                 anim.frame_height
             };
 
-            // Calculate scaled dimensions
+            // Calculate scaled dimensions and always center animation at pos
             float scaled_width = anim.frame_width * anim.scale_x;
             float scaled_height = anim.frame_height * anim.scale_y;
 
-            // Destination rectangle (where to draw on screen)
-            Rectangle dest;
-            if (collider_arr && collider_arr->size() > static_cast<size_t>(entity)) {
-                auto& collider_comp = (*collider_arr)[static_cast<size_t>(entity)];
-                float collider_center_x = pos.x + collider_comp.offset_x + collider_comp.w / 2.0f;
-                float collider_center_y = pos.y + collider_comp.offset_y + collider_comp.h / 2.0f;
-                dest = {
-                    collider_center_x - scaled_width / 2.0f,
-                    collider_center_y - scaled_height / 2.0f,
-                    scaled_width, scaled_height
-                };
-            } else {
-                dest = {
-                    pos.x, pos.y,
-                    scaled_width, scaled_height
-                };
-            }
+            Rectangle dest = {
+                pos.x - scaled_width / 2.0f,
+                pos.y - scaled_height / 2.0f,
+                scaled_width, scaled_height
+            };
 
             Vector2 origin = {0.0f, 0.0f};
 
-            // Draw the current frame
             DrawTexturePro(texture, source, dest, origin, 0.0f, WHITE);
         }
     }

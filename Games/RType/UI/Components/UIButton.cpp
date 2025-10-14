@@ -7,6 +7,7 @@
 
 #include "UIButton.hpp"
 #include <iostream>
+#include <cmath>
 
 void UIButton::update(__attribute_maybe_unused__ float delta_time) {
     if (!visible_) return;
@@ -19,6 +20,13 @@ void UIButton::render() {
 
     draw_button_background();
     draw_button_text();
+
+    // When hovered, add subtle neon glow
+    if (state_ == UIState::Hovered) {
+        // glow rectangle
+        DrawRectangleLinesEx({position_.x - 2, position_.y - 2, size_.x + 4, size_.y + 4}, 2.0f, neon_color_);
+        DrawRectangle(position_.x - 4, position_.y - 4, size_.x + 8, 4, neon_glow_color_);
+    }
 }
 
 void UIButton::handle_input() {
@@ -72,6 +80,11 @@ void UIButton::draw_button_background() const {
         DrawRectangle(position_.x + 2, position_.y + 2, size_.x - 4, size_.y - 4, 
                      {255, 255, 255, 30}); // Semi-transparent white overlay
     }
+
+    // add faint scanline texture for cyberpunk feel
+    for (int i = 0; i < (int)size_.y; i += 6) {
+        DrawRectangle(position_.x, position_.y + i, size_.x, 1, {0, 0, 0, 10});
+    }
 }
 
 void UIButton::draw_button_text() const {
@@ -90,5 +103,26 @@ void UIButton::draw_button_text() const {
         text_y += 1;
     }
     
-    DrawTextEx(GetFontDefault(), text_.c_str(), {text_x, text_y}, font_size_, 1.0f, text_color);
+    // On hover, apply jitter and RGB-split glitch
+    if (state_ == UIState::Hovered && enable_glitch_on_hover_) {
+        float t = GetTime() * hover_jitter_speed_ + hover_seed_;
+        float jitter_x = std::sin(t) * hover_jitter_amplitude_;
+        float jitter_y = std::cos(t * 1.3f) * (hover_jitter_amplitude_ / 2.0f);
+
+        // red layer
+        Color rcol = {255, 50, 80, text_color.a};
+        DrawTextEx(GetFontDefault(), text_.c_str(), {text_x + jitter_x + 1, text_y + jitter_y}, font_size_, 1.0f, rcol);
+        // green layer
+        Color gcol = {0, 255, 156, (unsigned char)(text_color.a * 0.6f)};
+        DrawTextEx(GetFontDefault(), text_.c_str(), {text_x - jitter_x - 1, text_y - jitter_y}, font_size_, 1.0f, gcol);
+        // main layer
+        DrawTextEx(GetFontDefault(), text_.c_str(), {text_x, text_y}, font_size_, 1.0f, text_color);
+
+        // tiny random scanline flicker overlay
+        if (((int)(GetTime() * 10) + hover_seed_) % 5 == 0) {
+            DrawRectangle(text_x - 4, text_y + text_size.y + 2, text_size.x + 8, 2, {255, 255, 255, 10});
+        }
+    } else {
+        DrawTextEx(GetFontDefault(), text_.c_str(), {text_x, text_y}, font_size_, 1.0f, text_color);
+    }
 }

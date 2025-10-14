@@ -76,7 +76,7 @@ void RType::create_player(IComponentFactory* factory, float x, float y, float w,
     factory->create_component<velocity>(reg_, entity, 0.f, 0.f);
     // factory->create_drawable(reg_, entity, w, h, 200, 100, 100, 255);
     // factory->create_controllable(reg_, entity, speed);
-    factory->create_component<collider>(reg_, entity, w, h, 0.f, 0.f, false);
+    factory->create_component<collider>(reg_, entity, w, h, -w/2.0f, -h/2.0f, false);
 }
 
 void RType::create_static_entity(IComponentFactory* factory, float x, float y, float w, float h,
@@ -85,7 +85,7 @@ void RType::create_static_entity(IComponentFactory* factory, float x, float y, f
     factory->create_component<position>(reg_, entity, x, y);
     // factory->create_drawable(reg_, entity, w, h, r, g, b, 255);
     if (has_collider) {
-        factory->create_component<collider>(reg_, entity, w, h, 0.f, 0.f, false);
+    factory->create_component<collider>(reg_, entity, w, h, -w/2.0f, -h/2.0f, false);
     }
 }
 
@@ -95,7 +95,7 @@ void RType::create_moving_entity(IComponentFactory* factory, float x, float y, f
     factory->create_component<position>(reg_, entity, x, y);
     // factory->create_component<drawable>(reg_, entity, w, h, r, g, b, 255);
     factory->create_component<velocity>(reg_, entity, vx, vy);
-    factory->create_component<collider>(reg_, entity, w, h, 0.f, 0.f, false);
+    factory->create_component<collider>(reg_, entity, w, h, -w/2.0f, -h/2.0f, false);
 }
 
 void RType::handle_events() {

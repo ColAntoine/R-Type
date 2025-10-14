@@ -10,11 +10,30 @@
 #include "Application.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <random>
+
+// ASCII background state (same as MainMenu)
+static std::vector<std::string> settings_ascii_grid;
+static int settings_ascii_cols = 0;
+static int settings_ascii_rows = 0;
+static int settings_ascii_font_size = 12;
+static float settings_ascii_timer = 0.0f;
+static float settings_ascii_interval = 0.04f;
+static std::mt19937 settings_ascii_rng((unsigned)time(nullptr));
+static std::string settings_ascii_charset = " .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 SettingsState::SettingsState(Application* app) : app_(app) {
 }
 
 void SettingsState::enter() {
+    // prepare ascii background
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    settings_ascii_font_size = 12;
+    settings_ascii_cols = std::max(10, sw / (settings_ascii_font_size / 2));
+    settings_ascii_rows = std::max(8, sh / settings_ascii_font_size);
+    settings_ascii_grid.assign(settings_ascii_rows, std::string(settings_ascii_cols, ' '));
+
     setup_ui();
     initialized_ = true;
 }
@@ -35,13 +54,42 @@ void SettingsState::resume() {
 void SettingsState::update(float delta_time) {
     if (!initialized_) return;
     ui_manager_.update(delta_time);
+
+    settings_ascii_timer += delta_time;
+    if (settings_ascii_timer >= settings_ascii_interval) {
+        settings_ascii_timer = 0.0f;
+        std::uniform_int_distribution<int> row_dist(0, settings_ascii_rows - 1);
+        std::uniform_int_distribution<int> col_dist(0, settings_ascii_cols - 1);
+        std::uniform_int_distribution<int> char_dist(0, (int)settings_ascii_charset.size() - 1);
+        int changes = std::max(1, (settings_ascii_cols * settings_ascii_rows) / 50);
+        for (int i = 0; i < changes; ++i) {
+            int r = row_dist(settings_ascii_rng);
+            int c = col_dist(settings_ascii_rng);
+            settings_ascii_grid[r][c] = settings_ascii_charset[char_dist(settings_ascii_rng)];
+        }
+    }
 }
 
 void SettingsState::render() {
     if (!initialized_) return;
 
-    // Draw semi-transparent overlay
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 100});
+    // Draw ascii background
+    ClearBackground({10, 10, 12, 255});
+    Color ascii_color = {0, 229, 255, 90};
+    int start_x = 10;
+    int start_y = 30;
+    for (int r = 0; r < settings_ascii_rows; ++r) {
+        for (int c = 0; c < settings_ascii_cols; ++c) {
+            char ch = settings_ascii_grid[r][c];
+            if (ch == ' ') continue;
+            int x = start_x + c * (settings_ascii_font_size / 2);
+            int y = start_y + r * settings_ascii_font_size;
+            DrawText(std::string(1, ch).c_str(), x, y, settings_ascii_font_size, ascii_color);
+        }
+    }
+
+    // translucent overlay
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 140});
 
     // Render UI
     ui_manager_.render();

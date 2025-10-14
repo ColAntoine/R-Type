@@ -21,6 +21,11 @@ class InGameState : public IGameState {
         UIManager ui_manager_;
         bool initialized_{false};
         bool paused_{false};
+        // in-game background state
+        float bg_time_{0.0f};
+        struct DataStream { float x; float y; float speed; float length; int chars; };
+        std::vector<DataStream> bg_streams_;
+        int bg_stream_count_{0};
 
     public:
         InGameState(Application* app);
@@ -44,4 +49,6 @@ class InGameState : public IGameState {
         void setup_hud();
         void cleanup_hud();
         void update_hud();
+        // Render helpers
+        void render_falling_background();
 };
