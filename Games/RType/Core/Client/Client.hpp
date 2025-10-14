@@ -4,9 +4,21 @@
 #include <atomic>
 #include <thread>
 #include <functional>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
+
+#ifdef _WIN32
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+  using socket_t = SOCKET;
+  #define CLOSESOCKET(s) closesocket(s)
+#else
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <arpa/inet.h>
+  #include <unistd.h>
+  using socket_t = int;
+  #define CLOSESOCKET(s) close(s)
+#endif
+
 
 class UDPClient {
     private:
