@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef _WIN32
+
 #include "ALoader.hpp"
 #include <dlfcn.h>
 #include <iostream>
@@ -18,3 +20,5 @@ class WindowsLoader : public ALoader {
         bool load_components(const std::string& so_path, registry& reg) override;
         bool load_system(const std::string& so_path) override;
 };
+
+#endif // _WIN32

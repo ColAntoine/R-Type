@@ -5,6 +5,8 @@
 ** WindowsLoader
 */
 
+#ifdef _WIN32
+
 #include "ECS/WindowsLoader.hpp"
 
 bool WindowsLoader::load_system(const std::string &so_path) {
@@ -120,3 +122,5 @@ bool WindowsLoader::load_components(const std::string &so_path, registry &reg) {
     std::cout << "Components loaded successfully from " << so_path << std::endl;
     return true;
 }
+
+#endif // _WIN32

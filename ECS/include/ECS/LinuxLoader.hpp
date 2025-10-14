@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef __linux__
+
 #include "ALoader.hpp"
 #include <dlfcn.h>
 #include <iostream>
@@ -19,3 +21,4 @@ class LinuxLoader : public ALoader {
 
 };
 
+#endif // __linux__
