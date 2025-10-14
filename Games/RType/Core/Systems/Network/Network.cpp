@@ -1,6 +1,9 @@
-#include "Core/Systems/Network/Network.hpp"
+    #include "Core/Systems/Network/Network.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include <iostream>
+#include <deque>
+#include <unordered_map>
+#include <cstddef>
 
 // NetworkSystem implementation
 NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* network_service, IComponentFactory* component_factory)
@@ -65,8 +68,34 @@ void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ fl
     }
     pending_leaves_.clear();
 
-    // Process pending player moves
+    // --- Client-side prediction ---
+    // Predict local player position based on input and previous velocity
+    auto* pos_array = ecs_registry.get_if<position>();
+    auto* vel_array = ecs_registry.get_if<velocity>();
+    // Note: input component not available, commenting out for now
+    // auto* input_array = ecs_registry.get_if<input>();
+    if (pos_array && vel_array && pos_array->size() > 0 && vel_array->size() > 0) {
+        auto& pos = (*pos_array)[0];
+        auto& vel = (*vel_array)[0];
+        // Simple prediction: update position by velocity
+        // TODO: Add input handling when input component is available
+        float predicted_x = pos.x + vel.vx * delta_time;
+        float predicted_y = pos.y + vel.vy * delta_time;
+        pos.x = predicted_x;
+        pos.y = predicted_y;
+    }
+
+    // --- Server reconciliation ---
+    // If server state differs from predicted, correct local state
     for (const auto& move_event : pending_moves_) {
+        if (pos_array && pos_array->size() > 0) {
+            auto& pos = (*pos_array)[0];
+            float error = std::abs(pos.x - move_event.x) + std::abs(pos.y - move_event.y);
+            if (error > 5.0f) {
+                pos.x = move_event.x;
+                pos.y = move_event.y;
+            }
+        }
         auto it = remote_players_.find(move_event.player_id);
         if (it != remote_players_.end()) {
             update_remote_player_position(ecs_registry, move_event.player_id, move_event.x, move_event.y);

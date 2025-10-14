@@ -34,6 +34,12 @@ public:
 
     void broadcast_spawn(registry& r, entity e);
     void broadcast_destroy(uint32_t network_id);
+
+    // Advanced networking features (stubs)
+    void handle_acknowledgement(uint32_t entity_id, uint32_t sequence_id); // ACK handling
+    void resend_unconfirmed_changes(); // Resend logic
+    void apply_lag_compensation(uint32_t client_id, float timestamp); // Lag compensation
+    void apply_delta_compression(); // Delta-compression stub
 };
 
 extern "C" {

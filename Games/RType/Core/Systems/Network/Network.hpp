@@ -50,6 +50,13 @@ class NetworkSystem {
             void handle_entity_destroy(const EntityDestroyEvent& e);
             void send_position_updates(registry& ecs_registry);
 
+            // Advanced networking features (stubs)
+            void predict_local_player(registry& ecs_registry, float delta_time); // Prediction
+            void reconcile_with_server(registry& ecs_registry); // Reconciliation
+            void interpolate_remote_entities(registry& ecs_registry, float delta_time); // Interpolation
+            void rollback_and_replay(registry& ecs_registry); // Rollback netcode
+            void handle_acknowledgement(uint32_t entity_id, uint32_t sequence_id); // ACK handling
+
             // Helper methods for remote player management
             entity create_remote_player(registry& ecs_registry, int player_id, float x, float y);
             void update_remote_player_position(registry& ecs_registry, int player_id, float x, float y);

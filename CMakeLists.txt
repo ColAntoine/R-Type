@@ -89,6 +89,7 @@ endif()
 
 # Add subdirectories for modular builds
 add_subdirectory(Games/RType)
+add_subdirectory(Network)
 
 # Build Game executable (r-type_client)
 # Check if main file exists in Games directory (for backwards compatibility)
@@ -135,16 +136,18 @@ if(NETWORK_SOURCES)
     target_include_directories(r-type_server PRIVATE
         Network
         Network/include
+        ECS/include
+        Games/RType
     )
 
-    # Link with required system libraries for Asio
+    # Link with required system libraries for Asio and ECS
     find_package(Threads REQUIRED)
     target_link_libraries(r-type_server
         Threads::Threads
         asio::asio
+        ECS
+        dl
     )
-
-    # Note: Server doesn't link with ECS to avoid raylib dependency
 endif()
 
 # Set output directories

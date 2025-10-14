@@ -1,0 +1,15 @@
+# Networking Features Checklist
+- [ ] Make the Server have an innstance of the ecs runig with the game
+- [ ] If needed separate the game code of the client codee completelty, the game simulation should be one thing, then the server and client differ in the way they handle everything network related. Of course the server should not render the game at all
+- [ ] Ajouter un tickrate  
+- [ ] Envoyer uniquement la différence d'état  
+- [ ] Ajouter la prédiction client  
+- [ ] Implémenter le server reconciliation  
+- [ ] Ajouter l'interpolation des entités (affichage des autres joueurs avec un tick de retard)  
+- [ ] Implémenter les acknowledgements (ACK)  
+  - [ ] Le serveur garde en mémoire les anciens moves
+  - [ ] Renvoyer les changements non confirmés  
+  - [ ] Implémenter la delta-compression  
+  - [ ] Si trop complexe, renvoyer périodiquement l’état complet du jeu  
+- [ ] Ajouter la lag compensation  
+- [ ] Implémenter le rollback-based netcode (prédire mouvements et projectiles depuis le dernier état connu)

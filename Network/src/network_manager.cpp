@@ -1,5 +1,6 @@
 #include "network_manager.hpp"
 #include "udp_server.hpp"
+#include "server_game_instance.hpp"
 #include <iostream>
 
 namespace RType::Network {
@@ -27,6 +28,13 @@ bool NetworkManager::initialize(uint16_t port) {
         // Create UDP server
         server_ = std::make_shared<UdpServer>(io_context_, port_);
 
+        // Create server game instance
+        game_instance_ = std::make_shared<ServerGameInstance>();
+        if (!game_instance_->initialize(server_)) {
+            std::cerr << "Failed to initialize server game instance" << std::endl;
+            return false;
+        }
+
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Failed to initialize NetworkManager: " << e.what() << std::endl;
@@ -49,6 +57,13 @@ bool NetworkManager::start(size_t thread_count) {
         // Start the UDP server
         if (!server_->start()) {
             std::cerr << "Failed to start UDP server" << std::endl;
+            return false;
+        }
+
+        // Start the game instance
+        if (game_instance_ && !game_instance_->start()) {
+            std::cerr << "Failed to start server game instance" << std::endl;
+            server_->stop();
             return false;
         }
 
@@ -77,6 +92,11 @@ void NetworkManager::stop() {
     std::cout << "Stopping NetworkManager..." << std::endl;
 
     running_ = false;
+
+    // Stop the game instance first
+    if (game_instance_) {
+        game_instance_->stop();
+    }
 
     // Stop the server
     if (server_) {
