@@ -10,7 +10,6 @@
 #ifdef _WIN32
 
 #include "ALoader.hpp"
-#include <dlfcn.h>
 #include <iostream>
 #include <filesystem>
 #include <windows.h>

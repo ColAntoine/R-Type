@@ -7,6 +7,8 @@
 
 #pragma once
 
+#ifdef __APPLE__
+
 #include "ALoader.hpp"
 #include <dlfcn.h>
 #include <iostream>
@@ -19,3 +21,4 @@ class MacOs : public ALoader{
 
 };
 
+#endif // __APPLE__
