@@ -42,8 +42,7 @@ class ALoader : public ILoader{
             std::string name;
         };
 
-        void* library_handle_;           // For components
-        IComponentFactory* factory_;     // For components
+        IComponentFactory* factory_ = nullptr;     // For components
         std::vector<LoadedSystem> systems_; // For systems
     
 };

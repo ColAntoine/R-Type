@@ -19,6 +19,8 @@ class LinuxLoader : public ALoader {
         bool load_components(const std::string& so_path, registry& reg) override;
         bool load_system(const std::string& so_path) override;
 
+    private:
+        void* library_handle_ = nullptr;  
 };
 
 #endif // __linux__
