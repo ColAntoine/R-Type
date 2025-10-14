@@ -35,5 +35,3 @@ TEST_CASE_TEMPLATE("Box::empty()", B, int, double) {
     Box<B> b{B{}};
     CHECK_FALSE(b.empty());
 }
-
-//test
