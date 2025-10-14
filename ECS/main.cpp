@@ -7,6 +7,8 @@
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/RType.hpp"
 
+// TODO: Remove this file!
+
 RType::RType()
 {
     InitWindow(800, 600, "ECS Raylib Demo");
