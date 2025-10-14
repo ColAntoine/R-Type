@@ -81,6 +81,20 @@ void Application::send_ready_signal(bool ready) {
 
 #include "ECS/Zipper.hpp"
 
+void Application::checkGameEnd()
+{
+    auto scoreArr = ecs_registry_.get_if<Score>();
+
+    if (scoreArr) {
+        for (auto [score, entity] : zipper(*scoreArr)) {
+            if (score._score >= 10) {
+                state_manager_.change_state("Lobby");
+                break;
+            }
+        }
+    }
+}
+
 void Application::run() {
     if (!running_) {
         std::cerr << "Application not initialized" << std::endl;
@@ -95,6 +109,7 @@ void Application::run() {
     while (running_ && !render_service.should_close() && !state_manager_.is_empty()) {
         float delta_time = render_service.get_frame_time();
 
+        checkGameEnd();
         // Emit frame update event
         event_manager_.emit(FrameUpdateEvent(delta_time));
 

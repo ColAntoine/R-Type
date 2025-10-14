@@ -62,6 +62,7 @@ class Application {
         void service_setup();
         void setup_event_handlers();
         void setup_game_states();
+        void checkGameEnd();
 
     public:
         // Getters for states to access application systems
