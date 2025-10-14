@@ -1,0 +1,12 @@
+name: Guard Main
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deny-direct-push:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "No direct push into main."
