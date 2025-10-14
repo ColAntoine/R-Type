@@ -10,6 +10,17 @@
 #include "Application.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <random>
+
+// ASCII background for WaitingLobby
+static std::vector<std::string> wait_ascii_grid;
+static int wait_ascii_cols = 0;
+static int wait_ascii_rows = 0;
+static int wait_ascii_font_size = 12;
+static float wait_ascii_timer = 0.0f;
+static float wait_ascii_interval = 0.04f;
+static std::mt19937 wait_ascii_rng((unsigned)time(nullptr));
+static std::string wait_ascii_charset = " .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 WaitingLobbyState::WaitingLobbyState(Application* app) : app_(app) {
 }
@@ -39,6 +50,13 @@ void WaitingLobbyState::enter() {
     connected_players_.push_back(local_player);
 
     update_player_list();
+
+    int sw = GetScreenWidth();
+    int sh = GetScreenHeight();
+    wait_ascii_font_size = 12;
+    wait_ascii_cols = std::max(10, sw / (wait_ascii_font_size / 2));
+    wait_ascii_rows = std::max(8, sh / wait_ascii_font_size);
+    wait_ascii_grid.assign(wait_ascii_rows, std::string(wait_ascii_cols, ' '));
 }
 
 void WaitingLobbyState::exit() {
@@ -63,10 +81,39 @@ void WaitingLobbyState::update(float delta_time) {
 
     // Update player list and ready status periodically
     update_ready_status();
+
+    wait_ascii_timer += delta_time;
+    if (wait_ascii_timer >= wait_ascii_interval) {
+        wait_ascii_timer = 0.0f;
+        std::uniform_int_distribution<int> row_dist(0, wait_ascii_rows - 1);
+        std::uniform_int_distribution<int> col_dist(0, wait_ascii_cols - 1);
+        std::uniform_int_distribution<int> char_dist(0, (int)wait_ascii_charset.size() - 1);
+        int changes = std::max(1, (wait_ascii_cols * wait_ascii_rows) / 50);
+        for (int i = 0; i < changes; ++i) {
+            int r = row_dist(wait_ascii_rng);
+            int c = col_dist(wait_ascii_rng);
+            wait_ascii_grid[r][c] = wait_ascii_charset[char_dist(wait_ascii_rng)];
+        }
+    }
 }
 
 void WaitingLobbyState::render() {
     if (!initialized_) return;
+    // draw ascii background behind UI
+    ClearBackground({10, 10, 12, 255});
+    Color ascii_color = {0, 229, 255, 90};
+    int start_x = 10;
+    int start_y = 30;
+    for (int r = 0; r < wait_ascii_rows; ++r) {
+        for (int c = 0; c < wait_ascii_cols; ++c) {
+            char ch = wait_ascii_grid[r][c];
+            if (ch == ' ') continue;
+            int x = start_x + c * (wait_ascii_font_size / 2);
+            int y = start_y + r * wait_ascii_font_size;
+            DrawText(std::string(1, ch).c_str(), x, y, wait_ascii_font_size, ascii_color);
+        }
+    }
+
     ui_manager_.render();
 }
 

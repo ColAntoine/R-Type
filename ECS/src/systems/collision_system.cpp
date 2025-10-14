@@ -8,6 +8,7 @@
 #include <iostream>
 #include <algorithm>
 #include <array>
+#include <raylib.h>
 #include "ECS/Systems/Collision.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
@@ -57,6 +58,7 @@ void CollisionSystem::update(registry& r, float dt) {
                 std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
                 continue;
             }
+            resolve_penetration(pi, a, pj, b);
         }
     }
 }

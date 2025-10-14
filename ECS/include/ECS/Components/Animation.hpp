@@ -15,12 +15,12 @@ struct animation : public IComponent {
     std::string texture_path;
 
     // Frame dimensions in pixels
-    float frame_width{400}; // Default frame width
-    float frame_height{400}; // Default frame height
+    float frame_width{400};
+    float frame_height{400};
 
     // Scaling factors
-    float scale_x{1.0f}; // Horizontal scale (1.0 = normal size)
-    float scale_y{1.0f}; // Vertical scale (1.0 = normal size)
+    float scale_x{1.0f};
+    float scale_y{1.0f};
 
     // Number of frames horizontally (optional: if 0 we will compute at runtime)
     int frame_count{0};
@@ -32,11 +32,13 @@ struct animation : public IComponent {
     float frame_timer{0.0f};
     // Whether animation loops back to start after last frame
     bool loop{true};
+    // If true the animation only advances while the entity is moving (velocity != 0)
+    bool play_on_movement{false};
 
 
     animation() = default;
-    animation(const std::string &path, float fw, float fh, int fc = 0)
-        : texture_path(path), frame_width(fw), frame_height(fh), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true) {}
-    animation(const std::string &path, float fw, float fh, float sx, float sy, int fc = 0)
-        : texture_path(path), frame_width(fw), frame_height(fh), scale_x(sx), scale_y(sy), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true) {}
+    animation(const std::string &path, float fw, float fh, int fc = 0, bool playOnMovement = false)
+        : texture_path(path), frame_width(fw), frame_height(fh), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true), play_on_movement(playOnMovement) {}
+    animation(const std::string &path, float fw, float fh, float sx, float sy, int fc = 0, bool playOnMovement = false)
+        : texture_path(path), frame_width(fw), frame_height(fh), scale_x(sx), scale_y(sy), frame_count(fc), current_frame(0), frame_time(0.1f), frame_timer(0.0f), loop(true), play_on_movement(playOnMovement) {}
 };

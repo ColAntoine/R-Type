@@ -26,6 +26,13 @@ class UIButton : public UIComponent {
 
         int font_size_{20};
         bool was_pressed_last_frame_{false};
+    // Neon / glitch style
+    Color neon_color_{0, 229, 255, 255}; // cyan neon
+    Color neon_glow_color_{0, 229, 255, 100};
+    float hover_jitter_amplitude_{2.0f};
+    float hover_jitter_speed_{8.0f};
+    bool enable_glitch_on_hover_{true};
+    int hover_seed_{0};
 
     public:
         UIButton() = default;
@@ -50,6 +57,8 @@ class UIButton : public UIComponent {
             text_color_ = text_color;
             disabled_text_color_ = disabled_text_color;
         }
+        void set_neon(Color neon, Color glow) { neon_color_ = neon; neon_glow_color_ = glow; }
+        void set_glitch_params(float amplitude, float speed, bool enabled=true) { hover_jitter_amplitude_ = amplitude; hover_jitter_speed_ = speed; enable_glitch_on_hover_ = enabled; }
         void set_font_size(int size) { font_size_ = size; }
 
         const std::string& get_text() const { return text_; }
