@@ -31,6 +31,8 @@ endif()
 
 # Include directories
 include_directories(include)
+include_directories(../ECS/include)  # Add ECS headers
+include_directories(../Games/RType)  # Add Game headers for NetworkSyncSystem
 
 if(USE_STANDALONE_ASIO)
     include_directories(${ASIO_INCLUDE_DIR})
@@ -46,6 +48,7 @@ set(NETWORK_SOURCES
     src/message_handler.cpp
     src/protocol.cpp
     src/game_handlers.cpp
+    src/server_game_instance.cpp
 )
 
 # Header files (for IDE support)
@@ -57,6 +60,7 @@ set(NETWORK_HEADERS
     include/message_handler.hpp
     include/protocol.hpp
     include/game_handlers.hpp
+    include/server_game_instance.hpp
 )
 
 # Create the network library
@@ -76,6 +80,9 @@ target_link_libraries(rtype_network PUBLIC Threads::Threads)
 if(USE_BOOST_ASIO)
     target_link_libraries(rtype_network PUBLIC Boost::system)
 endif()
+
+# Link against dl for dynamic loading of ECS systems
+target_link_libraries(rtype_network PUBLIC dl)
 
 # Create the server executable
 add_executable(rtype_server main.cpp)

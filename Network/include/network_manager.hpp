@@ -9,6 +9,7 @@
 namespace RType::Network {
 
     class UdpServer;
+    class ServerGameInstance;
 
     /**
      * @brief Main network manager that orchestrates the entire network layer
@@ -55,12 +56,18 @@ namespace RType::Network {
              */
             std::shared_ptr<UdpServer> get_server() const { return server_; }
 
+            /**
+             * @brief Get the server game instance
+             */
+            std::shared_ptr<ServerGameInstance> get_game_instance() const { return game_instance_; }
+
         private:
             void run_worker_thread();
 
             asio::io_context io_context_;
             std::unique_ptr<asio::io_context::work> work_guard_;
             std::shared_ptr<UdpServer> server_;
+            std::shared_ptr<ServerGameInstance> game_instance_;
             std::vector<std::thread> worker_threads_;
             std::atomic<bool> running_;
             uint16_t port_;

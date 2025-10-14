@@ -1,6 +1,9 @@
-#include "Core/Systems/Network/Network.hpp"
+    #include "Core/Systems/Network/Network.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include <iostream>
+#include <deque>
+#include <unordered_map>
+#include <cstddef>
 
 // NetworkSystem implementation
 NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* network_service, IComponentFactory* component_factory)
