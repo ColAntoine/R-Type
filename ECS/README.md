@@ -19,49 +19,49 @@ The **Entity Component System (ECS)** is a design pattern commonly used in game 
 ---
 
 ## Project Structure
-The ECS implementation in this project is modular and supports dynamic loading of components. Here's an overview of the key files:
+The ECS implementation in this project is modular and supports dynamic loading of both components and systems. Here's an overview of the key files:
 
-### 1. `main.cpp`
-- **Purpose**: Entry point of the application.
-- **Responsibilities**:
-  - Initializes the ECS registry.
-  - Dynamically loads components from the `libcomponents.so` shared library.
-  - Sets up the scene by creating entities and attaching components.
-  - Runs the game loop, which includes event handling, updating systems, and rendering.
-
-### 2. `include/ecs/registry.hpp`
+### 1. `include/ecs/registry.hpp`
 - **Purpose**: Core of the ECS framework.
 - **Responsibilities**:
   - Manages entities and their associated components.
   - Provides methods to add, remove, and query components for entities.
   - Allows systems to iterate over entities with specific components.
 
-### 3. `include/ecs/components.hpp`
+### 2. `include/ecs/components.hpp`
 - **Purpose**: Defines the components used in the ECS.
-- **Components**:
+- **Available Components**:
   - `position`: Stores the x and y coordinates of an entity.
   - `velocity`: Stores the velocity (vx, vy) of an entity.
-  - `drawable`: Stores rendering properties (e.g., color, size).
-  - `controllable`: Stores input-related properties (e.g., speed).
-  - `collider`: Stores collision properties (e.g., width, height, offsets).
+  - `sprite`: Stores rendering properties (texture path, dimensions, scale, rotation, frame coordinates, visibility).
+  - `animation`: Stores spritesheet animation data (texture path, frame dimensions, frame count, timing, loop settings).
+  - `collider`: Stores collision properties (width, height, offsets, trigger flag).
 
-### 4. `include/ecs/systems.hpp`
-- **Purpose**: Defines the systems that operate on entities.
-- **Systems**:
-  - `control_system`: Handles user input and updates entity velocities.
-  - `collision_system`: Detects and resolves collisions between entities.
-  - `draw_system`: Renders entities with the `drawable` component.
+### 3. `include/ecs/systems/` (System Headers)
+- **Purpose**: Defines the interface for systems that operate on entities.
+- **Available Systems**:
+  - `position_system`: Updates entity positions based on velocity.
+  - `collision_system`: Detects and resolves collisions between entities with collider components.
+  - `sprite_system`: Renders entities with sprite components.
+  - `animation_system`: Manages spritesheet animations and frame progression.
 
-### 5. `src/components/library.cpp`
+### 4. `src/components/library.cpp`
 - **Purpose**: Implements the components and provides dynamic loading functionality.
 - **Responsibilities**:
   - Implements the `register_components` function to register all components with the ECS registry.
   - Implements the `IComponentFactory` interface to dynamically create components.
 
-### 6. `include/ecs/component_factory.hpp`
+### 5. `include/ecs/component_factory.hpp`
 - **Purpose**: Defines the `IComponentFactory` interface.
 - **Responsibilities**:
   - Provides methods to dynamically create components without exposing their concrete types.
+
+### 6. `include/ecs/dlloader.hpp`
+- **Purpose**: Handles dynamic loading of shared libraries.
+- **Responsibilities**:
+  - Loads component libraries (`libECS.so`) at runtime.
+  - Loads system libraries (e.g., `libposition_system.so`, `libcollision_system.so`, `libsprite_system.so`, `libanimation_system.so`).
+  - Provides interface for registering components and systems with the registry.
 
 ### 7. `include/ecs/zipper.hpp`
 - **Purpose**: Provides a utility for iterating over multiple components simultaneously.
@@ -71,33 +71,86 @@ The ECS implementation in this project is modular and supports dynamic loading o
 
 ---
 
-## Dynamic Loading
-The ECS supports dynamic loading of components from a shared library (`libcomponents.so`). This allows you to add or modify components without recompiling the entire application.
+## Dynamic Loading Architecture
+The ECS library is built as a framework that supports dynamic loading of both components and systems through shared libraries. This allows you to add, modify, or replace components and systems without recompiling the core ECS library.
 
-### How It Works
-1. **Shared Library**:
-   - The `libcomponents.so` library contains the implementation of components and the `register_components` function.
-   - It also provides a factory (`IComponentFactory`) for creating components dynamically.
+### Component Libraries
+1. **Component Shared Library (`libECS.so`)**:
+   - Contains the implementation of all components.
+   - Exports a `register_components` function that registers components with the ECS registry.
+   - Provides a factory (`IComponentFactory`) for creating component instances dynamically.
 
-2. **Dynamic Loading**:
-   - The `main.cpp` file uses `dlopen` to load the shared library at runtime.
-   - The `register_components` function is called to register all components with the ECS registry.
-   - The `get_component_factory` function is used to retrieve the factory for creating components.
+2. **Loading Components**:
+   - Use the `DLLoader` class to load the shared library at runtime via `dlopen`.
+   - Call `register_components` to register all components with the registry.
+   - Retrieve the `IComponentFactory` to create component instances dynamically.
+
+### System Libraries
+1. **System Shared Libraries** (e.g., `libposition_system.so`, `libcollision_system.so`, `libsprite_system.so`, `libanimation_system.so`):
+   - Each system can be compiled as an independent shared library.
+   - Systems export their logic through a standardized interface (`ISystem`).
+   - Located in `lib/systems/` directory by default.
+
+2. **Loading Systems**:
+   - Systems are loaded individually through `DLLoader::load_system_from_so()`.
+   - Each system library provides its initialization and execution functions.
+   - Systems can be loaded, unloaded, or replaced at runtime without affecting other systems.
+
+### Integration Example
+```cpp
+#include "ECS/Registry.hpp"
+#include "ECS/DLLoader.hpp"
+
+int main() {
+    registry reg;
+    DLLoader loader;
+    
+    // Load component library
+    if (!loader.load_components_from_so("./libECS.so", reg)) {
+        std::cerr << "Failed to load components!" << std::endl;
+        return 1;
+    }
+    
+    // Load system libraries
+    loader.load_system_from_so("./lib/systems/libposition_system.so");
+    loader.load_system_from_so("./lib/systems/libcollision_system.so");
+    loader.load_system_from_so("./lib/systems/libsprite_system.so");
+    loader.load_system_from_so("./lib/systems/libanimation_system.so");
+    
+    // Your game logic here...
+    return 0;
+}
+```
 
 ---
 
-## Example Workflow
-### 1. Adding a New Component
-To add a new component:
-1. Define the component in `components.hpp`.
-2. Implement the component in `library.cpp`.
-3. Update the `register_components` function to register the new component.
+## Development Workflows
 
-### 2. Adding a New System
+### Creating a New Component
+To add a new component to the ECS:
+1. **Define** the component structure in `include/ECS/Components/<ComponentName>.hpp`.
+2. **Implement** the component logic in `src/components/<component_name>.cpp`.
+3. **Register** the component in `src/components/library.cpp` within the `register_components` function.
+4. **Rebuild** the component library (`libECS.so`).
+
+### Creating a New System
 To add a new system:
-1. Define the system in `systems.hpp`.
-2. Implement the system logic in `systems.cpp`.
-3. Call the system in the `update` or `render` function in `main.cpp`.
+1. **Define** the system interface in `include/ECS/Systems/<SystemName>.hpp` (implement `ISystem`).
+2. **Implement** the system logic in `src/systems/<system_name>.cpp`.
+3. **Export** the system's initialization and execution functions.
+4. **Compile** as a separate shared library (e.g., `lib<system_name>.so`).
+5. **Load** the system dynamically using `DLLoader` in your application.
+
+### Building Component and System Libraries
+```bash
+# Build the component library
+cd ECS
+./build.sh
+
+# Component library will be generated as libECS.so
+# System libraries will be in lib/systems/
+# libECS.so will be copied in lib/
+```
 
 ---
 
@@ -107,7 +160,8 @@ To add a new system:
 auto entity = reg.spawn_entity();
 reg.emplace_component<position>(entity, 100.f, 200.f);
 reg.emplace_component<velocity>(entity, 5.f, 0.f);
-reg.emplace_component<drawable>(entity, 50.f, 50.f, 255, 0, 0, 255);
+reg.emplace_component<sprite>(entity, "assets/player.png", 64.f, 64.f);
+reg.emplace_component<collider>(entity, 64.f, 64.f);
 ```
 
 ### Iterating Over Entities in a System
@@ -142,13 +196,13 @@ for (auto [pos, vel] : zipper(reg.get<position>(), reg.get<velocity>())) {
 
 ## Additional Examples
 
-### Example 1: Adding a Controllable Entity
+### Example 1: Creating an Animated Entity
 ```cpp
-auto player = reg.spawn_entity();
-reg.emplace_component<position>(player, 50.f, 50.f);
-reg.emplace_component<velocity>(player, 0.f, 0.f);
-reg.emplace_component<drawable>(player, 20.f, 20.f, 0, 255, 0, 255);
-reg.emplace_component<controllable>(player, 150.f);
+auto animated_entity = reg.spawn_entity();
+reg.emplace_component<position>(animated_entity, 50.f, 50.f);
+reg.emplace_component<velocity>(animated_entity, 0.f, 0.f);
+reg.emplace_component<animation>(animated_entity, "assets/spritesheet.png", 64.f, 64.f, 8);
+reg.emplace_component<collider>(animated_entity, 64.f, 64.f);
 ```
 
 ### Example 2: Detecting Collisions
@@ -164,14 +218,26 @@ for (auto [collider1, pos1] : zipper(reg.get<collider>(), reg.get<position>())) 
 }
 ```
 
-### Example 3: Rendering Entities
+### Example 3: Rendering Sprites
 ```cpp
-for (auto [pos, draw] : zipper(reg.get<position>(), reg.get<drawable>())) {
-    sf::RectangleShape shape(sf::Vector2f(draw.w, draw.h));
-    shape.setPosition(pos.x, pos.y);
-    shape.setFillColor(sf::Color(draw.r, draw.g, draw.b, draw.a));
-    window.draw(shape);
+for (auto [pos, spr] : zipper(reg.get<position>(), reg.get<sprite>())) {
+    if (spr.visible) {
+        // Load texture and create sprite
+        // Position sprite at (pos.x, pos.y)
+        // Apply scale (spr.scale_x, spr.scale_y)
+        // Apply rotation (spr.rotation)
+        // Render the sprite
+    }
 }
+```
+
+### Example 4: Creating a Moving Enemy
+```cpp
+auto enemy = reg.spawn_entity();
+reg.emplace_component<position>(enemy, 700.f, 300.f);
+reg.emplace_component<velocity>(enemy, -50.f, 0.f);  // Moving left
+reg.emplace_component<sprite>(enemy, "assets/enemy.png", 48.f, 48.f, 1.5f, 1.5f);  // 1.5x scale
+reg.emplace_component<collider>(enemy, 48.f, 48.f, 0.f, 0.f, false);
 ```
 
 ---
@@ -193,3 +259,46 @@ for (auto [pos, draw] : zipper(reg.get<position>(), reg.get<drawable>())) {
    - Add support for saving and loading the state of the ECS.
 3. **Event System**:
    - Implement an event system for better communication between systems.
+
+---
+
+## Contributing
+
+Contributions are welcome! Please follow these guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## License
+
+This project is part of the R-Type project at EPITECH.
+
+---
+
+## Authors
+
+**R-Type Development Team**
+
+- Project Repository: [R-Type](https://github.com/ColAntoine/R-Type)
+- Organization: EPITECH
+
+---
+
+## Acknowledgments
+
+- Inspired by classic ECS implementations
+- Built with modern C++ practices
+- Designed for high-performance game development
+
+---
+
+<div align="center">
+  <strong>Made with ❤️ for game development</strong>
+  <br>
+  <sub>© 2025 R-Type Team - EPITECH</sub>
+</div>

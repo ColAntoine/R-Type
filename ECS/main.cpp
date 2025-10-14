@@ -8,12 +8,14 @@
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/RType.hpp"
 
+// TODO: Remove this file!
+
 RType::RType()
 {
     InitWindow(800, 600, "ECS Raylib Demo");
     SetTargetFPS(60);
 
-    if (!loader_.load_components_from_so("./libcomponents.so", reg_)) {
+    if (!loader_.load_components_from_so("./libECS.so", reg_)) {
         std::cerr << "Failed to load components library!" << std::endl;
         exit(EXIT_FAILURE);
     }
