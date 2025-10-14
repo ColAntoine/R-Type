@@ -79,15 +79,19 @@ void InGameState::update(float delta_time) {
 
     // update background
     bg_time_ += delta_time;
+    // Use static RNG and distributions for consistency
+    static std::mt19937 update_rng((unsigned)time(nullptr));
+    static std::uniform_int_distribution<int> x_offset_dist(-100, 99);
+    static std::uniform_int_distribution<int> speed_offset_dist(0, 159);
     for (auto &s : bg_streams_) {
         s.y += s.speed * delta_time;
         if (s.y - s.length > GetScreenHeight()) {
             s.y = -s.length * 0.2f;
             // slightly randomize x and speed
-            s.x += (rand() % 200) - 100;
+            s.x += x_offset_dist(update_rng);
             if (s.x < 0) s.x += GetScreenWidth();
             if (s.x > GetScreenWidth()) s.x -= GetScreenWidth();
-            s.speed = 80.0f + (rand() % 160);
+            s.speed = 80.0f + speed_offset_dist(update_rng);
         }
     }
 }
