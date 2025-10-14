@@ -31,6 +31,7 @@ endif()
 
 # Include directories
 include_directories(include)
+include_directories(${CMAKE_SOURCE_DIR}/ECS/include)
 
 if(USE_STANDALONE_ASIO)
     include_directories(${ASIO_INCLUDE_DIR})
@@ -64,6 +65,10 @@ add_library(rtype_network STATIC ${NETWORK_SOURCES} ${NETWORK_HEADERS})
 
 # Set target properties
 target_include_directories(rtype_network PUBLIC include)
+# Allow network code to include ECS headers when linking against ECS
+if(TARGET ECS)
+    target_include_directories(rtype_network PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
+endif()
 
 if(USE_STANDALONE_ASIO)
     target_include_directories(rtype_network PUBLIC ${ASIO_INCLUDE_DIR})
@@ -80,6 +85,10 @@ endif()
 # Create the server executable
 add_executable(rtype_server main.cpp)
 target_link_libraries(rtype_server PRIVATE rtype_network)
+if(TARGET ECS)
+    target_link_libraries(rtype_server PRIVATE ECS)
+    target_include_directories(rtype_server PRIVATE ${CMAKE_SOURCE_DIR}/ECS ${CMAKE_SOURCE_DIR}/ECS/include)
+endif()
 
 # Compiler flags
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

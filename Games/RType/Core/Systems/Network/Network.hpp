@@ -33,6 +33,7 @@ class NetworkSystem {
         std::vector<EnemySpawnEvent> pending_enemy_spawns_;
         std::vector<EnemyUpdateEvent> pending_enemy_updates_;
         std::vector<EnemyDestroyEvent> pending_enemy_destroys_;
+        std::vector<PlayerShootEvent> pending_remote_shoots_;
 
         public:
                 NetworkSystem(EventManager* event_manager, NetworkService* network_service, IComponentFactory* component_factory);
@@ -46,9 +47,11 @@ class NetworkSystem {
             void handle_enemy_spawn(const EnemySpawnEvent& e);
             void handle_enemy_update(const EnemyUpdateEvent& e);
             void handle_enemy_destroy(const EnemyDestroyEvent& e);
+            void handle_remote_player_shoot(const PlayerShootEvent& e);
             void handle_entity_create(const EntityCreateEvent& e);
             void handle_entity_destroy(const EntityDestroyEvent& e);
             void send_position_updates(registry& ecs_registry);
+            void send_pending_shoots(registry& ecs_registry);
 
             // Helper methods for remote player management
             entity create_remote_player(registry& ecs_registry, int player_id, float x, float y);
@@ -56,6 +59,5 @@ class NetworkSystem {
 
             // Helper methods for enemy management
             entity create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, float health);
-            void update_enemy_position(registry& ecs_registry, int enemy_id, float x, float y);
-            void update_enemy_health(registry& ecs_registry, int enemy_id, float health);
+            void shoot_projectile(registry& ecs_registry);
 };

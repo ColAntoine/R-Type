@@ -74,6 +74,8 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;
         if (weapon._ammo > 0) --weapon._ammo;
+    // Mark that this weapon actually fired so other systems (e.g. network) can react
+        weapon._justFired = true;
         if (!weapon._automatic) weapon._wantsToFire = false;
     }
 }

@@ -127,3 +127,14 @@ struct StartGameEvent : Event {
     uint32_t timestamp;
     StartGameEvent(uint32_t ts) : timestamp(ts) {}
 };
+
+struct PlayerShootEvent : Event {
+    int player_id;
+    float start_x;
+    float start_y;
+    float dir_x;
+    float dir_y;
+    uint8_t weapon_type;
+    PlayerShootEvent(int id, float sx, float sy, float dx, float dy, uint8_t wt)
+        : player_id(id), start_x(sx), start_y(sy), dir_x(dx), dir_y(dy), weapon_type(wt) {}
+};

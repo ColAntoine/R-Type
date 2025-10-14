@@ -115,6 +115,8 @@ class PingHandler : public TypedMessageHandler<RType::Protocol::Ping> {
  */
 class PlayerShootHandler : public TypedMessageHandler<RType::Protocol::PlayerShoot> {
     public:
+        explicit PlayerShootHandler(std::shared_ptr<class UdpServer> server) : server_(server) {}
+
         uint8_t get_message_type() const override {
             return static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT);
         }
@@ -125,6 +127,9 @@ class PlayerShootHandler : public TypedMessageHandler<RType::Protocol::PlayerSho
             const RType::Protocol::PlayerShoot& message,
             const char* payload,
             size_t payload_size) override;
+
+    private:
+        std::shared_ptr<class UdpServer> server_;
 };
 
 } // namespace RType::Network
