@@ -1,5 +1,10 @@
 #include "Core/Systems/Network/Network.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Projectile/Projectile.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "ECS/Zipper.hpp"
 #include <iostream>
 
 // NetworkSystem implementation
@@ -13,6 +18,10 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
 
     event_manager_->subscribe<PlayerJoinEvent>([this](const PlayerJoinEvent& e) {
         handle_player_join(e);
+    });
+
+    event_manager_->subscribe<PlayerShootEvent>([this](const PlayerShootEvent& e) {
+        pending_remote_shoots_.push_back(e);
     });
 
     event_manager_->subscribe<PlayerLeaveEvent>([this](const PlayerLeaveEvent& e) {
@@ -93,8 +102,7 @@ void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ fl
     for (const auto& update_event : pending_enemy_updates_) {
         auto it = enemies_.find(update_event.enemy_id);
         if (it != enemies_.end()) {
-            update_enemy_position(ecs_registry, update_event.enemy_id, update_event.x, update_event.y);
-            update_enemy_health(ecs_registry, update_event.enemy_id, update_event.health);
+            // update_enemy_position(ecs_registry, update_event.enemy_id, update_event.x, update_event.y);
         }
     }
     pending_enemy_updates_.clear();
@@ -109,9 +117,27 @@ void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ fl
     }
     pending_enemy_destroys_.clear();
 
+    shoot_projectile(ecs_registry);
+    // Detect and send any pending shoots
+    send_pending_shoots(ecs_registry);
+
     // Send position updates periodically
     send_position_updates(ecs_registry);
+
 }
+
+void NetworkSystem::shoot_projectile(registry& ecs_registry) {
+    for (const auto& shoot_event : pending_remote_shoots_) {
+        entity projectile = ecs_registry.spawn_entity();
+        component_factory_->create_component<Projectile>(ecs_registry, projectile, Projectile(shoot_event.player_id, 1, 400.0f, shoot_event.dir_x, shoot_event.dir_y, 5.0f, 4.0f, false));
+        component_factory_->create_component<position>(ecs_registry, projectile, shoot_event.start_x, shoot_event.start_y);
+        component_factory_->create_component<velocity>(ecs_registry, projectile, shoot_event.dir_x * 400.0f, shoot_event.dir_y * 400.0f);
+        component_factory_->create_component<animation>(ecs_registry, projectile, "assets/Binary_bullet-Sheet.png", 220.0f, 220.0f, 0.1f, 0.1f, 0, false);
+        component_factory_->create_component<lifetime>(ecs_registry, projectile, 5.0f, false, true);
+    }
+    pending_remote_shoots_.clear();
+}
+
 void NetworkSystem::handle_connected(int player_id) {
     // Player connected to server
     std::cout << "NetworkSystem: Local player " << player_id << " connected to server" << std::endl;
@@ -147,8 +173,8 @@ entity NetworkSystem::create_remote_player(registry& ecs_registry, int player_id
     // Use factory methods instead of direct component creation
     component_factory_->create_component<position>(ecs_registry, remote_entity, x, y);
     component_factory_->create_component<velocity>(ecs_registry, remote_entity, 0.0f, 0.0f);
-    component_factory_->create_component<drawable>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, 0, 100, 255, 255); // Blue for remote players
     component_factory_->create_component<collider>(ecs_registry, remote_entity, PLAYER_WIDTH, PLAYER_HEIGHT, -PLAYER_WIDTH/2.0f, -PLAYER_HEIGHT/2.0f);
+    component_factory_->create_component<animation>(ecs_registry, remote_entity, "assets/spinning-skull-Sheet.png", 200, 200, 0.65, 0.5, 0, false);
     // component_factory_->create_remote_player(ecs_registry, remote_entity, "Remote_" + std::to_string(player_id));
 
     std::cout << "Created remote player entity " << remote_entity << " for player " << player_id << std::endl;
@@ -178,13 +204,25 @@ void NetworkSystem::handle_enemy_destroy(const EnemyDestroyEvent& e) {
     pending_enemy_destroys_.push_back(e);
 }
 
-entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int enemy_type, float x, float y, __attribute_maybe_unused__ float health) {
+entity NetworkSystem::create_enemy(registry& ecs_registry, __attribute_maybe_unused__ int enemy_id, int enemy_type, float x, float y, __attribute_maybe_unused__ float health) {
     entity enemy_entity = ecs_registry.spawn_entity();
-
-    // Use factory methods instead of direct component creation
     component_factory_->create_component<position>(ecs_registry, enemy_entity, x, y);
-    component_factory_->create_component<velocity>(ecs_registry, enemy_entity, 0.0f, 0.0f);
-
+    switch (enemy_type) {
+        case 1:
+            component_factory_->create_component<velocity>(ecs_registry, enemy_entity, -80.0f, 0.0f);
+            break;
+        case 2:
+            component_factory_->create_component<velocity>(ecs_registry, enemy_entity, -60.0f, 0.0f);
+            break;
+        case 3:
+            component_factory_->create_component<velocity>(ecs_registry, enemy_entity, -120.0f, 0.0f);
+            break;
+        default:
+            component_factory_->create_component<velocity>(ecs_registry, enemy_entity, -70.0f, 0.0f);
+            break;
+    }
+    component_factory_->create_component<Enemy>(ecs_registry, enemy_entity, static_cast<Enemy::EnemyAIType>(enemy_type));
+    component_factory_->create_component<Health>(ecs_registry, enemy_entity, health);
     // Different enemy types have different appearance
     if (enemy_type == 1) {
         component_factory_->create_component<drawable>(ecs_registry, enemy_entity, 30.0f, 30.0f, 255, 0, 255, 255); // Magenta
@@ -197,34 +235,7 @@ entity NetworkSystem::create_enemy(registry& ecs_registry, int enemy_id, int ene
     }
 
     component_factory_->create_component<collider>(ecs_registry, enemy_entity, 30.0f, 30.0f, -15.0f, -15.0f);
-    // Add lifetime component so enemies can be cleaned up by Lifetime system
-    // component_factory_->create_component<lifetime>(ecs_registry, enemy_entity, 10.0f, false, true);
-    // component_factory_->create_enemy(ecs_registry, enemy_entity, enemy_type, health);
-
-    std::cout << "Created enemy entity " << enemy_entity << " for enemy " << enemy_id << " (type " << enemy_type << ")" << std::endl;
     return enemy_entity;
-}
-
-void NetworkSystem::update_enemy_position(registry& ecs_registry, int enemy_id, float x, float y) {
-    auto it = enemies_.find(enemy_id);
-    if (it != enemies_.end()) {
-        auto* pos_array = ecs_registry.get_if<position>();
-        if (pos_array && pos_array->has(static_cast<size_t>(it->second))) {
-            pos_array->get(static_cast<size_t>(it->second)) = position(x, y);
-        }
-    }
-}
-
-void NetworkSystem::update_enemy_health(registry& ecs_registry, int enemy_id,
-    __attribute_maybe_unused__ float health) {
-    auto it = enemies_.find(enemy_id);
-    if (it != enemies_.end()) {
-        auto* enemy_array = ecs_registry.get_if<Enemy>();
-        if (enemy_array && enemy_array->has(static_cast<size_t>(it->second))) {
-            // auto& enemy_comp = enemy_array->get(static_cast<size_t>(it->second));
-            // enemy_comp.health = health;
-        }
-    }
 }
 
 void NetworkSystem::send_position_updates(registry& ecs_registry) {
@@ -247,5 +258,37 @@ void NetworkSystem::send_position_updates(registry& ecs_registry) {
             }
         }
         frame_counter = 0;
+    }
+}
+
+void NetworkSystem::send_pending_shoots(registry& ecs_registry) {
+    if (!network_service_->is_connected()) return;
+
+    auto* ctrlArr = ecs_registry.get_if<controllable>();
+    auto* weaponArr = ecs_registry.get_if<Weapon>();
+    auto* posArr = ecs_registry.get_if<position>();
+    auto* colArr = ecs_registry.get_if<collider>();
+
+    if (!ctrlArr || !weaponArr || !posArr) return;
+
+    for (auto [ctrl, weapon, ent] : zipper(*ctrlArr, *weaponArr)) {
+        if (!weapon._justFired) continue;
+        if (!posArr->has(static_cast<size_t>(ent))) continue;
+
+        float spawnX = posArr->get(static_cast<size_t>(ent)).x;
+        float spawnY = posArr->get(static_cast<size_t>(ent)).y;
+
+        if (colArr && colArr->has(static_cast<size_t>(ent))) {
+            auto &col = colArr->get(static_cast<size_t>(ent));
+            spawnX = spawnX + col.offset_x + col.w;
+            spawnY = spawnY + col.offset_y + col.h / 2.0f;
+        }
+
+        float dirX = 1.0f;
+        float dirY = 0.0f;
+        uint8_t weapon_type = 0;
+
+        network_service_->send_player_shoot(spawnX, spawnY, dirX, dirY, weapon_type);
+        weapon._justFired = false;
     }
 }

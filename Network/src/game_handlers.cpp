@@ -214,15 +214,13 @@ bool PlayerShootHandler::handle_typed_message(
         return false;
     }
 
-    std::cout << "Player " << session->get_player_id() << " shoots!" << std::endl;
-    std::cout << "  Start: (" << message.start_x << ", " << message.start_y << ")" << std::endl;
-    std::cout << "  Direction: (" << message.dir_x << ", " << message.dir_y << ")" << std::endl;
-    std::cout << "  Weapon: " << static_cast<int>(message.weapon_type) << std::endl;
-
-    // Here you would typically:
-    // 1. Create a bullet entity
-    // 2. Broadcast to all players
-    // 3. Start bullet simulation
+    if (server_) {
+        auto packet = RType::Protocol::create_packet(
+            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
+            message
+        );
+        server_->broadcast_except(session->get_session_id(), reinterpret_cast<const char*>(packet.data()), packet.size());
+    }
 
     return true;
 }

@@ -104,6 +104,26 @@ void NetworkService::send_player_position(float x, float y, float vx, float vy) 
         reinterpret_cast<const char*>(packet.data()), packet.size()));
 }
 
+void NetworkService::send_player_shoot(float start_x, float start_y, float dir_x, float dir_y, uint8_t weapon_type) {
+    if (!is_connected() || local_player_id_ <= 0) return;
+
+    RType::Protocol::PlayerShoot shoot_msg;
+    shoot_msg.player_id = local_player_id_.load();
+    shoot_msg.start_x = start_x;
+    shoot_msg.start_y = start_y;
+    shoot_msg.dir_x = dir_x;
+    shoot_msg.dir_y = dir_y;
+    shoot_msg.weapon_type = weapon_type;
+
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
+        shoot_msg
+    );
+
+    client_->send_message(std::string(
+        reinterpret_cast<const char*>(packet.data()), packet.size()));
+}
+
 void NetworkService::send_ready_signal(bool ready) {
     if (!is_connected() || local_player_id_ <= 0) {
         return;
@@ -116,6 +136,21 @@ void NetworkService::send_ready_signal(bool ready) {
     auto packet = RType::Protocol::create_packet(
         static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_READY),
         ready_msg
+    );
+
+    client_->send_message(std::string(
+        reinterpret_cast<const char*>(packet.data()), packet.size()));
+}
+
+void NetworkService::send_entity_destroy(uint32_t entity_network_id) {
+    if (!is_connected() || local_player_id_ <= 0) return;
+
+    RType::Protocol::EntityDestroy destroy_msg;
+    destroy_msg.entity_id = entity_network_id;
+    std::cout << "Sending ENTITY_DESTROY for entity ID " << entity_network_id << std::endl;
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_DESTROY),
+        destroy_msg
     );
 
     client_->send_message(std::string(
@@ -163,6 +198,8 @@ void NetworkService::handle_network_message(const std::string& message) {
         handle_start_game(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::POSITION_UPDATE)) {
         handle_position_update(header, payload);
+    } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT)) {
+        handle_player_shoot(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_JOIN)) {
         handle_player_join(header, payload);
     } else if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_LEAVE)) {
@@ -265,6 +302,16 @@ void NetworkService::handle_entity_update(const RType::Protocol::PacketHeader& h
                                                update->x, update->y,
                                                update->vx, update->vy));
         }
+    }
+}
+
+void NetworkService::handle_player_shoot(const RType::Protocol::PacketHeader& header, const uint8_t* payload) {
+    if (header.payload_size >= sizeof(RType::Protocol::PlayerShoot)) {
+        const auto* shoot = reinterpret_cast<const RType::Protocol::PlayerShoot*>(payload);
+        if (static_cast<uint32_t>(local_player_id_.load()) == shoot->player_id) {
+            return;
+        }
+        event_manager_->emit(PlayerShootEvent(static_cast<int>(shoot->player_id), shoot->start_x, shoot->start_y, shoot->dir_x, shoot->dir_y, shoot->weapon_type));
     }
 }
 

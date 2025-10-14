@@ -104,7 +104,7 @@ file(GLOB NETWORK_PROTOCOL_SOURCES "Network/src/protocol.cpp")
 
 if(MAIN_SOURCE)
     add_executable(r-type_client ${MAIN_SOURCE} ${NETWORK_PROTOCOL_SOURCES})
-    
+
     # Link with RType library
     target_link_libraries(r-type_client PRIVATE
         RType
@@ -112,7 +112,7 @@ if(MAIN_SOURCE)
         glfw
         dl
     )
-    
+
     target_include_directories(r-type_client PRIVATE
         Games/RType
         Network/include
@@ -139,11 +139,22 @@ if(NETWORK_SOURCES)
 
     # Link with required system libraries for Asio
     find_package(Threads REQUIRED)
-    target_link_libraries(r-type_server
+    target_link_libraries(r-type_server PRIVATE
         Threads::Threads
         asio::asio
     )
 
+    # Ensure server links with the RType game library so component symbols (Enemy, drawable, Health, etc.) are available
+    if(TARGET RType)
+        target_link_libraries(r-type_server PRIVATE RType)
+        target_include_directories(r-type_server PRIVATE ${CMAKE_SOURCE_DIR}/Games/RType)
+    endif()
+
+    # Allow server to use ECS types (registry, component factory) when ECS target exists
+    if(TARGET ECS)
+        target_link_libraries(r-type_server PRIVATE ECS)
+        target_include_directories(r-type_server PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
+    endif()
     # Note: Server doesn't link with ECS to avoid raylib dependency
 endif()
 
@@ -178,7 +189,7 @@ if(GAME_TEST_SOURCES)
     file(GLOB NETWORK_PROTOCOL_SOURCES "Network/src/protocol.cpp")
 
     add_executable(test_game ${GAME_TEST_SOURCES} ${NETWORK_PROTOCOL_SOURCES})
-    
+
     # Link with RType library and its dependencies
     target_link_libraries(test_game PRIVATE
         RType
@@ -186,19 +197,21 @@ if(GAME_TEST_SOURCES)
         glfw
         dl
     )
-    
+
     target_include_directories(test_game PRIVATE
         Games/RType
         Network/include
         ${RTYPE_INCLUDE_DIRS}
     )
-    
+
     if(TARGET ECS)
         target_link_libraries(test_game PRIVATE ECS)
     endif()
-    
+
     add_test(NAME Game_Tests COMMAND test_game)
 endif()
+
+
 
 file(GLOB NETWORK_TEST_SOURCES "Network/test/*.cpp")
 if(NETWORK_TEST_SOURCES)
@@ -209,14 +222,24 @@ if(NETWORK_TEST_SOURCES)
 
     add_executable(test_network ${NETWORK_TEST_SOURCES} ${NETWORK_IMPL_SOURCES})
     target_include_directories(test_network PRIVATE Network Network/include)
+    if(TARGET ECS)
+        target_include_directories(test_network PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
+        target_link_libraries(test_network PRIVATE ECS)
+    endif()
+
+    # Ensure test_network links with RType to provide component implementations for tests
+    if(TARGET RType)
+        target_link_libraries(test_network PRIVATE RType)
+        target_include_directories(test_network PRIVATE ${CMAKE_SOURCE_DIR}/Games/RType)
+    endif()
 
     # Find and link doctest
     find_package(doctest CONFIG REQUIRED)
-    target_link_libraries(test_network doctest::doctest)
+    target_link_libraries(test_network PRIVATE doctest::doctest)
 
     # Link with required system libraries for Asio (same as server)
     find_package(Threads REQUIRED)
-    target_link_libraries(test_network Threads::Threads asio::asio)
+    target_link_libraries(test_network PRIVATE Threads::Threads asio::asio)
 
     add_test(NAME Network_Tests COMMAND test_network)
 endif()

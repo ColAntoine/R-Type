@@ -37,6 +37,8 @@ class NetworkService : public IService {
 
         // Send messages
         void send_player_position(float x, float y, float vx, float vy);
+        void send_player_shoot(float start_x, float start_y, float dir_x, float dir_y, uint8_t weapon_type);
+        void send_entity_destroy(uint32_t entity_network_id);
         void send_ready_signal(bool ready = true);
 
     private:
@@ -51,5 +53,6 @@ class NetworkService : public IService {
         void handle_entity_create(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_entity_update(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         void handle_entity_destroy(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
+        void handle_player_shoot(const RType::Protocol::PacketHeader& header, const uint8_t* payload);
         uint32_t get_current_timestamp();
 };
