@@ -29,6 +29,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libgame_Spawn.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
+    system_loader_.load_system_from_so("lib/systems/libgame_GravitySys.so");
 }
 
 void Application::service_setup() {
