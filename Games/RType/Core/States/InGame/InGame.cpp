@@ -11,6 +11,8 @@
 #include "Entity/Components/Score/Score.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <random>
+#include <string>
 
 InGameState::InGameState(Application* app) : app_(app) {}
 
@@ -21,6 +23,25 @@ void InGameState::enter() {
     }
 
     setup_hud();
+    // initialize background streams
+    bg_time_ = 0.0f;
+    bg_streams_.clear();
+    bg_stream_count_ = 28; // number of vertical streams
+    std::mt19937 rng((unsigned)time(nullptr));
+    std::uniform_real_distribution<float> xdist(0.0f, (float)GetScreenWidth());
+    std::uniform_real_distribution<float> ydist(-600.0f, (float)GetScreenHeight());
+    std::uniform_real_distribution<float> speeddist(30.0f, 220.0f);
+    std::uniform_real_distribution<float> len(40.0f, 400.0f);
+    std::uniform_int_distribution<int> chars(6, 30);
+    for (int i = 0; i < bg_stream_count_; ++i) {
+        DataStream s;
+        s.x = xdist(rng);
+        s.y = ydist(rng);
+        s.speed = speeddist(rng);
+        s.length = len(rng);
+        s.chars = chars(rng);
+        bg_streams_.push_back(s);
+    }
     initialized_ = true;
     paused_ = false;
 }
@@ -55,13 +76,26 @@ void InGameState::update(float delta_time) {
     // Update existing game systems through Application
     app_->update_ecs_systems(delta_time);
     app_->update_traditional_ecs_systems(delta_time);
+
+    // update background
+    bg_time_ += delta_time;
+    for (auto &s : bg_streams_) {
+        s.y += s.speed * delta_time;
+        if (s.y - s.length > GetScreenHeight()) {
+            s.y = -s.length * 0.2f;
+            // slightly randomize x and speed
+            s.x += (rand() % 200) - 100;
+            if (s.x < 0) s.x += GetScreenWidth();
+            if (s.x > GetScreenWidth()) s.x -= GetScreenWidth();
+            s.speed = 80.0f + (rand() % 160);
+        }
+    }
 }
 
 void InGameState::render() {
     if (!initialized_ || !app_) return;
-
-    // Clear background
-    ClearBackground({10, 10, 20, 255}); // Dark blue space background
+    // Draw the falling background
+    render_falling_background();
 
     // The game entities are rendered automatically by the traditional ECS systems
     // (draw_system, sprite_system) when update_traditional_ecs_systems is called
@@ -69,6 +103,46 @@ void InGameState::render() {
 
     // Render HUD on top
     ui_manager_.render();
+}
+
+void InGameState::render_falling_background() {
+    // Themed dynamic background
+    ClearBackground({6, 8, 10, 255}); // very dark base
+
+    // subtle neon grid overlay
+    Color grid_color = {0, 40, 64, 30};
+    int gw = 48;
+    for (int x = 0; x < GetScreenWidth(); x += gw) {
+        DrawLine(x, 0, x, GetScreenHeight(), grid_color);
+    }
+    for (int y = 0; y < GetScreenHeight(); y += gw) {
+        DrawLine(0, y, GetScreenWidth(), y, grid_color);
+    }
+
+    // moving data streams (vertical)
+    Color stream_col = {0, 229, 255, 160};
+    for (auto &s : bg_streams_) {
+        int steps = s.chars;
+        float step_h = s.length / (float)steps;
+        for (int i = 0; i < steps; ++i) {
+            float cy = s.y - i * step_h;
+            if (cy < -20 || cy > GetScreenHeight() + 20) continue;
+            // fade tail
+            float t = 1.0f - (float)i / (float)steps;
+            unsigned char a = (unsigned char)std::clamp<int>((int)(stream_col.a * t), 8, stream_col.a);
+            Color c = {stream_col.r, stream_col.g, stream_col.b, a};
+            // draw small rectangles as stream particles
+            DrawRectangle((int)s.x, (int)cy, 4, (int)step_h - 1, c);
+        }
+    }
+
+    // moving horizontal scanline for energy feel
+    int scan_y = (int)(std::fmod(bg_time_ * 80.0f, (float)(GetScreenHeight() + 200)) - 100);
+    DrawRectangle(0, scan_y, GetScreenWidth(), 2, {0, 229, 255, 60});
+
+    // vignette
+    DrawRectangle(0, 0, GetScreenWidth(), 40, {0, 0, 0, 80});
+    DrawRectangle(0, GetScreenHeight()-40, GetScreenWidth(), 40, {0, 0, 0, 80});
 }
 
 void InGameState::handle_input() {

@@ -28,7 +28,7 @@ void EnemyCleanupSystem::update(registry& r, float dt) {
         // Out of bounds (left)
         if (pos.x < world_bounds_left_) {
             should_destroy = true;
-            std::cout << "Enemy " << sync.network_id << " out of bounds (x=" 
+            std::cout << "Enemy " << sync.network_id << " out of bounds (x="
                      << pos.x << ")" << std::endl;
         }
 

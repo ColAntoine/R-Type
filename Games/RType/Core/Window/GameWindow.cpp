@@ -15,6 +15,8 @@ bool GameWindow::initialize() {
         return true;
     }
 
+    // Reduce Raylib verbosity to warnings to avoid many INFO messages when loading many textures
+    SetTraceLogLevel(LOG_WARNING);
     InitWindow(width, height, title.c_str());
     SetTargetFPS(60);
 
