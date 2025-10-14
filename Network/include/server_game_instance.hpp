@@ -1,8 +1,8 @@
 #pragma once
 
-#include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
-#include "ECS/Components.hpp"
+#include "../../ECS/include/ECS/Registry.hpp"
+#include "../../ECS/include/ECS/DLLoader.hpp"
+#include "../../ECS/include/ECS/Components.hpp"
 #include "udp_server.hpp"
 #include <memory>
 #include <thread>

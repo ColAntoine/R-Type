@@ -211,15 +211,25 @@ if(NETWORK_TEST_SOURCES)
     list(FILTER NETWORK_IMPL_SOURCES EXCLUDE REGEX ".*/Network/main.cpp")
 
     add_executable(test_network ${NETWORK_TEST_SOURCES} ${NETWORK_IMPL_SOURCES})
-    target_include_directories(test_network PRIVATE Network Network/include)
+    target_include_directories(test_network PRIVATE 
+        Network 
+        Network/include
+        ECS/include
+        Games/RType
+    )
 
     # Find and link doctest
     find_package(doctest CONFIG REQUIRED)
     target_link_libraries(test_network doctest::doctest)
 
-    # Link with required system libraries for Asio (same as server)
+    # Link with required system libraries for Asio and ECS (same as server)
     find_package(Threads REQUIRED)
-    target_link_libraries(test_network Threads::Threads asio::asio)
+    target_link_libraries(test_network 
+        Threads::Threads 
+        asio::asio
+        ECS
+        dl
+    )
 
     add_test(NAME Network_Tests COMMAND test_network)
 endif()

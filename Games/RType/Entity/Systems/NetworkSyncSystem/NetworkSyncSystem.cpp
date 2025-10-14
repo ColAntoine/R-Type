@@ -1,34 +1,3 @@
-    // --- Lag compensation stub ---
-    static std::unordered_map<uint32_t, std::deque<position>> client_position_history;
-    const size_t history_length = 60; // 1 second at 60Hz
-    for (auto [sync, pos, index] : zipper(*sync_comps, *positions)) {
-        client_position_history[sync.network_id].push_back(pos);
-        if (client_position_history[sync.network_id].size() > history_length)
-            client_position_history[sync.network_id].pop_front();
-        // TODO: Use history for lag compensation in hit detection
-    }
-    // --- ACK handling and resend logic ---
-    static std::unordered_map<uint32_t, uint32_t> last_sent_sequence;
-    static std::unordered_map<uint32_t, RType::Protocol::PositionUpdate> unconfirmed_updates;
-    for (auto [sync, pos, index] : zipper(*sync_comps, *positions)) {
-        uint32_t seq = last_sent_sequence[sync.network_id] + 1;
-        last_sent_sequence[sync.network_id] = seq;
-        RType::Protocol::PositionUpdate update_msg;
-        update_msg.entity_id = sync.network_id;
-        update_msg.x = pos.x;
-        update_msg.y = pos.y;
-        update_msg.vx = 0.0f;
-        update_msg.vy = 0.0f;
-        update_msg.timestamp = static_cast<uint32_t>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count()
-        );
-        // Store for resend if not acknowledged
-        unconfirmed_updates[seq] = update_msg;
-    }
-
-    // Resend unconfirmed updates (stub)
-    // TODO: Check for ACKs and resend if needed
 /*
 ** EPITECH PROJECT, 2025
 ** R-Type
@@ -56,17 +25,10 @@ void NetworkSyncSystem::update(registry& r, float dt) {
 
     auto* enemies = r.get_if<Enemy>();
 
-    // Delta-compression: only broadcast if state changed
-    static std::unordered_map<uint32_t, position> last_sent_positions;
+    // Broadcast entity updates
     for (auto [sync, pos, index] : zipper(*sync_comps, *positions)) {
         sync.broadcast_timer += dt;
-        bool changed = false;
-        auto it = last_sent_positions.find(sync.network_id);
-        if (it == last_sent_positions.end() ||
-            it->second.x != pos.x || it->second.y != pos.y) {
-            changed = true;
-        }
-        if (sync.needs_broadcast() || changed) {
+        if (sync.needs_broadcast()) {
             uint8_t enemy_type = 1;
             if (enemies && index < enemies->size()) {
                 enemy_type = static_cast<uint8_t>((*enemies)[index].enemy_type);
@@ -91,7 +53,6 @@ void NetworkSyncSystem::update(registry& r, float dt) {
                               packet.size());
             sync.broadcast_timer = 0.0f;
             sync.dirty = false;
-            last_sent_positions[sync.network_id] = pos;
         }
     }
 }
