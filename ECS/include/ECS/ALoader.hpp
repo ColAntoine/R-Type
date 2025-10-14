@@ -12,6 +12,10 @@
 #include <exception>
 #include <iostream>
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 class ALoader : public ILoader{
     public:
         ALoader() = default;
