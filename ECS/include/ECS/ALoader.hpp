@@ -13,7 +13,16 @@
 #include <iostream>
 
 #ifdef _WIN32
+    // Prevent Windows API conflicts with Raylib
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    // Undefine conflicting macros after windows.h is included
     #include <windows.h>
+    #undef Rectangle
+    #undef CloseWindow
+    #undef ShowCursor
+    #undef DrawText
+    #undef PlaySound
 #endif
 
 class ALoader : public ILoader{

@@ -12,7 +12,7 @@
 #include "ALoader.hpp"
 #include <iostream>
 #include <filesystem>
-#include <windows.h>
+// windows.h is already included in ALoader.hpp with proper conflict prevention
 
 class WindowsLoader : public ALoader {
     public:
