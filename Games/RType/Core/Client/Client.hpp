@@ -5,14 +5,13 @@
 #include <thread>
 #include <functional>
 
-// Include RaylibWrapper FIRST - it handles Windows/Raylib conflicts
-// On Windows, it includes winsock2.h before raylib with proper guards
-#include "Core/RaylibWrapper.hpp"
-
+// Platform-specific socket includes - NO RAYLIB HERE
 #ifdef _WIN32
-  // Windows socket types are already available from winsock2.h (included in RaylibWrapper)
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
   using socket_t = SOCKET;
   #define CLOSESOCKET(s) closesocket(s)
+  #define INVALID_SOCKET_VALUE INVALID_SOCKET
 #else
   #include <sys/socket.h>
   #include <netinet/in.h>
@@ -20,6 +19,7 @@
   #include <unistd.h>
   using socket_t = int;
   #define CLOSESOCKET(s) close(s)
+  #define INVALID_SOCKET_VALUE -1
 #endif
 
 
