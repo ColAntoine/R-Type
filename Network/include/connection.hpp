@@ -3,7 +3,12 @@
 #include <memory>
 #include <string>
 #include <chrono>
-#include <asio.hpp>
+#if defined(_WIN32)
+#  include <asio.hpp>
+#  include <winsock2.h>
+#else
+#  include <asio.hpp>
+#endif
 
 namespace RType::Network {
 

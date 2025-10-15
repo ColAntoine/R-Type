@@ -5,8 +5,16 @@ project(RType_Network VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+
 # Find packages
 find_package(Threads REQUIRED)
+
+# Platform detection
+if(WIN32)
+    set(IS_WINDOWS TRUE)
+else()
+    set(IS_WINDOWS FALSE)
+endif()
 
 # Try to find Asio (standalone or Boost.Asio)
 find_path(ASIO_INCLUDE_DIR 
@@ -33,9 +41,13 @@ endif()
 include_directories(include)
 include_directories(${CMAKE_SOURCE_DIR}/ECS/include)
 
+
 if(USE_STANDALONE_ASIO)
     include_directories(${ASIO_INCLUDE_DIR})
     add_definitions(-DASIO_STANDALONE)
+    if(IS_WINDOWS)
+        add_definitions(-D_WIN32_WINNT=0x0601)
+    endif()
 endif()
 
 # Source files
@@ -78,8 +90,14 @@ endif()
 # Link libraries
 target_link_libraries(rtype_network PUBLIC Threads::Threads)
 
+
 if(USE_BOOST_ASIO)
     target_link_libraries(rtype_network PUBLIC Boost::system)
+endif()
+
+# Link ws2_32 on Windows
+if(IS_WINDOWS)
+    target_link_libraries(rtype_network PUBLIC ws2_32)
 endif()
 
 # Create the server executable

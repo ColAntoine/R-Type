@@ -4,11 +4,24 @@
 
 namespace RType::Network {
 
+
+#if defined(_WIN32)
+    WSADATA wsaData;
+#endif
+
 NetworkManager::NetworkManager()
     : running_(false), port_(0) {
+#if defined(_WIN32)
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "WSAStartup failed" << std::endl;
+    }
+#endif
 }
 
 NetworkManager::~NetworkManager() {
+#if defined(_WIN32)
+    WSACleanup();
+#endif
     stop();
 }
 

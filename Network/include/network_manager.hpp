@@ -1,7 +1,12 @@
 #pragma once
 
 #include <memory>
-#include <asio.hpp>
+#if defined(_WIN32)
+#  include <asio.hpp>
+#  include <winsock2.h>
+#else
+#  include <asio.hpp>
+#endif
 #include <thread>
 #include <vector>
 #include <atomic>

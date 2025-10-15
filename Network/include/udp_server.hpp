@@ -3,7 +3,12 @@
 #include <memory>
 #include <unordered_map>
 #include <functional>
-#include <asio.hpp>
+#if defined(_WIN32)
+#  include <asio.hpp>
+#  include <winsock2.h>
+#else
+#  include <asio.hpp>
+#endif
 #include "connection.hpp"
 #include "protocol.hpp"
 
