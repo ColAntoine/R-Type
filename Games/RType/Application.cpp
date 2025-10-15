@@ -1,3 +1,4 @@
+#include <raylib.h>
 #include "Application.hpp"
 #include "States/Loading/Loading.hpp"
 #include "States/MainMenu/MainMenu.hpp"
