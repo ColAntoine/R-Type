@@ -159,7 +159,7 @@ void Application::setup_event_handlers() {
         local_player_id_ = e.player_id;
     });
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](__attribute_maybe_unused__ const NetworkDisconnectedEvent& e) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this]([[maybe_unused]] const NetworkDisconnectedEvent& e) {
         running_ = false;
     });
 }
