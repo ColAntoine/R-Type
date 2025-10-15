@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <raylib.h>
+#include "Core/RaylibWrapper.hpp"
 #include <functional>
 
 // Forward declarations

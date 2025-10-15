@@ -9,7 +9,7 @@
 
 #include "Core/States/GameState.hpp"
 #include "Core/EventManager.hpp"
-#include "raylib.h"
+#include "Core/RaylibWrapper.hpp"
 
 class Loading : public IGameState {
     public:

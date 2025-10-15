@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EventManager.hpp"
-#include <raylib.h>
+#include "RaylibWrapper.hpp"
 #include <vector>
 #include <cstdint>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <raylib.h>
+#include "Core/RaylibWrapper.hpp"
 #include <string>
 #include <atomic>
 

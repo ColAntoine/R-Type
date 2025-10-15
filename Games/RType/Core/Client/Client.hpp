@@ -5,16 +5,10 @@
 #include <thread>
 #include <functional>
 
+// Include RaylibWrapper to ensure proper header inclusion order on Windows
+#include "Core/RaylibWrapper.hpp"
+
 #ifdef _WIN32
-  #include <raylib.h>
-  #ifndef NOMINMAX
-    #define NOMINMAX
-  #endif
-  #ifndef WIN32_LEAN_AND_MEAN
-    #define WIN32_LEAN_AND_MEAN
-  #endif
-  #include <winsock2.h>
-  #include <ws2tcpip.h>
   using socket_t = SOCKET;
   #define CLOSESOCKET(s) closesocket(s)
 #else
@@ -29,7 +23,7 @@
 
 class UDPClient {
     private:
-        int socket_fd;
+        socket_t socket_fd;
         sockaddr_in server_address;
         sockaddr_in client_address;
         std::string server_ip;

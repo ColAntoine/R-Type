@@ -3,7 +3,6 @@
 #include "Core/Services/ServiceManager.hpp"
 #include "Core/EventManager.hpp"
 #include "Core/Events.hpp"
-#include <raylib.h>
 
 class InputService : public IService {
     private:
