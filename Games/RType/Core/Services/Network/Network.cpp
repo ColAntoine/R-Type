@@ -6,6 +6,8 @@
 NetworkService::NetworkService(EventManager* event_manager) : event_manager_(event_manager) {
 }
 
+NetworkService::~NetworkService() = default;  // Must be defined where UDPClient is complete
+
 void NetworkService::initialize() {
     client_ = std::make_unique<UDPClient>();
 

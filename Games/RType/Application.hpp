@@ -16,9 +16,11 @@
 #include <sstream>
 #include <iostream>
 #include "ECS/ILoader.hpp"
-#include "ECS/LinuxLoader.hpp"
-#include "ECS/WindowsLoader.hpp"
-#include "ECS/MacOs.hpp"
+
+// Forward declarations to avoid including Windows headers (which conflict with Raylib)
+class LinuxLoader;
+class WindowsLoader;
+class MacOs;
 
 #define PLAYER_WIDTH 60.0f
 #define PLAYER_HEIGHT 40.0f

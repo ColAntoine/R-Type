@@ -27,6 +27,7 @@ class NetworkService : public IService {
 
     public:
         NetworkService(EventManager* event_manager);
+        ~NetworkService();  // Need explicit destructor for unique_ptr<UDPClient> with forward declaration
 
         void initialize() override;
         void shutdown() override;

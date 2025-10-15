@@ -1,4 +1,7 @@
 #include "Application.hpp"
+#include "ECS/LinuxLoader.hpp"
+#include "ECS/WindowsLoader.hpp"
+#include "ECS/MacOs.hpp"
 #include "States/Loading/Loading.hpp"
 #include "States/MainMenu/MainMenu.hpp"
 #include "States/Settings/Settings.hpp"
