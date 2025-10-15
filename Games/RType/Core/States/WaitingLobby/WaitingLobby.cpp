@@ -8,6 +8,7 @@
 #include "WaitingLobby.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "Application.hpp"
+#include "Core/PlatformMacros.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
@@ -293,7 +294,7 @@ void WaitingLobbyState::handle_player_list_update(const PlayerListEvent& event) 
     update_ready_button();  // Ensure button text is consistent
 }
 
-void WaitingLobbyState::handle_start_game(__attribute_maybe_unused__ const StartGameEvent& event) {
+void WaitingLobbyState::handle_start_game(MAYBE_UNUSED const StartGameEvent& event) {
     // Transition to InGame state when all players are ready
     if (state_manager_) {
         state_manager_->change_state("InGame");

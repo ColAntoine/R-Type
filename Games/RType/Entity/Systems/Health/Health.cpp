@@ -15,8 +15,9 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
+#include "Core/PlatformMacros.hpp"
 
-void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
+void HealthSys::update(registry& r, MAYBE_UNUSED float dt) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
 }

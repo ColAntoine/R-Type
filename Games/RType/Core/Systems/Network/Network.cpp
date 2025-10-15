@@ -5,6 +5,7 @@
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Health/Health.hpp"
 #include "ECS/Zipper.hpp"
+#include "Core/PlatformMacros.hpp"
 #include <iostream>
 
 // NetworkSystem implementation
@@ -53,7 +54,7 @@ NetworkSystem::NetworkSystem(EventManager* event_manager, NetworkService* networ
     });
 }
 
-void NetworkSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
+void NetworkSystem::update(registry& ecs_registry, MAYBE_UNUSED float delta_time) {
     // Process pending player joins
     for (const auto& join_event : pending_joins_) {
         auto it = remote_players_.find(join_event.player_id);
@@ -204,7 +205,7 @@ void NetworkSystem::handle_enemy_destroy(const EnemyDestroyEvent& e) {
     pending_enemy_destroys_.push_back(e);
 }
 
-entity NetworkSystem::create_enemy(registry& ecs_registry, __attribute_maybe_unused__ int enemy_id, int enemy_type, float x, float y, __attribute_maybe_unused__ float health) {
+entity NetworkSystem::create_enemy(registry& ecs_registry, MAYBE_UNUSED int enemy_id, int enemy_type, float x, float y, MAYBE_UNUSED float health) {
     entity enemy_entity = ecs_registry.spawn_entity();
     component_factory_->create_component<position>(ecs_registry, enemy_entity, x, y);
     switch (enemy_type) {

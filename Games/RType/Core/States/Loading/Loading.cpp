@@ -7,6 +7,7 @@
 
 #include "Loading.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "Core/PlatformMacros.hpp"
 #include <iostream>
 
 Loading::Loading() : current_frame_(0), animation_timer_(0.0f), frame_duration_(1.0f / FRAMES_PER_SECOND)
@@ -75,7 +76,7 @@ void Loading::resume()
     // Nothing to do
 }
 
-void Loading::update(__attribute_maybe_unused__ float delta_time)
+void Loading::update(MAYBE_UNUSED float delta_time)
 {
     // Update animation timer
     animation_timer_ += delta_time;

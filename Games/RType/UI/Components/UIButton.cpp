@@ -6,10 +6,11 @@
 */
 
 #include "UIButton.hpp"
+#include "Core/PlatformMacros.hpp"
 #include <iostream>
 #include <cmath>
 
-void UIButton::update(__attribute_maybe_unused__ float delta_time) {
+void UIButton::update(MAYBE_UNUSED float delta_time) {
     if (!visible_) return;
 
     update_state();

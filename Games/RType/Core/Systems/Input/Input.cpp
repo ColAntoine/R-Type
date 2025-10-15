@@ -1,4 +1,5 @@
 #include "Input.hpp"
+#include "Core/PlatformMacros.hpp"
 
 // InputSystem implementation
 InputSystem::InputSystem(EventManager* event_manager, entity player_entity)
@@ -14,7 +15,7 @@ InputSystem::InputSystem(EventManager* event_manager, entity player_entity)
     });
 }
 
-void InputSystem::update(registry& ecs_registry, __attribute_maybe_unused__ float delta_time) {
+void InputSystem::update(registry& ecs_registry, MAYBE_UNUSED float delta_time) {
     // InputSystem only tracks key state and emits events; actual movement
     // is handled by the ControlSystem which reads `controllable` components.
     // No velocity modifications here.
