@@ -1,4 +1,5 @@
 #include "Render.hpp"
+#include "Core/PlatformMacros.hpp"
 
 RenderService::RenderService(EventManager* event_manager) : event_manager_(event_manager) {
 }
@@ -16,7 +17,7 @@ void RenderService::shutdown() {
     }
 }
 
-void RenderService::update(__attribute_maybe_unused__ float delta_time) {
+void RenderService::update(MAYBE_UNUSED float delta_time) {
     // Check if window should close
     if (window_ && window_->should_window_close()) {
         window_should_close_ = true;
@@ -36,7 +37,7 @@ void RenderService::end_frame() {
     }
 }
 
-void RenderService::render_entities(__attribute_maybe_unused__ registry& ecs_registry) {
+void RenderService::render_entities(MAYBE_UNUSED registry& ecs_registry) {
     // Entity rendering is now handled by the draw_system through DLLoader
     // This method is kept for compatibility but does nothing
 }

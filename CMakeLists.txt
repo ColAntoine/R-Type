@@ -59,7 +59,11 @@ list(REMOVE_ITEM ECS_SOURCES ${SYSTEM_SOURCES})
 if(ECS_SOURCES)
     add_library(ECS SHARED ${ECS_SOURCES})
     target_include_directories(ECS PUBLIC ECS ECS/include)
-    target_link_libraries(ECS raylib glfw dl)
+    if(WIN32)
+        target_link_libraries(ECS raylib glfw)
+    else()
+        target_link_libraries(ECS raylib glfw dl)
+    endif()
 endif()
 
 # Build individual system libraries
@@ -110,8 +114,10 @@ if(MAIN_SOURCE)
         RType
         raylib
         glfw
-        dl
     )
+    if(NOT WIN32)
+        target_link_libraries(r-type_client PRIVATE dl)
+    endif()
 
     target_include_directories(r-type_client PRIVATE
         Games/RType
@@ -195,8 +201,10 @@ if(GAME_TEST_SOURCES)
         RType
         raylib
         glfw
-        dl
     )
+    if(NOT WIN32)
+        target_link_libraries(test_game PRIVATE dl)
+    endif()
 
     target_include_directories(test_game PRIVATE
         Games/RType

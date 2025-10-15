@@ -1,4 +1,5 @@
 #include "Network.hpp"
+#include "Core/PlatformMacros.hpp"
 #include <iostream>
 
 NetworkService::NetworkService(EventManager* event_manager) : event_manager_(event_manager) {
@@ -20,7 +21,7 @@ void NetworkService::shutdown() {
     connected_ = false;
 }
 
-void NetworkService::update(__attribute_maybe_unused__ float delta_time) {
+void NetworkService::update(MAYBE_UNUSED float delta_time) {
     // Network service doesn't need regular updates
     // All communication is event-driven
 }

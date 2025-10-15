@@ -42,8 +42,10 @@ set(ANIMATION_SYSTEM_SOURCES
 add_library(ECS SHARED ${LIB_ECS_SOURCES})
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Link dl library for dynamic loading
-target_link_libraries(ECS dl)
+# Link dl library for dynamic loading (Unix/Linux only, Windows uses LoadLibrary API)
+if(NOT WIN32)
+    target_link_libraries(ECS dl)
+endif()
 
 # Add system libraries
 add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
