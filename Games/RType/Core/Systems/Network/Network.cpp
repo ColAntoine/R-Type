@@ -4,6 +4,7 @@
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Gravity/Gravity.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 
@@ -134,6 +135,8 @@ void NetworkSystem::shoot_projectile(registry& ecs_registry) {
         component_factory_->create_component<velocity>(ecs_registry, projectile, shoot_event.dir_x * 400.0f, shoot_event.dir_y * 400.0f);
         component_factory_->create_component<animation>(ecs_registry, projectile, "assets/Binary_bullet-Sheet.png", 220.0f, 220.0f, 0.1f, 0.1f, 0, false);
         component_factory_->create_component<lifetime>(ecs_registry, projectile, 5.0f, false, true);
+        component_factory_->create_component<Gravity>(ecs_registry, projectile, 100.0f);
+
     }
     pending_remote_shoots_.clear();
 }
