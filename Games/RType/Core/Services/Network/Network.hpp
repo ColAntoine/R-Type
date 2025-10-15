@@ -3,11 +3,14 @@
 #include "Core/Services/ServiceManager.hpp"
 #include "Core/EventManager.hpp"
 #include "Core/Events.hpp"
-#include "Core/Client/Client.hpp"
 #include "protocol.hpp"
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <memory>
+
+// Forward declaration - avoids including Client.hpp (which has winsock2)
+class UDPClient;
 
 class NetworkService : public IService {
     private:

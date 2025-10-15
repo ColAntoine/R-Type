@@ -1,4 +1,5 @@
 #include "Network.hpp"
+#include "Core/Client/Client.hpp"  // Include here, not in header (avoids winsock2 in Raylib files)
 #include "Core/PlatformMacros.hpp"
 #include <iostream>
 
