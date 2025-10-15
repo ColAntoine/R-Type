@@ -1,22 +1,29 @@
 #pragma once
 
-// This header ensures proper inclusion order on Windows to prevent API conflicts
+// Critical: Define these BEFORE any Windows headers to exclude problematic APIs
 
 #ifdef _WIN32
-  // Prevent Windows.h from including problematic headers
-  #define NOGDI        // Exclude GDI (Graphics Device Interface) - prevents Rectangle function
-  #define NOUSER       // Exclude USER (Window management) - prevents ShowCursor, CloseWindow
-  #define NOMINMAX     // Prevent min/max macros
-  #define WIN32_LEAN_AND_MEAN  // Reduce Windows header bloat
-  
-  // Include winsock2.h with restricted Windows headers
-  #include <winsock2.h>
-  #include <ws2tcpip.h>
-  
-  // Now undefine NOGDI and NOUSER so raylib can work properly
-  #undef NOGDI
-  #undef NOUSER
+  // Must be defined BEFORE including any Windows header
+  #ifndef NOGDI
+    #define NOGDI      // Exclude GDI - prevents Rectangle(), DrawText conflicts  
+  #endif
+  #ifndef NOUSER  
+    #define NOUSER     // Exclude USER - prevents ShowCursor(), CloseWindow() conflicts
+  #endif
+  #ifndef NOMINMAX
+    #define NOMINMAX   // Prevent min/max macros
+  #endif
+  #ifndef WIN32_LEAN_AND_MEAN
+    #define WIN32_LEAN_AND_MEAN
+  #endif
 #endif
 
-// Include raylib - it can now define Rectangle, CloseWindow, ShowCursor freely
+// Now include platform-specific headers
+#ifdef _WIN32
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+  // winsock2.h will include windows.h, but wingdi.h and winuser.h are excluded
+#endif
+
+// Include raylib - no conflicts because NOGDI/NOUSER prevented problematic declarations
 #include <raylib.h>
