@@ -1,26 +1,23 @@
 #pragma once
 
-// This header ensures proper inclusion order for Raylib on Windows
-// to avoid conflicts with Windows API headers (especially WinGDI and WinUser)
+// This header ensures proper inclusion order on Windows to prevent API conflicts
 
 #ifdef _WIN32
-  // Set guards BEFORE including ANY Windows headers
+  // Step 1: Define guards BEFORE any Windows headers
   #ifndef NOMINMAX
     #define NOMINMAX
   #endif
   #ifndef WIN32_LEAN_AND_MEAN
     #define WIN32_LEAN_AND_MEAN
   #endif
-  // These must stay defined to prevent conflicts throughout the translation unit
-  #ifndef NOGDI
-    #define NOGDI     // Prevent wingdi.h inclusion (conflicts with raylib Rectangle)
-  #endif
-  #ifndef NOUSER
-    #define NOUSER    // Prevent winuser.h inclusion (conflicts with raylib CloseWindow, ShowCursor, DrawText, LoadImage)
-  #endif
+  
+  // Step 2: Include winsock2.h FIRST (before windows.h) with guards to prevent conflicts
+  #define NOGDI     // Prevents Rectangle conflict with Raylib
+  #define NOUSER    // Prevents LoadImage, DrawText, CloseWindow, ShowCursor conflicts with Raylib
   #include <winsock2.h>
   #include <ws2tcpip.h>
+  // Keep NOGDI and NOUSER defined so they remain active for raylib inclusion
 #endif
 
-// Now safe to include raylib - Windows headers already included with proper guards
+// Step 3: Include raylib - on Windows, windows.h is already included via winsock2.h with proper guards
 #include <raylib.h>

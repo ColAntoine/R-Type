@@ -5,10 +5,12 @@
 #include <thread>
 #include <functional>
 
-// Include RaylibWrapper to ensure proper header inclusion order on Windows
+// Include RaylibWrapper FIRST - it handles Windows/Raylib conflicts
+// On Windows, it includes winsock2.h before raylib with proper guards
 #include "Core/RaylibWrapper.hpp"
 
 #ifdef _WIN32
+  // Windows socket types are already available from winsock2.h (included in RaylibWrapper)
   using socket_t = SOCKET;
   #define CLOSESOCKET(s) closesocket(s)
 #else
