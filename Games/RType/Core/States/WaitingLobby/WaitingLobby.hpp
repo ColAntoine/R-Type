@@ -12,7 +12,6 @@
 #include "UI/Components/UIButton.hpp"
 #include "UI/Components/UIText.hpp"
 #include "UI/Components/UIPanel.hpp"
-#include "Core/Events.hpp"
 #include <vector>
 #include <string>
 
@@ -60,7 +59,4 @@ class WaitingLobbyState : public IGameState {
         void on_ready_clicked();
         void on_back_clicked();
 
-        // Event handlers
-        void handle_player_list_update(const PlayerListEvent& event);
-        void handle_start_game(const StartGameEvent& event);
 };

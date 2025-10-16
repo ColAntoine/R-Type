@@ -12,7 +12,6 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
-#include "Entity/Components/NetworkSync/NetworkSync.hpp"
 #include <memory>
 
 // Forward declaration

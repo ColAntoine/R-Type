@@ -15,6 +15,13 @@ file(GLOB_RECURSE GAME_SYSTEM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Entity/System
 # Remove system sources from main library sources
 list(REMOVE_ITEM RTYPE_SOURCES ${GAME_SYSTEM_SOURCES})
 
+# Remove main_client.cpp and main_server.cpp from library sources (they're executables)
+list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/main_client\\.cpp")
+list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/main_server\\.cpp")
+
+# Remove Server sources from the main RType library (they're only for r-type_server)
+list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/Core/Server/.*")
+
 # Collect all header files  
 file(GLOB_RECURSE RTYPE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
@@ -46,7 +53,6 @@ set_target_properties(${RTYPE_PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE
 # Set include directories for the library
 target_include_directories(${RTYPE_PROJECT_NAME} PUBLIC
     ${RTYPE_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/Network/include
 )
 
 # Link dependencies for RType
@@ -85,7 +91,6 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     # Set include directories for the system
     target_include_directories(${GAME_SYSTEM_NAME} PUBLIC
         ${RTYPE_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/Network/include
     )
     
     # Link with dependencies

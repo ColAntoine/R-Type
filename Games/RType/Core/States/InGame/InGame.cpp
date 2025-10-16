@@ -6,9 +6,9 @@
 */
 
 #include "InGame.hpp"
-#include "Application.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "Entity/Components/Score/Score.hpp"
+#include "ECS/Components/Position.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
@@ -72,10 +72,6 @@ void InGameState::update(float delta_time) {
     // Update UI
     ui_manager_.update(delta_time);
     update_hud();
-
-    // Update existing game systems through Application
-    app_->update_ecs_systems(delta_time);
-    app_->update_traditional_ecs_systems(delta_time);
 
     // update background
     bg_time_ += delta_time;
@@ -203,60 +199,5 @@ void InGameState::update_hud() {
         std::cerr << "ERROR: Application pointer is null in update_hud()" << std::endl;
         return;
     }
-
-    try {
-        auto& render_service = app_->get_service_manager().get_service<RenderService>();
-        auto& network_service = app_->get_service_manager().get_service<NetworkService>();
-
-        // Update FPS
-        auto fps_text = ui_manager_.get_component<UIText>("fps_text");
-        if (fps_text) {
-            fps_text->set_text("FPS: " + std::to_string(render_service.get_fps()));
-        }
-
-        // Update player info
-        auto player_info = ui_manager_.get_component<UIText>("player_info");
-        if (player_info) {
-            player_info->set_text("Player " + std::to_string(app_->get_local_player_id()));
-        }
-
-        // Update connection status
-        auto connection_status = ui_manager_.get_component<UIText>("connection_status");
-        if (connection_status) {
-            if (network_service.is_connected()) {
-                connection_status->set_text("Status: Connected");
-                connection_status->set_text_color({100, 255, 100, 255}); // Green
-            } else {
-                connection_status->set_text("Status: Disconnected");
-                connection_status->set_text_color({255, 100, 100, 255}); // Red
-            }
-        }
-
-        // Update position
-        auto position_text = ui_manager_.get_component<UIText>("position_text");
-        if (position_text) {
-            auto& ecs_registry = app_->get_ecs_registry();
-                if (auto* pos_arr = ecs_registry.get_if<position>(); pos_arr) {
-                    size_t ent_idx = static_cast<size_t>(app_->get_local_player_entity());
-                    if (pos_arr->has(ent_idx)) {
-                        auto& player_pos = pos_arr->get(ent_idx);
-                        position_text->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
-                    }
-                }
-        }
-
-        auto scoreText = ui_manager_.get_component<UIText>("score_text");
-        if (scoreText) {
-            auto& ecs_registry = app_->get_ecs_registry();
-            auto* score_arr = ecs_registry.get_if<Score>();
-            if (score_arr) {
-                if (score_arr->has(0)) {
-                    unsigned value = (*score_arr)[0]._score;
-                    scoreText->set_text("Score: " + std::to_string(value));
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Exception in update_hud(): " << e.what() << std::endl;
-    }
+    // Update FPS
 }

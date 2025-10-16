@@ -7,7 +7,6 @@
 
 #include "Lobby.hpp"
 #include "Core/States/GameStateManager.hpp"
-#include "Application.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
@@ -22,8 +21,7 @@ static float lobby_ascii_interval = 0.04f;
 static std::mt19937 lobby_ascii_rng((unsigned)time(nullptr));
 static std::string lobby_ascii_charset = " .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
-LobbyState::LobbyState(Application* app) : app_(app) {
-}
+LobbyState::LobbyState() {}
 
 void LobbyState::enter() {
     std::cout << "Entering Lobby State" << std::endl;
@@ -196,26 +194,6 @@ void LobbyState::on_connect_clicked() {
     if (status_label) {
         status_label->set_text("Status: Connecting...");
         status_label->set_text_color({255, 255, 100, 255}); // Yellow
-    }
-
-    // Actually connect to the server using Application
-    if (app_ && app_->connect_to_server(server_ip_, server_port_)) {
-        // Update status to connected
-        if (status_label) {
-            status_label->set_text("Status: Connected - Entering lobby");
-            status_label->set_text_color({100, 255, 100, 255}); // Green
-        }
-
-        // Transition to waiting lobby to show players and ready status
-        if (state_manager_) {
-            state_manager_->change_state("WaitingLobby");
-        }
-    } else {
-        // Update status to connection failed with helpful message
-        if (status_label) {
-            status_label->set_text("Status: Server not available - Try again");
-            status_label->set_text_color({255, 100, 100, 255}); // Red
-        }
     }
 }
 

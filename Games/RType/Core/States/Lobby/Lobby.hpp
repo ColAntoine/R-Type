@@ -15,19 +15,16 @@
 #include "UI/Components/UIInputField.hpp"
 #include <memory>
 
-// Forward declarations
-class Application;
 
 class LobbyState : public IGameState {
 private:
-    Application* app_;
     UIManager ui_manager_;
     bool initialized_{false};
     std::string server_ip_{"127.0.0.1"};
     int server_port_{8080};
 
 public:
-    LobbyState(Application* app);
+    LobbyState();
     ~LobbyState() override = default;
 
     // IGameState implementation

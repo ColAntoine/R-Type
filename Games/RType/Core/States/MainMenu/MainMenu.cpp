@@ -17,8 +17,10 @@ void MainMenuState::enter() {
     ascii_font_size_ = 12;
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
-    ascii_cols_ = std::max(10, sw / (ascii_font_size_ / 2));
-    ascii_rows_ = std::max(8, sh / ascii_font_size_);
+    int font_w = std::max(1, ascii_font_size_ / 2);
+    int font_h = ascii_font_size_;
+    ascii_cols_ = std::max(10, (sw + font_w - 1) / font_w);
+    ascii_rows_ = std::max(8, (sh + font_h - 1) / font_h);
     ascii_grid_.assign(ascii_rows_, std::string(ascii_cols_, ' '));
 
     setup_ui();
@@ -101,8 +103,9 @@ void MainMenuState::render() {
     ClearBackground({8, 10, 12, 255});
 
     // ASCII glitch background (draw behind)
-    int start_x = 10;
-    int start_y = 30;
+    // draw from top-left so background fully covers the screen
+    int start_x = 0;
+    int start_y = 0;
     Color ascii_color = {0, 229, 255, 90}; // cyan-ish low alpha
     for (int r = 0; r < ascii_rows_; ++r) {
         for (int c = 0; c < ascii_cols_; ++c) {

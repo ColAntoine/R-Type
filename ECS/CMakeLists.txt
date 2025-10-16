@@ -45,27 +45,30 @@ set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 # Link dl library for dynamic loading
 target_link_libraries(ECS dl)
 
+# Ensure ECS target can include project Utils headers
+target_include_directories(ECS PUBLIC ${CMAKE_SOURCE_DIR} ECS ECS/include)
+
 # Add system libraries
 add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
-set_target_properties(position_system PROPERTIES 
+set_target_properties(position_system PROPERTIES
     OUTPUT_NAME "position_system"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
 )
 
 add_library(collision_system SHARED ${COLLISION_SYSTEM_SOURCES})
-set_target_properties(collision_system PROPERTIES 
+set_target_properties(collision_system PROPERTIES
     OUTPUT_NAME "collision_system"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
 )
 
 add_library(sprite_system SHARED ${SPRITE_SYSTEM_SOURCES})
-set_target_properties(sprite_system PROPERTIES 
+set_target_properties(sprite_system PROPERTIES
     OUTPUT_NAME "sprite_system"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
 )
 
 add_library(animation_system SHARED ${ANIMATION_SYSTEM_SOURCES})
-set_target_properties(animation_system PROPERTIES 
+set_target_properties(animation_system PROPERTIES
     OUTPUT_NAME "animation_system"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
 )
