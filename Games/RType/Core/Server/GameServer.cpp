@@ -1,6 +1,6 @@
 #include "GameServer.hpp"
-#include "NetworkManager.hpp"
-#include "MessageQueue.hpp"
+#include "Network/NetworkManager.hpp"
+#include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include "Utils/Console.hpp"
 #include <iostream>

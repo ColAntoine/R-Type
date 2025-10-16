@@ -1,9 +1,10 @@
 #pragma once
 
-#include "../MessageQueue.hpp"
+#include "Protocol/MessageQueue.hpp"
 #include "ECS/DLLoader.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components/NetInput.hpp"
+#include "Core/AGameCore.hpp"
 #include <string>
 #include <chrono>
 

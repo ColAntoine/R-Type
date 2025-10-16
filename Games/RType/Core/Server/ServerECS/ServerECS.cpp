@@ -1,4 +1,4 @@
-#include "ServerECS/ServerECS.hpp"
+#include "ServerECS.hpp"
 #include <iostream>
 #include "Utils/Console.hpp"
 
@@ -10,7 +10,6 @@ namespace RType::Network {
     bool ServerECS::init(const std::string& components_so) {
         if (!loader_.load_components_from_so(components_so, registry_)) {
             std::cerr << "Warning: failed to load ECS components from " << components_so << std::endl;
-            // continue without custom components
         }
         factory_ = loader_.get_factory();
         if (!factory_) std::cerr << "Warning: no component factory available from DLLoader" << std::endl;

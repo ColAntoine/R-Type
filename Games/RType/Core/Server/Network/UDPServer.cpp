@@ -1,6 +1,6 @@
 #include "UDPServer.hpp"
 #include "Session.hpp"
-#include "Protocol.hpp"
+#include "Protocol/Protocol.hpp"
 #include <iostream>
 #include "Utils/Console.hpp"
 #include <cstring>

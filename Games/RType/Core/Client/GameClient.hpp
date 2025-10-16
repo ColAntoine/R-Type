@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../AGameCore.hpp"
+#include "ECS/Registry.hpp"
 
 class GameClient : public AGameCore {
     public:
@@ -11,4 +12,9 @@ class GameClient : public AGameCore {
         void run() override;
         void update(float delta) override;
         void shutdown() override;
+
+        registry& GetRegistry();
+
+    private:
+        registry ecs_registry_;
 };

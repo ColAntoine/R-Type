@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../AGameCore.hpp"
+#include "Core/AGameCore.hpp"
 #include <memory>
 #include <asio.hpp>
 

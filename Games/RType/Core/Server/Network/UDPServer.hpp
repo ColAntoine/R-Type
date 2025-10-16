@@ -5,8 +5,8 @@
 #include <functional>
 #include <asio.hpp>
 #include "Connection.hpp"
-#include "Protocol.hpp"
-#include "MessageQueue.hpp"
+#include "Protocol/Protocol.hpp"
+#include "Protocol/MessageQueue.hpp"
 
 namespace RType::Network {
 
