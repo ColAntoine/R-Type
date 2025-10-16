@@ -1,4 +1,7 @@
 #include "Application.hpp"
+#include "ECS/LinuxLoader.hpp"
+#include "ECS/WindowsLoader.hpp"
+#include "ECS/MacOs.hpp"
 #include "States/Loading/Loading.hpp"
 #include "States/MainMenu/MainMenu.hpp"
 #include "States/Settings/Settings.hpp"
@@ -12,24 +15,34 @@
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Score/Score.hpp"
 
+std::string Application::getExtention() {
+    #ifdef _WIN32
+        return ".dll";
+    #elif __APPLE__
+        return ".dylib"
+    #else
+        return ".so";
+    #endif
+}
 
 void Application::load_systems() {
-    system_loader_.load_system_from_so("lib/systems/libposition_system.so");
-    system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
-    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
-    system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
-    system_loader_.load_system_from_so("lib/systems/libanimation_system.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_Control.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_EnemyAI.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_EnemyCleanup.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_EnemySpawnSystem.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_NetworkSyncSystem.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_Spawn.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_Shoot.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_Health.so");
-    system_loader_.load_system_from_so("lib/systems/libgame_GravitySys.so");
+    std::string libExetension = getExtention();
+
+    system_loader_->load_system("lib/systems/libposition_system" + libExetension);
+    system_loader_->load_system("lib/systems/libcollision_system" + libExetension);
+    system_loader_->load_system("lib/systems/libsprite_system" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_LifeTime" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_Draw" + libExetension);
+    system_loader_->load_system("lib/systems/libsprite_system" + libExetension);
+    system_loader_->load_system("lib/systems/libanimation_system" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_Control" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_EnemyAI" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_EnemyCleanup" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_EnemySpawnSystem" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_NetworkSyncSystem" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_Spawn" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_Shoot" + libExetension);
+    system_loader_->load_system("lib/systems/libgame_Health" + libExetension);
 }
 
 void Application::service_setup() {
@@ -42,24 +55,26 @@ void Application::service_setup() {
 
 bool Application::initialize() {
     try {
+        #ifdef _WIN32
+            system_loader_ = std::make_unique<WindowsLoader>();
+        #elif __APPLE__
+            system_loader_ = std::make_unique<MacOsLoader>();
+        #else
+            system_loader_ = std::make_unique<LinuxLoader>();
+        #endif
         setup_ecs();
         load_systems();
         service_setup();
-
         // Create ECS systems
         input_system_ = std::make_unique<InputSystem>(&event_manager_, local_player_entity_);
         network_system_ = std::make_unique<NetworkSystem>(&event_manager_,
         &service_manager_.get_service<NetworkService>(), component_factory_);
-
         // Subscribe to application events
         setup_event_handlers();
-
         // Setup game states
         setup_game_states();
-
         running_ = true;
         return true;
-
     } catch (const std::exception& e) {
         std::cerr << "Application initialization failed: " << e.what() << std::endl;
         return false;
@@ -79,8 +94,6 @@ void Application::send_ready_signal(bool ready) {
     network_service.send_ready_signal(ready);
 }
 
-#include "ECS/Zipper.hpp"
-
 void Application::run() {
     if (!running_) {
         std::cerr << "Application not initialized" << std::endl;
@@ -88,33 +101,23 @@ void Application::run() {
     }
 
     auto& render_service = service_manager_.get_service<RenderService>();
-
     // Start with loading screen
     state_manager_.push_state("Loading");
-
     while (running_ && !render_service.should_close() && !state_manager_.is_empty()) {
         float delta_time = render_service.get_frame_time();
-
         // Emit frame update event
         event_manager_.emit(FrameUpdateEvent(delta_time));
-
         // Update services
         service_manager_.update(delta_time);
-
         // Process events
         event_manager_.process_events();
-
         // Update state manager
         state_manager_.update(delta_time);
-
         // Render frame
         render_service.begin_frame();
-
         // Let states handle their own rendering
         state_manager_.render();
-
         render_service.end_frame();
-
         // Handle state input
         state_manager_.handle_input();
     }
@@ -127,19 +130,16 @@ void Application::shutdown() {
 
 void Application::setup_ecs() {
     // Load ECS component types from shared library
-    if (!system_loader_.load_components_from_so("build/lib/libECS.so", ecs_registry_)) {
-        throw std::runtime_error("Failed to load ECS components from build/lib/libECS.so");
+    if (!system_loader_->load_components("build/lib/libECS" + getExtention(), ecs_registry_)) {
+        throw std::runtime_error("Failed to load ECS components from build/lib/libECS" + getExtention());
     }
-
     // Get the component factory from the loaded library
-    component_factory_ = system_loader_.get_factory();
+    component_factory_ = system_loader_->get_factory();
     if (!component_factory_) {
         throw std::runtime_error("Failed to get component factory from loaded library");
     }
-
     auto score_entity = ecs_registry_.spawn_entity();
     component_factory_->create_component<Score>(ecs_registry_, score_entity, 0);
-
     // Create local player entity using factory methods
     local_player_entity_ = ecs_registry_.spawn_entity();
     component_factory_->create_component<controllable>(ecs_registry_, local_player_entity_, 200.0f);
@@ -157,14 +157,12 @@ void Application::setup_event_handlers() {
             running_ = false;
         }
     });
-
     // Handle network connection
     event_manager_.subscribe<NetworkConnectedEvent>([this](const NetworkConnectedEvent& e) {
         local_player_id_ = e.player_id;
     });
-
     // Handle network disconnection
-    event_manager_.subscribe<NetworkDisconnectedEvent>([this](__attribute_maybe_unused__ const NetworkDisconnectedEvent& e) {
+    event_manager_.subscribe<NetworkDisconnectedEvent>([this]([[maybe_unused]] const NetworkDisconnectedEvent& e) {
         running_ = false;
     });
 }
@@ -177,29 +175,25 @@ void Application::update_ecs_systems(float delta_time) {
 
 void Application::update_traditional_ecs_systems(float delta_time) {
     // Update all loaded systems through the DLLoader
-    system_loader_.update_all_systems(ecs_registry_, delta_time);
+    system_loader_->update_all_systems(ecs_registry_, delta_time);
 }
 
 void Application::setup_game_states() {
     // Register all game states with factory functions
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
-
     // Register Settings state with Application pointer using custom factory
     state_manager_.register_state_with_factory("Settings", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<SettingsState>(this);
     });
-
     // Register Lobby state with Application pointer using custom factory
     state_manager_.register_state_with_factory("Lobby", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<LobbyState>(this);
     });
-
     // Register Waiting Lobby state with Application pointer using custom factory
     state_manager_.register_state_with_factory("WaitingLobby", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<WaitingLobbyState>(this);
     });
-
     // Register InGame state with Application pointer using custom factory
     state_manager_.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(this);

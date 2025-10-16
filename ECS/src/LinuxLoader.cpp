@@ -1,32 +1,15 @@
-#include "ECS/DLLoader.hpp"
-#include "ECS/Registry.hpp"
-#include <dlfcn.h>
-#include <iostream>
-#include <filesystem>
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** LinuxLoader
+*/
 
-DLLoader::DLLoader() : library_handle_(nullptr), factory_(nullptr) {}
+#ifdef __linux__
 
-DLLoader::~DLLoader() {
-    // Clean up systems - destroy objects before unloading libraries
-    for (auto& loaded_sys : systems_) {
-        // Explicitly reset the unique_ptr to destroy the system object first
-        loaded_sys.system.reset();
-        // Now it's safe to close the library handle
-        if (loaded_sys.handle) {
-            dlclose(loaded_sys.handle);
-        }
-    }
-    systems_.clear();
+#include "ECS/LinuxLoader.hpp"
 
-    // Clean up component library
-    if (library_handle_) {
-        dlclose(library_handle_);
-        library_handle_ = nullptr;
-        factory_ = nullptr;
-    }
-}
-
-bool DLLoader::load_system_from_so(const std::string &so_path) {
+bool LinuxLoader::load_system(const std::string &so_path) {
     // Check if file exists
     if (!std::filesystem::exists(so_path)) {
         std::cerr << "System library file does not exist: " << so_path << std::endl;
@@ -72,7 +55,7 @@ bool DLLoader::load_system_from_so(const std::string &so_path) {
     }
 
     // Store the loaded system
-    LoadedSystem loaded_sys;
+    ALoader::LoadedSystem loaded_sys;
     loaded_sys.handle = handle;
     loaded_sys.system = std::move(system);
     loaded_sys.name = std::filesystem::path(so_path).stem().string();
@@ -84,34 +67,8 @@ bool DLLoader::load_system_from_so(const std::string &so_path) {
     return true;
 }
 
-void DLLoader::update_all_systems(registry& r, float dt) {
-    for (auto& loaded_sys : systems_) {
-        if (loaded_sys.system) {
-            try {
-                loaded_sys.system->update(r, dt);
-            } catch (const std::exception& e) {
-                std::cerr << "Exception in system " << loaded_sys.system->get_name()
-                          << ": " << e.what() << std::endl;
-            }
-        }
-    }
-}
 
-void DLLoader::update_system_by_name(const std::string& name, registry& r, float dt) {
-    for (auto& loaded_sys : systems_) {
-        if (loaded_sys.system && loaded_sys.system->get_name() == name) {
-            try {
-                loaded_sys.system->update(r, dt);
-            } catch (const std::exception& e) {
-                std::cerr << "Exception in system " << name << ": " << e.what() << std::endl;
-            }
-            return;
-        }
-    }
-    std::cerr << "System not found: " << name << std::endl;
-}
-
-bool DLLoader::load_components_from_so(const std::string &so_path, registry &reg) {
+bool LinuxLoader::load_components(const std::string &so_path, registry &reg) {
     if (!std::filesystem::exists(so_path)) {
         std::cerr << "Component library file does not exist: " << so_path << std::endl;
         return false;
@@ -176,50 +133,4 @@ bool DLLoader::load_components_from_so(const std::string &so_path, registry &reg
     return true;
 }
 
-IComponentFactory* DLLoader::get_factory() const {
-    return factory_;
-}
-
-bool DLLoader::is_loaded() const {
-    return library_handle_ != nullptr;
-}
-
-size_t DLLoader::get_system_count() const {
-    return systems_.size();
-}
-
-std::vector<std::string> DLLoader::get_system_names() const {
-    std::vector<std::string> names;
-    for (const auto& loaded_sys : systems_) {
-        if (loaded_sys.system) {
-            names.push_back(loaded_sys.system->get_name());
-        }
-    }
-    return names;
-}
-
-// Move constructor and assignment operator
-DLLoader::DLLoader(DLLoader&& other) noexcept
-    : library_handle_(other.library_handle_)
-    , factory_(other.factory_)
-    , systems_(std::move(other.systems_)) {
-    other.library_handle_ = nullptr;
-    other.factory_ = nullptr;
-}
-
-DLLoader& DLLoader::operator=(DLLoader&& other) noexcept {
-    if (this != &other) {
-        // Clean up current resources
-        this->~DLLoader();
-
-        // Move from other
-        library_handle_ = other.library_handle_;
-        factory_ = other.factory_;
-        systems_ = std::move(other.systems_);
-
-        // Reset other
-        other.library_handle_ = nullptr;
-        other.factory_ = nullptr;
-    }
-    return *this;
-}
+#endif // __linux__

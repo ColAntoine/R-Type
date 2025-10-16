@@ -3,7 +3,16 @@
 #include "message_handler.hpp"
 #include "game_handlers.hpp"
 #include "protocol.hpp"
-#include "ECS/DLLoader.hpp"
+#if defined(_WIN32)
+#  include "ECS/WindowsLoader.hpp"
+    using ServerDLLoader = WindowsLoader;
+#elif defined(__APPLE__)
+#  include "ECS/MacOs.hpp"
+    using ServerDLLoader = MacOs;
+#else
+#  include "ECS/LinuxLoader.hpp"
+    using ServerDLLoader = LinuxLoader;
+#endif
 #include "ECS/Registry.hpp"
 #include "enemy_manager.hpp"
 #include <iostream>
@@ -19,7 +28,7 @@ std::unique_ptr<RType::Network::ServerEnemyManager> g_enemy_manager = nullptr;
 
 // Server-side ECS (for authoritative enemy spawning)
 static registry g_server_ecs_registry;
-static DLLoader g_server_dl_loader;
+static ServerDLLoader g_server_dl_loader;
 
 void game_loop() {
     const float target_fps = 60.0f;
@@ -187,7 +196,7 @@ int main(int ac, char** av) {
         setup_message_handlers(g_network_manager->get_server());
 
     // Load ECS component definitions into the server registry so server can spawn entities
-    if (!g_server_dl_loader.load_components_from_so("lib/libECS.so", g_server_ecs_registry)) {
+    if (!g_server_dl_loader.load_components("lib/libECS.so", g_server_ecs_registry)) {
         std::cerr << "Warning: Failed to load ECS components for server; enemy spawning will still broadcast but server entities may not be tracked." << std::endl;
     }
     IComponentFactory* server_factory = g_server_dl_loader.get_factory();
