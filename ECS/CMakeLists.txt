@@ -14,7 +14,10 @@ include_directories(include)
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
-    src/dlloader.cpp
+    src/ALoader.cpp
+    src/LinuxLoader.cpp
+    src/WindowsLoader.cpp
+    src/MacOsLoader.cpp
     src/components/position.cpp
     src/components/velocity.cpp
     src/components/sprite.cpp

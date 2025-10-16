@@ -11,11 +11,16 @@
 #include "Core/States/GameStateManager.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Entity.hpp"
-#include "ECS/DLLoader.hpp"
 #include "ECS/ComponentFactory.hpp"
 #include <memory>
 #include <sstream>
 #include <iostream>
+#include "ECS/ILoader.hpp"
+
+// Forward declarations to avoid including Windows headers (which conflict with Raylib)
+class LinuxLoader;
+class WindowsLoader;
+class MacOs;
 
 #define PLAYER_WIDTH 60.0f
 #define PLAYER_HEIGHT 40.0f
@@ -29,7 +34,7 @@ class Application {
         // ECS
         registry ecs_registry_;
         entity local_player_entity_;
-        DLLoader system_loader_;
+        std::unique_ptr<ILoader> system_loader_;
         IComponentFactory* component_factory_;
 
         // ECS Systems
@@ -80,10 +85,10 @@ class Application {
                 player_name_ = name.empty() ? "Player" : name;
             }
         }
-        DLLoader& get_system_loader() { return system_loader_; }
+        ILoader& get_system_loader() { return *system_loader_; }
 
         // ECS update methods for states to use
         void update_ecs_systems(float delta_time);
         void update_traditional_ecs_systems(float delta_time);
-
+        std::string getExtention();
 };

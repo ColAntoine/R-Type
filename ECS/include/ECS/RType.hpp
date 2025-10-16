@@ -14,7 +14,7 @@
 
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 
 class RType {
   public:
@@ -38,5 +38,5 @@ class RType {
 
   private:
     registry reg_;
-    DLLoader loader_;
+    std::unique_ptr<ILoader> loader_;
 };
