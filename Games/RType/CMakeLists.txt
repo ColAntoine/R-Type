@@ -26,7 +26,7 @@ list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/Core/Server/.*")
 # Ensure the Protocol.cpp is included in the main game library so clients can link against it.
 list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/Protocol/Protocol.cpp")
 
-# Collect all header files  
+# Collect all header files
 file(GLOB_RECURSE RTYPE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
@@ -86,24 +86,24 @@ target_compile_options(${RTYPE_PROJECT_NAME} PRIVATE
 # Build individual game system libraries as .so files
 foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     get_filename_component(SYSTEM_NAME ${SYSTEM_FILE} NAME_WE)
-    
+
     # Create a unique name for game systems to avoid conflicts with ECS systems
     set(GAME_SYSTEM_NAME "game_${SYSTEM_NAME}")
-    
+
     add_library(${GAME_SYSTEM_NAME} SHARED ${SYSTEM_FILE})
-    
+
     # Set include directories for the system
     target_include_directories(${GAME_SYSTEM_NAME} PUBLIC
         ${RTYPE_INCLUDE_DIRS}
     )
-    
+
     # Link with dependencies
     target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC
         raylib
         glfw
         ${RTYPE_PROJECT_NAME}          # <--- add this
     )
-    
+
     # Link with ECS library if available
     if(TARGET ECS)
         target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC ECS)
@@ -111,15 +111,15 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
             ${CMAKE_SOURCE_DIR}/ECS/include
         )
     endif()
-    
+
     # Set C++ standard for systems
     target_compile_features(${GAME_SYSTEM_NAME} PUBLIC cxx_std_20)
-    
+
     # Set output directory for game system libraries
     set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems
     )
-    
+
     message(STATUS "Building game system: ${GAME_SYSTEM_NAME} from ${SYSTEM_FILE}")
 endforeach()
 
@@ -136,7 +136,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     # Find required dependencies when building standalone
     find_package(raylib CONFIG REQUIRED)
     find_package(glfw3 CONFIG REQUIRED)
-    
+
     # Check if main.cpp exists
     if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
         add_executable(${RTYPE_PROJECT_NAME}_exe ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
