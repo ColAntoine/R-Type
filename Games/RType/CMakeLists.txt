@@ -22,6 +22,10 @@ list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/main_server\\.cpp")
 # Remove Server sources from the main RType library (they're only for r-type_server)
 list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/Core/Server/.*")
 
+# The protocol implementation is shared between client and server (PacketBuilder, parser, etc.).
+# Ensure the Protocol.cpp is included in the main game library so clients can link against it.
+list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/Protocol/Protocol.cpp")
+
 # Collect all header files  
 file(GLOB_RECURSE RTYPE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
