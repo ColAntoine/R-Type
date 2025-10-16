@@ -1,16 +1,142 @@
-/*
-** EPITECH PROJECT, 2025
-** R-Type
-** File description:
-** UI System Test
-*/
+// /*
+// ** EPITECH PROJECT, 2025
+// ** R-Type
+// ** File description:
+// ** UI System Test
+// */
 
-#include <iostream>
-#include <raylib.h>
-#include "ECS/Registry.hpp"
-#include "ECS/Components/UIComponent.hpp"
-#include "ECS/UI/Components/Button.hpp"
-#include "ECS/Systems/UISystem.hpp"
+// #include <iostream>
+// #include <cmath>
+// #include <raylib.h>
+// #include "ECS/Registry.hpp"
+// #include "ECS/Components/UIComponent.hpp"
+// #include "ECS/UI/Components/Button.hpp"
+// #include "ECS/UI/Components/InputField.hpp"
+// #include "ECS/Systems/UISystem.hpp"
+
+// // Custom button with glitch effect on hover
+// class GlitchButton : public UI::UIButton {
+// public:
+//     GlitchButton(float x, float y, float w, float h, const std::string& text)
+//         : UIButton(x, y, w, h, text) {
+//         hover_seed_ = rand() % 1000;
+//     }
+
+//     void set_glitch_params(float amplitude, float speed, Color neon, Color glow) {
+//         hover_jitter_amplitude_ = amplitude;
+//         hover_jitter_speed_ = speed;
+//         neon_color_ = neon;
+//         neon_glow_color_ = glow;
+//     }
+
+// protected:
+//     void draw_button_background() const override {
+//         Color bg_color = get_current_background_color();
+//         Vector2 pos = get_position();
+//         Vector2 size = get_size();
+        
+//         // Draw main button rectangle
+//         DrawRectangle(pos.x, pos.y, size.x, size.y, bg_color);
+        
+//         // Draw border
+//         Color border_color = {
+//             static_cast<unsigned char>(bg_color.r + 30),
+//             static_cast<unsigned char>(bg_color.g + 30),
+//             static_cast<unsigned char>(bg_color.b + 30),
+//             255
+//         };
+//         DrawRectangleLines(pos.x, pos.y, size.x, size.y, border_color);
+        
+//         // Add scanline texture for cyberpunk feel
+//         for (int i = 0; i < static_cast<int>(size.y); i += 6) {
+//             DrawRectangle(pos.x, pos.y + i, size.x, 1, {0, 0, 0, 10});
+//         }
+        
+//         // Add neon glow when hovered
+//         if (get_state() == UI::UIState::Hovered) {
+//             DrawRectangleLinesEx(
+//                 {pos.x - 2, pos.y - 2, size.x + 4, size.y + 4},
+//                 2.0f,
+//                 neon_color_
+//             );
+//             DrawRectangle(
+//                 pos.x - 4,
+//                 pos.y - 4,
+//                 size.x + 8,
+//                 4,
+//                 neon_glow_color_
+//             );
+//         }
+        
+//         // Pressed state highlight
+//         if (get_state() == UI::UIState::Pressed) {
+//             DrawRectangle(
+//                 pos.x + 2,
+//                 pos.y + 2,
+//                 size.x - 4,
+//                 size.y - 4,
+//                 {255, 255, 255, 30}
+//             );
+//         }
+//     }
+
+//     void draw_button_text() const override {
+//         if (get_text().empty()) return;
+
+//         Vector2 pos = get_position();
+//         Vector2 size = get_size();
+//         const auto& style = get_style();
+//         Color text_color = (get_state() == UI::UIState::Disabled) 
+//             ? style._disabled_text_color 
+//             : style._text_color;
+        
+//         Vector2 text_size = MeasureTextEx(GetFontDefault(), get_text().c_str(), style._font_size, 1.0f);
+//         float text_x = pos.x + (size.x - text_size.x) / 2.0f;
+//         float text_y = pos.y + (size.y - text_size.y) / 2.0f;
+
+//         // Glitch effect on hover
+//         if (get_state() == UI::UIState::Hovered) {
+//             float t = GetTime() * hover_jitter_speed_ + hover_seed_;
+//             float jitter_x = std::sin(t) * hover_jitter_amplitude_;
+//             float jitter_y = std::cos(t * 1.3f) * (hover_jitter_amplitude_ / 2.0f);
+
+//             // RGB split effect
+//             Color rcol = {255, 50, 80, text_color.a};
+//             DrawTextEx(GetFontDefault(), get_text().c_str(),
+//                       {text_x + jitter_x + 1, text_y + jitter_y},
+//                       style._font_size, 1.0f, rcol);
+
+//             Color gcol = {0, 255, 156, static_cast<unsigned char>(text_color.a * 0.6f)};
+//             DrawTextEx(GetFontDefault(), get_text().c_str(),
+//                       {text_x - jitter_x - 1, text_y - jitter_y},
+//                       style._font_size, 1.0f, gcol);
+
+//             DrawTextEx(GetFontDefault(), get_text().c_str(),
+//                       {text_x, text_y}, style._font_size, 1.0f, text_color);
+
+//             // Scanline flicker
+//             if (((static_cast<int>(GetTime() * 10) + hover_seed_) % 5) == 0) {
+//                 DrawRectangle(text_x - 4, text_y + text_size.y + 2,
+//                             text_size.x + 8, 2, {255, 255, 255, 10});
+//             }
+//         } else {
+//             // Normal rendering
+//             if (get_state() == UI::UIState::Pressed) {
+//                 text_x += 1;
+//                 text_y += 1;
+//             }
+//             DrawTextEx(GetFontDefault(), get_text().c_str(),
+//                       {text_x, text_y}, style._font_size, 1.0f, text_color);
+//         }
+//     }
+
+// private:
+//     Color neon_color_{0, 229, 255, 255};
+//     Color neon_glow_color_{0, 229, 255, 100};
+//     float hover_jitter_amplitude_{2.0f};
+//     float hover_jitter_speed_{8.0f};
+//     int hover_seed_{0};
+// };
 
 // int main() {
 //     // Initialize window
@@ -24,27 +150,35 @@
 //     // Register UIComponent
 //     reg.register_component<UI::UIComponent>();
 
-//     // Create a button entity
-//     auto button_entity = reg.spawn_entity();
-    
-//     // Create button
-//     auto play_button = std::make_shared<UI::UIButton>(300, 250, 200, 60, "Play Game");
-    
-//     // Set button style
+//     // Create button style
 //     UI::ButtonStyle style;
 //     style._normal_color = {70, 70, 70, 255};
 //     style._hovered_color = {100, 100, 255, 255};
 //     style._pressed_color = {50, 50, 150, 255};
 //     style._font_size = 24;
+
+//     // Create a glitch button entity
+//     auto button_entity = reg.spawn_entity();
+    
+//     // Create glitch button with cyberpunk effect
+//     auto play_button = std::make_shared<GlitchButton>(300, 250, 200, 60, "Play Game");
 //     play_button->set_style(style);
     
-//     // Set button callback
+//     // Configure glitch parameters (amplitude, speed, neon color, glow color)
+//     play_button->set_glitch_params(
+//         2.0f,                      // Jitter amplitude
+//         8.0f,                      // Jitter speed
+//         {0, 229, 255, 255},       // Neon cyan
+//         {0, 229, 255, 100}        // Neon glow
+//     );
+    
+//     // Set button callbacks
 //     play_button->set_on_click([]() {
 //         std::cout << "Play button clicked!" << std::endl;
 //     });
     
 //     play_button->set_on_hover([]() {
-//         std::cout << "Hovering over play button" << std::endl;
+//         std::cout << "Hovering over play button - GLITCH ACTIVE" << std::endl;
 //     });
     
 //     play_button->set_on_hover_exit([]() {
@@ -54,14 +188,72 @@
 //     // Add button to registry
 //     reg.add_component(button_entity, UI::UIComponent(play_button));
 
-//     // Create quit button
+//     // Create quit button with glitch effect
 //     auto quit_button_entity = reg.spawn_entity();
-//     auto quit_button = std::make_shared<UI::UIButton>(300, 330, 200, 60, "Quit");
-//     quit_button->set_style(style);
+//     auto quit_button = std::make_shared<GlitchButton>(300, 330, 200, 60, "Quit");
+    
+//     // Different color scheme for quit button
+//     UI::ButtonStyle quit_style = style;
+//     quit_style._hovered_color = {255, 50, 50, 255};  // Red hover
+//     quit_button->set_style(quit_style);
+    
+//     // Configure with red neon
+//     quit_button->set_glitch_params(
+//         2.5f,                      // Slightly more jitter
+//         10.0f,                     // Faster speed
+//         {255, 0, 100, 255},       // Red neon
+//         {255, 0, 100, 100}        // Red glow
+//     );
+    
 //     quit_button->set_on_click([]() {
 //         std::cout << "Quit button clicked! Closing window..." << std::endl;
 //     });
+    
+//     quit_button->set_on_hover([]() {
+//         std::cout << "Hovering over quit - WARNING GLITCH" << std::endl;
+//     });
+    
 //     reg.add_component(quit_button_entity, UI::UIComponent(quit_button));
+
+//     // Create an input field entity
+//     auto input_entity = reg.spawn_entity();
+//     auto username_input = std::make_shared<UI::UIInputField>(250, 180, 300, 50, "Enter username...");
+    
+//     // Set input field style
+//     UI::InputFieldStyle input_style;
+//     input_style._background_color = {50, 50, 50, 255};
+//     input_style._focused_color = {70, 70, 90, 255};
+//     input_style._border_color = {100, 100, 100, 255};
+//     input_style._focused_border_color = {0, 229, 255, 255};  // Cyan when focused
+//     input_style._text_color = {255, 255, 255, 255};
+//     input_style._placeholder_color = {150, 150, 150, 255};
+//     input_style._cursor_color = {0, 229, 255, 255};
+//     input_style._font_size = 20;
+//     input_style._border_thickness = 2.0f;
+//     username_input->set_style(input_style);
+    
+//     // Set max length
+//     username_input->set_max_length(20);
+    
+//     // Set callbacks
+//     username_input->set_on_text_changed([](const std::string& text) {
+//         std::cout << "Text changed: " << text << std::endl;
+//     });
+    
+//     username_input->set_on_enter_pressed([](const std::string& text) {
+//         std::cout << "Enter pressed! Username: " << text << std::endl;
+//     });
+    
+//     username_input->set_on_focus([]() {
+//         std::cout << "Input field focused" << std::endl;
+//     });
+    
+//     username_input->set_on_focus_lost([]() {
+//         std::cout << "Input field lost focus" << std::endl;
+//     });
+    
+//     // Add input field to registry
+//     reg.add_component(input_entity, UI::UIComponent(username_input));
 
 //     // Main game loop
 //     while (!WindowShouldClose()) {
@@ -78,7 +270,9 @@
 //         ClearBackground(BLACK);
         
 //         DrawText("UI System Test", 250, 100, 40, WHITE);
+//         DrawText("Username:", 250, 150, 20, GRAY);
 //         DrawText("Hover and click the buttons!", 220, 450, 20, GRAY);
+//         DrawText("Press Enter to submit", 250, 510, 16, DARKGRAY);
         
 //         ui_system.render(reg);
         
