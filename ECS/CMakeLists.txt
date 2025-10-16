@@ -35,6 +35,8 @@ set(LIB_ECS_SOURCES
 set(UI_COMPONENT_SOURCES
     src/UI/Components/Button.cpp
     src/UI/Components/InputField.cpp
+    src/UI/Components/Panel.cpp
+    src/UI/Components/Text.cpp
 )
 
 # Source files for system libraries

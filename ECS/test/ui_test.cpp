@@ -12,6 +12,8 @@
 // #include "ECS/Components/UIComponent.hpp"
 // #include "ECS/UI/Components/Button.hpp"
 // #include "ECS/UI/Components/InputField.hpp"
+// #include "ECS/UI/Components/Panel.hpp"
+// #include "ECS/UI/Components/Text.hpp"
 // #include "ECS/Systems/UISystem.hpp"
 
 // // Custom button with glitch effect on hover
@@ -150,74 +152,64 @@
 //     // Register UIComponent
 //     reg.register_component<UI::UIComponent>();
 
-//     // Create button style
-//     UI::ButtonStyle style;
-//     style._normal_color = {70, 70, 70, 255};
-//     style._hovered_color = {100, 100, 255, 255};
-//     style._pressed_color = {50, 50, 150, 255};
-//     style._font_size = 24;
+//     // ========================================
+//     // STEP 1: Create background panel FIRST (rendered behind everything)
+//     // ========================================
+//     auto panel_entity = reg.spawn_entity();
+//     auto background_panel = std::make_shared<UI::UIPanel>(200, 120, 400, 420);
+    
+//     // Set panel style
+//     UI::PanelStyle panel_style;
+//     panel_style._background_color = {30, 30, 40, 220};  // Semi-transparent dark blue
+//     panel_style._border_color = {0, 229, 255, 255};     // Cyan border
+//     panel_style._border_thickness = 2.0f;
+//     panel_style._corner_radius = 10.0f;                 // Rounded corners
+//     panel_style._has_shadow = true;
+//     panel_style._shadow_color = {0, 0, 0, 150};
+//     panel_style._shadow_offset = 8.0f;
+//     background_panel->set_style(panel_style);
+    
+//     // Add panel to registry FIRST
+//     reg.add_component(panel_entity, UI::UIComponent(background_panel));
 
-//     // Create a glitch button entity
-//     auto button_entity = reg.spawn_entity();
+//     // ========================================
+//     // STEP 2: Create title text
+//     // ========================================
+//     auto title_entity = reg.spawn_entity();
+//     auto title_text = std::make_shared<UI::UIText>(400, 140, "UI SYSTEM TEST");
     
-//     // Create glitch button with cyberpunk effect
-//     auto play_button = std::make_shared<GlitchButton>(300, 250, 200, 60, "Play Game");
-//     play_button->set_style(style);
+//     // Set text style
+//     UI::TextStyle title_style;
+//     title_style._text_color = {0, 229, 255, 255};  // Cyan
+//     title_style._font_size = 36;
+//     title_style._alignment = UI::TextAlignment::Center;
+//     title_style._has_shadow = true;
+//     title_style._shadow_color = {0, 0, 0, 200};
+//     title_style._shadow_offset = {3.0f, 3.0f};
+//     title_text->set_style(title_style);
     
-//     // Configure glitch parameters (amplitude, speed, neon color, glow color)
-//     play_button->set_glitch_params(
-//         2.0f,                      // Jitter amplitude
-//         8.0f,                      // Jitter speed
-//         {0, 229, 255, 255},       // Neon cyan
-//         {0, 229, 255, 100}        // Neon glow
-//     );
-    
-//     // Set button callbacks
-//     play_button->set_on_click([]() {
-//         std::cout << "Play button clicked!" << std::endl;
-//     });
-    
-//     play_button->set_on_hover([]() {
-//         std::cout << "Hovering over play button - GLITCH ACTIVE" << std::endl;
-//     });
-    
-//     play_button->set_on_hover_exit([]() {
-//         std::cout << "Stopped hovering" << std::endl;
-//     });
+//     // Add title to registry
+//     reg.add_component(title_entity, UI::UIComponent(title_text));
 
-//     // Add button to registry
-//     reg.add_component(button_entity, UI::UIComponent(play_button));
+//     // ========================================
+//     // STEP 3: Create username label
+//     // ========================================
+//     auto label_entity = reg.spawn_entity();
+//     auto username_label = std::make_shared<UI::UIText>(250, 195, "Username:");
+    
+//     UI::TextStyle label_style;
+//     label_style._text_color = {200, 200, 200, 255};
+//     label_style._font_size = 18;
+//     label_style._alignment = UI::TextAlignment::Left;
+//     username_label->set_style(label_style);
+    
+//     reg.add_component(label_entity, UI::UIComponent(username_label));
 
-//     // Create quit button with glitch effect
-//     auto quit_button_entity = reg.spawn_entity();
-//     auto quit_button = std::make_shared<GlitchButton>(300, 330, 200, 60, "Quit");
-    
-//     // Different color scheme for quit button
-//     UI::ButtonStyle quit_style = style;
-//     quit_style._hovered_color = {255, 50, 50, 255};  // Red hover
-//     quit_button->set_style(quit_style);
-    
-//     // Configure with red neon
-//     quit_button->set_glitch_params(
-//         2.5f,                      // Slightly more jitter
-//         10.0f,                     // Faster speed
-//         {255, 0, 100, 255},       // Red neon
-//         {255, 0, 100, 100}        // Red glow
-//     );
-    
-//     quit_button->set_on_click([]() {
-//         std::cout << "Quit button clicked! Closing window..." << std::endl;
-//     });
-    
-//     quit_button->set_on_hover([]() {
-//         std::cout << "Hovering over quit - WARNING GLITCH" << std::endl;
-//     });
-    
-//     reg.add_component(quit_button_entity, UI::UIComponent(quit_button));
-
-//     // Create an input field entity
+//     // ========================================
+//     // STEP 4: Create input field
+//     // ========================================
 //     auto input_entity = reg.spawn_entity();
-//     auto username_input = std::make_shared<UI::UIInputField>(250, 180, 300, 50, "Enter username...");
+//     auto username_input = std::make_shared<UI::UIInputField>(250, 220, 300, 50, "Enter username...");
     
 //     // Set input field style
 //     UI::InputFieldStyle input_style;
@@ -255,6 +247,88 @@
 //     // Add input field to registry
 //     reg.add_component(input_entity, UI::UIComponent(username_input));
 
+//     // ========================================
+//     // STEP 5: Create buttons
+//     // ========================================
+//     // Create button style
+//     UI::ButtonStyle style;
+//     style._normal_color = {70, 70, 70, 255};
+//     style._hovered_color = {100, 100, 255, 255};
+//     style._pressed_color = {50, 50, 150, 255};
+//     style._font_size = 24;
+
+//     // Create a glitch button entity
+//     auto button_entity = reg.spawn_entity();
+    
+//     // Create glitch button with cyberpunk effect
+//     auto play_button = std::make_shared<GlitchButton>(300, 290, 200, 60, "Play Game");
+//     play_button->set_style(style);
+    
+//     // Configure glitch parameters (amplitude, speed, neon color, glow color)
+//     play_button->set_glitch_params(
+//         2.0f,                      // Jitter amplitude
+//         8.0f,                      // Jitter speed
+//         {0, 229, 255, 255},       // Neon cyan
+//         {0, 229, 255, 100}        // Neon glow
+//     );
+    
+//     // Set button callbacks
+//     play_button->set_on_click([]() {
+//         std::cout << "Play button clicked!" << std::endl;
+//     });
+    
+//     play_button->set_on_hover([]() {
+//         std::cout << "Hovering over play button - GLITCH ACTIVE" << std::endl;
+//     });
+    
+//     play_button->set_on_hover_exit([]() {
+//         std::cout << "Stopped hovering" << std::endl;
+//     });
+
+//     // Add button to registry
+//     reg.add_component(button_entity, UI::UIComponent(play_button));
+
+//     // Create quit button with glitch effect
+//     auto quit_button_entity = reg.spawn_entity();
+//     auto quit_button = std::make_shared<GlitchButton>(300, 370, 200, 60, "Quit");
+    
+//     // Different color scheme for quit button
+//     UI::ButtonStyle quit_style = style;
+//     quit_style._hovered_color = {255, 50, 50, 255};  // Red hover
+//     quit_button->set_style(quit_style);
+    
+//     // Configure with red neon
+//     quit_button->set_glitch_params(
+//         2.5f,                      // Slightly more jitter
+//         10.0f,                     // Faster speed
+//         {255, 0, 100, 255},       // Red neon
+//         {255, 0, 100, 100}        // Red glow
+//     );
+    
+//     quit_button->set_on_click([]() {
+//         std::cout << "Quit button clicked! Closing window..." << std::endl;
+//     });
+    
+//     quit_button->set_on_hover([]() {
+//         std::cout << "Hovering over quit - WARNING GLITCH" << std::endl;
+//     });
+    
+//     reg.add_component(quit_button_entity, UI::UIComponent(quit_button));
+
+//     // ========================================
+//     // STEP 6: Create footer text
+//     // ========================================
+//     auto footer_entity = reg.spawn_entity();
+//     auto footer_text = std::make_shared<UI::UIText>(400, 510, "Press Enter to submit | ESC to quit");
+    
+//     UI::TextStyle footer_style;
+//     footer_style._text_color = {100, 100, 100, 255};
+//     footer_style._font_size = 14;
+//     footer_style._alignment = UI::TextAlignment::Center;
+//     footer_text->set_style(footer_style);
+    
+//     reg.add_component(footer_entity, UI::UIComponent(footer_text));
+
 //     // Main game loop
 //     while (!WindowShouldClose()) {
 //         float deltaTime = GetFrameTime();
@@ -267,13 +341,9 @@
 
 //         // Render
 //         BeginDrawing();
-//         ClearBackground(BLACK);
+//         ClearBackground({10, 10, 15, 255});  // Dark background
         
-//         DrawText("UI System Test", 250, 100, 40, WHITE);
-//         DrawText("Username:", 250, 150, 20, GRAY);
-//         DrawText("Hover and click the buttons!", 220, 450, 20, GRAY);
-//         DrawText("Press Enter to submit", 250, 510, 16, DARKGRAY);
-        
+//         // All UI elements are now rendered through the UI system
 //         ui_system.render(reg);
         
 //         EndDrawing();
