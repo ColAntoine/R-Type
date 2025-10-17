@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Include directories
 include_directories(include)
 
-# Source files for the libECS.so shared library (components + registry + dlloader)
+# Source files for the libECS.so shared library (components + registry + dlloader + assetmanager + renderer + physics + audio + messaging + plugin)
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
@@ -19,6 +19,24 @@ set(LIB_ECS_SOURCES
     src/components/velocity.cpp
     src/components/sprite.cpp
     src/components/collider.cpp
+    src/AssetManager/AssetManager.cpp
+    src/AssetManager/Texture/TextureManager.cpp
+    src/AssetManager/Sound/SoundManager.cpp
+    src/Renderer/RenderManager.cpp
+    src/Renderer/Camera/Camera.cpp
+    src/Renderer/Batch/SpriteBatch.cpp
+    src/Physics/PhysicsManager.cpp
+    src/Physics/Collision/CollisionDetector.cpp
+    src/Physics/SpatialHash/SpatialHash.cpp
+    src/Audio/AudioManager.cpp
+    src/Audio/Music/MusicPlayer.cpp
+    src/Audio/SFX/SFXPlayer.cpp
+    src/Messaging/MessagingManager.cpp
+    src/Messaging/EventBus.cpp
+    src/Messaging/CommandDispatcher.cpp
+    src/Messaging/MessageQueue.cpp
+    src/Plugin/PluginManager.cpp
+    src/Plugin/Plugin.cpp
 )
 
 # Source files for system libraries
@@ -42,8 +60,8 @@ set(ANIMATION_SYSTEM_SOURCES
 add_library(ECS SHARED ${LIB_ECS_SOURCES})
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Link dl library for dynamic loading
-target_link_libraries(ECS dl)
+# Link dl library for dynamic loading and raylib for assets
+target_link_libraries(ECS dl raylib)
 
 # Ensure ECS target can include project Utils headers
 target_include_directories(ECS PUBLIC ${CMAKE_SOURCE_DIR} ECS ECS/include)

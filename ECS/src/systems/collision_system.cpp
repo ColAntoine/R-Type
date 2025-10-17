@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** R-Type
 ** File description:
-** Collision System Implementation
+** Collision System Implementation - Using Spatial Hash for O(n) performance
 */
 
 #include <iostream>
@@ -13,6 +13,7 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Physics/PhysicsManager.hpp"
 
 using Rect = std::array<float,4>; // {minx, miny, maxx, maxy}
 
@@ -48,18 +49,36 @@ void CollisionSystem::update(registry& r, float dt) {
     auto *col_arr = r.get_if<collider>();
     if (!pos_arr || !col_arr) return;
 
+    auto& physics = PhysicsManager::instance();
+    physics.clear();
+
+    // Step 1: Insert all entities with colliders into spatial hash
     for (auto [pi, ci, entity_i] : zipper(*pos_arr, *col_arr)) {
+        AABB bounds(pi.x + ci.offset_x, pi.y + ci.offset_y, ci.w, ci.h);
+        physics.update_entity(entity_i, bounds);
+    }
+
+    // Step 2: Get only potential collision pairs (O(n) instead of O(n²))
+    auto collision_pairs = physics.get_collision_pairs();
+
+    // Step 3: Check and resolve actual collisions
+    for (auto [entity_i, entity_j] : collision_pairs) {
+        auto& pi = (*pos_arr)[entity_i];
+        auto& ci = (*col_arr)[entity_i];
+        auto& pj = (*pos_arr)[entity_j];
+        auto& cj = (*col_arr)[entity_j];
+
         Rect a = make_rect(pi, ci);
-        for (auto [pj, cj, entity_j] : zipper(*pos_arr, *col_arr)) {
-            if (entity_i == entity_j) continue;
-            Rect b = make_rect(pj, cj);
-            if (!rect_overlap(a, b)) continue;
-            if (ci.is_trigger || cj.is_trigger) {
-                std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
-                continue;
-            }
-            resolve_penetration(pi, a, pj, b);
+        Rect b = make_rect(pj, cj);
+
+        if (!rect_overlap(a, b)) continue;
+
+        if (ci.is_trigger || cj.is_trigger) {
+            std::cerr << "Trigger collision: " << entity_i << " <-> " << entity_j << "\n";
+            continue;
         }
+
+        resolve_penetration(pi, a, pj, b);
     }
 }
 
