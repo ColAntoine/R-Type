@@ -12,12 +12,20 @@ include_directories(include)
 
 # Find raylib (required for UI components)
 find_package(raylib QUIET)
+find_package(glfw3 QUIET)
+
 if (NOT raylib_FOUND)
     message(WARNING "raylib not found. UI components will not be built.")
     set(BUILD_UI_COMPONENTS OFF)
 else()
     message(STATUS "raylib found. UI components will be built.")
     set(BUILD_UI_COMPONENTS ON)
+    
+    if (NOT glfw3_FOUND)
+        message(WARNING "glfw3 not found but required for raylib.")
+    else()
+        message(STATUS "glfw3 found.")
+    endif()
 endif()
 
 # Source files for the libECS.so shared library (components + registry + dlloader)
@@ -31,7 +39,7 @@ set(LIB_ECS_SOURCES
     src/components/collider.cpp
 )
 
-# UI Component sources
+# UI Component sources (to be included in main ECS library)
 set(UI_COMPONENT_SOURCES
     src/UI/Components/Button.cpp
     src/UI/Components/InputField.cpp
@@ -61,11 +69,25 @@ set(UI_SYSTEM_SOURCES
 )
 
 # Add the main ECS shared library (components + core functionality)
-add_library(ECS SHARED ${LIB_ECS_SOURCES})
-set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
+# Include UI components and system if raylib is available
+if (BUILD_UI_COMPONENTS)
+    add_library(ECS SHARED ${LIB_ECS_SOURCES} ${UI_COMPONENT_SOURCES} ${UI_SYSTEM_SOURCES})
+    target_link_libraries(ECS dl raylib)
+    
+    # Link with glfw3 if available
+    if(TARGET glfw)
+        target_link_libraries(ECS glfw)
+        message(STATUS "Linking ECS with glfw")
+    endif()
+    
+    message(STATUS "Building ECS with UI components and UISystem")
+else()
+    add_library(ECS SHARED ${LIB_ECS_SOURCES})
+    target_link_libraries(ECS dl)
+    message(STATUS "Building ECS without UI components")
+endif()
 
-# Link dl library for dynamic loading
-target_link_libraries(ECS dl)
+set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
 # Add system libraries
 add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
@@ -94,38 +116,24 @@ set_target_properties(animation_system PROPERTIES
 
 # Build UI components and system only if raylib is found
 if (BUILD_UI_COMPONENTS)
-    # Add UI components library
-    add_library(ui_components SHARED ${UI_COMPONENT_SOURCES})
-    set_target_properties(ui_components PROPERTIES
-        OUTPUT_NAME "ui_components"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/ui"
-    )
-    target_link_libraries(ui_components raylib)
-
-    # Add UI system
-    add_library(ui_system SHARED ${UI_SYSTEM_SOURCES})
-    set_target_properties(ui_system PROPERTIES
-        OUTPUT_NAME "ui_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-    target_link_libraries(ui_system raylib)
-
-    # Create lib/ui directory
+    # UI components and UISystem are now part of the main ECS library
+    # No need for separate libraries anymore
+    
+    # Create lib/ui directory for backward compatibility (if needed)
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/ui)
 
-    message(STATUS "  - lib/ui/libui_components.so: UI components library")
-    message(STATUS "  - lib/systems/libui_system.so: UI management system")
+    message(STATUS "  - UI components and UISystem included in libECS.so")
 endif()
 
 # Create lib/systems directory
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems)
 
-# Add UI test executable if raylib is available
-if (BUILD_UI_COMPONENTS)
-    add_executable(ui_test test/ui_test.cpp)
-    target_link_libraries(ui_test ECS ui_components ui_system raylib)
-    message(STATUS "  - ui_test: UI system test executable")
-endif()
+# Add UI test executable if raylib is available (commented out - test file is commented)
+# if (BUILD_UI_COMPONENTS)
+#     add_executable(ui_test test/ui_test.cpp)
+#     target_link_libraries(ui_test ECS raylib)
+#     message(STATUS "  - ui_test: UI system test executable")
+# endif()
 
 # Display build information
 message(STATUS "Building ECS library and system plugins")

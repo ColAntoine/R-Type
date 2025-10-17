@@ -8,20 +8,36 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIText.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Text.hpp"
 #include <memory>
+#include <vector>
 
 // Forward declarations
 class Application;
 
+// Tag components for InGame HUD elements
+namespace RType {
+    struct UIFPSText : public IComponent {};
+    struct UIPlayerInfo : public IComponent {};
+    struct UIConnectionStatus : public IComponent {};
+    struct UIPositionText : public IComponent {};
+    struct UIScoreText : public IComponent {};
+}
+
 class InGameState : public IGameState {
     private:
         Application* app_;
-        UIManager ui_manager_;
         bool initialized_{false};
         bool paused_{false};
-        // in-game background state
+
+        // ECS UI system for HUD
+        registry ui_registry_;
+        UI::UISystem ui_system_;
+
+        // In-game background state
         float bg_time_{0.0f};
         struct DataStream { float x; float y; float speed; float length; int chars; };
         std::vector<DataStream> bg_streams_;

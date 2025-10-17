@@ -17,6 +17,7 @@ void Application::load_systems() {
     system_loader_.load_system_from_so("lib/systems/libposition_system.so");
     system_loader_.load_system_from_so("lib/systems/libcollision_system.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+    system_loader_.load_system_from_so("lib/systems/libUISystem.so");
     system_loader_.load_system_from_so("lib/systems/libgame_LifeTime.so");
     system_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
     system_loader_.load_system_from_so("lib/systems/libsprite_system.so");
