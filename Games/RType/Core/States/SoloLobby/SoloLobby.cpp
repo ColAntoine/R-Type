@@ -27,13 +27,13 @@ void SoloLobbyState::enter() {
 void SoloLobbyState::exit() {
     std::cout << "[SoloLobby] Exiting" << std::endl;
     cleanup_ui();
-    
+
     // Unsubscribe from all events
     for (auto callback_id : event_subscriptions_) {
         event_bus_.unsubscribe(callback_id);
     }
     event_subscriptions_.clear();
-    
+
     // Unload preloaded SFX
     AudioManager::instance().get_sfx().unload("shoot");
     initialized_ = false;
@@ -166,7 +166,7 @@ void SoloLobbyState::update(float delta_time) {
             if (IsKeyDown(KEY_LEFT)) vel.vx = -200.0f;
             if (IsKeyDown(KEY_DOWN)) vel.vy = 200.0f;
             if (IsKeyDown(KEY_UP)) vel.vy = -200.0f;
-            
+
             // Test EventBus: Emit event when SPACE is pressed
             if (IsKeyPressed(KEY_SPACE)) {
                 Event shoot_event(EventType::CUSTOM, player_entity_);
@@ -174,28 +174,28 @@ void SoloLobbyState::update(float delta_time) {
                 event_bus_.emit(shoot_event);
             }
         }
-        
+
         // Check for collision between player and enemy (manual collision detection for EventBus demo)
         auto* positions = ecs_registry_.get_if<position>();
         auto* colliders = ecs_registry_.get_if<collider>();
         if (positions && colliders) {
             if (positions->has(player_entity_) && positions->has(enemy_entity_) &&
                 colliders->has(player_entity_) && colliders->has(enemy_entity_)) {
-                
+
                 auto& p1 = (*positions)[player_entity_];
                 auto& c1 = (*colliders)[player_entity_];
                 auto& p2 = (*positions)[enemy_entity_];
                 auto& c2 = (*colliders)[enemy_entity_];
-                
+
                 // Simple AABB collision check
                 float x1 = p1.x + c1.offset_x;
                 float y1 = p1.y + c1.offset_y;
                 float x2 = p2.x + c2.offset_x;
                 float y2 = p2.y + c2.offset_y;
-                
+
                 bool colliding = !(x1 + c1.w < x2 || x1 > x2 + c2.w ||
                                    y1 + c1.h < y2 || y1 > y2 + c2.h);
-                
+
                 static bool was_colliding = false;
                 if (colliding && !was_colliding) {
                     // Collision started - emit event
