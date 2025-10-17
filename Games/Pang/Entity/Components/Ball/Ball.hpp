@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include "ECS/Components/IComponent.hpp"
 #include <raylib.h>
 
-struct Ball : public IComponent {
+struct Ball {
     float _radius{2.f};
     Color _color{Color(255, 255, 255, 255)};
     bool _isActive{true};

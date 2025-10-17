@@ -24,6 +24,15 @@
 
 // ====================================ECS======================================
     #include "ECS/Registry.hpp"
+    #include "ECS/DLLoader.hpp"
+// =============================================================================
+
+// =====================================Entity==================================
+#include "Entity/Components/Ball/Ball.hpp"
+#include "Entity/Components/Gravity/Gravity.hpp"
+
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
 // =============================================================================
 
 // =================================CONSTANTS===================================
@@ -43,12 +52,16 @@ class Core
 
         // * INIT
         void initWindow();
+        void loadSystems();
 
         // * Game
         void loop();
 
         // * VARS
         registry _reg;
+        IComponentFactory *_componentFactory;
+        DLLoader _systemLoader;
+        entity _ballEntity;
 };
 
 #endif
