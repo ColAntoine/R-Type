@@ -8,7 +8,6 @@
 #include "WaitingLobby.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
-#include "Application.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -30,20 +29,9 @@ void WaitingLobbyState::enter() {
     ui_registry_.register_component<RType::UIDisconnectButton>();
     ui_registry_.register_component<RType::UIGameStatus>();
 
-    // Set up event subscription for player list updates
-    if (app_) {
-        auto& event_manager = app_->get_event_manager();
-        event_manager.subscribe<PlayerListEvent>([this](const PlayerListEvent& e) {
-            handle_player_list_update(e);
-        });
-        event_manager.subscribe<StartGameEvent>([this](const StartGameEvent& e) {
-            handle_start_game(e);
-        });
-    }
-
     // Add local player to the list (will be updated by server data)
     PlayerInfo local_player;
-    local_player.player_id = app_ ? app_->get_local_player_id() : 1;
+    local_player.player_id = /* app_ ? app_->get_local_player_id() : */ 1;
     local_player.name = "Player " + std::to_string(local_player.player_id);
     local_player.is_ready = false;
     local_player.is_local_player = true;
@@ -348,11 +336,6 @@ void WaitingLobbyState::on_ready_clicked() {
     for (auto& player : connected_players_) {
         if (player.is_local_player) {
             player.is_ready = !player.is_ready;
-
-            // Send ready status to server through Application
-            if (app_) {
-                app_->send_ready_signal(player.is_ready);
-            }
             update_ready_button();
             break;
         }
@@ -363,39 +346,8 @@ void WaitingLobbyState::on_ready_clicked() {
 }
 
 void WaitingLobbyState::on_back_clicked() {
-    // TODO: Disconnect from server
-    if (app_) {
-        // app_->disconnect_from_server();
-    }
 
     if (state_manager_) {
         state_manager_->change_state("Lobby"); // Go back to connection screen
-    }
-}
-
-void WaitingLobbyState::handle_player_list_update(const PlayerListEvent& event) {
-    // Replace current player list with server data
-    connected_players_.clear();
-
-    for (const auto& server_player : event.players) {
-        PlayerInfo player;
-        player.player_id = server_player.player_id;
-        player.name = server_player.name;
-        player.is_ready = server_player.is_ready;
-        player.is_local_player = server_player.is_local_player;
-
-        connected_players_.push_back(player);
-    }
-
-    // Update UI with new player list
-    update_player_list();
-    update_ready_status();
-    update_ready_button();  // Ensure button text is consistent
-}
-
-void WaitingLobbyState::handle_start_game(__attribute_maybe_unused__ const StartGameEvent& event) {
-    // Transition to InGame state when all players are ready
-    if (state_manager_) {
-        state_manager_->change_state("InGame");
     }
 }

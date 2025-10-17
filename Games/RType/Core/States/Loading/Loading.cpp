@@ -25,7 +25,7 @@ void Loading::load_current_frame()
     unload_current_frame();
 
     // Load current frame (assuming files are named 0.png, 1.png, etc.)
-    std::string frame_path = "assets/joinusAnim/dedsecjoinus" + std::to_string(current_frame_) + ".png";
+    std::string frame_path = "Games/RType/Assets/joinusAnim/dedsecjoinus" + std::to_string(current_frame_) + ".png";
     current_frame_texture_ = LoadTexture(frame_path.c_str());
 
     if (current_frame_texture_.id == 0) {

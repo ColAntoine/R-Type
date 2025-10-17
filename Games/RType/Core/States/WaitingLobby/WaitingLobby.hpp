@@ -7,12 +7,10 @@
 
 #pragma once
 
-#include "Core/States/GameState.hpp"
-#include "Core/Events.hpp"
+#include "GameState.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
-#include "ECS/UI/Components/Button.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
 #include <vector>
@@ -88,7 +86,4 @@ class WaitingLobbyState : public IGameState {
         void on_ready_clicked();
         void on_back_clicked();
 
-        // Event handlers
-        void handle_player_list_update(const PlayerListEvent& event);
-        void handle_start_game(const StartGameEvent& event);
 };

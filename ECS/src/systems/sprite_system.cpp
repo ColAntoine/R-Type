@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** R-Type
 ** File description:
-** sprite_system
+** sprite_system - Integrated with SpriteBatch for performance
 */
 
 #include <raylib.h>
@@ -11,6 +11,7 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
     auto it = texture_cache_.find(path);
@@ -37,15 +38,20 @@ void SpriteRenderSystem::update(registry& r, float dt) {
     auto *pos_arr = r.get_if<position>();
     auto *sprite_arr = r.get_if<sprite>();
     auto *collider_arr = r.get_if<collider>();
-    Vector2 origin = {0.0f, 0.0f};
-    Rectangle dest;
     if (!pos_arr || !sprite_arr) return;
+
+    auto& batch = RenderManager::instance().get_batch();
+    Vector2 origin = {0.0f, 0.0f};
 
     for (auto [p, s, entity] : zipper(*pos_arr, *sprite_arr)) {
         if (!s.visible) continue;
 
-        Texture2D texture = load_texture(s.texture_path);
-        if (texture.id == 0) continue; // Failed to load
+        // Load texture and get pointer to cached texture (not a local copy!)
+        load_texture(s.texture_path);  // Ensure it's loaded into cache
+        auto it = texture_cache_.find(s.texture_path);
+        if (it == texture_cache_.end() || it->second.id == 0) continue; // Failed to load
+
+        Texture2D* texture = &it->second;  // Pointer to cached texture
 
         // Use the exact dimensions specified in the sprite component
         float display_width = s.width * s.scale_x;
@@ -53,10 +59,11 @@ void SpriteRenderSystem::update(registry& r, float dt) {
 
         Rectangle source = {
             (float)s.frame_x, (float)s.frame_y,
-            (s.frame_x == 0 && s.frame_y == 0) ? (float)texture.width : s.width,
-            (s.frame_x == 0 && s.frame_y == 0) ? (float)texture.height : s.height
+            (s.frame_x == 0 && s.frame_y == 0) ? (float)texture->width : s.width,
+            (s.frame_x == 0 && s.frame_y == 0) ? (float)texture->height : s.height
         };
 
+        Rectangle dest;
         if (collider_arr && collider_arr->has(static_cast<size_t>(entity))) {
             auto& collider_comp = collider_arr->get(static_cast<size_t>(entity));
             float collider_center_x = p.x + collider_comp.offset_x + collider_comp.w / 2.0f;
@@ -75,7 +82,9 @@ void SpriteRenderSystem::update(registry& r, float dt) {
             };
         }
 
-        DrawTexturePro(texture, source, dest, origin, s.rotation, WHITE);
+        // Use SpriteBatch instead of direct DrawTexturePro
+        // layer = 0 by default (can be extended with a sprite.layer field later)
+        batch.draw(texture, source, dest, origin, s.rotation, WHITE, 0);
     }
 }
 

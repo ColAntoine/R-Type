@@ -8,7 +8,6 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "Core/EventManager.hpp"
 #include "raylib.h"
 
 class Loading : public IGameState {

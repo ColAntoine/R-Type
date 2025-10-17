@@ -6,10 +6,10 @@
 */
 
 #include "InGame.hpp"
-#include "Application.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "Entity/Components/Score/Score.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Components/Position.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
@@ -104,10 +104,6 @@ void InGameState::update(float delta_time) {
     // Update UI system
     ui_system_.update(ui_registry_, delta_time);
     update_hud();
-
-    // Update existing game systems through Application
-    app_->update_ecs_systems(delta_time);
-    app_->update_traditional_ecs_systems(delta_time);
 
     // Update background
     bg_time_ += delta_time;
@@ -266,103 +262,5 @@ void InGameState::update_hud() {
     if (!app_) {
         std::cerr << "ERROR: Application pointer is null in update_hud()" << std::endl;
         return;
-    }
-
-    try {
-        auto& render_service = app_->get_service_manager().get_service<RenderService>();
-        auto& network_service = app_->get_service_manager().get_service<NetworkService>();
-
-        // Get UI component arrays
-        auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
-        if (!ui_components) return;
-
-        // Update FPS
-        auto* fps_tags = ui_registry_.get_if<RType::UIFPSText>();
-        if (fps_tags) {
-            for (auto [ui_comp, fps_tag, ent] : zipper(*ui_components, *fps_tags)) {
-                if (ui_comp._ui_element) {
-                    auto text_elem = std::dynamic_pointer_cast<UI::UIText>(ui_comp._ui_element);
-                    if (text_elem) {
-                        text_elem->set_text("FPS: " + std::to_string(render_service.get_fps()));
-                    }
-                }
-            }
-        }
-
-        // Update player info
-        auto* player_tags = ui_registry_.get_if<RType::UIPlayerInfo>();
-        if (player_tags) {
-            for (auto [ui_comp, player_tag, ent] : zipper(*ui_components, *player_tags)) {
-                if (ui_comp._ui_element) {
-                    auto text_elem = std::dynamic_pointer_cast<UI::UIText>(ui_comp._ui_element);
-                    if (text_elem) {
-                        text_elem->set_text("Player " + std::to_string(app_->get_local_player_id()));
-                    }
-                }
-            }
-        }
-
-        // Update connection status
-        auto* status_tags = ui_registry_.get_if<RType::UIConnectionStatus>();
-        if (status_tags) {
-            for (auto [ui_comp, status_tag, ent] : zipper(*ui_components, *status_tags)) {
-                if (ui_comp._ui_element) {
-                    auto text_elem = std::dynamic_pointer_cast<UI::UIText>(ui_comp._ui_element);
-                    if (text_elem) {
-                        if (network_service.is_connected()) {
-                            text_elem->set_text("Status: Connected");
-                            UI::TextStyle style = text_elem->get_style();
-                            style._text_color = {100, 255, 100, 255}; // Green
-                            text_elem->set_style(style);
-                        } else {
-                            text_elem->set_text("Status: Disconnected");
-                            UI::TextStyle style = text_elem->get_style();
-                            style._text_color = {255, 100, 100, 255}; // Red
-                            text_elem->set_style(style);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Update position
-        auto* pos_tags = ui_registry_.get_if<RType::UIPositionText>();
-        if (pos_tags) {
-            for (auto [ui_comp, pos_tag, ent] : zipper(*ui_components, *pos_tags)) {
-                if (ui_comp._ui_element) {
-                    auto text_elem = std::dynamic_pointer_cast<UI::UIText>(ui_comp._ui_element);
-                    if (text_elem) {
-                        auto& ecs_registry = app_->get_ecs_registry();
-                        if (auto* pos_arr = ecs_registry.get_if<position>(); pos_arr) {
-                            size_t ent_idx = static_cast<size_t>(app_->get_local_player_entity());
-                            if (pos_arr->has(ent_idx)) {
-                                auto& player_pos = pos_arr->get(ent_idx);
-                                text_elem->set_text("Position: (" + std::to_string((int)player_pos.x) + ", " + std::to_string((int)player_pos.y) + ")");
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Update score
-        auto* score_tags = ui_registry_.get_if<RType::UIScoreText>();
-        if (score_tags) {
-            for (auto [ui_comp, score_tag, ent] : zipper(*ui_components, *score_tags)) {
-                if (ui_comp._ui_element) {
-                    auto text_elem = std::dynamic_pointer_cast<UI::UIText>(ui_comp._ui_element);
-                    if (text_elem) {
-                        auto& ecs_registry = app_->get_ecs_registry();
-                        auto* score_arr = ecs_registry.get_if<Score>();
-                        if (score_arr && score_arr->has(0)) {
-                            unsigned value = (*score_arr)[0]._score;
-                            text_elem->set_text("Score: " + std::to_string(value));
-                        }
-                    }
-                }
-            }
-        }
-    } catch (const std::exception& e) {
-        std::cerr << "Exception in update_hud(): " << e.what() << std::endl;
     }
 }

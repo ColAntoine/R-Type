@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Include directories
-include_directories(include)
+include_directories(include ${CMAKE_SOURCE_DIR})
 
 # Only find packages if not already found by parent CMakeLists
 if(NOT TARGET raylib)
@@ -34,15 +34,59 @@ else()
     message(WARNING "raylib not found. UI components will not be built.")
 endif()
 
-# Source files for the libECS.so shared library (components + registry + dlloader)
+# Only find packages if not already found by parent CMakeLists
+if(NOT TARGET raylib)
+    find_package(raylib QUIET)
+endif()
+
+if(NOT TARGET glfw)
+    find_package(glfw3 QUIET)
+endif()
+
+# Check if raylib is available (either found here or in parent)
+if(TARGET raylib)
+    set(BUILD_UI_COMPONENTS ON)
+    message(STATUS "raylib found. UI components will be built.")
+    
+    if(TARGET glfw)
+        message(STATUS "glfw3 found.")
+    else()
+        message(WARNING "glfw3 not found but required for raylib.")
+    endif()
+else()
+    set(BUILD_UI_COMPONENTS OFF)
+    message(WARNING "raylib not found. UI components will not be built.")
+endif()
+
+
+# Source files for the libECS.so shared library (components + registry + dlloader + assetmanager + renderer + physics + audio + messaging + plugin)
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
     src/dlloader.cpp
+    src/RegisterAllComponents.cpp
     src/components/position.cpp
     src/components/velocity.cpp
     src/components/sprite.cpp
     src/components/collider.cpp
+    src/AssetManager/AssetManager.cpp
+    src/AssetManager/Texture/TextureManager.cpp
+    src/AssetManager/Sound/SoundManager.cpp
+    src/Renderer/RenderManager.cpp
+    src/Renderer/Camera/Camera.cpp
+    src/Renderer/Batch/SpriteBatch.cpp
+    src/Physics/PhysicsManager.cpp
+    src/Physics/Collision/CollisionDetector.cpp
+    src/Physics/SpatialHash/SpatialHash.cpp
+    src/Audio/AudioManager.cpp
+    src/Audio/Music/MusicPlayer.cpp
+    src/Audio/SFX/SFXPlayer.cpp
+    src/Messaging/MessagingManager.cpp
+    src/Messaging/EventBus.cpp
+    src/Messaging/CommandDispatcher.cpp
+    src/Messaging/MessageQueue.cpp
+    src/Plugin/PluginManager.cpp
+    src/Plugin/Plugin.cpp
 )
 
 # UI Component sources (to be included in main ECS library)

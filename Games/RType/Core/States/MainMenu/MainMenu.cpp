@@ -28,8 +28,10 @@ void MainMenuState::enter() {
     ascii_font_size_ = 12;
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
-    ascii_cols_ = std::max(10, sw / (ascii_font_size_ / 2));
-    ascii_rows_ = std::max(8, sh / ascii_font_size_);
+    int font_w = std::max(1, ascii_font_size_ / 2);
+    int font_h = ascii_font_size_;
+    ascii_cols_ = std::max(10, (sw + font_w - 1) / font_w);
+    ascii_rows_ = std::max(8, (sh + font_h - 1) / font_h);
     ascii_grid_.assign(ascii_rows_, std::string(ascii_cols_, ' '));
 
     setup_ui();
@@ -299,7 +301,7 @@ void MainMenuState::cleanup_ui() {
 void MainMenuState::on_play_clicked() {
     std::cout << "[MainMenu] Play button clicked" << std::endl;
     if (state_manager_) {
-        state_manager_->change_state("Lobby");
+        state_manager_->change_state("SoloLobby");
     }
 }
 

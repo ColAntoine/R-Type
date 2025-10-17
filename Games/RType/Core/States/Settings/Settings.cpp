@@ -8,7 +8,6 @@
 #include "Settings.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
-#include "Application.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -242,7 +241,7 @@ void SettingsState::on_back_clicked() {
 void SettingsState::on_player_name_changed(const std::string& name) {
     std::cout << "[Settings] Player name changed: " << name << std::endl;
     // Store the player name in the application
-    if (app_ && !name.empty()) {
-        app_->set_player_name(name);
-    }
+    // if (app_ && !name.empty()) {
+    //     app_->set_player_name(name);
+    // }
 }

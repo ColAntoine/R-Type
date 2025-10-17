@@ -16,12 +16,7 @@
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/UI/Components/InputField.hpp"
 #include <memory>
-#include <vector>
-#include <string>
 #include <random>
-
-// Forward declarations
-class Application;
 
 // Tag components for Lobby UI elements
 namespace RType {
@@ -37,7 +32,6 @@ namespace RType {
 
 class LobbyState : public IGameState {
 private:
-    Application* app_;
     bool initialized_{false};
     std::string server_ip_{"127.0.0.1"};
     int server_port_{8080};
@@ -57,7 +51,7 @@ private:
     std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
 public:
-    LobbyState(Application* app);
+    LobbyState();
     ~LobbyState() override = default;
 
     // IGameState implementation

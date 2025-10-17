@@ -8,13 +8,12 @@
 #include "Lobby.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
-#include "Application.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <random>
 
-LobbyState::LobbyState(Application* app) : app_(app) {
-}
+LobbyState::LobbyState() {}
 
 void LobbyState::enter() {
     std::cout << "[Lobby] Entering state" << std::endl;
@@ -237,20 +236,7 @@ void LobbyState::cleanup_ui() {
 }
 
 void LobbyState::on_connect_clicked() {
-    std::cout << "[Lobby] Connect button clicked" << std::endl;
-    std::cout << "[Lobby] Connecting to " << server_ip_ << ":" << server_port_ << std::endl;
-
-    // Actually connect to the server using Application
-    if (app_ && app_->connect_to_server(server_ip_, server_port_)) {
-        std::cout << "[Lobby] Connected successfully - Entering waiting lobby" << std::endl;
-        // Transition to waiting lobby to show players and ready status
-        if (state_manager_) {
-            state_manager_->change_state("WaitingLobby");
-        }
-    } else {
-        std::cout << "[Lobby] Connection failed - Server not available" << std::endl;
-        // TODO: Update a status text to show connection failed
-    }
+    // Update status
 }
 
 void LobbyState::on_back_clicked() {

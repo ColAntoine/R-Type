@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** R-Type
 ** File description:
-** animation_system
+** animation_system - Integrated with SpriteBatch for performance
 */
 
 #include <raylib.h>
@@ -11,6 +11,7 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 Texture2D AnimationSystem::load_texture(const std::string& path) {
     auto it = texture_cache_.find(path);
@@ -106,7 +107,9 @@ void AnimationSystem::update(registry& r, float dt) {
 
             Vector2 origin = {0.0f, 0.0f};
 
-            DrawTexturePro(texture, source, dest, origin, 0.0f, WHITE);
+            // Use SpriteBatch instead of direct DrawTexturePro
+            auto& batch = RenderManager::instance().get_batch();
+            batch.draw(&texture, source, dest, origin, 0.0f, WHITE, 0);
         }
     }
 }
