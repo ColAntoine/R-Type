@@ -83,16 +83,16 @@ void MainMenuState::update(float delta_time) {
         menu_reveal_progress_ = std::min(1.0f, t / menu_reveal_duration_);
 
         // staged reveal thresholds for components
-        // 0.0 -> panel, 0.33 -> play, 0.66 -> settings, 1.0 -> quit
+        // 0.0 -> panel, 0.25 -> solo, 0.5 -> multiplayer, 0.75 -> quit
         auto panel = ui_manager_.get_component("main_panel");
+        auto solo = ui_manager_.get_component<UIButton>("solo_button");
         auto play = ui_manager_.get_component<UIButton>("play_button");
-        auto settings = ui_manager_.get_component<UIButton>("settings_button");
         auto quit = ui_manager_.get_component<UIButton>("quit_button");
 
         if (panel) panel->set_visible(menu_reveal_progress_ >= 0.0f);
-        if (play) play->set_visible(menu_reveal_progress_ >= 0.33f);
-        if (settings) settings->set_visible(menu_reveal_progress_ >= 0.66f);
-        if (quit) quit->set_visible(menu_reveal_progress_ >= 1.0f - 1e-6f);
+        if (solo) solo->set_visible(menu_reveal_progress_ >= 0.25f);
+        if (play) play->set_visible(menu_reveal_progress_ >= 0.5f);
+        if (quit) quit->set_visible(menu_reveal_progress_ >= 0.75f);
     }
 }
 
@@ -161,13 +161,32 @@ void MainMenuState::setup_ui() {
     float center_y = screen_height / 2.0f;
 
     // Main menu panel
-    auto main_panel = std::make_shared<UIPanel>(center_x - 150, center_y - 100, 300, 250);
+    auto main_panel = std::make_shared<UIPanel>(center_x - 150, center_y - 120, 300, 280);
     main_panel->set_background_color({40, 40, 60, 200});
     main_panel->set_border_color({100, 100, 150, 255});
     ui_manager_.add_component("main_panel", main_panel);
 
-    // Play button
-    auto play_button = std::make_shared<UIButton>(center_x - 100, center_y - 50, 200, 50, "PLAY");
+    // Solo Play button (offline mode)
+    auto solo_button = std::make_shared<UIButton>(center_x - 100, center_y - 80, 200, 50, "SOLO PLAY");
+    solo_button->set_colors(
+        {20, 40, 20, 220},  // Normal - greenish tint
+        {36, 60, 36, 230}, // Hovered
+        {16, 35, 16, 200},  // Pressed
+        {12, 20, 12, 180}     // Disabled
+    );
+    solo_button->set_text_color({200, 255, 200, 255}, {140, 180, 140, 255});
+    solo_button->set_font_size(24);
+    solo_button->set_neon({0, 255, 128, 255}, {0, 255, 128, 100});
+    solo_button->set_glitch_params(2.2f, 8.0f, true);
+    solo_button->set_on_click([this]() {
+        if (state_manager_) {
+            state_manager_->change_state("SoloLobby");
+        }
+    });
+    ui_manager_.add_component("solo_button", solo_button);
+
+    // Multiplayer button (requires server)
+    auto play_button = std::make_shared<UIButton>(center_x - 100, center_y - 20, 200, 50, "MULTIPLAYER");
     play_button->set_colors(
         {20, 20, 30, 220},  // Normal - dark transparent
         {36, 36, 52, 230}, // Hovered
@@ -175,29 +194,14 @@ void MainMenuState::setup_ui() {
         {12, 12, 16, 180}     // Disabled
     );
     play_button->set_text_color({220, 240, 255, 255}, {160, 160, 160, 255});
-    play_button->set_font_size(24);
+    play_button->set_font_size(20);
     play_button->set_neon({0, 229, 255, 255}, {0, 229, 255, 100});
     play_button->set_glitch_params(2.2f, 8.0f, true);
     play_button->set_on_click([this]() { on_play_clicked(); });
     ui_manager_.add_component("play_button", play_button);
 
-    // Settings button
-    auto settings_button = std::make_shared<UIButton>(center_x - 100, center_y + 10, 200, 40, "SETTINGS");
-    settings_button->set_colors(
-        {20, 20, 30, 200},  // Normal
-        {36, 36, 52, 220}, // Hovered
-        {16, 16, 24, 200},  // Pressed
-        {12, 12, 16, 160}     // Disabled
-    );
-    settings_button->set_text_color({200, 230, 255, 220}, {140, 140, 140, 200});
-    settings_button->set_font_size(18);
-    settings_button->set_neon({0, 229, 255, 220}, {0, 229, 255, 80});
-    settings_button->set_glitch_params(1.6f, 6.0f, true);
-    settings_button->set_on_click([this]() { on_settings_clicked(); });
-    ui_manager_.add_component("settings_button", settings_button);
-
     // Quit button
-    auto quit_button = std::make_shared<UIButton>(center_x - 100, center_y + 60, 200, 40, "QUIT");
+    auto quit_button = std::make_shared<UIButton>(center_x - 100, center_y + 40, 200, 40, "QUIT");
     quit_button->set_colors(
         {30, 12, 12, 200},   // Normal
         {60, 18, 18, 220}, // Hovered

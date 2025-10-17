@@ -2,6 +2,8 @@
 
 #include "../AGameCore.hpp"
 #include "ECS/Registry.hpp"
+#include "Core/States/GameStateManager.hpp"
+#include <raylib.h>
 
 class GameClient : public AGameCore {
     public:
@@ -17,4 +19,8 @@ class GameClient : public AGameCore {
 
     private:
         registry ecs_registry_;
+        GameStateManager state_manager_;
+        bool running_{false};
+
+        void register_states();
 };
