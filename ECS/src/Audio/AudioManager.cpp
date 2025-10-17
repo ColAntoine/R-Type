@@ -14,14 +14,25 @@ AudioManager& AudioManager::instance() {
 }
 
 void AudioManager::init() {
+    if (initialized_) {
+        std::cout << "AudioManager already initialized" << std::endl;
+        return;
+    }
+
     InitAudioDevice();
+    initialized_ = true;
     std::cout << "AudioManager initialized" << std::endl;
 }
 
 void AudioManager::shutdown() {
+    if (!initialized_) {
+        return;
+    }
+
     music_player_.clear();
     sfx_player_.clear();
     CloseAudioDevice();
+    initialized_ = false;
     std::cout << "AudioManager shutdown" << std::endl;
 }
 
@@ -31,7 +42,7 @@ void AudioManager::update() {
 
 void AudioManager::set_master_volume(float volume) {
     master_volume_ = volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume);
-    
+
     music_player_.set_volume(master_volume_);
     sfx_player_.set_master_volume(master_volume_);
 }
