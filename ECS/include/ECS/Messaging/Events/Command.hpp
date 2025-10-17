@@ -11,6 +11,7 @@
 #include <any>
 #include <unordered_map>
 #include <memory>
+#include <stdexcept>
 
 enum class CommandType {
     REQUEST_ENTITY_INFO,

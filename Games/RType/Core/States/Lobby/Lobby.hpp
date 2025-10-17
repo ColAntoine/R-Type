@@ -8,20 +8,47 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIButton.hpp"
-#include "UI/Components/UIText.hpp"
-#include "UI/Components/UIPanel.hpp"
-#include "UI/Components/UIInputField.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Button.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
+#include "ECS/UI/Components/InputField.hpp"
 #include <memory>
+#include <random>
 
+// Tag components for Lobby UI elements
+namespace RType {
+    struct UILobbyPanel : public IComponent {};
+    struct UILobbyTitle : public IComponent {};
+    struct UIIPLabel : public IComponent {};
+    struct UIIPInput : public IComponent {};
+    struct UIPortLabel : public IComponent {};
+    struct UIPortInput : public IComponent {};
+    struct UIConnectButton : public IComponent {};
+    struct UILobbyBackButton : public IComponent {};
+}
 
 class LobbyState : public IGameState {
 private:
-    UIManager ui_manager_;
     bool initialized_{false};
     std::string server_ip_{"127.0.0.1"};
     int server_port_{8080};
+
+    // ECS UI system
+    registry ui_registry_;
+    UI::UISystem ui_system_;
+
+    // ASCII background state
+    std::vector<std::string> ascii_grid_;
+    int ascii_cols_{0};
+    int ascii_rows_{0};
+    int ascii_font_size_{12};
+    float ascii_timer_{0.0f};
+    float ascii_interval_{0.04f};
+    std::mt19937 ascii_rng_{std::random_device{}()};
+    std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
 public:
     LobbyState();

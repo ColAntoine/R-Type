@@ -8,6 +8,7 @@
 #include "InGame.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "Entity/Components/Score/Score.hpp"
+#include "ECS/Zipper.hpp"
 #include "ECS/Components/Position.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -17,13 +18,24 @@
 InGameState::InGameState(Application* app) : app_(app) {}
 
 void InGameState::enter() {
+    std::cout << "[InGame] Entering state" << std::endl;
+
     if (!app_) {
         std::cerr << "ERROR: Application pointer is null in InGameState::enter()" << std::endl;
         return;
     }
 
+    // Register UI components
+    ui_registry_.register_component<UI::UIComponent>();
+    ui_registry_.register_component<RType::UIFPSText>();
+    ui_registry_.register_component<RType::UIPlayerInfo>();
+    ui_registry_.register_component<RType::UIConnectionStatus>();
+    ui_registry_.register_component<RType::UIPositionText>();
+    ui_registry_.register_component<RType::UIScoreText>();
+
     setup_hud();
-    // initialize background streams
+
+    // Initialize background streams
     bg_time_ = 0.0f;
     bg_streams_.clear();
     bg_stream_count_ = 28; // number of vertical streams
@@ -42,23 +54,43 @@ void InGameState::enter() {
         s.chars = chars(rng);
         bg_streams_.push_back(s);
     }
+
     initialized_ = true;
     paused_ = false;
 }
 
 void InGameState::exit() {
+    std::cout << "[InGame] Exiting state" << std::endl;
     cleanup_hud();
     initialized_ = false;
 }
 
 void InGameState::pause() {
+    std::cout << "[InGame] Pausing state" << std::endl;
     paused_ = true;
-    ui_manager_.set_all_visible(false);
+    // Hide HUD when paused
+    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    if (ui_components) {
+        for (auto& comp : *ui_components) {
+            if (comp._ui_element) {
+                comp._ui_element->set_visible(false);
+            }
+        }
+    }
 }
 
 void InGameState::resume() {
+    std::cout << "[InGame] Resuming state" << std::endl;
     paused_ = false;
-    ui_manager_.set_all_visible(true);
+    // Show HUD when resumed
+    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    if (ui_components) {
+        for (auto& comp : *ui_components) {
+            if (comp._ui_element) {
+                comp._ui_element->set_visible(true);
+            }
+        }
+    }
 }
 
 void InGameState::update(float delta_time) {
@@ -69,11 +101,11 @@ void InGameState::update(float delta_time) {
         return;
     }
 
-    // Update UI
-    ui_manager_.update(delta_time);
+    // Update UI system
+    ui_system_.update(ui_registry_, delta_time);
     update_hud();
 
-    // update background
+    // Update background
     bg_time_ += delta_time;
     // Use static RNG and distributions for consistency
     static std::mt19937 update_rng((unsigned)time(nullptr));
@@ -83,7 +115,7 @@ void InGameState::update(float delta_time) {
         s.y += s.speed * delta_time;
         if (s.y - s.length > GetScreenHeight()) {
             s.y = -s.length * 0.2f;
-            // slightly randomize x and speed
+            // Slightly randomize x and speed
             s.x += x_offset_dist(update_rng);
             if (s.x < 0) s.x += GetScreenWidth();
             if (s.x > GetScreenWidth()) s.x -= GetScreenWidth();
@@ -94,6 +126,7 @@ void InGameState::update(float delta_time) {
 
 void InGameState::render() {
     if (!initialized_ || !app_) return;
+
     // Draw the falling background
     render_falling_background();
 
@@ -102,7 +135,7 @@ void InGameState::render() {
     // We don't need to explicitly render them here as Raylib systems handle it
 
     // Render HUD on top
-    ui_manager_.render();
+    ui_system_.render(ui_registry_);
 }
 
 void InGameState::render_falling_background() {
@@ -156,42 +189,73 @@ void InGameState::handle_input() {
         }
     }
 
-    // Handle UI input
-    ui_manager_.handle_input();
+    // Handle UI input (HUD is mostly read-only, but this is here for consistency)
+    ui_system_.process_input(ui_registry_);
 
     // Game input is handled by the InputSystem in the Application
 }
 
 void InGameState::setup_hud() {
-    // Create HUD elements
-
     // FPS display
-    auto fps_text = std::make_shared<UIText>(10, 10, "FPS: 0", 20);
-    fps_text->set_text_color({255, 255, 0, 255}); // Yellow
-    ui_manager_.add_component("fps_text", fps_text);
+    auto fps_entity = ui_registry_.spawn_entity();
+    auto fps_text = std::make_shared<UI::UIText>(10, 10, "FPS: 0");
+    UI::TextStyle fps_style;
+    fps_style._text_color = {255, 255, 0, 255}; // Yellow
+    fps_style._font_size = 20;
+    fps_style._alignment = UI::TextAlignment::Left;
+    fps_text->set_style(fps_style);
+    ui_registry_.add_component(fps_entity, UI::UIComponent(fps_text));
+    ui_registry_.add_component(fps_entity, RType::UIFPSText{});
 
     // Player info
-    auto player_info = std::make_shared<UIText>(10, 35, "Player: 0", 20);
-    player_info->set_text_color({255, 255, 255, 255}); // White
-    ui_manager_.add_component("player_info", player_info);
+    auto player_entity = ui_registry_.spawn_entity();
+    auto player_info = std::make_shared<UI::UIText>(10, 35, "Player: 0");
+    UI::TextStyle player_style;
+    player_style._text_color = {255, 255, 255, 255}; // White
+    player_style._font_size = 20;
+    player_style._alignment = UI::TextAlignment::Left;
+    player_info->set_style(player_style);
+    ui_registry_.add_component(player_entity, UI::UIComponent(player_info));
+    ui_registry_.add_component(player_entity, RType::UIPlayerInfo{});
 
     // Connection status
-    auto connection_status = std::make_shared<UIText>(10, 60, "Status: Disconnected", 20);
-    connection_status->set_text_color({255, 100, 100, 255}); // Light red
-    ui_manager_.add_component("connection_status", connection_status);
+    auto status_entity = ui_registry_.spawn_entity();
+    auto connection_status = std::make_shared<UI::UIText>(10, 60, "Status: Disconnected");
+    UI::TextStyle status_style;
+    status_style._text_color = {255, 100, 100, 255}; // Light red
+    status_style._font_size = 20;
+    status_style._alignment = UI::TextAlignment::Left;
+    connection_status->set_style(status_style);
+    ui_registry_.add_component(status_entity, UI::UIComponent(connection_status));
+    ui_registry_.add_component(status_entity, RType::UIConnectionStatus{});
 
     // Position display
-    auto position_text = std::make_shared<UIText>(10, 85, "Position: (0, 0)", 20);
-    position_text->set_text_color({200, 200, 200, 255}); // Light gray
-    ui_manager_.add_component("position_text", position_text);
+    auto pos_entity = ui_registry_.spawn_entity();
+    auto position_text = std::make_shared<UI::UIText>(10, 85, "Position: (0, 0)");
+    UI::TextStyle pos_style;
+    pos_style._text_color = {200, 200, 200, 255}; // Light gray
+    pos_style._font_size = 20;
+    pos_style._alignment = UI::TextAlignment::Left;
+    position_text->set_style(pos_style);
+    ui_registry_.add_component(pos_entity, UI::UIComponent(position_text));
+    ui_registry_.add_component(pos_entity, RType::UIPositionText{});
 
-    auto scoreText = std::make_shared<UIText>(10, 100, "Score: 0", 20);
-    scoreText->set_text_color({200, 200, 200, 255});
-    ui_manager_.add_component("score_text", scoreText);
+    // Score display
+    auto score_entity = ui_registry_.spawn_entity();
+    auto score_text = std::make_shared<UI::UIText>(10, 110, "Score: 0");
+    UI::TextStyle score_style;
+    score_style._text_color = {200, 200, 200, 255};
+    score_style._font_size = 20;
+    score_style._alignment = UI::TextAlignment::Left;
+    score_text->set_style(score_style);
+    ui_registry_.add_component(score_entity, UI::UIComponent(score_text));
+    ui_registry_.add_component(score_entity, RType::UIScoreText{});
+
+    std::cout << "[InGame] HUD setup complete" << std::endl;
 }
 
 void InGameState::cleanup_hud() {
-    ui_manager_.clear_components();
+    // Registry entities will be cleaned up automatically
 }
 
 void InGameState::update_hud() {
@@ -199,5 +263,4 @@ void InGameState::update_hud() {
         std::cerr << "ERROR: Application pointer is null in update_hud()" << std::endl;
         return;
     }
-    // Update FPS
 }

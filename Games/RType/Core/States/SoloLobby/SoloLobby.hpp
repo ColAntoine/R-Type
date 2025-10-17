@@ -8,10 +8,6 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIButton.hpp"
-#include "UI/Components/UIText.hpp"
-#include "UI/Components/UIPanel.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/DLLoader.hpp"
 #include "ECS/ComponentFactory.hpp"
@@ -20,12 +16,27 @@
 #include "ECS/Physics/PhysicsManager.hpp"
 #include "ECS/Messaging/EventBus.hpp"
 #include "ECS/Messaging/Events/Event.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Button.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
 #include <memory>
 #include <random>
 
+// Tag components for identifying UI elements in Solo Lobby
+namespace RType {
+    struct UILogPanel : public IComponent {};
+    struct UIStatusText : public IComponent {};
+    struct UIRendererButton : public IComponent {};
+    struct UIPhysicsButton : public IComponent {};
+    struct UIAudioButton : public IComponent {};
+    struct UIAllSystemsButton : public IComponent {};
+    struct UIBackButton : public IComponent {};
+}
+
 class SoloLobbyState : public IGameState {
     private:
-        UIManager ui_manager_;
         bool initialized_{false};
 
         // ECS and Engine Systems
@@ -33,6 +44,10 @@ class SoloLobbyState : public IGameState {
         DLLoader system_loader_;
         DLLoader component_loader_;
         IComponentFactory* component_factory_{nullptr};
+
+        // UI Registry and System
+        registry ui_registry_;
+        UI::UISystem ui_system_;
 
         // Test entities
         entity player_entity_;

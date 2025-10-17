@@ -7,12 +7,24 @@
 
 #include "SoloLobby.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
 #include "ECS/Components.hpp"
+#include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
 
 void SoloLobbyState::enter() {
     std::cout << "[SoloLobby] Entering offline test mode" << std::endl;
+
+    // Register UI component types in UI registry
+    ui_registry_.register_component<UI::UIComponent>();
+    ui_registry_.register_component<RType::UILogPanel>();
+    ui_registry_.register_component<RType::UIStatusText>();
+    ui_registry_.register_component<RType::UIRendererButton>();
+    ui_registry_.register_component<RType::UIPhysicsButton>();
+    ui_registry_.register_component<RType::UIAudioButton>();
+    ui_registry_.register_component<RType::UIAllSystemsButton>();
+    ui_registry_.register_component<RType::UIBackButton>();
 
     setup_ui();
     setup_ecs_demo();
@@ -40,11 +52,13 @@ void SoloLobbyState::exit() {
 }
 
 void SoloLobbyState::pause() {
-    ui_manager_.set_all_visible(false);
+    // UI system will handle visibility
+    ui_system_.set_enabled(false);
 }
 
 void SoloLobbyState::resume() {
-    ui_manager_.set_all_visible(true);
+    // UI system will handle visibility
+    ui_system_.set_enabled(true);
 }
 
 void SoloLobbyState::setup_ecs_demo() {
@@ -149,7 +163,9 @@ void SoloLobbyState::update(float delta_time) {
     if (!initialized_) return;
 
     elapsed_time_ += delta_time;
-    ui_manager_.update(delta_time);
+    
+    // Update UI system
+    ui_system_.update(ui_registry_, delta_time);
 
     // Process deferred events from EventBus
     event_bus_.process_deferred();
@@ -221,8 +237,8 @@ void SoloLobbyState::update(float delta_time) {
 void SoloLobbyState::render() {
     if (!initialized_) return;
 
-    // Clear background (RenderManager already cleared at begin_frame)
-    // ClearBackground({20, 20, 40, 255});
+    // Clear background
+    ClearBackground({20, 20, 40, 255});
 
     // Render ECS entities if test phase active
     if (test_phase_ > 0) {
@@ -252,13 +268,13 @@ void SoloLobbyState::render() {
         DrawText("All systems running offline!", GetScreenWidth() - 380, 70, 14, {200, 200, 200, 255});
     }
 
-    // Render UI
-    ui_manager_.render();
+    // Render UI via system
+    ui_system_.render(ui_registry_);
 }
 
 void SoloLobbyState::handle_input() {
     if (!initialized_) return;
-    ui_manager_.handle_input();
+    ui_system_.process_input(ui_registry_);
 }
 
 void SoloLobbyState::setup_ui() {
@@ -270,57 +286,112 @@ void SoloLobbyState::setup_ui() {
     float button_spacing = 60.0f;
 
     // Test Renderer Button
-    auto renderer_button = std::make_shared<UIButton>(button_x, button_y, 300, 45, "Test Renderer");
-    renderer_button->set_colors({20, 20, 30, 220}, {36, 36, 52, 230}, {16, 16, 24, 200}, {12, 12, 16, 180});
-    renderer_button->set_text_color({220, 240, 255, 255}, {160, 160, 160, 255});
-    renderer_button->set_font_size(20);
-    renderer_button->set_neon({0, 229, 255, 255}, {0, 229, 255, 100});
+    auto renderer_entity = ui_registry_.spawn_entity();
+    auto renderer_button = std::make_shared<RType::GlitchButton>(button_x, button_y, 300, 45, "Test Renderer");
+    UI::ButtonStyle renderer_style;
+    renderer_style._normal_color = {20, 20, 30, 220};
+    renderer_style._hovered_color = {36, 36, 52, 230};
+    renderer_style._pressed_color = {16, 16, 24, 200};
+    renderer_style._text_color = {220, 240, 255, 255};
+    renderer_style._font_size = 20;
+    renderer_button->set_style(renderer_style);
+    renderer_button->set_neon_colors({0, 229, 255, 255}, {0, 229, 255, 100});
+    renderer_button->set_glitch_params(2.0f, 7.5f, true);
     renderer_button->set_on_click([this]() { on_test_renderer_clicked(); });
-    ui_manager_.add_component("renderer_button", renderer_button);
+    ui_registry_.add_component(renderer_entity, UI::UIComponent(renderer_button));
+    ui_registry_.add_component(renderer_entity, RType::UIRendererButton{});
 
     // Test Physics Button
     button_y += button_spacing;
-    auto physics_button = std::make_shared<UIButton>(button_x, button_y, 300, 45, "Test Physics");
-    physics_button->set_colors({20, 20, 30, 220}, {36, 36, 52, 230}, {16, 16, 24, 200}, {12, 12, 16, 180});
-    physics_button->set_text_color({220, 240, 255, 255}, {160, 160, 160, 255});
-    physics_button->set_font_size(20);
-    physics_button->set_neon({0, 229, 255, 255}, {0, 229, 255, 100});
+    auto physics_entity = ui_registry_.spawn_entity();
+    auto physics_button = std::make_shared<RType::GlitchButton>(button_x, button_y, 300, 45, "Test Physics");
+    UI::ButtonStyle physics_style;
+    physics_style._normal_color = {20, 20, 30, 220};
+    physics_style._hovered_color = {36, 36, 52, 230};
+    physics_style._pressed_color = {16, 16, 24, 200};
+    physics_style._text_color = {220, 240, 255, 255};
+    physics_style._font_size = 20;
+    physics_button->set_style(physics_style);
+    physics_button->set_neon_colors({0, 229, 255, 255}, {0, 229, 255, 100});
+    physics_button->set_glitch_params(2.0f, 7.5f, true);
     physics_button->set_on_click([this]() { on_test_physics_clicked(); });
-    ui_manager_.add_component("physics_button", physics_button);
+    ui_registry_.add_component(physics_entity, UI::UIComponent(physics_button));
+    ui_registry_.add_component(physics_entity, RType::UIPhysicsButton{});
 
-    // // Test Audio Button
+    // Test Audio Button
     button_y += button_spacing;
-    auto audio_button = std::make_shared<UIButton>(button_x, button_y, 300, 45, "Test Audio");
-    audio_button->set_colors({20, 20, 30, 220}, {36, 36, 52, 230}, {16, 16, 24, 200}, {12, 12, 16, 180});
-    audio_button->set_text_color({220, 240, 255, 255}, {160, 160, 160, 255});
-    audio_button->set_font_size(20);
-    audio_button->set_neon({0, 229, 255, 255}, {0, 229, 255, 100});
+    auto audio_entity = ui_registry_.spawn_entity();
+    auto audio_button = std::make_shared<RType::GlitchButton>(button_x, button_y, 300, 45, "Test Audio");
+    UI::ButtonStyle audio_style;
+    audio_style._normal_color = {20, 20, 30, 220};
+    audio_style._hovered_color = {36, 36, 52, 230};
+    audio_style._pressed_color = {16, 16, 24, 200};
+    audio_style._text_color = {220, 240, 255, 255};
+    audio_style._font_size = 20;
+    audio_button->set_style(audio_style);
+    audio_button->set_neon_colors({0, 229, 255, 255}, {0, 229, 255, 100});
+    audio_button->set_glitch_params(2.0f, 7.5f, true);
     audio_button->set_on_click([this]() { on_test_audio_clicked(); });
-    ui_manager_.add_component("audio_button", audio_button);
+    ui_registry_.add_component(audio_entity, UI::UIComponent(audio_button));
+    ui_registry_.add_component(audio_entity, RType::UIAudioButton{});
 
-    // // Test All Button
+    // Test All Button
     button_y += button_spacing;
-    auto all_button = std::make_shared<UIButton>(button_x, button_y, 300, 45, "Test ALL Systems");
-    all_button->set_colors({20, 60, 20, 220}, {36, 80, 36, 230}, {16, 50, 16, 200}, {12, 30, 12, 180});
-    all_button->set_text_color({200, 255, 200, 255}, {140, 180, 140, 255});
-    all_button->set_font_size(20);
-    all_button->set_neon({0, 255, 128, 255}, {0, 255, 128, 100});
+    auto all_entity = ui_registry_.spawn_entity();
+    auto all_button = std::make_shared<RType::GlitchButton>(button_x, button_y, 300, 45, "Test ALL Systems");
+    UI::ButtonStyle all_style;
+    all_style._normal_color = {20, 60, 20, 220};
+    all_style._hovered_color = {36, 80, 36, 230};
+    all_style._pressed_color = {16, 50, 16, 200};
+    all_style._text_color = {200, 255, 200, 255};
+    all_style._font_size = 20;
+    all_button->set_style(all_style);
+    all_button->set_neon_colors({0, 255, 128, 255}, {0, 255, 128, 100});
+    all_button->set_glitch_params(2.5f, 8.0f, true);
     all_button->set_on_click([this]() { on_test_all_clicked(); });
-    ui_manager_.add_component("all_button", all_button);
+    ui_registry_.add_component(all_entity, UI::UIComponent(all_button));
+    ui_registry_.add_component(all_entity, RType::UIAllSystemsButton{});
 
     // Back Button
     button_y += button_spacing * 1.5f;
-    auto back_button = std::make_shared<UIButton>(button_x, button_y, 300, 45, "Back to Menu");
-    back_button->set_colors({30, 12, 12, 200}, {60, 18, 18, 220}, {20, 8, 8, 200}, {12, 6, 6, 160});
-    back_button->set_text_color({255, 160, 160, 220}, {140, 80, 80, 200});
-    back_button->set_font_size(18);
-    back_button->set_neon({255, 80, 80, 220}, {255, 80, 80, 80});
+    auto back_entity = ui_registry_.spawn_entity();
+    auto back_button = std::make_shared<RType::GlitchButton>(button_x, button_y, 300, 45, "Back to Menu");
+    UI::ButtonStyle back_style;
+    back_style._normal_color = {30, 12, 12, 200};
+    back_style._hovered_color = {60, 18, 18, 220};
+    back_style._pressed_color = {20, 8, 8, 200};
+    back_style._text_color = {255, 160, 160, 220};
+    back_style._font_size = 18;
+    back_button->set_style(back_style);
+    back_button->set_neon_colors({255, 80, 80, 220}, {255, 80, 80, 80});
+    back_button->set_glitch_params(2.0f, 7.0f, true);
     back_button->set_on_click([this]() { on_back_clicked(); });
-    ui_manager_.add_component("back_button", back_button);
+    ui_registry_.add_component(back_entity, UI::UIComponent(back_button));
+    ui_registry_.add_component(back_entity, RType::UIBackButton{});
 }
 
 void SoloLobbyState::cleanup_ui() {
-    ui_manager_.clear_components();
+    // Collect all entity IDs first to avoid modifying while iterating
+    std::vector<entity> entities_to_cleanup;
+    
+    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    if (ui_components) {
+        for (auto [comp, ent] : zipper(*ui_components)) {
+            entities_to_cleanup.push_back(entity(ent));
+        }
+    }
+    
+    // Now remove all components from collected entities
+    for (auto ent : entities_to_cleanup) {
+        ui_registry_.remove_component<UI::UIComponent>(ent);
+        ui_registry_.remove_component<RType::UILogPanel>(ent);
+        ui_registry_.remove_component<RType::UIStatusText>(ent);
+        ui_registry_.remove_component<RType::UIRendererButton>(ent);
+        ui_registry_.remove_component<RType::UIPhysicsButton>(ent);
+        ui_registry_.remove_component<RType::UIAudioButton>(ent);
+        ui_registry_.remove_component<RType::UIAllSystemsButton>(ent);
+        ui_registry_.remove_component<RType::UIBackButton>(ent);
+    }
 }
 
 void SoloLobbyState::add_log(const std::string& message) {

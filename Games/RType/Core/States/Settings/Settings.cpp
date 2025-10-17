@@ -7,64 +7,89 @@
 
 #include "Settings.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "../../UI/Components/GlitchButton.hpp"
+#include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
-#include <random>
-
-// ASCII background state (same as MainMenu)
-static std::vector<std::string> settings_ascii_grid;
-static int settings_ascii_cols = 0;
-static int settings_ascii_rows = 0;
-static int settings_ascii_font_size = 12;
-static float settings_ascii_timer = 0.0f;
-static float settings_ascii_interval = 0.04f;
-static std::mt19937 settings_ascii_rng((unsigned)time(nullptr));
-static std::string settings_ascii_charset = " .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 SettingsState::SettingsState(Application* app) : app_(app) {
 }
 
 void SettingsState::enter() {
-    // prepare ascii background
+    std::cout << "[Settings] Entering state" << std::endl;
+
+    // Register all component types
+    ui_registry_.register_component<UI::UIComponent>();
+    ui_registry_.register_component<RType::UISettingsPanel>();
+    ui_registry_.register_component<RType::UISettingsTitle>();
+    ui_registry_.register_component<RType::UINameLabel>();
+    ui_registry_.register_component<RType::UINameInput>();
+    ui_registry_.register_component<RType::UIAudioLabel>();
+    ui_registry_.register_component<RType::UIGraphicsLabel>();
+    ui_registry_.register_component<RType::UIBackButton>();
+
+    // Prepare ascii background
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
-    settings_ascii_font_size = 12;
-    settings_ascii_cols = std::max(10, sw / (settings_ascii_font_size / 2));
-    settings_ascii_rows = std::max(8, sh / settings_ascii_font_size);
-    settings_ascii_grid.assign(settings_ascii_rows, std::string(settings_ascii_cols, ' '));
+    ascii_font_size_ = 12;
+    ascii_cols_ = std::max(10, sw / (ascii_font_size_ / 2));
+    ascii_rows_ = std::max(8, sh / ascii_font_size_);
+    ascii_grid_.assign(ascii_rows_, std::string(ascii_cols_, ' '));
 
     setup_ui();
     initialized_ = true;
 }
 
 void SettingsState::exit() {
+    std::cout << "[Settings] Exiting state" << std::endl;
     cleanup_ui();
     initialized_ = false;
 }
 
 void SettingsState::pause() {
-    ui_manager_.set_all_visible(false);
+    std::cout << "[Settings] Pausing state" << std::endl;
+    // Hide UI when paused
+    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    if (ui_components) {
+        for (auto& comp : *ui_components) {
+            if (comp._ui_element) {
+                comp._ui_element->set_visible(false);
+            }
+        }
+    }
 }
 
 void SettingsState::resume() {
-    ui_manager_.set_all_visible(true);
+    std::cout << "[Settings] Resuming state" << std::endl;
+    // Show UI when resumed
+    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    if (ui_components) {
+        for (auto& comp : *ui_components) {
+            if (comp._ui_element) {
+                comp._ui_element->set_visible(true);
+            }
+        }
+    }
 }
 
 void SettingsState::update(float delta_time) {
     if (!initialized_) return;
-    ui_manager_.update(delta_time);
 
-    settings_ascii_timer += delta_time;
-    if (settings_ascii_timer >= settings_ascii_interval) {
-        settings_ascii_timer = 0.0f;
-        std::uniform_int_distribution<int> row_dist(0, settings_ascii_rows - 1);
-        std::uniform_int_distribution<int> col_dist(0, settings_ascii_cols - 1);
-        std::uniform_int_distribution<int> char_dist(0, (int)settings_ascii_charset.size() - 1);
-        int changes = std::max(1, (settings_ascii_cols * settings_ascii_rows) / 50);
+    // Update UI system
+    ui_system_.update(ui_registry_, delta_time);
+
+    // Update ascii background
+    ascii_timer_ += delta_time;
+    if (ascii_timer_ >= ascii_interval_) {
+        ascii_timer_ = 0.0f;
+        std::uniform_int_distribution<int> row_dist(0, ascii_rows_ - 1);
+        std::uniform_int_distribution<int> col_dist(0, ascii_cols_ - 1);
+        std::uniform_int_distribution<int> char_dist(0, (int)ascii_charset_.size() - 1);
+        int changes = std::max(1, (ascii_cols_ * ascii_rows_) / 50);
         for (int i = 0; i < changes; ++i) {
-            int r = row_dist(settings_ascii_rng);
-            int c = col_dist(settings_ascii_rng);
-            settings_ascii_grid[r][c] = settings_ascii_charset[char_dist(settings_ascii_rng)];
+            int r = row_dist(ascii_rng_);
+            int c = col_dist(ascii_rng_);
+            ascii_grid_[r][c] = ascii_charset_[char_dist(ascii_rng_)];
         }
     }
 }
@@ -77,21 +102,21 @@ void SettingsState::render() {
     Color ascii_color = {0, 229, 255, 90};
     int start_x = 10;
     int start_y = 30;
-    for (int r = 0; r < settings_ascii_rows; ++r) {
-        for (int c = 0; c < settings_ascii_cols; ++c) {
-            char ch = settings_ascii_grid[r][c];
+    for (int r = 0; r < ascii_rows_; ++r) {
+        for (int c = 0; c < ascii_cols_; ++c) {
+            char ch = ascii_grid_[r][c];
             if (ch == ' ') continue;
-            int x = start_x + c * (settings_ascii_font_size / 2);
-            int y = start_y + r * settings_ascii_font_size;
-            DrawText(std::string(1, ch).c_str(), x, y, settings_ascii_font_size, ascii_color);
+            int x = start_x + c * (ascii_font_size_ / 2);
+            int y = start_y + r * ascii_font_size_;
+            DrawText(std::string(1, ch).c_str(), x, y, ascii_font_size_, ascii_color);
         }
     }
 
-    // translucent overlay
+    // Translucent overlay
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 140});
 
-    // Render UI
-    ui_manager_.render();
+    // Render UI via system
+    ui_system_.render(ui_registry_);
 }
 
 void SettingsState::handle_input() {
@@ -103,76 +128,118 @@ void SettingsState::handle_input() {
         return;
     }
 
-    ui_manager_.handle_input();
+    ui_system_.process_input(ui_registry_);
 }
 
 void SettingsState::setup_ui() {
     // Get screen dimensions
     int screen_width = GetScreenWidth();
     int screen_height = GetScreenHeight();
-
     float center_x = screen_width / 2.0f;
     float center_y = screen_height / 2.0f;
 
     // Settings panel
-    auto settings_panel = std::make_shared<UIPanel>(center_x - 200, center_y - 150, 400, 300);
-    settings_panel->set_background_color({50, 50, 70, 240});
-    settings_panel->set_border_color({120, 120, 180, 255});
-    ui_manager_.add_component("settings_panel", settings_panel);
+    auto panel_entity = ui_registry_.spawn_entity();
+    auto settings_panel = std::make_shared<UI::UIPanel>(center_x - 200, center_y - 150, 400, 300);
+    UI::PanelStyle panel_style;
+    panel_style._background_color = {20, 25, 35, 240};
+    panel_style._border_color = {0, 229, 255, 180};
+    panel_style._border_thickness = 2.0f;
+    panel_style._has_shadow = true;
+    panel_style._shadow_color = {0, 0, 0, 200};
+    panel_style._shadow_offset = 5.0f;
+    settings_panel->set_style(panel_style);
+    ui_registry_.add_component(panel_entity, UI::UIComponent(settings_panel));
+    ui_registry_.add_component(panel_entity, RType::UISettingsPanel{});
 
     // Settings title
-    auto title = std::make_shared<UIText>(center_x - 50, center_y - 120, "SETTINGS", 28);
-    title->set_text_color({255, 255, 255, 255});
-    ui_manager_.add_component("settings_title", title);
+    auto title_entity = ui_registry_.spawn_entity();
+    auto title = std::make_shared<UI::UIText>(center_x, center_y - 120, "SETTINGS");
+    UI::TextStyle title_style;
+    title_style._text_color = {0, 229, 255, 255};
+    title_style._font_size = 32;
+    title_style._alignment = UI::TextAlignment::Center;
+    title_style._has_shadow = true;
+    title_style._shadow_color = {0, 150, 200, 180};
+    title_style._shadow_offset = {3.0f, 3.0f};
+    title->set_style(title_style);
+    ui_registry_.add_component(title_entity, UI::UIComponent(title));
+    ui_registry_.add_component(title_entity, RType::UISettingsTitle{});
 
-    // Player name section
-    auto name_label = std::make_shared<UIText>(center_x - 180, center_y - 70, "Player Name:", 20);
-    name_label->set_text_color({200, 200, 200, 255});
-    ui_manager_.add_component("name_label", name_label);
+    // Player name label
+    auto name_label_entity = ui_registry_.spawn_entity();
+    auto name_label = std::make_shared<UI::UIText>(center_x - 180, center_y - 70, "Player Name:");
+    UI::TextStyle label_style;
+    label_style._text_color = {200, 200, 200, 255};
+    label_style._font_size = 18;
+    label_style._alignment = UI::TextAlignment::Left;
+    name_label->set_style(label_style);
+    ui_registry_.add_component(name_label_entity, UI::UIComponent(name_label));
+    ui_registry_.add_component(name_label_entity, RType::UINameLabel{});
 
-    auto name_input = std::make_shared<UIInputField>(center_x - 180, center_y - 45, 250, 35, "Enter your name...");
-    name_input->set_colors(
-        {60, 60, 80, 255},    // Background
-        {80, 80, 100, 255},   // Focused background
-        {100, 100, 150, 255}, // Border
-        {150, 150, 255, 255}  // Focused border
-    );
+    // Player name input
+    auto name_input_entity = ui_registry_.spawn_entity();
+    auto name_input = std::make_shared<UI::UIInputField>(center_x - 180, center_y - 45, 360, 35, "Enter your name...");
+    UI::InputFieldStyle input_style;
+    input_style._background_color = {30, 35, 45, 255};
+    input_style._focused_color = {40, 45, 60, 255};
+    input_style._border_color = {80, 80, 120, 255};
+    input_style._focused_border_color = {0, 229, 255, 255};
+    input_style._text_color = {255, 255, 255, 255};
+    input_style._placeholder_color = {150, 150, 150, 255};
+    input_style._cursor_color = {0, 229, 255, 255};
+    input_style._font_size = 18;
+    input_style._border_thickness = 1.5f;
+    name_input->set_style(input_style);
+    name_input->set_max_length(20);
     name_input->set_on_text_changed([this](const std::string& name) { on_player_name_changed(name); });
-    ui_manager_.add_component("name_input", name_input);
+    ui_registry_.add_component(name_input_entity, UI::UIComponent(name_input));
+    ui_registry_.add_component(name_input_entity, RType::UINameInput{});
 
-    // Audio section placeholder
-    auto audio_label = std::make_shared<UIText>(center_x - 180, center_y + 10, "Audio Volume: 100%", 20);
-    audio_label->set_text_color({200, 200, 200, 255});
-    ui_manager_.add_component("audio_label", audio_label);
+    // Audio label
+    auto audio_label_entity = ui_registry_.spawn_entity();
+    auto audio_label = std::make_shared<UI::UIText>(center_x - 180, center_y + 10, "Audio Volume: 100%");
+    audio_label->set_style(label_style);
+    ui_registry_.add_component(audio_label_entity, UI::UIComponent(audio_label));
+    ui_registry_.add_component(audio_label_entity, RType::UIAudioLabel{});
 
-    // Graphics section placeholder
-    auto graphics_label = std::make_shared<UIText>(center_x - 180, center_y + 40, "Graphics: High", 20);
-    graphics_label->set_text_color({200, 200, 200, 255});
-    ui_manager_.add_component("graphics_label", graphics_label);
+    // Graphics label
+    auto graphics_label_entity = ui_registry_.spawn_entity();
+    auto graphics_label = std::make_shared<UI::UIText>(center_x - 180, center_y + 40, "Graphics: High");
+    graphics_label->set_style(label_style);
+    ui_registry_.add_component(graphics_label_entity, UI::UIComponent(graphics_label));
+    ui_registry_.add_component(graphics_label_entity, RType::UIGraphicsLabel{});
 
     // Back button
-    auto back_button = std::make_shared<UIButton>(center_x - 75, center_y + 100, 150, 40, "BACK");
-    back_button->set_colors(
-        {100, 100, 100, 255}, // Normal
-        {130, 130, 130, 255}, // Hovered
-        {80, 80, 80, 255},    // Pressed
-        {40, 40, 40, 255}     // Disabled
-    );
+    auto back_button_entity = ui_registry_.spawn_entity();
+    auto back_button = std::make_shared<RType::GlitchButton>(center_x - 75, center_y + 90, 150, 40, "BACK");
+    UI::ButtonStyle back_style;
+    back_style._normal_color = {20, 20, 30, 220};
+    back_style._hovered_color = {36, 36, 52, 240};
+    back_style._pressed_color = {16, 16, 24, 200};
+    back_style._text_color = {220, 240, 255, 255};
+    back_style._font_size = 20;
+    back_button->set_style(back_style);
+    back_button->set_neon_colors({0, 229, 255, 220}, {0, 229, 255, 100});
+    back_button->set_glitch_params(1.8f, 7.0f, true);
     back_button->set_on_click([this]() { on_back_clicked(); });
-    ui_manager_.add_component("back_button", back_button);
+    ui_registry_.add_component(back_button_entity, UI::UIComponent(back_button));
+    ui_registry_.add_component(back_button_entity, RType::UIBackButton{});
 }
 
 void SettingsState::cleanup_ui() {
-    ui_manager_.clear_components();
+    // Registry entities will be cleaned up automatically when state exits
 }
 
 void SettingsState::on_back_clicked() {
+    std::cout << "[Settings] Back button clicked" << std::endl;
     if (state_manager_) {
-        state_manager_->change_state("MainMenu");
+        state_manager_->pop_state();
     }
 }
 
 void SettingsState::on_player_name_changed(const std::string& name) {
+    std::cout << "[Settings] Player name changed: " << name << std::endl;
     // Store the player name in the application
     // if (app_ && !name.empty()) {
     //     app_->set_player_name(name);

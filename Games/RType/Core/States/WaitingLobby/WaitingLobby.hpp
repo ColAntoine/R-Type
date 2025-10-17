@@ -8,12 +8,14 @@
 #pragma once
 
 #include "GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIButton.hpp"
-#include "UI/Components/UIText.hpp"
-#include "UI/Components/UIPanel.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
 #include <vector>
 #include <string>
+#include <random>
 
 // Forward declarations
 class Application;
@@ -25,12 +27,37 @@ struct PlayerInfo {
     bool is_local_player;
 };
 
+// Tag components for WaitingLobby UI elements
+namespace RType {
+    struct UIWaitingPanel : public IComponent {};
+    struct UIWaitingTitle : public IComponent {};
+    struct UIWaitingStatus : public IComponent {};
+    struct UIPlayerListTitle : public IComponent {};
+    struct UIPlayerSlot : public IComponent { int slot_index; };
+    struct UIReadyButton : public IComponent {};
+    struct UIDisconnectButton : public IComponent {};
+    struct UIGameStatus : public IComponent {};
+}
+
 class WaitingLobbyState : public IGameState {
     private:
         Application* app_;
-        UIManager ui_manager_;
         bool initialized_{false};
         std::vector<PlayerInfo> connected_players_;
+
+        // ECS UI system
+        registry ui_registry_;
+        UI::UISystem ui_system_;
+
+        // ASCII background state
+        std::vector<std::string> ascii_grid_;
+        int ascii_cols_{0};
+        int ascii_rows_{0};
+        int ascii_font_size_{12};
+        float ascii_timer_{0.0f};
+        float ascii_interval_{0.04f};
+        std::mt19937 ascii_rng_{std::random_device{}()};
+        std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
     public:
         WaitingLobbyState(Application* app);
