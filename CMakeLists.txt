@@ -49,7 +49,6 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "        \\/ 
 
 find_package(raylib CONFIG REQUIRED)
 
-find_package(raylib CONFIG REQUIRED)
 find_package(asio CONFIG REQUIRED)
 find_package(glfw3 CONFIG REQUIRED)
 
