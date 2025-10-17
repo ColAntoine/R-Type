@@ -8,20 +8,49 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIButton.hpp"
-#include "UI/Components/UIText.hpp"
-#include "UI/Components/UIPanel.hpp"
-#include "UI/Components/UIInputField.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Button.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
+#include "ECS/UI/Components/InputField.hpp"
 #include <memory>
+#include <vector>
+#include <string>
+#include <random>
 
 class Application;
+
+// Tag components for Settings UI elements
+namespace RType {
+    struct UISettingsPanel : public IComponent {};
+    struct UISettingsTitle : public IComponent {};
+    struct UINameLabel : public IComponent {};
+    struct UINameInput : public IComponent {};
+    struct UIAudioLabel : public IComponent {};
+    struct UIGraphicsLabel : public IComponent {};
+    struct UIBackButton : public IComponent {};
+}
 
 class SettingsState : public IGameState {
 private:
     Application* app_;
-    UIManager ui_manager_;
     bool initialized_{false};
+
+    // ECS UI system
+    registry ui_registry_;
+    UI::UISystem ui_system_;
+
+    // ASCII background state
+    std::vector<std::string> ascii_grid_;
+    int ascii_cols_{0};
+    int ascii_rows_{0};
+    int ascii_font_size_{12};
+    float ascii_timer_{0.0f};
+    float ascii_interval_{0.04f};
+    std::mt19937 ascii_rng_{std::random_device{}()};
+    std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
 public:
     SettingsState(Application* app);

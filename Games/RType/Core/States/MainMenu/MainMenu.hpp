@@ -8,20 +8,29 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
-#include "UI/UIManager.hpp"
-#include "UI/Components/UIButton.hpp"
-#include "UI/Components/UIText.hpp"
-#include "UI/Components/UIPanel.hpp"
 #include <memory>
 #include <vector>
 #include <string>
 #include <random>
 
-class MainMenuState : public IGameState {
-private:
-    UIManager ui_manager_;
-    bool initialized_{false};
+#include "ECS/Registry.hpp"
+#include "ECS/Systems/UISystem.hpp"
+#include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Button.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
 
+// Tag components for identifying UI elements
+// This allow us to get the UI elements individualy
+namespace RType {
+    struct UIMainPanel : public IComponent {};
+    struct UITitleText : public IComponent {};
+    struct UIPlayButton : public IComponent {};
+    struct UISettingsButton : public IComponent {};
+    struct UIQuitButton : public IComponent {};
+}
+
+class MainMenuState : public IGameState {
 public:
     MainMenuState() = default;
     ~MainMenuState() override = default;
@@ -41,11 +50,18 @@ public:
 private:
     void setup_ui();
     void cleanup_ui();
+    void update_reveal_animation(float delta_time);
 
     // Button callbacks
     void on_play_clicked();
     void on_settings_clicked();
     void on_quit_clicked();
+
+    // ECS UI system
+    registry ui_registry_;
+    UI::UISystem ui_system_;
+
+    bool initialized_{false};
 
     // ASCII background state
     std::vector<std::string> ascii_grid_;
@@ -53,14 +69,13 @@ private:
     int ascii_rows_{0};
     int ascii_font_size_{12};
     float ascii_timer_{0.0f};
-    float ascii_interval_{0.04f}; // update ~25 FPS
+    float ascii_interval_{0.04f};
     std::mt19937 ascii_rng_{std::random_device{}()};
     std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
-    // menu appearance timing
+
+    // Menu appearance timing
     float menu_show_delay_{2.0f};
     float menu_elapsed_{0.0f};
-    // new reveal (scanline + staggered) parameters
-    float menu_reveal_duration_{0.9f}; // how long the reveal animation lasts
-    float menu_reveal_progress_{0.0f}; // 0..1 progress during reveal
-    float menu_flicker_timer_{0.0f};
+    float menu_reveal_duration_{0.9f};
+    float menu_reveal_progress_{0.0f};
 };
