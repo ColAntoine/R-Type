@@ -3,9 +3,11 @@
 class IGameCore {
     public:
         virtual ~IGameCore() = default;
-        virtual void init() = 0;
-        virtual void update(float deltaTime) = 0;
-        virtual void shutdown() = 0;
+
+        virtual bool init() = 0;
+        virtual bool start() = 0;
+        virtual bool update(float deltaTime) = 0;
+        virtual bool shutdown() = 0;
 
     protected:
         IGameCore() = default;

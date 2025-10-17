@@ -1,13 +1,26 @@
 #include "GameClient.hpp"
 
-void GameClient::init() {
-    // Initialization code for the game client
+IGameCore& GameClient::getInstance() {
+    static GameClient instance;
+    return instance;
 }
 
-void GameClient::update(float deltaTime) {
+bool GameClient::init() {
+    this->g_running = true;
+    return true;
+}
+
+bool GameClient::start() {
+    while (g_running);
+    return true;
+}
+
+bool GameClient::update(float deltaTime) {
     // Update code for the game client
+    return true;
 }
 
-void GameClient::shutdown() {
-    // Shutdown code for the game client
+bool GameClient::shutdown() {
+    this->g_running = false;
+    return true;
 }
