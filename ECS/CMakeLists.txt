@@ -95,30 +95,44 @@ endif()
 
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Add system libraries
-add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
-set_target_properties(position_system PROPERTIES
-    OUTPUT_NAME "position_system"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-)
+# Add system libraries (only if raylib is available since they depend on it)
+if (BUILD_UI_COMPONENTS)
+    add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
+    set_target_properties(position_system PROPERTIES
+        OUTPUT_NAME "position_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
+    target_include_directories(position_system PRIVATE include)
+    target_link_libraries(position_system PRIVATE raylib)
 
-add_library(collision_system SHARED ${COLLISION_SYSTEM_SOURCES})
-set_target_properties(collision_system PROPERTIES
-    OUTPUT_NAME "collision_system"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-)
+    add_library(collision_system SHARED ${COLLISION_SYSTEM_SOURCES})
+    set_target_properties(collision_system PROPERTIES
+        OUTPUT_NAME "collision_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
+    target_include_directories(collision_system PRIVATE include)
+    target_link_libraries(collision_system PRIVATE raylib)
 
-add_library(sprite_system SHARED ${SPRITE_SYSTEM_SOURCES})
-set_target_properties(sprite_system PROPERTIES
-    OUTPUT_NAME "sprite_system"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-)
+    add_library(sprite_system SHARED ${SPRITE_SYSTEM_SOURCES})
+    set_target_properties(sprite_system PROPERTIES
+        OUTPUT_NAME "sprite_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
+    target_include_directories(sprite_system PRIVATE include)
+    target_link_libraries(sprite_system PRIVATE raylib)
 
-add_library(animation_system SHARED ${ANIMATION_SYSTEM_SOURCES})
-set_target_properties(animation_system PROPERTIES
-    OUTPUT_NAME "animation_system"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-)
+    add_library(animation_system SHARED ${ANIMATION_SYSTEM_SOURCES})
+    set_target_properties(animation_system PROPERTIES
+        OUTPUT_NAME "animation_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
+    target_include_directories(animation_system PRIVATE include)
+    target_link_libraries(animation_system PRIVATE raylib)
+    
+    message(STATUS "Building ECS system plugins with raylib support")
+else()
+    message(STATUS "Skipping ECS system plugins (raylib not available)")
+endif()
 
 # Build UI components and system only if raylib is found
 if (BUILD_UI_COMPONENTS)
