@@ -56,16 +56,13 @@ void Core::loadSystems()
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so");
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so");
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libcollision_system.so");
     std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
 
-    // Spawn initial ball entity
     Ball ball;
     ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
 
-    // Spawn player entity
     Player player;
     player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 30.f));
 }
@@ -78,11 +75,9 @@ void Core::loop()
         deltaTime = GetFrameTime();
 
         BeginDrawing();
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
 
-        DrawText("Pang Game", 10, 10, 20, DARKGRAY);
-
-        // Update all systems (Physics, Controls, Rendering)
+        DrawText("Pang Game", 10, 10, 20, RAYWHITE);
         _systemLoader.update_all_systems(_reg, deltaTime);
 
         EndDrawing();

@@ -16,6 +16,7 @@ public:
 
 private:
     void bounceBalls(registry &r);
+    void checkPlayerHits(registry &r);
 };
 
 extern "C" {

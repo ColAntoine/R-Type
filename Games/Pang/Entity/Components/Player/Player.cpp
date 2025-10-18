@@ -26,5 +26,5 @@ void Player::spawn(IComponentFactory *factory, registry &r, position pos)
     factory->create_component<position>(r, player, pos.x, pos.y);
     factory->create_component<velocity>(r, player);
     factory->create_component<Player>(r, player);
-    factory->create_component<collider>(r, player, 50.f, 30.f, -25.f, -15.f);
+    factory->create_component<collider>(r, player, 100.f, 100.f, -50.f, -50.f);
 }
