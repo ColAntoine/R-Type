@@ -77,7 +77,7 @@ void BallSys::checkPlayerHits(registry &r)
                               ballTop > playerBottom);
 
             if (collision) {
-                std::cout << "Ball hit player! Ball at (" << ballPos.x << ", " << ballPos.y 
+                std::cout << "Ball hit player! Ball at (" << ballPos.x << ", " << ballPos.y
                           << ") Player at (" << playerPos.x << ", " << playerPos.y << ")" << std::endl;
 
                 player._invincibility = 2.0f;
