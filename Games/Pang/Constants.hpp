@@ -1,67 +1,29 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Sat, Oct, 2025                                                     *
+ * EPITECH PROJECT - Sun, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     Core                                                                             *
+ *     Constants                                                                        *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *             ███████╗██████╗ ██╗████████╗███████╗ ██████╗██╗  ██╗                     *
- *             ██╔════╝██╔══██╗██║╚══██╔══╝██╔════╝██╔════╝██║  ██║                     *
- *             █████╗  ██████╔╝██║   ██║   █████╗  ██║     ███████║                     *
- *             ██╔══╝  ██╔═══╝ ██║   ██║   ██╔══╝  ██║     ██╔══██║                     *
- *             ███████╗██║     ██║   ██║   ███████╗╚██████╗██║  ██║                     *
- *             ╚══════╝╚═╝     ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝                     *
+ *         ░        ░       ░░        ░        ░        ░░      ░░  ░░░░  ░             *
+ *         ▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒  ▒▒▒▒  ▒             *
+ *         ▓      ▓▓▓       ▓▓▓▓▓  ▓▓▓▓▓▓▓  ▓▓▓▓      ▓▓▓  ▓▓▓▓▓▓▓        ▓             *
+ *         █  ███████  ██████████  ███████  ████  ███████  ████  █  ████  █             *
+ *         █        █  ███████        ████  ████        ██      ██  ████  █             *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#ifndef INCLUDED_CORE_HPP
-    #define INCLUDED_CORE_HPP
+#ifndef INCLUDED_CONSTANTS_HPP
+    #define INCLUDED_CONSTANTS_HPP
 
-    #include <iostream>
-    #include <raylib.h>
+#include <iostream>
 
-// ====================================ECS======================================
-#include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+// ====================================WIN======================================
+#define SCREEN_WIDTH    1920
+#define SCREEN_HEIGHT   1080
 // =============================================================================
-
-// =====================================Entity==================================
-#include "Entity/Components/Ball/Ball.hpp"
-#include "Entity/Components/Gravity/Gravity.hpp"
-
-#include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-// =============================================================================
-
-// =================================CONSTANTS===================================
-
-// =============================================================================
-
-class Core
-{
-    public:
-        static Core& getInstance();
-        void run();
-
-    private:
-        Core();
-        ~Core() = default;
-
-        // * INIT
-        void initWindow();
-        void loadSystems();
-
-        // * Game
-        void loop();
-
-        // * VARS
-        registry _reg;
-        IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
-        entity _ballEntity;
-};
 
 #endif
 

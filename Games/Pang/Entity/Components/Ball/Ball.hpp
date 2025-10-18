@@ -9,6 +9,10 @@
 
 #include <raylib.h>
 
+#include "ECS/DLLoader.hpp"
+#include "Constants.hpp"
+#include "ECS/Components/Position.hpp"
+
 struct Ball {
     float _radius{2.f};
     Color _color{Color(255, 255, 255, 255)};
@@ -16,4 +20,7 @@ struct Ball {
 
     Ball();
     Ball(float radius, Color color, bool isACtive);
+
+    public:
+        void spawn(IComponentFactory *factory, registry &r, position pos);
 };

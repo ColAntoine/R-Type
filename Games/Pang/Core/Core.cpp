@@ -21,7 +21,6 @@
 
 Core::Core()
 {
-    // Register components
     _reg.register_component<position>();
     _reg.register_component<velocity>();
     _reg.register_component<Ball>();
@@ -47,34 +46,40 @@ void Core::initWindow()
 {
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pang");
     SetTargetFPS(60);
-    
-    // Create ball entity
-
 }
 
 void Core::loadSystems()
 {
-    // Load gravity system (from Pang's build directory)
+    std::cout << "Loading game systems dynamically..." << std::endl;
+    
+    // Load gravity system - applies gravity to entities with velocity + gravity components
     if (_systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so")) {
         std::cout << "✓ Loaded: GravitySystem" << std::endl;
     } else {
         std::cerr << "✗ Failed to load GravitySystem!" << std::endl;
     }
 
-    // Load position system
+    // Load position system - updates positions based on velocity
     if (_systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so")) {
         std::cout << "✓ Loaded: PositionSystem" << std::endl;
     } else {
         std::cerr << "✗ Failed to load PositionSystem!" << std::endl;
     }
 
+    // Load ball bounce system - handles ball collision with screen bounds
+    if (_systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so")) {
+        std::cout << "✓ Loaded: BallSystem" << std::endl;
+    } else {
+        std::cerr << "✗ Failed to load BallSystem!" << std::endl;
+    }
+
+    std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
+
     _componentFactory = _systemLoader.get_factory();
 
-    _ballEntity = _reg.spawn_entity();
-    _componentFactory->create_component<position>(_reg, _ballEntity, position{SCREEN_WIDTH / 2.0f, 100.0f});
-    _componentFactory->create_component<velocity>(_reg, _ballEntity, 0.0f, 0.0f);
-    _componentFactory->create_component<Ball>(_reg, _ballEntity, 20.0f, RED, true);
-    _componentFactory->create_component<Gravity>(_reg, _ballEntity, 500.0f); // Add gravity component
+    // Spawn initial ball entity
+    Ball ball;
+    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
 }
 
 void Core::loop()
