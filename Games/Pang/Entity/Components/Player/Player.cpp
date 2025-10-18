@@ -8,14 +8,12 @@
 #include "Player.hpp"
 
 Player::Player() {}
-
 Player::Player(int life, float cooldow, float cCooldown,
-    int score, float invincibilty, float moveSpeed)
+    int score, float moveSpeed)
 : _life(life),
 _cooldown(_cooldown),
 _currentCooldown(cCooldown),
 _score(score),
-_invincibility(invincibilty),
 _moveSpeed(moveSpeed)
 {}
 
@@ -27,4 +25,5 @@ void Player::spawn(IComponentFactory *factory, registry &r, position pos)
     factory->create_component<velocity>(r, player);
     factory->create_component<Player>(r, player);
     factory->create_component<collider>(r, player, 100.f, 100.f, -50.f, -50.f);
+    factory->create_component<Invincibility>(r, player, 2.0f, false, 0.0f); // 2 second invincibility
 }

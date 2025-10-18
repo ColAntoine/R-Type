@@ -15,6 +15,7 @@
 
 #include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/Ball/Ball.hpp"
+#include "Entity/Components/Invincibility/Invincibility.hpp"
 
 void RenderSystem::update(registry& r, float dt) {
     renderPlayers(r);
@@ -25,14 +26,18 @@ void RenderSystem::renderPlayers(registry &r)
 {
     auto *playerArr = r.get_if<Player>();
     auto *posArr = r.get_if<position>();
+    auto *inviArr = r.get_if<Invincibility>();
 
     if (!playerArr || !posArr) return;
 
     for (auto&& [player, pos, ent] : zipper(*playerArr, *posArr)) {
         Color playerColor = BLUE;
 
-        if (player._invincibility > 0.0f && static_cast<int>(player._invincibility * 10) % 2 == 0) {
-            playerColor = YELLOW;
+        if (inviArr && inviArr->has(ent)) {
+            auto& invi = inviArr->get(ent);
+            if (invi._isInvincible && static_cast<int>(invi._lastActivation * 10) % 2 == 0) {
+                playerColor = YELLOW; // Flash yellow when invincible
+            }
         }
 
         DrawRectangle( static_cast<int>(pos.x - 50), static_cast<int>(pos.y - 50), 100, 100, playerColor);
