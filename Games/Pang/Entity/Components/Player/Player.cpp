@@ -8,10 +8,23 @@
 #include "Player.hpp"
 
 Player::Player() {}
-Player::Player(int life, float cooldow, float cCooldown, int score, float invincibilty)
+
+Player::Player(int life, float cooldow, float cCooldown,
+    int score, float invincibilty, float moveSpeed)
 : _life(life),
 _cooldown(_cooldown),
 _currentCooldown(cCooldown),
 _score(score),
-_invincibility(invincibilty)
+_invincibility(invincibilty),
+_moveSpeed(moveSpeed)
 {}
+
+void Player::spawn(IComponentFactory *factory, registry &r, position pos)
+{
+    auto player = r.spawn_entity();
+
+    factory->create_component<position>(r, player, pos.x, pos.y);
+    factory->create_component<velocity>(r, player);
+    factory->create_component<Player>(r, player);
+    factory->create_component<collider>(r, player, 50.f, 30.f, -25.f, -15.f);
+}

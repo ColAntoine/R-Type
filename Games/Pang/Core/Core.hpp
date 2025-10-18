@@ -29,6 +29,7 @@
 
 // =====================================Entity==================================
 #include "Entity/Components/Ball/Ball.hpp"
+#include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/Gravity/Gravity.hpp"
 
 #include "ECS/Components/Position.hpp"
