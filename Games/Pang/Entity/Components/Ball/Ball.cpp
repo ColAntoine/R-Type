@@ -20,5 +20,6 @@ void Ball::spawn(IComponentFactory *factory, registry &r, position pos)
     factory->create_component<position>(r, ballEntity, pos.x, pos.y);
     factory->create_component<velocity>(r, ballEntity, 0.0f, 0.0f);
     factory->create_component<Ball>(r, ballEntity, 20.0f, RED, true);
-    factory->create_component<Gravity>(r, ballEntity, 500.0f);
+    factory->create_component<collider>(r, ballEntity);
+    factory->create_component<Gravity>(r, ballEntity, GRAVITY);
 }
