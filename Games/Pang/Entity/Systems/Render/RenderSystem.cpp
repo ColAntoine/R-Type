@@ -35,21 +35,8 @@ void RenderSystem::renderPlayers(registry &r)
             playerColor = YELLOW;
         }
 
-        DrawRectangle(
-            static_cast<int>(pos.x - 50),
-            static_cast<int>(pos.y - 50),
-            100,  // width
-            100,  // height
-            playerColor
-        );
-
-        DrawRectangleLines(
-            static_cast<int>(pos.x - 50),
-            static_cast<int>(pos.y - 50),
-            100,
-            100,
-            BLACK
-        );
+        DrawRectangle( static_cast<int>(pos.x - 50), static_cast<int>(pos.y - 50), 100, 100, playerColor);
+        DrawRectangleLines( static_cast<int>(pos.x - 50), static_cast<int>(pos.y - 50), 100, 100, BLACK);
     }
 }
 
@@ -61,12 +48,7 @@ void RenderSystem::renderBalls(registry &r)
     if (!ballArr || !posArr) return;
 
     for (auto&& [ball, pos, ent] : zipper(*ballArr, *posArr)) {
-        DrawCircle(
-            static_cast<int>(pos.x),
-            static_cast<int>(pos.y),
-            ball._radius,
-            ball._color
-        );
+        DrawCircle( static_cast<int>(pos.x), static_cast<int>(pos.y), ball._radius, ball._color);
     }
 }
 

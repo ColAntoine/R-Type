@@ -93,13 +93,14 @@ void BallSys::checkPlayerHits(registry &r)
 
                 if (std::abs(dx) > std::abs(dy)) {
                     // Hit from side
-                    ballVel.vx = -ballVel.vx;
                     if (dx > 0) {
+                        // Ball is on the right side of player
                         ballPos.x = playerRight + ball._radius;
-                        ballVel.vx = playerVel.vx;
+                        ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : 100.0f; // Push right
                     } else {
+                        // Ball is on the left side of player
                         ballPos.x = playerLeft - ball._radius;
-                        ballVel.vx = -playerVel.vx;
+                        ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : -100.0f; // Push left
                     }
                 } else {
                     // Hit from top/bottom
