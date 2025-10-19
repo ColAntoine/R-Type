@@ -11,11 +11,6 @@
 
 #include "BallSys.hpp"
 
-#include "ECS/Components.hpp"
-#include "Entity/Components/Ball/Ball.hpp"
-#include "Entity/Components/Player/Player.hpp"
-#include "Entity/Components/Invincibility/Invincibility.hpp"
-
 #include "ECS/Zipper.hpp"
 #include "Constants.hpp"
 
@@ -57,13 +52,11 @@ void BallSys::checkPlayerHits(registry &r)
     auto *playerPosArr = r.get_if<position>();
     auto *playerVelArr = r.get_if<velocity>();
     auto *playerArr = r.get_if<Player>();
-    auto *inviArr = r.get_if<Invincibility>();
 
     if (!ballPosArr || !ballArr || !ballVelArr || !playerPosArr || !playerArr) return;
 
     for (auto&& [playerPos, playerVel, player, playerEnt] : zipper(*playerPosArr, *playerVelArr, *playerArr)) {
         // Get invincibility component if it exists
-        Invincibility* invi = inviArr && inviArr->has(playerEnt) ? &inviArr->get(playerEnt) : nullptr;
         float playerLeft = playerPos.x -50.0f;
         float playerRight = playerPos.x + 50.0f;
         float playerTop = playerPos.y - 50.0f;
@@ -81,57 +74,48 @@ void BallSys::checkPlayerHits(registry &r)
                               ballTop > playerBottom);
 
             if (collision) {
-                // Check if player is invincible, if so skip collision
-                if (invi && invi->_isInvincible) {
-                    continue; // Skip this collision
-                }
-
-                player._life -= 1;
-                std::cout << "Ball hit player! Lives remaining: " << player._life << std::endl;
-
-                if (player._life <= 0) {
-                    std::cout << "Player has no lives left! Removing player entity..." << std::endl;
-                    r.kill_entity(entity(playerEnt));
-                    return; // Exit the function since player is dead
-                }
-
-                std::cout << "Ball hit player! Ball at (" << ballPos.x << ", " << ballPos.y
-                          << ") Player at (" << playerPos.x << ", " << playerPos.y << ")" << std::endl;
-
-                // Set the hit flag for the InvincibilitySys to handle
                 player._isHit = true;
 
-                // Calculate collision response
-                float ballCenterX = ballPos.x;
-                float ballCenterY = ballPos.y;
-                float playerCenterX = playerPos.x;
-                float playerCenterY = playerPos.y;
-
-                // Determine which side of the player was hit
-                float dx = ballCenterX - playerCenterX;
-                float dy = ballCenterY - playerCenterY;
-
-                if (std::abs(dx) > std::abs(dy)) {
-                    // Hit from side
-                    if (dx > 0) {
-                        // Ball is on the right side of player
-                        ballPos.x = playerRight + ball._radius;
-                        ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : 100.0f; // Push right
-                    } else {
-                        // Ball is on the left side of player
-                        ballPos.x = playerLeft - ball._radius;
-                        ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : -100.0f; // Push left
-                    }
-                } else {
-                    // Hit from top/bottom
-                    ballVel.vy = -ballVel.vy;
-                    if (dy > 0) {
-                        ballPos.y = playerBottom + ball._radius;
-                    } else {
-                        ballPos.y = playerTop - ball._radius;
-                    }
-                }
+                computeBallPhysics(ballPos, playerPos, ball, ballVel, playerVel);
             }
+        }
+    }
+}
+
+void BallSys::computeBallPhysics(position &ballPos, position &playerPos, Ball &ball,
+    velocity &ballVel, velocity &playerVel)
+{
+    float ballCenterX = ballPos.x;
+    float ballCenterY = ballPos.y;
+    float playerCenterX = playerPos.x;
+    float playerCenterY = playerPos.y;
+    float playerLeft = playerPos.x -50.0f;
+    float playerRight = playerPos.x + 50.0f;
+    float playerTop = playerPos.y - 50.0f;
+    float playerBottom = playerPos.y + 50.0f;
+
+    // Determine which side of the player was hit
+    float dx = ballCenterX - playerCenterX;
+    float dy = ballCenterY - playerCenterY;
+
+    if (std::abs(dx) > std::abs(dy)) {
+        // Hit from side
+        if (dx > 0) {
+            // Ball is on the right side of player
+            ballPos.x = playerRight + ball._radius;
+            ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : 100.0f; // Push right
+        } else {
+            // Ball is on the left side of player
+            ballPos.x = playerLeft - ball._radius;
+            ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : -100.0f; // Push left
+        }
+    } else {
+        // Hit from top/bottom
+        ballVel.vy = -ballVel.vy;
+        if (dy > 0) {
+            ballPos.y = playerBottom + ball._radius;
+        } else {
+            ballPos.y = playerTop - ball._radius;
         }
     }
 }

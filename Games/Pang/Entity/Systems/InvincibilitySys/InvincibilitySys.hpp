@@ -18,7 +18,7 @@ public:
     const char* get_name() const override { return "InvincibilitySys"; }
 private:
     void checkPlayerInvicibilty(registry &r, float dt);
-    void activateInvi(Invincibility &invi, Player &player);
+    void activateInvi(registry &r, Invincibility &invi, Player &player, std::size_t ent);
     void updatePlayerInvi(Invincibility &invi, float dt);
 };
 
