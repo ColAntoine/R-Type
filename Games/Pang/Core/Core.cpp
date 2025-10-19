@@ -63,6 +63,7 @@ void Core::loadSystems()
 
     Ball ball;
     ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
+    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f + 5.f, 150.f));
 
     Player player;
     player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 30.f));

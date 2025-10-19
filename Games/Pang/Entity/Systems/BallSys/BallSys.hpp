@@ -24,6 +24,12 @@ private:
     void checkPlayerHits(registry &r);
     void computeBallPhysics(position &ballPos, position &playerPos, Ball &ball,
         velocity &ballVel, velocity &playerVel);
+    bool checkPlayerColision(position &playerPos, position &ballPos, Ball &ball);
+
+    void checkBallCollisions(registry &r);
+    bool checkBallToBallCollision(position &ball1Pos, position &ball2Pos, Ball &ball1, Ball &ball2);
+    void resolveBallCollision(position &ball1Pos, position &ball2Pos, Ball &ball1, Ball &ball2,
+        velocity &ball1Vel, velocity &ball2Vel);
 };
 
 extern "C" {
