@@ -28,19 +28,31 @@ void InvincibilitySys::checkPlayerInvicibilty(registry &r, float dt)
 
     if (!playerArr || !inviArr) return;
 
-    // Loop through all players with invincibility component
     for (auto&& [player, invi, ent] : zipper(*playerArr, *inviArr)) {
-        // Check if player is currently invincible
-        if (invi._isInvincible) {
-            // Update the timer
-            invi._lastActivation += dt;
+        activateInvi(invi, player);
+        updatePlayerInvi(invi, dt);
+    }
+}
 
-            // Check if invincibility duration has expired
-            if (invi._lastActivation >= invi._duration) {
-                invi._isInvincible = false;
-                invi._lastActivation = 0.0f;
-                std::cout << "Player invincibility ended!" << std::endl;
-            }
+void InvincibilitySys::activateInvi(Invincibility &invi, Player &player)
+{
+    if (player._isHit) {
+        player._isHit = false;
+        invi._isInvincible = true;
+        invi._lastActivation = 0.0f;
+        std::cout << "Player invincibility activated!" << std::endl;
+    }
+}
+
+void InvincibilitySys::updatePlayerInvi(Invincibility &invi, float dt)
+{
+    if (invi._isInvincible) {
+        invi._lastActivation += dt;
+
+        if (invi._lastActivation >= invi._duration) {
+            invi._isInvincible = false;
+            invi._lastActivation = 0.0f;
+            std::cout << "Player invincibility ended!" << std::endl;
         }
     }
 }

@@ -9,12 +9,13 @@
 
 Player::Player() {}
 Player::Player(int life, float cooldow, float cCooldown,
-    int score, float moveSpeed)
+    int score, float moveSpeed, bool isHit)
 : _life(life),
 _cooldown(_cooldown),
 _currentCooldown(cCooldown),
 _score(score),
-_moveSpeed(moveSpeed)
+_moveSpeed(moveSpeed),
+_isHit(isHit)
 {}
 
 void Player::spawn(IComponentFactory *factory, registry &r, position pos)

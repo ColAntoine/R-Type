@@ -19,10 +19,11 @@ struct Player : public IComponent {
     float _currentCooldown{0.f};
     int _score{0};
     float _moveSpeed{300.f};
+    bool _isHit{false};
 
     Player();
     Player(int life, float cooldown, float currentCooldown,
-        int score, float moveSpeed);
+        int score, float moveSpeed, bool isHit);
 
     public:
         void spawn(IComponentFactory *factory, registry &r, position pos);

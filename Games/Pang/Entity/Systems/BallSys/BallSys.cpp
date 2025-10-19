@@ -98,12 +98,8 @@ void BallSys::checkPlayerHits(registry &r)
                 std::cout << "Ball hit player! Ball at (" << ballPos.x << ", " << ballPos.y
                           << ") Player at (" << playerPos.x << ", " << playerPos.y << ")" << std::endl;
 
-                // Activate invincibility if component exists
-                if (invi) {
-                    invi->_isInvincible = true;
-                    invi->_lastActivation = 0.0f;
-                    std::cout << "Player invincibility activated!" << std::endl;
-                }
+                // Set the hit flag for the InvincibilitySys to handle
+                player._isHit = true;
 
                 // Calculate collision response
                 float ballCenterX = ballPos.x;
