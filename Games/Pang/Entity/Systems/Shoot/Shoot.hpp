@@ -21,6 +21,7 @@ public:
     const char* get_name() const override { return "Shoot"; }
 
     void checkShoot(registry &r);
+    void updateCd(registry &r, float dt);
 };
 
 extern "C" {

@@ -21,6 +21,7 @@ struct Player : public IComponent {
     float _moveSpeed{300.f};
     bool _isHit{false};
     bool _isShooting{false};
+    float _shootCd{2.f};
 
     Player();
     Player(int life, float cooldown, float currentCooldown,

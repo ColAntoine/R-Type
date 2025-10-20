@@ -11,6 +11,7 @@
 #include "Shoot.hpp"
 
 void Shoot::update(registry& r, float dt) {
+    updateCd(r, dt);
     checkShoot(r);
 }
 
@@ -22,9 +23,23 @@ void Shoot::checkShoot(registry &r)
     if (!playerArr) return;
 
     for (auto [player, ent] : zipper(*playerArr)) {
-        if (isShooting) {
+        if (isShooting && player._cooldown <= 0.f) {
             player._isShooting = true;
+            player._cooldown = 2.f;
             std::cout << "The player is shooting" << std::endl;
+        }
+    }
+}
+
+void Shoot::updateCd(registry &r, float dt)
+{
+    auto *playerArr = r.get_if<Player>();
+
+    if (!playerArr) return;
+
+    for (auto [player, ent] : zipper(*playerArr)) {
+        if (player._cooldown > 0.f) {
+            player._cooldown -= dt;
         }
     }
 }
