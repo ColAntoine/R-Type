@@ -29,16 +29,19 @@ void InvincibilitySys::checkPlayerInvicibilty(registry &r, float dt)
     if (!playerArr || !inviArr) return;
 
     for (auto&& [player, invi, ent] : zipper(*playerArr, *inviArr)) {
-        activateInvi(r, invi, player, ent);
+        bool playerKilled = activateInvi(r, invi, player, ent);
+        if (playerKilled) {
+            return; // Exit immediately if player was killed
+        }
         updatePlayerInvi(invi, dt);
     }
 }
 
-void InvincibilitySys::activateInvi(registry &r, Invincibility &invi, Player &player, std::size_t ent)
+bool InvincibilitySys::activateInvi(registry &r, Invincibility &invi, Player &player, std::size_t ent)
 {
     if (player._isHit && invi._isInvincible) {
         player._isHit = false;
-        return;
+        return false;
     }
 
     if (player._isHit) {
@@ -49,13 +52,15 @@ void InvincibilitySys::activateInvi(registry &r, Invincibility &invi, Player &pl
         if (player._life <= 0) {
             std::cout << "Player has no lives left! Removing player entity..." << std::endl;
             r.kill_entity(entity(ent));
-            return;
+            return true; // Player was killed
         }
 
         invi._isInvincible = true;
         invi._lastActivation = 0.0f;
         std::cout << "Player invincibility activated!" << std::endl;
     }
+    
+    return false; // Player not killed
 }
 
 void InvincibilitySys::updatePlayerInvi(Invincibility &invi, float dt)

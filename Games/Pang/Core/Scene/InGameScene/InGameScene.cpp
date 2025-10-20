@@ -1,82 +1,100 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Sat, Oct, 2025                                                     *
+ * EPITECH PROJECT - Tue, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     Core                                                                             *
+ *     InGameScene                                                                      *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *             ███████╗██████╗ ██╗████████╗███████╗ ██████╗██╗  ██╗                     *
- *             ██╔════╝██╔══██╗██║╚══██╔══╝██╔════╝██╔════╝██║  ██║                     *
- *             █████╗  ██████╔╝██║   ██║   █████╗  ██║     ███████║                     *
- *             ██╔══╝  ██╔═══╝ ██║   ██║   ██╔══╝  ██║     ██╔══██║                     *
- *             ███████╗██║     ██║   ██║   ███████╗╚██████╗██║  ██║                     *
- *             ╚══════╝╚═╝     ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝                     *
+ *       _|_|_|_|  _|_|_|    _|_|_|  _|_|_|_|_|  _|_|_|_|    _|_|_|  _|    _|           *
+ *       _|        _|    _|    _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|    _|_|_|      _|        _|      _|_|_|    _|        _|_|_|_|           *
+ *       _|        _|          _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|_|  _|        _|_|_|      _|      _|_|_|_|    _|_|_|  _|    _|           *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#ifndef INCLUDED_CORE_HPP
-    #define INCLUDED_CORE_HPP
-
-    #include <iostream>
-    #include <map>
-    #include <raylib.h>
-
-// ====================================ECS======================================
-#include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
-// =============================================================================
-
-// =====================================Entity==================================
+#include "InGameScene.hpp"
+#include "Constants.hpp"
 #include "Entity/Components/Ball/Ball.hpp"
-#include "Entity/Components/Player/Player.hpp"
-#include "Entity/Components/Gravity/Gravity.hpp"
-
 #include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-// =============================================================================
+#include "ECS/Zipper.hpp"
 
-// ===================================SCENE=====================================
-#include "Scene/IScene.hpp"
-#include "Scene/MenuScene/MenuScene.hpp"
-#include "Scene/InGameScene/InGameScene.hpp"
-#include "Scene/EndScene/EndScene.hpp"
-// =============================================================================
+InGameScene::InGameScene(registry& reg, DLLoader& systemLoader, IComponentFactory* factory)
+: _reg(reg), _systemLoader(systemLoader), _componentFactory(factory), _initialized(false)
+{}
 
-class Core
+void InGameScene::init(float dt)
 {
-    public:
-        static Core& getInstance();
-        void run();
+    Ball ball;
+    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
+    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f + 30.f, 150.f));
 
-        void changeState(GameState newState);
+    Player player;
+    player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 30.f));
 
-    private:
-        Core();
-        ~Core() = default;
+    _initialized = true;
+}
 
-        // * INIT
-        void initWindow();
-        void loadSystems();
+std::optional<GameState> InGameScene::update(float dt)
+{
+    _systemLoader.update_all_systems(_reg, dt);
 
-        // * Game
-        void loop();
+    auto *playerArr = _reg.get_if<Player>();
+    if (playerArr) {
+        bool hasPlayer = false;
+        for (auto [player, ent] : zipper(*playerArr)) {
+            hasPlayer = true;
+            break;
+        }
+        if (!hasPlayer) {
+            return GameState::END;
+        }
+    } else {
+        return GameState::END;
+    }
 
-        // * State Management
-        void initScenes();
-        std::map<GameState, std::unique_ptr<IScene>> _scenes;
-        GameState _currentState;
+    return std::nullopt;
+}
 
-        // * VARS
-        registry _reg;
-        IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
-        entity _ballEntity;
-        bool _systemsLoaded;
-};
+void InGameScene::render(float dt)
+{
+    DrawText("Pang Game", 10, 10, 20, RAYWHITE);
 
-#endif
+    auto *playerArr = _reg.get_if<Player>();
+    if (playerArr) {
+        for (auto [player, ent] : zipper(*playerArr)) {
+            DrawText(TextFormat("Lives: %d", player._life), SCREEN_WIDTH - 120, 10, 20, RAYWHITE);
+            break;
+        }
+    }
+}
+
+void InGameScene::destroy(float dt)
+{
+    auto *playerArr = _reg.get_if<Player>();
+    auto *ballArr = _reg.get_if<Ball>();
+    std::vector<std::size_t> entitiesToKill;
+
+    if (playerArr) {
+        for (auto [player, ent]: zipper(*playerArr)) {
+            entitiesToKill.push_back(ent);
+        }
+    }
+
+    if (ballArr) {
+        for (auto [ball, ent]: zipper(*ballArr)) {
+            entitiesToKill.push_back(ent);
+        }
+    }
+
+    for (auto id : entitiesToKill) {
+        _reg.kill_entity(entity(id));
+    }
+
+    _initialized = false;
+}
 
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *

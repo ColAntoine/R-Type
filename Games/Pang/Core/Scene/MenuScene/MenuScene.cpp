@@ -1,82 +1,45 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Sat, Oct, 2025                                                     *
+ * EPITECH PROJECT - Tue, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     Core                                                                             *
+ *     MenuScene                                                                        *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *             ███████╗██████╗ ██╗████████╗███████╗ ██████╗██╗  ██╗                     *
- *             ██╔════╝██╔══██╗██║╚══██╔══╝██╔════╝██╔════╝██║  ██║                     *
- *             █████╗  ██████╔╝██║   ██║   █████╗  ██║     ███████║                     *
- *             ██╔══╝  ██╔═══╝ ██║   ██║   ██╔══╝  ██║     ██╔══██║                     *
- *             ███████╗██║     ██║   ██║   ███████╗╚██████╗██║  ██║                     *
- *             ╚══════╝╚═╝     ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝                     *
+ *       _|_|_|_|  _|_|_|    _|_|_|  _|_|_|_|_|  _|_|_|_|    _|_|_|  _|    _|           *
+ *       _|        _|    _|    _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|    _|_|_|      _|        _|      _|_|_|    _|        _|_|_|_|           *
+ *       _|        _|          _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|_|  _|        _|_|_|      _|      _|_|_|_|    _|_|_|  _|    _|           *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#ifndef INCLUDED_CORE_HPP
-    #define INCLUDED_CORE_HPP
+#include "MenuScene.hpp"
+#include "Constants.hpp"
+#include <optional>
 
-    #include <iostream>
-    #include <map>
-    #include <raylib.h>
+void MenuScene::init(float dt)
+{}
 
-// ====================================ECS======================================
-#include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
-// =============================================================================
-
-// =====================================Entity==================================
-#include "Entity/Components/Ball/Ball.hpp"
-#include "Entity/Components/Player/Player.hpp"
-#include "Entity/Components/Gravity/Gravity.hpp"
-
-#include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-// =============================================================================
-
-// ===================================SCENE=====================================
-#include "Scene/IScene.hpp"
-#include "Scene/MenuScene/MenuScene.hpp"
-#include "Scene/InGameScene/InGameScene.hpp"
-#include "Scene/EndScene/EndScene.hpp"
-// =============================================================================
-
-class Core
+std::optional<GameState> MenuScene::update(float dt)
 {
-    public:
-        static Core& getInstance();
-        void run();
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+        return GameState::INGAME;
+    }
+    return std::nullopt;
+}
 
-        void changeState(GameState newState);
+void MenuScene::render(float dt)
+{
+    DrawText("PANG", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 100, 80, RAYWHITE);
+    DrawText("Press ENTER or SPACE to Start", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 20, RAYWHITE);
+    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 140, SCREEN_HEIGHT / 2 + 40, 20, GRAY);
+    DrawText("Avoid the Balls!", SCREEN_WIDTH / 2 - 90, SCREEN_HEIGHT / 2 + 70, 20, GRAY);
+}
 
-    private:
-        Core();
-        ~Core() = default;
-
-        // * INIT
-        void initWindow();
-        void loadSystems();
-
-        // * Game
-        void loop();
-
-        // * State Management
-        void initScenes();
-        std::map<GameState, std::unique_ptr<IScene>> _scenes;
-        GameState _currentState;
-
-        // * VARS
-        registry _reg;
-        IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
-        entity _ballEntity;
-        bool _systemsLoaded;
-};
-
-#endif
+void MenuScene::destroy(float dt)
+{}
 
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *

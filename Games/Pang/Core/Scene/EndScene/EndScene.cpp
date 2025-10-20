@@ -1,82 +1,52 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Sat, Oct, 2025                                                     *
+ * EPITECH PROJECT - Tue, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     Core                                                                             *
+ *     EndScene                                                                         *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *             ███████╗██████╗ ██╗████████╗███████╗ ██████╗██╗  ██╗                     *
- *             ██╔════╝██╔══██╗██║╚══██╔══╝██╔════╝██╔════╝██║  ██║                     *
- *             █████╗  ██████╔╝██║   ██║   █████╗  ██║     ███████║                     *
- *             ██╔══╝  ██╔═══╝ ██║   ██║   ██╔══╝  ██║     ██╔══██║                     *
- *             ███████╗██║     ██║   ██║   ███████╗╚██████╗██║  ██║                     *
- *             ╚══════╝╚═╝     ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝                     *
+ *       _|_|_|_|  _|_|_|    _|_|_|  _|_|_|_|_|  _|_|_|_|    _|_|_|  _|    _|           *
+ *       _|        _|    _|    _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|    _|_|_|      _|        _|      _|_|_|    _|        _|_|_|_|           *
+ *       _|        _|          _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|_|  _|        _|_|_|      _|      _|_|_|_|    _|_|_|  _|    _|           *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#ifndef INCLUDED_CORE_HPP
-    #define INCLUDED_CORE_HPP
+#include "EndScene.hpp"
+#include "Constants.hpp"
 
-    #include <iostream>
-    #include <map>
-    #include <raylib.h>
-
-// ====================================ECS======================================
-#include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
-// =============================================================================
-
-// =====================================Entity==================================
-#include "Entity/Components/Ball/Ball.hpp"
-#include "Entity/Components/Player/Player.hpp"
-#include "Entity/Components/Gravity/Gravity.hpp"
-
-#include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-// =============================================================================
-
-// ===================================SCENE=====================================
-#include "Scene/IScene.hpp"
-#include "Scene/MenuScene/MenuScene.hpp"
-#include "Scene/InGameScene/InGameScene.hpp"
-#include "Scene/EndScene/EndScene.hpp"
-// =============================================================================
-
-class Core
+void EndScene::init(float dt)
 {
-    public:
-        static Core& getInstance();
-        void run();
+    std::cout << "EndScene initialized" << std::endl;
+}
 
-        void changeState(GameState newState);
+std::optional<GameState> EndScene::update(float dt)
+{
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+        return GameState::INGAME;
+    }
+    
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        return GameState::MENU;
+    }
+    
+    return std::nullopt;
+}
 
-    private:
-        Core();
-        ~Core() = default;
+void EndScene::render(float dt)
+{
+    DrawText("GAME OVER", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 - 100, 60, RED);
+    DrawText("Press ENTER to Restart", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2, 20, RAYWHITE);
+    DrawText("Press ESC for Menu", SCREEN_WIDTH / 2 - 120, SCREEN_HEIGHT / 2 + 40, 20, GRAY);
+}
 
-        // * INIT
-        void initWindow();
-        void loadSystems();
-
-        // * Game
-        void loop();
-
-        // * State Management
-        void initScenes();
-        std::map<GameState, std::unique_ptr<IScene>> _scenes;
-        GameState _currentState;
-
-        // * VARS
-        registry _reg;
-        IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
-        entity _ballEntity;
-        bool _systemsLoaded;
-};
-
-#endif
+void EndScene::destroy(float dt)
+{
+    std::cout << "EndScene destroyed" << std::endl;
+}
 
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *

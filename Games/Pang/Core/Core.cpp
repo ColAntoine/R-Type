@@ -19,7 +19,7 @@
 
 #include "Core.hpp"
 
-Core::Core()
+Core::Core() : _currentState(GameState::MENU), _systemsLoaded(false), _componentFactory(nullptr)
 {
     _reg.register_component<position>();
     _reg.register_component<velocity>();
@@ -38,6 +38,7 @@ void Core::run()
 {
     initWindow();
     loadSystems();
+    initScenes();
 
     loop();
 }
@@ -50,6 +51,8 @@ void Core::initWindow()
 
 void Core::loadSystems()
 {
+    if (_systemsLoaded) return;
+
     std::cout << "Loading game systems dynamically..." << std::endl;
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so");
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so");
@@ -60,13 +63,15 @@ void Core::loadSystems()
     std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
+    _systemsLoaded = true;
+}
 
-    Ball ball;
-    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
-    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f + 5.f, 150.f));
-
-    Player player;
-    player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 30.f));
+void Core::initScenes()
+{
+    _scenes[GameState::MENU] = std::make_unique<MenuScene>();
+    _scenes[GameState::INGAME] = std::make_unique<InGameScene>(_reg, _systemLoader, _componentFactory);
+    _scenes[GameState::END] = std::make_unique<EndScene>();
+    _scenes[_currentState]->init(0.0f);
 }
 
 void Core::loop()
@@ -76,14 +81,23 @@ void Core::loop()
     while (!WindowShouldClose()) {
         deltaTime = GetFrameTime();
 
+        auto nextState = _scenes[_currentState]->update(deltaTime);
+        if (nextState.has_value() && nextState.value() != _currentState) {
+            _scenes[_currentState]->destroy(deltaTime);
+            changeState(nextState.value());
+            _scenes[_currentState]->init(deltaTime);
+        }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
-        DrawText("Pang Game", 10, 10, 20, RAYWHITE);
-        _systemLoader.update_all_systems(_reg, deltaTime);
+        _scenes[_currentState]->render(deltaTime);
 
         EndDrawing();
     }
 
     CloseWindow();
+}void Core::changeState(GameState newState)
+{
+    _currentState = newState;
 }

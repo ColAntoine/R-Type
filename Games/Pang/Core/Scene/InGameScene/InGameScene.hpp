@@ -1,79 +1,47 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Sat, Oct, 2025                                                     *
+ * EPITECH PROJECT - Tue, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     Core                                                                             *
+ *     InGameScene                                                                      *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *             ███████╗██████╗ ██╗████████╗███████╗ ██████╗██╗  ██╗                     *
- *             ██╔════╝██╔══██╗██║╚══██╔══╝██╔════╝██╔════╝██║  ██║                     *
- *             █████╗  ██████╔╝██║   ██║   █████╗  ██║     ███████║                     *
- *             ██╔══╝  ██╔═══╝ ██║   ██║   ██╔══╝  ██║     ██╔══██║                     *
- *             ███████╗██║     ██║   ██║   ███████╗╚██████╗██║  ██║                     *
- *             ╚══════╝╚═╝     ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝                     *
+ *       _|_|_|_|  _|_|_|    _|_|_|  _|_|_|_|_|  _|_|_|_|    _|_|_|  _|    _|           *
+ *       _|        _|    _|    _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|    _|_|_|      _|        _|      _|_|_|    _|        _|_|_|_|           *
+ *       _|        _|          _|        _|      _|        _|        _|    _|           *
+ *       _|_|_|_|  _|        _|_|_|      _|      _|_|_|_|    _|_|_|  _|    _|           *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#ifndef INCLUDED_CORE_HPP
-    #define INCLUDED_CORE_HPP
+#ifndef INCLUDED_INGAMESCENE_HPP
+    #define INCLUDED_INGAMESCENE_HPP
 
-    #include <iostream>
-    #include <map>
-    #include <raylib.h>
-
-// ====================================ECS======================================
+#include "../IScene.hpp"
+#include <raylib.h>
+#include <optional>
 #include "ECS/Registry.hpp"
 #include "ECS/DLLoader.hpp"
-// =============================================================================
-
-// =====================================Entity==================================
-#include "Entity/Components/Ball/Ball.hpp"
+#include "ECS/ComponentFactory.hpp"
 #include "Entity/Components/Player/Player.hpp"
-#include "Entity/Components/Gravity/Gravity.hpp"
 
-#include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-// =============================================================================
-
-// ===================================SCENE=====================================
-#include "Scene/IScene.hpp"
-#include "Scene/MenuScene/MenuScene.hpp"
-#include "Scene/InGameScene/InGameScene.hpp"
-#include "Scene/EndScene/EndScene.hpp"
-// =============================================================================
-
-class Core
+class InGameScene : public IScene
 {
     public:
-        static Core& getInstance();
-        void run();
+        InGameScene(registry& reg, DLLoader& systemLoader, IComponentFactory* factory);
+        ~InGameScene() override = default;
 
-        void changeState(GameState newState);
+        void init(float dt) override;
+        std::optional<GameState> update(float dt) override;
+        void render(float dt) override;
+        void destroy(float dt) override;
 
     private:
-        Core();
-        ~Core() = default;
-
-        // * INIT
-        void initWindow();
-        void loadSystems();
-
-        // * Game
-        void loop();
-
-        // * State Management
-        void initScenes();
-        std::map<GameState, std::unique_ptr<IScene>> _scenes;
-        GameState _currentState;
-
-        // * VARS
-        registry _reg;
-        IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
-        entity _ballEntity;
-        bool _systemsLoaded;
+        registry& _reg;
+        DLLoader& _systemLoader;
+        IComponentFactory* _componentFactory;
+        bool _initialized;
 };
 
 #endif
