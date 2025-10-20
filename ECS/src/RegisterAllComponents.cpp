@@ -4,7 +4,7 @@
 #include "ECS/Components/Sprite.hpp"
 #include "ECS/Components/Animation.hpp"
 #include "ECS/Components/Collider.hpp"
-#include "ECS/Components/NetInput.hpp"
+#include "ECS/Components/InputBuffer.hpp"
 
 void RegisterAllComponents(registry &r) {
     r.register_component<position>();
@@ -12,5 +12,6 @@ void RegisterAllComponents(registry &r) {
     r.register_component<sprite>();
     r.register_component<animation>();
     r.register_component<collider>();
-    r.register_component<NetInput>();
+    r.register_component<InputBuffer>();
+
 }

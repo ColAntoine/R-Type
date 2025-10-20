@@ -34,7 +34,7 @@ bool Plugin::load_metadata() {
     get_metadata_func_ = (GetMetadataFunc)dlsym(handle_, "get_plugin_metadata");
     if (get_metadata_func_) {
         metadata_ = get_metadata_func_();
-        std::cout << "Plugin metadata: " << metadata_.name 
+        std::cout << "Plugin metadata: " << metadata_.name
                   << " v" << metadata_.version << std::endl;
     } else {
         metadata_ = PluginMetadata(path_, "1.0.0", "Unknown", "");
