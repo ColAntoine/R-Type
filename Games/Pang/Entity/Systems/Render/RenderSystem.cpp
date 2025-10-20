@@ -16,10 +16,12 @@
 #include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/Ball/Ball.hpp"
 #include "Entity/Components/Invincibility/Invincibility.hpp"
+#include "Entity/Components/Rope/Rope.hpp"
 
 void RenderSystem::update(registry& r, float dt) {
     renderPlayers(r);
     renderBalls(r);
+    renderRopes(r);
 }
 
 void RenderSystem::renderPlayers(registry &r)
@@ -54,6 +56,26 @@ void RenderSystem::renderBalls(registry &r)
 
     for (auto&& [ball, pos, ent] : zipper(*ballArr, *posArr)) {
         DrawCircle( static_cast<int>(pos.x), static_cast<int>(pos.y), ball._radius, ball._color);
+    }
+}
+
+void RenderSystem::renderRopes(registry &r)
+{
+    auto *ropeArr = r.get_if<Rope>();
+    auto *posArr = r.get_if<position>();
+
+    if (!ropeArr || !posArr) return;
+
+    for (auto&& [rope, pos, ent] : zipper(*ropeArr, *posArr)) {
+        // Draw rope as a thick vertical line from player position to current rope tip position
+        // The rope always goes from the current position to the top (0)
+        DrawRectangle(
+            static_cast<int>(pos.x - rope._width / 2.0f),  // x position (centered)
+            0,                                               // from top of screen
+            static_cast<int>(rope._width),                   // width
+            static_cast<int>(pos.y),                         // height (extends down to rope position)
+            rope._color
+        );
     }
 }
 

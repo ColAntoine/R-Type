@@ -12,8 +12,13 @@
 
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/ComponentFactory.hpp"
+#include "ECS/Components.hpp"
 
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Rope/Rope.hpp"
+#include "Entity/Components/Ball/Ball.hpp"
+#include "Constants.hpp"
 
 class Shoot : public ISystem {
 public:
@@ -22,6 +27,8 @@ public:
 
     void checkShoot(registry &r);
     void updateCd(registry &r, float dt);
+    void updateRopes(registry &r, float dt);
+    void spawnRope(registry &r, float playerX, float playerY);
 };
 
 extern "C" {

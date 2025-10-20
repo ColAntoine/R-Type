@@ -67,6 +67,11 @@ set(PANG_INCLUDE_DIRS
 if(PANG_SOURCES)
     add_library(Pang STATIC ${PANG_SOURCES})
     
+    # Enable position-independent code for static library (needed for shared library linking)
+    set_target_properties(Pang PROPERTIES
+        POSITION_INDEPENDENT_CODE ON
+    )
+    
     target_include_directories(Pang PUBLIC
         ${PANG_INCLUDE_DIRS}
     )

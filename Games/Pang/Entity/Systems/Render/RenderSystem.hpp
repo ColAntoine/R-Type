@@ -17,6 +17,7 @@ public:
 private:
     void renderPlayers(registry &r);
     void renderBalls(registry &r);
+    void renderRopes(registry &r);
 };
 
 extern "C" {
