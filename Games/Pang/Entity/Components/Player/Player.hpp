@@ -15,9 +15,9 @@
 
 struct Player : public IComponent {
     int _life{3};
+    unsigned _score{0};
     float _cooldown{0.5f};
     float _currentCooldown{0.f};
-    int _score{0};
     float _moveSpeed{300.f};
     bool _isHit{false};
     bool _isShooting{false};

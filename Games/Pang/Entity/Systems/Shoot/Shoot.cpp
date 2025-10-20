@@ -121,9 +121,9 @@ void Shoot::checkBallCollision(registry &r)
             float distanceY = ballCenterY - closestY;
             float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
 
-            // Check if collision occurred
             if (distanceSquared < (ball._radius * ball._radius)) {
                 ball._isHit = true;
+                updateScore(r);
                 ropesToRemove.push_back(entity(ropeEnt));
                 break;
             }
@@ -131,6 +131,16 @@ void Shoot::checkBallCollision(registry &r)
     }
 
     killDeadEntities(r, ropesToRemove);
+}
+
+void Shoot::updateScore(registry &r)
+{
+    auto *playerArr = r.get_if<Player>();
+
+    for (auto [player, ent] : zipper(*playerArr)) {
+        player._score++;
+        return;
+    }
 }
 
 extern "C" {
