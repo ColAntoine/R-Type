@@ -82,10 +82,16 @@ void Core::loop()
         deltaTime = GetFrameTime();
 
         auto nextState = _scenes[_currentState]->update(deltaTime);
-        if (nextState.has_value() && nextState.value() != _currentState) {
-            _scenes[_currentState]->destroy(deltaTime);
-            changeState(nextState.value());
-            _scenes[_currentState]->init(deltaTime);
+        if (nextState.has_value()) {
+            if (nextState.value() == GameState::QUIT) {
+                break;
+            }
+
+            if (nextState.value() != _currentState) {
+                _scenes[_currentState]->destroy(deltaTime);
+                changeState(nextState.value());
+                _scenes[_currentState]->init(deltaTime);
+            }
         }
 
         BeginDrawing();

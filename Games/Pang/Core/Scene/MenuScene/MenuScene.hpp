@@ -21,6 +21,8 @@
 #include "../IScene.hpp"
 #include <raylib.h>
 #include <optional>
+#include <memory>
+#include "ECS/UI/Components/Button.hpp"
 
 class MenuScene : public IScene
 {
@@ -34,6 +36,10 @@ class MenuScene : public IScene
         void destroy(float dt) override;
 
     private:
+        std::unique_ptr<UI::UIButton> _playButton;
+        std::unique_ptr<UI::UIButton> _quitButton;
+        bool _shouldStartGame;
+        bool _shouldQuit;
 };
 
 #endif

@@ -21,6 +21,8 @@
 #include "../IScene.hpp"
 #include <raylib.h>
 #include <optional>
+#include <memory>
+#include "ECS/UI/Components/Button.hpp"
 
 class EndScene : public IScene
 {
@@ -34,6 +36,10 @@ class EndScene : public IScene
         void destroy(float dt) override;
 
     private:
+        std::unique_ptr<UI::UIButton> _restartButton;
+        std::unique_ptr<UI::UIButton> _quitButton;
+        bool _shouldRestart;
+        bool _shouldQuit;
 };
 
 #endif

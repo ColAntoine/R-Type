@@ -20,26 +20,101 @@
 #include <optional>
 
 void MenuScene::init(float dt)
-{}
+{
+    _shouldStartGame = false;
+    _shouldQuit = false;
+
+    _playButton = std::make_unique<UI::UIButton>(
+        SCREEN_WIDTH / 2.f - 200.f,
+        SCREEN_HEIGHT / 2.f + 50.f,
+        400.f,
+        100.f,
+        "PLAY"
+    );
+
+    UI::ButtonStyle playStyle;
+    playStyle._normal_color = Color{0, 120, 215, 255};
+    playStyle._hovered_color = Color{0, 150, 255, 255};
+    playStyle._pressed_color = Color{0, 90, 180, 255};
+    playStyle._text_color = WHITE;
+    playStyle._font_size = 24;
+    playStyle._border_thickness = 2.0f;
+    playStyle._border_color = WHITE;
+    _playButton->set_style(playStyle);
+
+    _playButton->set_on_click([this]() {
+        _shouldStartGame = true;
+    });
+
+    _quitButton = std::make_unique<UI::UIButton>(
+        SCREEN_WIDTH / 2.f - 200.f,
+        SCREEN_HEIGHT / 2.f + 200.f,
+        400.f,
+        100.f,
+        "QUIT"
+    );
+
+    UI::ButtonStyle quitStyle;
+    quitStyle._normal_color = Color{180, 0, 0, 255};
+    quitStyle._hovered_color = Color{220, 0, 0, 255};
+    quitStyle._pressed_color = Color{140, 0, 0, 255};
+    quitStyle._text_color = WHITE;
+    quitStyle._font_size = 24;
+    quitStyle._border_thickness = 2.0f;
+    quitStyle._border_color = WHITE;
+    _quitButton->set_style(quitStyle);
+
+
+    _quitButton->set_on_click([this]() {
+        _shouldQuit = true;
+    });
+}
 
 std::optional<GameState> MenuScene::update(float dt)
 {
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+
+    if (_playButton) {
+        _playButton->handle_input();
+        _playButton->update(dt);
+    }
+    if (_quitButton) {
+        _quitButton->handle_input();
+        _quitButton->update(dt);
+    }
+
+
+    if (_shouldStartGame) {
+        _shouldStartGame = false;
         return GameState::INGAME;
     }
+
+    if (_shouldQuit) {
+        _shouldQuit = false;
+        return GameState::QUIT;
+    }
+
     return std::nullopt;
 }
 
 void MenuScene::render(float dt)
 {
-    DrawText("PANG", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 100, 80, RAYWHITE);
-    DrawText("Press ENTER or SPACE to Start", SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2, 20, RAYWHITE);
-    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 140, SCREEN_HEIGHT / 2 + 40, 20, GRAY);
-    DrawText("Avoid the Balls!", SCREEN_WIDTH / 2 - 90, SCREEN_HEIGHT / 2 + 70, 20, GRAY);
+    DrawText("PANG", SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 150, 80, RAYWHITE);
+    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 140, SCREEN_HEIGHT / 2 - 40, 20, GRAY);
+    DrawText("Avoid the Balls!", SCREEN_WIDTH / 2 - 90, SCREEN_HEIGHT / 2 - 10, 20, GRAY);
+
+    if (_playButton) {
+        _playButton->render();
+    }
+    if (_quitButton) {
+        _quitButton->render();
+    }
 }
 
 void MenuScene::destroy(float dt)
-{}
+{
+    _playButton.reset();
+    _quitButton.reset();
+}
 
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *

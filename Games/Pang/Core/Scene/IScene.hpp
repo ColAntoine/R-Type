@@ -24,7 +24,8 @@
 enum class GameState {
     MENU,
     INGAME,
-    END
+    END,
+    QUIT
 };
 
 class IScene
