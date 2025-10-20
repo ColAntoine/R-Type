@@ -58,12 +58,13 @@ std::optional<GameState> InGameScene::update(float dt)
 
 void InGameScene::render(float dt)
 {
-    DrawText("Pang Game", 10, 10, 20, RAYWHITE);
+    DrawText("Pang Game", 10, 10, 50, RAYWHITE);
 
     auto *playerArr = _reg.get_if<Player>();
     if (playerArr) {
         for (auto [player, ent] : zipper(*playerArr)) {
-            DrawText(TextFormat("Lives: %d", player._life), SCREEN_WIDTH - 120, 10, 20, RAYWHITE);
+            DrawText(TextFormat("Lives: %d", player._life), SCREEN_WIDTH - 300, 10, 40, RAYWHITE);
+            DrawText(TextFormat("Score: %u", player._score), SCREEN_WIDTH - 300, 60, 40, RAYWHITE);
             break;
         }
     }

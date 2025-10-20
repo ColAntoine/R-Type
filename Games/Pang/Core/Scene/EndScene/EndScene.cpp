@@ -99,9 +99,8 @@ std::optional<GameState> EndScene::update(float dt)
 
 void EndScene::render(float dt)
 {
-
-    DrawText("GAME OVER", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 - 120, 60, RED);
-    DrawText("You died!", SCREEN_WIDTH / 2 - 70, SCREEN_HEIGHT / 2 - 40, 24, GRAY);
+    DrawText("GAME OVER", SCREEN_WIDTH / 2 - 300, SCREEN_HEIGHT / 2 - 180, 100, RED);
+    DrawText("You died!", SCREEN_WIDTH / 2 - 140, SCREEN_HEIGHT / 2 - 50, 50, GRAY);
 
     if (_restartButton) {
         _restartButton->render();
