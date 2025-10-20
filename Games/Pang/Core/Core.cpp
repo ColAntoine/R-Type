@@ -60,6 +60,7 @@ void Core::loadSystems()
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so");
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys.so");
     _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so");
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot.so");
     std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
