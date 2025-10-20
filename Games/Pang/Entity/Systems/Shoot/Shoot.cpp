@@ -16,6 +16,7 @@ void Shoot::update(registry& r, float dt) {
     updateCd(r, dt);
     checkShoot(r);
     updateRopes(r, dt);
+    checkBallCollision(r);
 }
 
 void Shoot::checkShoot(registry &r)
@@ -31,7 +32,6 @@ void Shoot::checkShoot(registry &r)
             player._isShooting = true;
             player._cooldown = 2.f;
             spawnRope(r, pos.x, pos.y);
-            std::cout << "Rope shot from position: (" << pos.x << ", " << pos.y << ")" << std::endl;
         }
     }
 }
@@ -52,13 +52,9 @@ void Shoot::updateCd(registry &r, float dt)
 void Shoot::spawnRope(registry &r, float playerX, float playerY)
 {
     auto ropeEntity = r.spawn_entity();
-    // Position stays at player's location (the base of the rope)
     r.emplace_component<position>(ropeEntity, playerX, playerY);
-    // No velocity needed - we'll update the tip position directly
     r.emplace_component<velocity>(ropeEntity, 0.0f, 0.0f);
-    // Initialize rope with starting position
     r.emplace_component<Rope>(ropeEntity, 3.0f, 800.0f, playerY, WHITE);
-    // Collider will be updated dynamically in updateRopes
     r.emplace_component<collider>(ropeEntity, 3.0f, 10.0f, -1.5f, 0.0f);
 }
 
@@ -73,17 +69,11 @@ void Shoot::updateRopes(registry &r, float dt)
     std::vector<entity> ropesToRemove;
 
     for (auto [rope, pos, col, ent] : zipper(*ropeArr, *posArr, *colliderArr)) {
-        // Move the tip of the rope upward
         rope._currentTipY -= rope._speed * dt;
-        
-        // Calculate the current height of the rope
         float ropeHeight = rope._startY - rope._currentTipY;
-        
-        // Update collider to match the rope's current height
         col.h = ropeHeight;
-        col.offset_y = -ropeHeight; // Offset so collider extends upward from base
-        
-        // Check if rope reached the top of the screen
+        col.offset_y = -ropeHeight;
+
         if (rope._currentTipY <= 0) {
             ropesToRemove.push_back(entity(ent));
         }
@@ -91,8 +81,56 @@ void Shoot::updateRopes(registry &r, float dt)
 
     for (auto& ropeEnt : ropesToRemove) {
         r.kill_entity(ropeEnt);
-        std::cout << "Rope reached the top and was removed" << std::endl;
     }
+}
+
+static void killDeadEntities(registry &r, std::vector<entity> vEnt)
+{
+    for (auto &ent : vEnt) {
+        r.kill_entity(entity(ent));
+    }
+}
+
+void Shoot::checkBallCollision(registry &r)
+{
+    auto *ropeArr = r.get_if<Rope>();
+    auto *ropePosArr = r.get_if<position>();
+    auto *ropeColArr = r.get_if<collider>();
+
+    auto *ballArr = r.get_if<Ball>();
+    auto *ballPosArr = r.get_if<position>();
+
+    if (!ropeArr || !ropePosArr || !ropeColArr || !ballArr || !ballPosArr) return;
+
+    std::vector<entity> ropesToRemove;
+
+    for (auto [rope, ropePos, ropeCol, ropeEnt] : zipper(*ropeArr, *ropePosArr, *ropeColArr)) {
+        for (auto [ball, ballPos, ballEnt] : zipper(*ballArr, *ballPosArr)) {
+            float ropeLeft = ropePos.x + ropeCol.offset_x;
+            float ropeRight = ropeLeft + ropeCol.w;
+            float ropeTop = ropePos.y + ropeCol.offset_y;
+            float ropeBottom = ropeTop + ropeCol.h;
+
+            float ballCenterX = ballPos.x;
+            float ballCenterY = ballPos.y;
+
+            float closestX = std::max(ropeLeft, std::min(ballCenterX, ropeRight));
+            float closestY = std::max(ropeTop, std::min(ballCenterY, ropeBottom));
+
+            float distanceX = ballCenterX - closestX;
+            float distanceY = ballCenterY - closestY;
+            float distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+            // Check if collision occurred
+            if (distanceSquared < (ball._radius * ball._radius)) {
+                std::cout << "🎯 Rope hit a ball at position (" << ballPos.x << ", " << ballPos.y << ")!" << std::endl;
+                ropesToRemove.push_back(entity(ropeEnt));
+                break;
+            }
+        }
+    }
+
+    killDeadEntities(r, ropesToRemove);
 }
 
 extern "C" {

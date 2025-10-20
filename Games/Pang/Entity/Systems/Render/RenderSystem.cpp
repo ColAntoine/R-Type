@@ -38,7 +38,7 @@ void RenderSystem::renderPlayers(registry &r)
         if (inviArr && inviArr->has(ent)) {
             auto& invi = inviArr->get(ent);
             if (invi._isInvincible && static_cast<int>(invi._lastActivation * 10) % 2 == 0) {
-                playerColor = YELLOW; // Flash yellow when invincible
+                playerColor = YELLOW;
             }
         }
 
@@ -67,15 +67,14 @@ void RenderSystem::renderRopes(registry &r)
     if (!ropeArr || !posArr) return;
 
     for (auto&& [rope, pos, ent] : zipper(*ropeArr, *posArr)) {
-        // Draw rope as a vertical line growing from the base (player position) to the tip
         float ropeHeight = rope._startY - rope._currentTipY;
-        
+
         if (ropeHeight > 0) {
             DrawRectangle(
-                static_cast<int>(pos.x - rope._width / 2.0f),  // x position (centered on player)
-                static_cast<int>(rope._currentTipY),            // start at the tip (top)
-                static_cast<int>(rope._width),                   // width
-                static_cast<int>(ropeHeight),                    // height (from tip to base)
+                static_cast<int>(pos.x - rope._width / 2.0f),
+                static_cast<int>(rope._currentTipY),
+                static_cast<int>(rope._width),
+                static_cast<int>(ropeHeight),
                 rope._color
             );
         }

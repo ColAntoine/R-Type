@@ -29,6 +29,7 @@ public:
     void updateCd(registry &r, float dt);
     void updateRopes(registry &r, float dt);
     void spawnRope(registry &r, float playerX, float playerY);
+    void checkBallCollision(registry &r);
 };
 
 extern "C" {
