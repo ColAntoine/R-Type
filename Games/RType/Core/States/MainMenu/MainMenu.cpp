@@ -301,7 +301,7 @@ void MainMenuState::cleanup_ui() {
 void MainMenuState::on_play_clicked() {
     std::cout << "[MainMenu] Play button clicked" << std::endl;
     if (state_manager_) {
-        state_manager_->change_state("SoloLobby");
+        state_manager_->change_state("Lobby");
     }
 }
 

@@ -19,8 +19,14 @@ class UdpClient {
 
         void disconnect();
 
+        // After successful connect, the client stores the assigned numeric session token
+        void set_session_token(uint32_t token) { session_token_ = token; }
+        uint32_t get_session_token() const { return session_token_; }
+
+        // Helper to send an input packet (auto-includes session token and input sequence)
     private:
         asio::io_context io_context_;
         asio::ip::udp::socket socket_;
         asio::ip::udp::endpoint server_endpoint_;
+        uint32_t session_token_{0};
 };

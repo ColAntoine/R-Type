@@ -6,24 +6,23 @@
 */
 
 #include "InGame.hpp"
+#include "Core/Client/Network/ClientService.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "Entity/Components/Score/Score.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
+#include "ECS/Components.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
 #include <string>
 
-InGameState::InGameState(Application* app) : app_(app) {}
+InGameState::InGameState() {}
 
 void InGameState::enter() {
     std::cout << "[InGame] Entering state" << std::endl;
-
-    if (!app_) {
-        std::cerr << "ERROR: Application pointer is null in InGameState::enter()" << std::endl;
-        return;
-    }
 
     // Register UI components
     ui_registry_.register_component<UI::UIComponent>();
@@ -96,11 +95,6 @@ void InGameState::resume() {
 void InGameState::update(float delta_time) {
     if (!initialized_ || paused_) return;
 
-    if (!app_) {
-        std::cerr << "ERROR: Application pointer is null in InGameState::update()" << std::endl;
-        return;
-    }
-
     // Update UI system
     ui_system_.update(ui_registry_, delta_time);
     update_hud();
@@ -125,14 +119,8 @@ void InGameState::update(float delta_time) {
 }
 
 void InGameState::render() {
-    if (!initialized_ || !app_) return;
-
     // Draw the falling background
     render_falling_background();
-
-    // The game entities are rendered automatically by the traditional ECS systems
-    // (draw_system, sprite_system) when update_traditional_ecs_systems is called
-    // We don't need to explicitly render them here as Raylib systems handle it
 
     // Render HUD on top
     ui_system_.render(ui_registry_);
@@ -179,8 +167,6 @@ void InGameState::render_falling_background() {
 }
 
 void InGameState::handle_input() {
-    if (!initialized_ || !app_) return;
-
     // Handle pause menu (ESC key)
     if (IsKeyPressed(KEY_ESCAPE)) {
         if (state_manager_) {
@@ -220,7 +206,7 @@ void InGameState::setup_hud() {
 
     // Connection status
     auto status_entity = ui_registry_.spawn_entity();
-    auto connection_status = std::make_shared<UI::UIText>(10, 60, "Status: Disconnected");
+    auto connection_status = std::make_shared<UI::UIText>(10, 60, "Status: Unkown");
     UI::TextStyle status_style;
     status_style._text_color = {255, 100, 100, 255}; // Light red
     status_style._font_size = 20;
@@ -259,8 +245,4 @@ void InGameState::cleanup_hud() {
 }
 
 void InGameState::update_hud() {
-    if (!app_) {
-        std::cerr << "ERROR: Application pointer is null in update_hud()" << std::endl;
-        return;
-    }
 }

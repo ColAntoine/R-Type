@@ -6,6 +6,8 @@
 */
 
 #include "Lobby.hpp"
+#include "Core/Client/Network/UDPClient.hpp"
+#include "Core/Client/Network/ClientService.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
 #include "ECS/Zipper.hpp"
@@ -236,7 +238,21 @@ void LobbyState::cleanup_ui() {
 }
 
 void LobbyState::on_connect_clicked() {
-    // Update status
+    std::cout << "[Lobby] Connect clicked -> attempting to contact server " << server_ip_ << ":" << server_port_ << std::endl;
+    // Use shared client service to perform handshake
+    auto client = RType::Network::get_client();
+    if (!client) {
+        std::cout << "[Lobby] No network client available" << std::endl;
+        return;
+    }
+    std::string player_name = "Player"; // TODO: wire a player name input field
+    auto accept = client->connect(server_ip_, static_cast<uint16_t>(server_port_), player_name, 1, 2000);
+    if (accept) {
+        std::cout << "[Lobby] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << std::endl;
+        if (state_manager_) state_manager_->change_state("InGame");
+    } else {
+        std::cout << "[Lobby] Failed to connect to server." << std::endl;
+    }
 }
 
 void LobbyState::on_back_clicked() {

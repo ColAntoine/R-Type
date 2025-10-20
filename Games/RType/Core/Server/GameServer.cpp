@@ -49,6 +49,11 @@ bool GameServer::init()
     // Create ServerECS (game logic)
     server_ecs_ = std::make_unique<RType::Network::ServerECS>();
     server_ecs_->set_message_queue(msg_ptr);
+    // Provide a callback so ServerECS can send packets back to specific sessions
+    server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {
+        if (!server) return;
+        server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
+    });
 
     // Start network with worker threads
     if (!network_manager_->start(2)) {

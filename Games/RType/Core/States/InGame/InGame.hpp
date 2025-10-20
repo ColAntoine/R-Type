@@ -12,11 +12,9 @@
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/UI/Components/Text.hpp"
+#include "ECS/DLLoader.hpp"
 #include <memory>
 #include <vector>
-
-// Forward declarations
-class Application;
 
 // Tag components for InGame HUD elements
 namespace RType {
@@ -29,7 +27,6 @@ namespace RType {
 
 class InGameState : public IGameState {
     private:
-        Application* app_;
         bool initialized_{false};
         bool paused_{false};
 
@@ -44,7 +41,7 @@ class InGameState : public IGameState {
         int bg_stream_count_{0};
 
     public:
-        InGameState(Application* app);
+        InGameState();
         ~InGameState() override = default;
 
         // IGameState implementation

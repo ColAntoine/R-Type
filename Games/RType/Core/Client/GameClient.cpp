@@ -3,10 +3,13 @@
 #include "GameClient.hpp"
 #include <iostream>
 #include "Network/UDPClient.hpp"
+#include "Network/ClientService.hpp"
 #include "Core/States/Loading/Loading.hpp"
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/Lobby/Lobby.hpp"
 #include "Core/States/SoloLobby/SoloLobby.hpp"
+#include "Core/States/InGame/InGame.hpp"
+
 
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
@@ -17,13 +20,11 @@ void GameClient::register_states() {
     // Register all available states
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
+    state_manager_.register_state<InGameState>("InGame");
     state_manager_.register_state<LobbyState>("Lobby");
     state_manager_.register_state<SoloLobbyState>("SoloLobby");
-
-    std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
-    std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
-    std::cout << "[GameClient] ✓ Asset Manager, Renderer, Physics, Audio, Messaging, Plugin API" << std::endl;
 }
+
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
@@ -46,6 +47,10 @@ bool GameClient::init()
 
     // Start with loading screen
     state_manager_.push_state("Loading");
+
+    // Create shared client service for in-game/network states
+    auto client = std::make_shared<UdpClient>();
+    RType::Network::set_client(client);
 
     running_ = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;

@@ -45,6 +45,7 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
                     if (hdr.payload_size >= sizeof(RType::Protocol::ServerAccept)) {
                         RType::Protocol::ServerAccept sa;
                         memcpy(&sa, recvbuf.data() + RType::Protocol::HEADER_SIZE, sizeof(sa));
+                        set_session_token(sa.session_id);
                         return sa;
                     }
                 }
