@@ -52,25 +52,39 @@ void Shoot::updateCd(registry &r, float dt)
 void Shoot::spawnRope(registry &r, float playerX, float playerY)
 {
     auto ropeEntity = r.spawn_entity();
+    // Position stays at player's location (the base of the rope)
     r.emplace_component<position>(ropeEntity, playerX, playerY);
-    r.emplace_component<velocity>(ropeEntity, 0.0f, -800.0f);
-    r.emplace_component<Rope>(ropeEntity, 3.0f, 800.0f, 0.0f, WHITE);
-    r.emplace_component<collider>(ropeEntity, 3.0f, 10.0f, -1.5f, -5.0f);
+    // No velocity needed - we'll update the tip position directly
+    r.emplace_component<velocity>(ropeEntity, 0.0f, 0.0f);
+    // Initialize rope with starting position
+    r.emplace_component<Rope>(ropeEntity, 3.0f, 800.0f, playerY, WHITE);
+    // Collider will be updated dynamically in updateRopes
+    r.emplace_component<collider>(ropeEntity, 3.0f, 10.0f, -1.5f, 0.0f);
 }
 
 void Shoot::updateRopes(registry &r, float dt)
 {
     auto *ropeArr = r.get_if<Rope>();
     auto *posArr = r.get_if<position>();
-    auto *velArr = r.get_if<velocity>();
+    auto *colliderArr = r.get_if<collider>();
 
-    if (!ropeArr || !posArr || !velArr) return;
+    if (!ropeArr || !posArr || !colliderArr) return;
 
     std::vector<entity> ropesToRemove;
 
-    for (auto [rope, pos, vel, ent] : zipper(*ropeArr, *posArr, *velArr)) {
+    for (auto [rope, pos, col, ent] : zipper(*ropeArr, *posArr, *colliderArr)) {
+        // Move the tip of the rope upward
+        rope._currentTipY -= rope._speed * dt;
+        
+        // Calculate the current height of the rope
+        float ropeHeight = rope._startY - rope._currentTipY;
+        
+        // Update collider to match the rope's current height
+        col.h = ropeHeight;
+        col.offset_y = -ropeHeight; // Offset so collider extends upward from base
+        
         // Check if rope reached the top of the screen
-        if (pos.y <= 0) {
+        if (rope._currentTipY <= 0) {
             ropesToRemove.push_back(entity(ent));
         }
     }

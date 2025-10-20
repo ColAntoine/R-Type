@@ -67,15 +67,18 @@ void RenderSystem::renderRopes(registry &r)
     if (!ropeArr || !posArr) return;
 
     for (auto&& [rope, pos, ent] : zipper(*ropeArr, *posArr)) {
-        // Draw rope as a thick vertical line from player position to current rope tip position
-        // The rope always goes from the current position to the top (0)
-        DrawRectangle(
-            static_cast<int>(pos.x - rope._width / 2.0f),  // x position (centered)
-            0,                                               // from top of screen
-            static_cast<int>(rope._width),                   // width
-            static_cast<int>(pos.y),                         // height (extends down to rope position)
-            rope._color
-        );
+        // Draw rope as a vertical line growing from the base (player position) to the tip
+        float ropeHeight = rope._startY - rope._currentTipY;
+        
+        if (ropeHeight > 0) {
+            DrawRectangle(
+                static_cast<int>(pos.x - rope._width / 2.0f),  // x position (centered on player)
+                static_cast<int>(rope._currentTipY),            // start at the tip (top)
+                static_cast<int>(rope._width),                   // width
+                static_cast<int>(ropeHeight),                    // height (from tip to base)
+                rope._color
+            );
+        }
     }
 }
 
