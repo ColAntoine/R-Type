@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "BallSys.hpp"
+#include "Entity/Components/Gravity/Gravity.hpp"
 
 #include "ECS/Zipper.hpp"
 #include "Constants.hpp"
@@ -19,6 +20,7 @@ void BallSys::update(registry& r, float dt) {
     bounceBalls(r);
     checkBallCollisions(r);
     checkPlayerHits(r);
+    splitBalls(r);
 }
 
 void BallSys::bounceBalls(registry &r)
@@ -205,6 +207,38 @@ void BallSys::resolveBallCollision(position &ball1Pos, position &ball2Pos, Ball 
     ball1Vel.vy -= impulseY;
     ball2Vel.vx += impulseX;
     ball2Vel.vy += impulseY;
+}
+
+void BallSys::splitBalls(registry &r)
+{
+    auto *ballArr = r.get_if<Ball>();
+    auto *posArr = r.get_if<position>();
+    auto *velArr = r.get_if<velocity>();
+
+    if (!ballArr || !posArr || !velArr) return;
+
+    std::vector<std::tuple<Ball, position, velocity, entity>> ballsToSplit;
+
+    for (auto [ball, pos, vel, ent]: zipper(*ballArr, *posArr, *velArr)) {
+        if (ball._isHit) {
+            ballsToSplit.push_back(std::make_tuple(ball, pos, vel, entity(ent)));
+        }
+    }
+
+    // Process each ball that was hit
+    for (auto& [ball, pos, vel, ent] : ballsToSplit) {
+        if (ball._type == SMALL) {
+            r.kill_entity(ent);
+        } else {
+            ballType newType = (ball._type == LARGE) ? MEDIUM : SMALL;
+            float newRadius = (newType == MEDIUM) ? 50.f : 25.f;
+            Ball newBall;
+            newBall.spawn(nullptr, r, position(pos.x - newRadius, pos.y), newType, -150.0f, vel.vy * 0.5f);
+            newBall.spawn(nullptr, r, position(pos.x + newRadius, pos.y), newType, 150.0f, vel.vy * 0.5f);
+
+            r.kill_entity(ent);
+        }
+    }
 }
 
 extern "C" {

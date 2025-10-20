@@ -25,10 +25,12 @@ struct Ball {
     Color _color{Color(255, 255, 255, 255)};
     bool _isActive{true};
     ballType _type{MEDIUM};
+    bool _isHit{false};
 
     Ball();
     Ball(float radius, Color color, bool isACtive, ballType type);
 
     public:
         void spawn(IComponentFactory *factory, registry &r, position pos, ballType type=MEDIUM);
+        void spawn(IComponentFactory *factory, registry &r, position pos, ballType type, float vx, float vy);
 };

@@ -123,7 +123,7 @@ void Shoot::checkBallCollision(registry &r)
 
             // Check if collision occurred
             if (distanceSquared < (ball._radius * ball._radius)) {
-                std::cout << "🎯 Rope hit a ball at position (" << ballPos.x << ", " << ballPos.y << ")!" << std::endl;
+                ball._isHit = true;
                 ropesToRemove.push_back(entity(ropeEnt));
                 break;
             }

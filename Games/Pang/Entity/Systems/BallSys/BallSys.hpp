@@ -14,6 +14,8 @@
 #include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/Invincibility/Invincibility.hpp"
 
+#include "ECS/Registry.hpp"
+
 class BallSys : public ISystem {
 public:
     void update(registry& r, float dt = 0.0f) override;
@@ -30,6 +32,7 @@ private:
     bool checkBallToBallCollision(position &ball1Pos, position &ball2Pos, Ball &ball1, Ball &ball2);
     void resolveBallCollision(position &ball1Pos, position &ball2Pos, Ball &ball1, Ball &ball2,
         velocity &ball1Vel, velocity &ball2Vel);
+    void splitBalls(registry &r);
 };
 
 extern "C" {

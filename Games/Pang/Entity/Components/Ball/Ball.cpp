@@ -26,13 +26,52 @@ Ball::Ball(float radius, Color color, bool isACtive, ballType type)
 
 void Ball::spawn(IComponentFactory *factory, registry &r, position pos, ballType type)
 {
+    // Determine radius based on ball type
+    float radius;
+    if (type == SMALL) {
+        radius = 25.f;
+    } else if (type == MEDIUM) {
+        radius = 50.f;
+    } else if (type == LARGE) {
+        radius = 100.f;
+    } else {
+        radius = 20.f; // Default for CUSTOM
+    }
+    
     auto ballEntity = r.spawn_entity();
-    factory->create_component<position>(r, ballEntity, pos.x, pos.y);
-    factory->create_component<velocity>(r, ballEntity, 0.0f, 0.0f);
-    factory->create_component<Ball>(r, ballEntity, 20.0f, RED, true, type);
-    float diameter = 20.0f * 2.0f;
-    factory->create_component<collider>(r, ballEntity,
+    r.emplace_component<position>(ballEntity, pos.x, pos.y);
+    r.emplace_component<velocity>(ballEntity, 0.0f, 0.0f);
+    r.emplace_component<Ball>(ballEntity, radius, RED, true, type);
+    
+    float diameter = radius * 2.0f;
+    r.emplace_component<collider>(ballEntity,
         diameter, diameter,
-        -20.0f, -20.0f);
-    factory->create_component<Gravity>(r, ballEntity, GRAVITY);
+        -radius, -radius);
+    r.emplace_component<Gravity>(ballEntity, GRAVITY);
+}
+
+void Ball::spawn(IComponentFactory *factory, registry &r, position pos, ballType type, float vx, float vy)
+{
+    // Determine radius based on ball type
+    float radius;
+    if (type == SMALL) {
+        radius = 25.f;
+    } else if (type == MEDIUM) {
+        radius = 50.f;
+    } else if (type == LARGE) {
+        radius = 100.f;
+    } else {
+        radius = 20.f; // Default for CUSTOM
+    }
+    
+    auto ballEntity = r.spawn_entity();
+    r.emplace_component<position>(ballEntity, pos.x, pos.y);
+    r.emplace_component<velocity>(ballEntity, vx, vy);
+    r.emplace_component<Ball>(ballEntity, radius, RED, true, type);
+    
+    float diameter = radius * 2.0f;
+    r.emplace_component<collider>(ballEntity,
+        diameter, diameter,
+        -radius, -radius);
+    r.emplace_component<Gravity>(ballEntity, GRAVITY);
 }
