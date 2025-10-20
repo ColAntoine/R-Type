@@ -32,11 +32,25 @@ void InGameScene::init(float dt)
     Player player;
     player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 100.f));
 
+    _cloudTexture = LoadTexture("Games/Pang/Assets/clouds.png");
+
+    _clouds.clear();
+    _clouds.push_back({200.f, 150.f, 30.f});   // Slow cloud
+    _clouds.push_back({800.f, 300.f, 50.f});   // Medium cloud
+    _clouds.push_back({1400.f, 200.f, 40.f});  // Medium-slow cloud
+
     _initialized = true;
 }
 
 std::optional<GameState> InGameScene::update(float dt)
 {
+    for (auto& cloud : _clouds) {
+        cloud.x += cloud.speed * dt;
+        if (cloud.x > SCREEN_WIDTH + 200.f) {
+            cloud.x = -200.f;
+        }
+    }
+
     _systemLoader.update_all_systems(_reg, dt);
 
     auto *playerArr = _reg.get_if<Player>();
@@ -58,12 +72,22 @@ std::optional<GameState> InGameScene::update(float dt)
 
 void InGameScene::render(float dt)
 {
+    if (_cloudTexture.id != 0) {
+        for (const auto& cloud : _clouds) {
+            DrawTexture(_cloudTexture, static_cast<int>(cloud.x), static_cast<int>(cloud.y), WHITE);
+        }
+    }
+
+    DrawText("Pang Game", 10 + 2, 10 + 2, 50, BLACK);
     DrawText("Pang Game", 10, 10, 50, RAYWHITE);
 
     auto *playerArr = _reg.get_if<Player>();
     if (playerArr) {
         for (auto [player, ent] : zipper(*playerArr)) {
+            DrawText(TextFormat("Lives: %d", player._life), SCREEN_WIDTH - 300 + 2, 10 + 2, 40, BLACK);
             DrawText(TextFormat("Lives: %d", player._life), SCREEN_WIDTH - 300, 10, 40, RAYWHITE);
+
+            DrawText(TextFormat("Score: %u", player._score), SCREEN_WIDTH - 300 + 2, 60 + 2, 40, BLACK);
             DrawText(TextFormat("Score: %u", player._score), SCREEN_WIDTH - 300, 60, 40, RAYWHITE);
             break;
         }
@@ -100,6 +124,12 @@ void InGameScene::destroy(float dt)
 
     for (auto id : entitiesToKill) {
         _reg.kill_entity(entity(id));
+    }
+
+    // Unload cloud texture
+    if (_cloudTexture.id != 0) {
+        UnloadTexture(_cloudTexture);
+        _cloudTexture.id = 0;
     }
 
     _initialized = false;

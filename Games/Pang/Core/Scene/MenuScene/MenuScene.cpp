@@ -98,8 +98,13 @@ std::optional<GameState> MenuScene::update(float dt)
 
 void MenuScene::render(float dt)
 {
+    DrawText("PANG", SCREEN_WIDTH / 2 - 150 + 3, SCREEN_HEIGHT / 2 - 200 + 3, 120, BLACK);
     DrawText("PANG", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 - 200, 120, RAYWHITE);
+
+    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 250 + 2, SCREEN_HEIGHT / 2 - 50 + 2, 40, BLACK);
     DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 50, 40, GRAY);
+
+    DrawText("Press SPACE to Shoot!", SCREEN_WIDTH / 2 - 220 + 2, SCREEN_HEIGHT / 2 - 5 + 2, 40, BLACK);
     DrawText("Press SPACE to Shoot!", SCREEN_WIDTH / 2 - 220, SCREEN_HEIGHT / 2 - 5, 40, GRAY);
 
     if (_playButton) {

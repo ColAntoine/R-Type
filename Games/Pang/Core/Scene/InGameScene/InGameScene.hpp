@@ -42,6 +42,15 @@ class InGameScene : public IScene
         DLLoader& _systemLoader;
         IComponentFactory* _componentFactory;
         bool _initialized;
+        Texture2D _cloudTexture;
+        
+        // Cloud positions for parallax scrolling
+        struct Cloud {
+            float x;
+            float y;
+            float speed;
+        };
+        std::vector<Cloud> _clouds;
 };
 
 #endif

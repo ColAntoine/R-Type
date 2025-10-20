@@ -97,7 +97,7 @@ void Core::loop()
         }
 
         BeginDrawing();
-        ClearBackground(BLACK);
+        ClearBackground(SKYBLUE);
 
         _scenes[_currentState]->render(deltaTime);
 
