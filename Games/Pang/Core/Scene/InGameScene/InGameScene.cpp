@@ -68,6 +68,9 @@ void InGameScene::render(float dt)
             break;
         }
     }
+    Rectangle floor = {0, SCREEN_HEIGHT - 50.f, SCREEN_WIDTH, 50.f};
+    DrawRectangleRec(floor, YELLOW);
+    DrawRectangleLinesEx(floor, 3.0f, BLACK);
 }
 
 void InGameScene::destroy(float dt)

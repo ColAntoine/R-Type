@@ -17,10 +17,13 @@ Ball::Ball(float radius, Color color, bool isACtive, ballType type)
 
     if (type == SMALL) {
         _radius = 25.f;
+        _color = RED;
     } else if (type == MEDIUM) {
         _radius = 50.f;
+        _color = GREEN;
     } else if (type == LARGE) {
         _radius = 100.f;
+        _color = BLUE;
     }
 }
 
