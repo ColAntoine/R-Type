@@ -18,6 +18,8 @@
 #include "InGameScene.hpp"
 #include "Constants.hpp"
 #include "Entity/Components/Ball/Ball.hpp"
+#include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Rope/Rope.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Zipper.hpp"
 
@@ -27,12 +29,8 @@ InGameScene::InGameScene(registry& reg, DLLoader& systemLoader, IComponentFactor
 
 void InGameScene::init(float dt)
 {
-    Ball ball;
-    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, 100.f));
-    ball.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f + 30.f, 150.f));
-
     Player player;
-    player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 30.f));
+    player.spawn(_componentFactory, _reg, position(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 100.f));
 
     _initialized = true;
 }
@@ -75,6 +73,7 @@ void InGameScene::destroy(float dt)
 {
     auto *playerArr = _reg.get_if<Player>();
     auto *ballArr = _reg.get_if<Ball>();
+    auto *ropeArr = _reg.get_if<Rope>();
     std::vector<std::size_t> entitiesToKill;
 
     if (playerArr) {
@@ -85,6 +84,12 @@ void InGameScene::destroy(float dt)
 
     if (ballArr) {
         for (auto [ball, ent]: zipper(*ballArr)) {
+            entitiesToKill.push_back(ent);
+        }
+    }
+
+    if (ropeArr) {
+        for (auto [rope, ent]: zipper(*ropeArr)) {
             entitiesToKill.push_back(ent);
         }
     }

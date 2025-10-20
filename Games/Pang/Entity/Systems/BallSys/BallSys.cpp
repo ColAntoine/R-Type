@@ -225,7 +225,6 @@ void BallSys::splitBalls(registry &r)
         }
     }
 
-    // Process each ball that was hit
     for (auto& [ball, pos, vel, ent] : ballsToSplit) {
         if (ball._type == SMALL) {
             r.kill_entity(ent);
