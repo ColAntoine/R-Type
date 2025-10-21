@@ -31,3 +31,9 @@ void AGameState::cleanup_ui() {
 
     std::cout << "[AGameState] UI cleanup complete (" << entities_to_cleanup.size() << " entities removed)" << std::endl;
 }
+
+void AGameState::handle_input() {
+    if (this->_initialized == false)
+        return;
+    this->_uiSystems->process_input(*this->_uiRegistry);
+}

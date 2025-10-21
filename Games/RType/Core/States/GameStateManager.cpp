@@ -7,6 +7,7 @@
 
 #include "GameStateManager.hpp"
 #include <algorithm>
+#include <memory>
 
 void GameStateManager::push_state(const std::string& state_name, bool pause_current) {
     if (processing_states_) {
@@ -188,7 +189,8 @@ std::shared_ptr<IGameState> GameStateManager::create_state(const std::string& st
 
     auto state = it->second();
     if (state) {
-        state->set_state_manager(this);
+        auto self = std::make_shared<GameStateManager>(*this);
+        state->set_state_manager(self);
     }
     return state;
 }

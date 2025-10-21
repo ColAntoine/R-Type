@@ -1,10 +1,12 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
-#include "Core/States/Loading/Loading.hpp"
-#include "Core/States/MainMenu/MainMenu.hpp"
-#include "Core/States/Lobby/Lobby.hpp"
-#include "Core/States/SoloLobby/SoloLobby.hpp"
-#include "Core/States/InGame/InGame.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
+// #include "Core/States/Loading/Loading.hpp"
+// #include "Core/States/MainMenu/MainMenu.hpp"
+// #include "Core/States/Lobby/Lobby.hpp"
+// #include "Core/States/SoloLobby/SoloLobby.hpp"
+// #include "Core/States/InGame/InGame.hpp"
+#include "Core/States/MenusBG/MenusBG.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -19,11 +21,12 @@ void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
 
     // Register all available states
-    _stateManager.register_state<Loading>("Loading");
-    _stateManager.register_state<MainMenuState>("MainMenu");
-    _stateManager.register_state<LobbyState>("Lobby");
-    _stateManager.register_state<SoloLobbyState>("SoloLobby");
-    _stateManager.register_state<InGameState>("InGame");
+    // _stateManager.register_state<Loading>("Loading");
+    // _stateManager.register_state<MainMenuState>("MainMenu");
+    // _stateManager.register_state<LobbyState>("Lobby");
+    // _stateManager.register_state<SoloLobbyState>("SoloLobby");
+    // _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<MenusBackgroundState>("MenusBackground");
 
     std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
     std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
@@ -51,7 +54,7 @@ bool GameClient::init()
     register_states();
 
     // Start with loading screen
-    _stateManager.push_state("Loading");
+    _stateManager.push_state("MenusBackground");
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;

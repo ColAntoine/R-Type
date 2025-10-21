@@ -8,6 +8,9 @@
 #pragma once
 
 #include <string>
+#include <memory>
+#include <ECS/Registry.hpp>
+#include <iostream>
 
 // Forward declarations
 class GameStateManager;
@@ -16,13 +19,7 @@ class GameStateManager;
 class IGameState {
 public:
     enum class GameStateType {
-        MainMenu,
-        Settings,
-        Lobby,
-        InGame,
-        GameOver,
-        Loading,
-        WaitingLobby
+        MenusBackground,
     };
 
     virtual ~IGameState() = default;
@@ -42,4 +39,9 @@ public:
     virtual std::string get_name() const = 0;
     virtual bool blocks_update() const = 0;    // Does this state block states below it from updating?
     virtual bool blocks_render() const = 0;    // Does this state block states below it from rendering?
+protected:
+    virtual void set_state_manager(std::shared_ptr<GameStateManager> manager) = 0;
+    virtual void set_ui_registry(std::shared_ptr<registry> uiRegistry) = 0;
+
+    friend class GameStateManager;
 };

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "GameState.hpp"
+#include "IGameState.hpp"
 #include <stack>
 #include <memory>
 #include <unordered_map>
