@@ -37,7 +37,7 @@ void MenuScene::init(float dt)
         .onClick([this]() {
             _shouldStartGame = true;
         })
-        .build();
+        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create QUIT button using builder
     _quitButton = ButtonBuilder()
@@ -51,7 +51,7 @@ void MenuScene::init(float dt)
         .onClick([this]() {
             _shouldQuit = true;
         })
-        .build();
+        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 std::optional<GameState> MenuScene::update(float dt)

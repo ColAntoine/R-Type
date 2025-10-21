@@ -36,7 +36,7 @@ void EndScene::init(float dt)
         .onClick([this]() {
             _shouldRestart = true;
         })
-        .build();
+        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create QUIT button using builder
     _quitButton = ButtonBuilder()
@@ -50,7 +50,7 @@ void EndScene::init(float dt)
         .onClick([this]() {
             _shouldQuit = true;
         })
-        .build();
+        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 std::optional<GameState> EndScene::update(float dt)
