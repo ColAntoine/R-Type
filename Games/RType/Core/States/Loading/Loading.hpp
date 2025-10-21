@@ -33,7 +33,7 @@ class Loading : public IGameState {
         float frame_duration_;
         static constexpr int TOTAL_FRAMES = 122;
         static constexpr float FRAMES_PER_SECOND = 24.0f;
-        
+
         void load_current_frame();
         void unload_current_frame();
 };

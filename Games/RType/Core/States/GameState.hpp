@@ -34,10 +34,11 @@ public:
     virtual bool blocks_render() const { return true; }    // Does this state block states below it from rendering?
 
 protected:
-    GameStateManager* state_manager_{nullptr};
+    GameStateManager* _stateManager{nullptr};
+    registry _uiRegistry;
 
     friend class GameStateManager;
-    void set_state_manager(GameStateManager* manager) { state_manager_ = manager; }
+    void set_state_manager(GameStateManager* manager) { _stateManager = manager; }
 };
 
 // Game State Types

@@ -46,7 +46,7 @@ class WaitingLobbyState : public IGameState {
         std::vector<PlayerInfo> connected_players_;
 
         // ECS UI system
-        registry ui_registry_;
+        registry _uiRegistry;
         UI::UISystem ui_system_;
 
         // ASCII background state

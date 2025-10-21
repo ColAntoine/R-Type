@@ -19,8 +19,7 @@ class GameClient : public AGameCore {
 
     private:
         registry ecs_registry_;
-        GameStateManager state_manager_;
-        bool running_{false};
+        GameStateManager _stateManager;
 
         void register_states();
 };

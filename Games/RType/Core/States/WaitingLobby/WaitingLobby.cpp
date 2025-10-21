@@ -19,15 +19,15 @@ void WaitingLobbyState::enter() {
     std::cout << "[WaitingLobby] Entering state" << std::endl;
 
     // Register all component types
-    ui_registry_.register_component<UI::UIComponent>();
-    ui_registry_.register_component<RType::UIWaitingPanel>();
-    ui_registry_.register_component<RType::UIWaitingTitle>();
-    ui_registry_.register_component<RType::UIWaitingStatus>();
-    ui_registry_.register_component<RType::UIPlayerListTitle>();
-    ui_registry_.register_component<RType::UIPlayerSlot>();
-    ui_registry_.register_component<RType::UIReadyButton>();
-    ui_registry_.register_component<RType::UIDisconnectButton>();
-    ui_registry_.register_component<RType::UIGameStatus>();
+    _uiRegistry.register_component<UI::UIComponent>();
+    _uiRegistry.register_component<RType::UIWaitingPanel>();
+    _uiRegistry.register_component<RType::UIWaitingTitle>();
+    _uiRegistry.register_component<RType::UIWaitingStatus>();
+    _uiRegistry.register_component<RType::UIPlayerListTitle>();
+    _uiRegistry.register_component<RType::UIPlayerSlot>();
+    _uiRegistry.register_component<RType::UIReadyButton>();
+    _uiRegistry.register_component<RType::UIDisconnectButton>();
+    _uiRegistry.register_component<RType::UIGameStatus>();
 
     // Add local player to the list (will be updated by server data)
     PlayerInfo local_player;
@@ -71,7 +71,7 @@ void WaitingLobbyState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(ui_registry_, delta_time);
+    ui_system_.update(_uiRegistry, delta_time);
 
     // Update player list and ready status periodically
     update_ready_status();
@@ -112,12 +112,12 @@ void WaitingLobbyState::render() {
         }
     }
 
-    ui_system_.render(ui_registry_);
+    ui_system_.render(_uiRegistry);
 }
 
 void WaitingLobbyState::handle_input() {
     if (!initialized_) return;
-    ui_system_.process_input(ui_registry_);
+    ui_system_.process_input(_uiRegistry);
 }
 
 void WaitingLobbyState::setup_ui() {
@@ -125,7 +125,7 @@ void WaitingLobbyState::setup_ui() {
     int center_y = 768 / 2;
 
     // Panel
-    auto panel_entity = ui_registry_.spawn_entity();
+    auto panel_entity = _uiRegistry.spawn_entity();
     auto panel = std::make_shared<UI::UIPanel>(center_x - 300, 30, 600, 660);
     UI::PanelStyle panel_style;
     panel_style._background_color = {20, 20, 25, 230};
@@ -135,11 +135,11 @@ void WaitingLobbyState::setup_ui() {
     panel_style._shadow_color = {0, 0, 0, 150};
     panel_style._shadow_offset = {4.0f};
     panel->set_style(panel_style);
-    ui_registry_.add_component(panel_entity, UI::UIComponent(panel));
-    ui_registry_.add_component(panel_entity, RType::UIWaitingPanel{});
+    _uiRegistry.add_component(panel_entity, UI::UIComponent(panel));
+    _uiRegistry.add_component(panel_entity, RType::UIWaitingPanel{});
 
     // Title
-    auto title_entity = ui_registry_.spawn_entity();
+    auto title_entity = _uiRegistry.spawn_entity();
     auto title = std::make_shared<UI::UIText>(center_x, 70, "WAITING LOBBY");
     UI::TextStyle title_style;
     title_style._text_color = {0, 229, 255, 255};
@@ -149,48 +149,48 @@ void WaitingLobbyState::setup_ui() {
     title_style._shadow_color = {0, 180, 200, 180};
     title_style._shadow_offset = {3.0f, 3.0f};
     title->set_style(title_style);
-    ui_registry_.add_component(title_entity, UI::UIComponent(title));
-    ui_registry_.add_component(title_entity, RType::UIWaitingTitle{});
+    _uiRegistry.add_component(title_entity, UI::UIComponent(title));
+    _uiRegistry.add_component(title_entity, RType::UIWaitingTitle{});
 
     // Status text
-    auto status_entity = ui_registry_.spawn_entity();
+    auto status_entity = _uiRegistry.spawn_entity();
     auto status_text = std::make_shared<UI::UIText>(center_x - 180, 130, "Waiting for other players...");
     UI::TextStyle status_style;
     status_style._text_color = {200, 200, 200, 255};
     status_style._font_size = 22;
     status_text->set_style(status_style);
-    ui_registry_.add_component(status_entity, UI::UIComponent(status_text));
-    ui_registry_.add_component(status_entity, RType::UIWaitingStatus{});
+    _uiRegistry.add_component(status_entity, UI::UIComponent(status_text));
+    _uiRegistry.add_component(status_entity, RType::UIWaitingStatus{});
 
     // Player list title
-    auto list_title_entity = ui_registry_.spawn_entity();
+    auto list_title_entity = _uiRegistry.spawn_entity();
     auto list_title = std::make_shared<UI::UIText>(center_x - 280, 180, "Connected Players:");
     UI::TextStyle list_title_style;
     list_title_style._text_color = {0, 229, 255, 255};
     list_title_style._font_size = 24;
     list_title->set_style(list_title_style);
-    ui_registry_.add_component(list_title_entity, UI::UIComponent(list_title));
-    ui_registry_.add_component(list_title_entity, RType::UIPlayerListTitle{});
+    _uiRegistry.add_component(list_title_entity, UI::UIComponent(list_title));
+    _uiRegistry.add_component(list_title_entity, RType::UIPlayerListTitle{});
 
     // Create 8 player slot entities
     int y_offset = 220;
     for (int i = 0; i < 8; ++i) {
-        auto slot_entity = ui_registry_.spawn_entity();
+        auto slot_entity = _uiRegistry.spawn_entity();
         auto slot_text = std::make_shared<UI::UIText>(center_x - 280, y_offset + (i * 35), "---");
         UI::TextStyle slot_style;
         slot_style._text_color = {100, 100, 100, 255};
         slot_style._font_size = 18;
         slot_text->set_style(slot_style);
-        ui_registry_.add_component(slot_entity, UI::UIComponent(slot_text));
+        _uiRegistry.add_component(slot_entity, UI::UIComponent(slot_text));
         
         // Create the tag with designated initialization
         RType::UIPlayerSlot slot_tag{};
         slot_tag.slot_index = i;
-        ui_registry_.add_component(slot_entity, std::move(slot_tag));
+        _uiRegistry.add_component(slot_entity, std::move(slot_tag));
     }
 
     // Ready button (using GlitchButton)
-    auto ready_btn_entity = ui_registry_.spawn_entity();
+    auto ready_btn_entity = _uiRegistry.spawn_entity();
     auto ready_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 230, 240, 55, "READY");
     UI::ButtonStyle ready_style;
     ready_style._normal_color = {20, 30, 20, 220};
@@ -202,11 +202,11 @@ void WaitingLobbyState::setup_ui() {
     ready_button->set_neon_colors({100, 255, 100, 255}, {80, 200, 80, 120});
     ready_button->set_glitch_params(0.03f, 8.0f, 0.5f);
     ready_button->set_on_click([this]() { on_ready_clicked(); });
-    ui_registry_.add_component(ready_btn_entity, UI::UIComponent(ready_button));
-    ui_registry_.add_component(ready_btn_entity, RType::UIReadyButton{});
+    _uiRegistry.add_component(ready_btn_entity, UI::UIComponent(ready_button));
+    _uiRegistry.add_component(ready_btn_entity, RType::UIReadyButton{});
 
     // Disconnect button
-    auto disconnect_btn_entity = ui_registry_.spawn_entity();
+    auto disconnect_btn_entity = _uiRegistry.spawn_entity();
     auto disconnect_button = std::make_shared<RType::GlitchButton>(40, 680, 200, 50, "DISCONNECT");
     UI::ButtonStyle disconnect_style;
     disconnect_style._normal_color = {40, 15, 15, 220};
@@ -218,18 +218,18 @@ void WaitingLobbyState::setup_ui() {
     disconnect_button->set_neon_colors({255, 100, 100, 255}, {200, 80, 80, 120});
     disconnect_button->set_glitch_params(0.03f, 8.0f, 0.5f);
     disconnect_button->set_on_click([this]() { on_back_clicked(); });
-    ui_registry_.add_component(disconnect_btn_entity, UI::UIComponent(disconnect_button));
-    ui_registry_.add_component(disconnect_btn_entity, RType::UIDisconnectButton{});
+    _uiRegistry.add_component(disconnect_btn_entity, UI::UIComponent(disconnect_button));
+    _uiRegistry.add_component(disconnect_btn_entity, RType::UIDisconnectButton{});
 
     // Game status text
-    auto game_status_entity = ui_registry_.spawn_entity();
+    auto game_status_entity = _uiRegistry.spawn_entity();
     auto game_status = std::make_shared<UI::UIText>(center_x - 180, center_y + 310, "");
     UI::TextStyle status_text_style;
     status_text_style._text_color = {255, 255, 100, 255};
     status_text_style._font_size = 20;
     game_status->set_style(status_text_style);
-    ui_registry_.add_component(game_status_entity, UI::UIComponent(game_status));
-    ui_registry_.add_component(game_status_entity, RType::UIGameStatus{});
+    _uiRegistry.add_component(game_status_entity, UI::UIComponent(game_status));
+    _uiRegistry.add_component(game_status_entity, RType::UIGameStatus{});
 }
 
 void WaitingLobbyState::cleanup_ui() {
@@ -238,8 +238,8 @@ void WaitingLobbyState::cleanup_ui() {
 
 void WaitingLobbyState::update_player_list() {
     // Use zipper to iterate through all player slot components
-    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
-    auto* player_slots = ui_registry_.get_if<RType::UIPlayerSlot>();
+    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* player_slots = _uiRegistry.get_if<RType::UIPlayerSlot>();
     
     if (!ui_components || !player_slots) return;
 
@@ -286,8 +286,8 @@ void WaitingLobbyState::update_ready_status() {
     }
 
     // Use zipper to find and update game status text
-    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
-    auto* game_statuses = ui_registry_.get_if<RType::UIGameStatus>();
+    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* game_statuses = _uiRegistry.get_if<RType::UIGameStatus>();
     
     if (!ui_components || !game_statuses) return;
 
@@ -310,8 +310,8 @@ void WaitingLobbyState::update_ready_status() {
 
 void WaitingLobbyState::update_ready_button() {
     // Use zipper to find and update ready button
-    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
-    auto* ready_buttons = ui_registry_.get_if<RType::UIReadyButton>();
+    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* ready_buttons = _uiRegistry.get_if<RType::UIReadyButton>();
     
     if (!ui_components || !ready_buttons) return;
 
@@ -347,7 +347,7 @@ void WaitingLobbyState::on_ready_clicked() {
 
 void WaitingLobbyState::on_back_clicked() {
 
-    if (state_manager_) {
-        state_manager_->change_state("Lobby"); // Go back to connection screen
+    if (_stateManager) {
+        _stateManager->change_state("Lobby"); // Go back to connection screen
     }
 }

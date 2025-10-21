@@ -19,14 +19,14 @@ void SettingsState::enter() {
     std::cout << "[Settings] Entering state" << std::endl;
 
     // Register all component types
-    ui_registry_.register_component<UI::UIComponent>();
-    ui_registry_.register_component<RType::UISettingsPanel>();
-    ui_registry_.register_component<RType::UISettingsTitle>();
-    ui_registry_.register_component<RType::UINameLabel>();
-    ui_registry_.register_component<RType::UINameInput>();
-    ui_registry_.register_component<RType::UIAudioLabel>();
-    ui_registry_.register_component<RType::UIGraphicsLabel>();
-    ui_registry_.register_component<RType::UIBackButton>();
+    _uiRegistry.register_component<UI::UIComponent>();
+    _uiRegistry.register_component<RType::UISettingsPanel>();
+    _uiRegistry.register_component<RType::UISettingsTitle>();
+    _uiRegistry.register_component<RType::UINameLabel>();
+    _uiRegistry.register_component<RType::UINameInput>();
+    _uiRegistry.register_component<RType::UIAudioLabel>();
+    _uiRegistry.register_component<RType::UIGraphicsLabel>();
+    _uiRegistry.register_component<RType::UIBackButton>();
 
     // Prepare ascii background
     int sw = GetScreenWidth();
@@ -49,7 +49,7 @@ void SettingsState::exit() {
 void SettingsState::pause() {
     std::cout << "[Settings] Pausing state" << std::endl;
     // Hide UI when paused
-    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
@@ -62,7 +62,7 @@ void SettingsState::pause() {
 void SettingsState::resume() {
     std::cout << "[Settings] Resuming state" << std::endl;
     // Show UI when resumed
-    auto* ui_components = ui_registry_.get_if<UI::UIComponent>();
+    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
@@ -76,7 +76,7 @@ void SettingsState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(ui_registry_, delta_time);
+    ui_system_.update(_uiRegistry, delta_time);
 
     // Update ascii background
     ascii_timer_ += delta_time;
@@ -116,7 +116,7 @@ void SettingsState::render() {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 140});
 
     // Render UI via system
-    ui_system_.render(ui_registry_);
+    ui_system_.render(_uiRegistry);
 }
 
 void SettingsState::handle_input() {
@@ -128,7 +128,7 @@ void SettingsState::handle_input() {
         return;
     }
 
-    ui_system_.process_input(ui_registry_);
+    ui_system_.process_input(_uiRegistry);
 }
 
 void SettingsState::setup_ui() {
@@ -139,7 +139,7 @@ void SettingsState::setup_ui() {
     float center_y = screen_height / 2.0f;
 
     // Settings panel
-    auto panel_entity = ui_registry_.spawn_entity();
+    auto panel_entity = _uiRegistry.spawn_entity();
     auto settings_panel = std::make_shared<UI::UIPanel>(center_x - 200, center_y - 150, 400, 300);
     UI::PanelStyle panel_style;
     panel_style._background_color = {20, 25, 35, 240};
@@ -149,11 +149,11 @@ void SettingsState::setup_ui() {
     panel_style._shadow_color = {0, 0, 0, 200};
     panel_style._shadow_offset = 5.0f;
     settings_panel->set_style(panel_style);
-    ui_registry_.add_component(panel_entity, UI::UIComponent(settings_panel));
-    ui_registry_.add_component(panel_entity, RType::UISettingsPanel{});
+    _uiRegistry.add_component(panel_entity, UI::UIComponent(settings_panel));
+    _uiRegistry.add_component(panel_entity, RType::UISettingsPanel{});
 
     // Settings title
-    auto title_entity = ui_registry_.spawn_entity();
+    auto title_entity = _uiRegistry.spawn_entity();
     auto title = std::make_shared<UI::UIText>(center_x, center_y - 120, "SETTINGS");
     UI::TextStyle title_style;
     title_style._text_color = {0, 229, 255, 255};
@@ -163,22 +163,22 @@ void SettingsState::setup_ui() {
     title_style._shadow_color = {0, 150, 200, 180};
     title_style._shadow_offset = {3.0f, 3.0f};
     title->set_style(title_style);
-    ui_registry_.add_component(title_entity, UI::UIComponent(title));
-    ui_registry_.add_component(title_entity, RType::UISettingsTitle{});
+    _uiRegistry.add_component(title_entity, UI::UIComponent(title));
+    _uiRegistry.add_component(title_entity, RType::UISettingsTitle{});
 
     // Player name label
-    auto name_label_entity = ui_registry_.spawn_entity();
+    auto name_label_entity = _uiRegistry.spawn_entity();
     auto name_label = std::make_shared<UI::UIText>(center_x - 180, center_y - 70, "Player Name:");
     UI::TextStyle label_style;
     label_style._text_color = {200, 200, 200, 255};
     label_style._font_size = 18;
     label_style._alignment = UI::TextAlignment::Left;
     name_label->set_style(label_style);
-    ui_registry_.add_component(name_label_entity, UI::UIComponent(name_label));
-    ui_registry_.add_component(name_label_entity, RType::UINameLabel{});
+    _uiRegistry.add_component(name_label_entity, UI::UIComponent(name_label));
+    _uiRegistry.add_component(name_label_entity, RType::UINameLabel{});
 
     // Player name input
-    auto name_input_entity = ui_registry_.spawn_entity();
+    auto name_input_entity = _uiRegistry.spawn_entity();
     auto name_input = std::make_shared<UI::UIInputField>(center_x - 180, center_y - 45, 360, 35, "Enter your name...");
     UI::InputFieldStyle input_style;
     input_style._background_color = {30, 35, 45, 255};
@@ -193,25 +193,25 @@ void SettingsState::setup_ui() {
     name_input->set_style(input_style);
     name_input->set_max_length(20);
     name_input->set_on_text_changed([this](const std::string& name) { on_player_name_changed(name); });
-    ui_registry_.add_component(name_input_entity, UI::UIComponent(name_input));
-    ui_registry_.add_component(name_input_entity, RType::UINameInput{});
+    _uiRegistry.add_component(name_input_entity, UI::UIComponent(name_input));
+    _uiRegistry.add_component(name_input_entity, RType::UINameInput{});
 
     // Audio label
-    auto audio_label_entity = ui_registry_.spawn_entity();
+    auto audio_label_entity = _uiRegistry.spawn_entity();
     auto audio_label = std::make_shared<UI::UIText>(center_x - 180, center_y + 10, "Audio Volume: 100%");
     audio_label->set_style(label_style);
-    ui_registry_.add_component(audio_label_entity, UI::UIComponent(audio_label));
-    ui_registry_.add_component(audio_label_entity, RType::UIAudioLabel{});
+    _uiRegistry.add_component(audio_label_entity, UI::UIComponent(audio_label));
+    _uiRegistry.add_component(audio_label_entity, RType::UIAudioLabel{});
 
     // Graphics label
-    auto graphics_label_entity = ui_registry_.spawn_entity();
+    auto graphics_label_entity = _uiRegistry.spawn_entity();
     auto graphics_label = std::make_shared<UI::UIText>(center_x - 180, center_y + 40, "Graphics: High");
     graphics_label->set_style(label_style);
-    ui_registry_.add_component(graphics_label_entity, UI::UIComponent(graphics_label));
-    ui_registry_.add_component(graphics_label_entity, RType::UIGraphicsLabel{});
+    _uiRegistry.add_component(graphics_label_entity, UI::UIComponent(graphics_label));
+    _uiRegistry.add_component(graphics_label_entity, RType::UIGraphicsLabel{});
 
     // Back button
-    auto back_button_entity = ui_registry_.spawn_entity();
+    auto back_button_entity = _uiRegistry.spawn_entity();
     auto back_button = std::make_shared<RType::GlitchButton>(center_x - 75, center_y + 90, 150, 40, "BACK");
     UI::ButtonStyle back_style;
     back_style._normal_color = {20, 20, 30, 220};
@@ -223,8 +223,8 @@ void SettingsState::setup_ui() {
     back_button->set_neon_colors({0, 229, 255, 220}, {0, 229, 255, 100});
     back_button->set_glitch_params(1.8f, 7.0f, true);
     back_button->set_on_click([this]() { on_back_clicked(); });
-    ui_registry_.add_component(back_button_entity, UI::UIComponent(back_button));
-    ui_registry_.add_component(back_button_entity, RType::UIBackButton{});
+    _uiRegistry.add_component(back_button_entity, UI::UIComponent(back_button));
+    _uiRegistry.add_component(back_button_entity, RType::UIBackButton{});
 }
 
 void SettingsState::cleanup_ui() {
@@ -233,8 +233,8 @@ void SettingsState::cleanup_ui() {
 
 void SettingsState::on_back_clicked() {
     std::cout << "[Settings] Back button clicked" << std::endl;
-    if (state_manager_) {
-        state_manager_->pop_state();
+    if (_stateManager) {
+        _stateManager->pop_state();
     }
 }
 

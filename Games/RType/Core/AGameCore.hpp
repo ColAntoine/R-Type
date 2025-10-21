@@ -33,4 +33,6 @@ class AGameCore : public IGameCore {
         virtual void onRun() {}
         virtual void onUpdate(float) {}
         virtual void onShutdown() {}
+
+        bool _running{false};
 };

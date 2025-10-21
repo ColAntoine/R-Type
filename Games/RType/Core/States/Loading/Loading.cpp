@@ -88,9 +88,9 @@ void Loading::update(__attribute_maybe_unused__ float delta_time)
             ++current_frame_;
             load_current_frame();
         } else {
-            if (state_manager_) {
-                state_manager_->pop_state();
-                state_manager_->change_state("MainMenu");
+            if (_stateManager) {
+                _stateManager->pop_state();
+                _stateManager->change_state("MainMenu");
             }
         }
     }
@@ -113,9 +113,9 @@ void Loading::handle_input()
 {
     // Press any key to skip to MainMenu
     if (IsKeyPressed(KEY_SPACE) || IsKeyPressed(KEY_ENTER)) {
-        if (state_manager_) {
-            state_manager_->pop_state();
-            state_manager_->push_state("MainMenu");
+        if (_stateManager) {
+            _stateManager->pop_state();
+            _stateManager->push_state("MainMenu");
         }
     }
 }

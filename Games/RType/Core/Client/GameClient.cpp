@@ -1,12 +1,16 @@
-
-
 #include "GameClient.hpp"
-#include <iostream>
 #include "Network/UDPClient.hpp"
 #include "Core/States/Loading/Loading.hpp"
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/Lobby/Lobby.hpp"
 #include "Core/States/SoloLobby/SoloLobby.hpp"
+#include "Core/States/InGame/InGame.hpp"
+
+#include <iostream>
+#include <csignal>
+#include <atomic>
+#include <thread>
+#include <chrono>
 
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
@@ -15,15 +19,17 @@ void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
 
     // Register all available states
-    state_manager_.register_state<Loading>("Loading");
-    state_manager_.register_state<MainMenuState>("MainMenu");
-    state_manager_.register_state<LobbyState>("Lobby");
-    state_manager_.register_state<SoloLobbyState>("SoloLobby");
+    _stateManager.register_state<Loading>("Loading");
+    _stateManager.register_state<MainMenuState>("MainMenu");
+    _stateManager.register_state<LobbyState>("Lobby");
+    _stateManager.register_state<SoloLobbyState>("SoloLobby");
+    _stateManager.register_state<InGameState>("InGame");
 
     std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
     std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
     std::cout << "[GameClient] ✓ Asset Manager, Renderer, Physics, Audio, Messaging, Plugin API" << std::endl;
 }
+
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
@@ -45,9 +51,9 @@ bool GameClient::init()
     register_states();
 
     // Start with loading screen
-    state_manager_.push_state("Loading");
+    _stateManager.push_state("Loading");
 
-    running_ = true;
+    _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
 
     return true;
@@ -59,7 +65,7 @@ void GameClient::run()
 
     float last_frame_time = 0.0f;
 
-    while (running_ && !WindowShouldClose() && !state_manager_.is_empty()) {
+    while (_running && !WindowShouldClose() && !_stateManager.is_empty()) {
         // Calculate delta time
         float current_time = GetTime();
         float delta_time = current_time - last_frame_time;
@@ -69,18 +75,18 @@ void GameClient::run()
         if (delta_time > 0.1f) delta_time = 0.1f;
 
         // Update current state
-        state_manager_.update(delta_time);
+        _stateManager.update(delta_time);
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();
         render_mgr.begin_frame();
 
-        state_manager_.render();
+        _stateManager.render();
 
         render_mgr.end_frame();
 
         // Handle input
-        state_manager_.handle_input();
+        _stateManager.handle_input();
     }
 }
 
@@ -95,14 +101,14 @@ void GameClient::shutdown()
     std::cout << "GameClient::shutdown" << std::endl;
 
     // Clear all states
-    state_manager_.clear_states();
+    _stateManager.clear_states();
 
     // Close Raylib window
     if (IsWindowReady()) {
         CloseWindow();
     }
 
-    running_ = false;
+    _running = false;
 }
 
 registry& GameClient::GetRegistry() { return ecs_registry_; }
