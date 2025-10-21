@@ -12,6 +12,9 @@ namespace RType {
 
 class MainMenuState : public AGameState {
     public:
+        MainMenuState() = default;
+        ~MainMenuState() override = default;
+
         void enter() override;
         void exit() override;
         void pause() override;

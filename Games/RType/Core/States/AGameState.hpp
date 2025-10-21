@@ -13,6 +13,7 @@ class GameStateManager;
 
 class AGameState : public IGameState {
     public:
+        AGameState();
         virtual ~AGameState() = default;
 
         void cleanup_ui();

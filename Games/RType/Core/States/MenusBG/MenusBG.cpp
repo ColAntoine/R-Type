@@ -1,4 +1,5 @@
 #include "MenusBG.hpp"
+#include "ECS/UI/Components/Text.hpp"
 #include <iostream>
 #include <random>
 #include <raylib.h>
@@ -8,34 +9,56 @@ void MenusBackgroundState::enter()
 {
     std::cout << "[MenusBackground] Entering state" << std::endl;
 
-    if (!this->_uiRegistry) {
-        this->_uiRegistry = std::make_shared<registry>();
-    }
-    if (!this->_uiSystems) {
-        this->_uiSystems = std::make_shared<UI::UISystem>();
-    }
-
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
     int font_w = std::max(1, this->_asciiFontSize / 2);
     int font_h = this->_asciiFontSize;
 
-    this->_asciiFontSize = 12;
     this->_asciiCols = std::max(10, (sw + font_w - 1) / font_w);
     this->_asciiRows = std::max(8, (sh + font_h - 1) / font_h);
     this->_asciiGrid.assign(this->_asciiRows, std::string(this->_asciiCols, ' '));
 
-    // Initialize ASCII background with random characters
     std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<> char_dist(0, this->_asciiCharset.size() - 1);
+    std::uniform_int_distribution<> char_dist(0, static_cast<int>(this->_asciiCharset.size() - 1));
     std::uniform_int_distribution<> row_dist(0, this->_asciiRows - 1);
     std::uniform_int_distribution<> col_dist(0, this->_asciiCols - 1);
 
-    for (int i = 0; i < this->_asciiRows * this->_asciiCols / 4; ++i) {
+    for (int i = 0; i < static_cast<int>(this->_asciiRows * this->_asciiCols / 4); ++i) {
         int r = row_dist(rng);
         int c = col_dist(rng);
         this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
     }
+
+    auto ascii_text_entity = this->_uiRegistry->spawn_entity();
+    auto ascii_text = std::make_shared<UI::UIText>(0, 0, " ");
+
+    UI::TextStyle ascii_text_style;
+    ascii_text_style._text_color = {100, 150, 200, 150};  // Semi-transparent blue
+    ascii_text_style._font_size = this->_asciiFontSize;
+    ascii_text_style._alignment = UI::TextAlignment::Left;
+    ascii_text->set_style(ascii_text_style);
+
+    ascii_text->set_custom_render([this](const UI::UIText& text) {
+        Vector2 pos = text.get_position();
+        Color color = text.get_style()._text_color;
+        int font_size = text.get_style()._font_size;
+        int font_w = std::max(1, font_size / 2);
+
+        for (int r = 0; r < static_cast<int>(this->_asciiRows); ++r) {
+            for (int c = 0; c < static_cast<int>(this->_asciiCols); ++c) {
+                char ch = this->_asciiGrid[r][c];
+                if (ch == ' ') continue;
+
+                int x = static_cast<int>(pos.x) + c * font_w;
+                int y = static_cast<int>(pos.y) + r * font_size;
+
+                std::string ch_str(1, ch);
+                DrawText(ch_str.c_str(), x, y, font_size, color);
+            }
+        }
+    });
+    this->_uiRegistry->add_component(ascii_text_entity, UI::UIComponent(ascii_text));
+    this->_asciiTextEntity = ascii_text_entity;
 
     this->_asciiTimer = 0.0f;
     this->_initialized = true;
@@ -63,23 +86,21 @@ void MenusBackgroundState::update(float delta_time)
     if (!this->_initialized)
         return;
 
-    // Update UI systems
     if (this->_uiSystems) {
         this->_uiSystems->update(*this->_uiRegistry, delta_time);
     }
 
-    // Animate ASCII background
     this->_asciiTimer += delta_time;
     if (this->_asciiTimer >= this->_asciiInterval) {
         this->_asciiTimer = 0.0f;
 
         std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<> char_dist(0, this->_asciiCharset.size() - 1);
+        std::uniform_int_distribution<> char_dist(0, static_cast<int>(this->_asciiCharset.size() - 1));
         std::uniform_int_distribution<> row_dist(0, this->_asciiRows - 1);
         std::uniform_int_distribution<> col_dist(0, this->_asciiCols - 1);
 
         // Change random characters
-        int changes = std::max(1, this->_asciiRows * this->_asciiCols / 20);
+        int changes = std::max(1, static_cast<int>(this->_asciiRows * this->_asciiCols / 20));
         for (int i = 0; i < changes; ++i) {
             int r = row_dist(rng);
             int c = col_dist(rng);
@@ -93,26 +114,8 @@ void MenusBackgroundState::render()
     if (!this->_initialized)
         return;
 
-    // Draw ASCII background
-    int start_x = 10;
-    int start_y = 10;
-    Color ascii_color = Color{100, 150, 200, 150};  // Semi-transparent blue
+    if (!this->_uiRegistry || !this->_uiSystems)
+        return;
 
-    for (int r = 0; r < this->_asciiRows; ++r) {
-        for (int c = 0; c < this->_asciiCols; ++c) {
-            char ch = this->_asciiGrid[r][c];
-            if (ch == ' ') continue;
-
-            int x = start_x + c * (this->_asciiFontSize / 2);
-            int y = start_y + r * this->_asciiFontSize;
-
-            std::string ch_str(1, ch);
-            DrawText(ch_str.c_str(), x, y, this->_asciiFontSize, ascii_color);
-        }
-    }
-
-    // Render UI components via UISystem
-    if (this->_uiSystems && this->_uiRegistry) {
-        this->_uiSystems->render(*this->_uiRegistry);
-    }
+    this->_uiSystems->render(*this->_uiRegistry);
 }

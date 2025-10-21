@@ -9,7 +9,14 @@
 #include "ECS/Zipper.hpp"
 #include <iostream>
 
-void AGameState::cleanup_ui() {
+AGameState::AGameState()
+{
+    this->_uiRegistry = std::make_shared<registry>();
+    this->_uiSystems = std::make_shared<UI::UISystem>();
+}
+
+void AGameState::cleanup_ui()
+{
     if (!_uiRegistry) {
         return;
     }

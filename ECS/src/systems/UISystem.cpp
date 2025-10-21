@@ -8,6 +8,7 @@
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/Zipper.hpp"
+#include <iostream>
 
 namespace UI {
     void UISystem::update(registry& registry, float deltaTime) {
@@ -34,6 +35,8 @@ namespace UI {
 
     void UISystem::render(registry& registry) {
         if (!_enabled) return;
+
+        std::cout << "[UISystem] Rendering UI components" << std::endl;
 
         // Get UI components array
         auto* ui_components = registry.get_if<UI::UIComponent>();
