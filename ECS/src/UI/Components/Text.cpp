@@ -18,23 +18,23 @@ namespace UI {
         if (_text.empty()) return;
 
         // If custom render function is set, use it instead
-        if (_custom_render) {
-            _custom_render(*this);
+        if (_customRender) {
+            _customRender(*this);
             return;
         }
 
         // Default rendering
         if (_style._has_shadow) {
-            draw_text_shadow();
+            drawTextShadow();
         }
-        draw_text_content();
+        drawTextContent();
     }
 
-    void UIText::handle_input() {
+    void UIText::handleInput() {
         // Text typically doesn't handle input
     }
 
-    Vector2 UIText::get_text_size() const {
+    Vector2 UIText::getTextSize() const {
         return MeasureTextEx(
             GetFontDefault(),
             _text.c_str(),
@@ -43,12 +43,12 @@ namespace UI {
         );
     }
 
-    void UIText::update_size() {
-        _size = get_text_size();
+    void UIText::updateSize() {
+        _size = getTextSize();
     }
 
-    Vector2 UIText::calculate_text_position() const {
-        Vector2 text_size = get_text_size();
+    Vector2 UIText::calculateTextPosition() const {
+        Vector2 text_size = getTextSize();
         Vector2 pos = _position;
 
         switch (_style._alignment) {
@@ -67,10 +67,10 @@ namespace UI {
         return pos;
     }
 
-    void UIText::draw_text_shadow() const {
+    void UIText::drawTextShadow() const {
         if (!_style._has_shadow) return;
 
-        Vector2 pos = calculate_text_position();
+        Vector2 pos = calculateTextPosition();
         Vector2 shadow_pos = {
             pos.x + _style._shadow_offset.x,
             pos.y + _style._shadow_offset.y
@@ -86,8 +86,8 @@ namespace UI {
         );
     }
 
-    void UIText::draw_text_content() const {
-        Vector2 pos = calculate_text_position();
+    void UIText::drawTextContent() const {
+        Vector2 pos = calculateTextPosition();
 
         DrawTextEx(
             GetFontDefault(),

@@ -17,68 +17,51 @@
 
 #include "EndScene.hpp"
 #include "Constants.hpp"
+#include "../../../ECS/include/ECS/UI/UIBuilder.hpp"
 
 void EndScene::init(float dt)
 {
     _shouldRestart = false;
     _shouldQuit = false;
 
+    // Create RESTART button using builder
+    _restartButton = ButtonBuilder()
+        .centered(50)
+        .size(400, 100)
+        .text("RESTART")
+        .green()
+        .textColor(WHITE)
+        .fontSize(24)
+        .border(2, WHITE)
+        .onClick([this]() {
+            _shouldRestart = true;
+        })
+        .build();
 
-    _restartButton = std::make_unique<UI::UIButton>(
-        SCREEN_WIDTH / 2.f - 200.f,
-        SCREEN_HEIGHT / 2.f + 50.f,
-        400.f,
-        100.f,
-        "RESTART"
-    );
-
-    UI::ButtonStyle restartStyle;
-    restartStyle._normal_color = Color{0, 180, 0, 255};
-    restartStyle._hovered_color = Color{0, 220, 0, 255};
-    restartStyle._pressed_color = Color{0, 140, 0, 255};
-    restartStyle._text_color = WHITE;
-    restartStyle._font_size = 24;
-    restartStyle._border_thickness = 2.0f;
-    restartStyle._border_color = WHITE;
-    _restartButton->set_style(restartStyle);
-
-    _restartButton->set_on_click([this]() {
-        _shouldRestart = true;
-    });
-
-    _quitButton = std::make_unique<UI::UIButton>(
-        SCREEN_WIDTH / 2.f - 200.f,
-        SCREEN_HEIGHT / 2.f + 200.f,
-        400.f,
-        100.f,
-        "QUIT"
-    );
-
-    UI::ButtonStyle quitStyle;
-    quitStyle._normal_color = Color{180, 0, 0, 255};
-    quitStyle._hovered_color = Color{220, 0, 0, 255};
-    quitStyle._pressed_color = Color{140, 0, 0, 255};
-    quitStyle._text_color = WHITE;
-    quitStyle._font_size = 24;
-    quitStyle._border_thickness = 2.0f;
-    quitStyle._border_color = WHITE;
-    _quitButton->set_style(quitStyle);
-
-
-    _quitButton->set_on_click([this]() {
-        _shouldQuit = true;
-    });
+    // Create QUIT button using builder
+    _quitButton = ButtonBuilder()
+        .centered(200)
+        .size(400, 100)
+        .text("QUIT")
+        .red()
+        .textColor(WHITE)
+        .fontSize(24)
+        .border(2, WHITE)
+        .onClick([this]() {
+            _shouldQuit = true;
+        })
+        .build();
 }
 
 std::optional<GameState> EndScene::update(float dt)
 {
 
     if (_restartButton) {
-        _restartButton->handle_input();
+        _restartButton->handleInput();
         _restartButton->update(dt);
     }
     if (_quitButton) {
-        _quitButton->handle_input();
+        _quitButton->handleInput();
         _quitButton->update(dt);
     }
 

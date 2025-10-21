@@ -7,12 +7,10 @@
 
 #pragma once
 
-#include "../AUIComponent.hpp"
+#include "ECS/UI/AUIComponent.hpp"
 #include <string>
 #include <functional>
 #include <raylib.h>
-
-// TODO: move all the implementations on the cpp file for better clarity
 
 namespace UI {
 
@@ -44,41 +42,43 @@ namespace UI {
         // IUIComponent implementation
         void update(float delta_time) override;
         void render() override;
-        void handle_input() override;
+        void handleInput() override;
 
         // Button-specific methods
-        void set_text(const std::string& text) { _text = text; }
-        const std::string& get_text() const { return _text; }
+        void setText(const std::string& text) { _text = text; }
+        const std::string& getText() const { return _text; }
 
-        void set_style(const ButtonStyle& style) { _style = style; }
-        ButtonStyle& get_style() { return _style; }
-        const ButtonStyle& get_style() const { return _style; }
+        void setStyle(const ButtonStyle& style) { _style = style; }
+        ButtonStyle& getStyle() { return _style; }
+        const ButtonStyle& getStyle() const { return _style; }
 
         // Callbacks
-        void set_on_click(std::function<void()> callback) { _on_click = std::move(callback); }
-        void set_on_hover(std::function<void()> callback) { _on_hover = std::move(callback); }
-        void set_on_hover_exit(std::function<void()> callback) { _on_hover_exit = std::move(callback); }
-        void set_on_press(std::function<void()> callback) { _on_press = std::move(callback); }
-        void set_on_release(std::function<void()> callback) { _on_release = std::move(callback); }
+        void setOnClick(std::function<void()> callback) { _on_click = std::move(callback); }
+        void setOnHover(std::function<void()> callback) { _on_hover = std::move(callback); }
+        void setOnHoverExit(std::function<void()> callback) { _on_hover_exit = std::move(callback); }
+        void setOnPress(std::function<void()> callback) { _on_press = std::move(callback); }
+        void setOnRelease(std::function<void()> callback) { _on_release = std::move(callback); }
 
         // Custom rendering callback - allows game to override rendering
-        void set_custom_render(std::function<void(const UIButton&)> render_func) {
-            _custom_render = std::move(render_func);
+        void setCustomRender(std::function<void(const UIButton&)> render_func) {
+            _customRender = std::move(render_func);
         }
 
         // Getters for custom rendering
-        UIState get_current_state() const { return _state; }
+        UIState getCurrentState() const { return _state; }
 
     protected:
         // Virtual methods that can be overridden for custom styling
-        virtual Color get_current_background_color() const;
-        virtual Color get_current_text_color() const;
-        virtual void draw_button_background() const;
-        virtual void draw_button_text() const;
+        virtual Color getCurrentBackgroundColor() const;
+        virtual Color getCurrentTextColor() const;
+        virtual void drawButtonBackground() const;
+        virtual void drawButtonText() const;
+
+    public:
+        ButtonStyle _style;
 
     private:
         std::string _text;
-        ButtonStyle _style;
 
         // Callbacks
         std::function<void()> _on_click;
@@ -86,7 +86,7 @@ namespace UI {
         std::function<void()> _on_hover_exit;
         std::function<void()> _on_press;
         std::function<void()> _on_release;
-        std::function<void(const UIButton&)> _custom_render;
+        std::function<void(const UIButton&)> _customRender;
 
         // State tracking
         bool _was_hovered_last_frame{false};

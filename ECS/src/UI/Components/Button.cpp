@@ -40,21 +40,21 @@ namespace UI {
         if (!_visible) return;
 
         // If custom render function is set, use it instead
-        if (_custom_render) {
-            _custom_render(*this);
+        if (_customRender) {
+            _customRender(*this);
             return;
         }
 
         // Default rendering
-        draw_button_background();
-        draw_button_text();
+        drawButtonBackground();
+        drawButtonText();
     }
 
-    void UIButton::handle_input() {
+    void UIButton::handleInput() {
         if (!_visible || !_enabled) return;
 
         Vector2 mouse_pos = GetMousePosition();
-        bool is_hovered = is_point_inside(mouse_pos.x, mouse_pos.y);
+        bool is_hovered = isPointInside(mouse_pos.x, mouse_pos.y);
         bool is_clicked = is_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
         if (is_clicked && _on_click) {
@@ -62,7 +62,7 @@ namespace UI {
         }
     }
 
-    Color UIButton::get_current_background_color() const {
+    Color UIButton::getCurrentBackgroundColor() const {
         switch (_state) {
             case UIState::Hovered:
                 return _style._hovered_color;
@@ -76,12 +76,12 @@ namespace UI {
         }
     }
 
-    Color UIButton::get_current_text_color() const {
+    Color UIButton::getCurrentTextColor() const {
         return (_state == UIState::Disabled) ? _style._disabled_text_color : _style._text_color;
     }
 
-    void UIButton::draw_button_background() const {
-        Color bg_color = get_current_background_color();
+    void UIButton::drawButtonBackground() const {
+        Color bg_color = getCurrentBackgroundColor();
 
         // Draw main button rectangle
         DrawRectangle(_position.x, _position.y, _size.x, _size.y, bg_color);
@@ -94,10 +94,10 @@ namespace UI {
         );
     }
 
-    void UIButton::draw_button_text() const {
+    void UIButton::drawButtonText() const {
         if (_text.empty()) return;
 
-        Color text_color = get_current_text_color();
+        Color text_color = getCurrentTextColor();
 
         // Calculate text position to center it in the button
         Vector2 textSize = MeasureTextEx(GetFontDefault(), _text.c_str(), _style._font_size, 1.0f);

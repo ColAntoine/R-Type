@@ -31,9 +31,9 @@ namespace RType {
         }
 
     protected:
-        void draw_button_background() const override {
+        void drawButtonBackground() const override {
             // Call base implementation
-            UIButton::draw_button_background();
+            UIButton::drawButtonBackground();
 
             // Add scanline texture
             for (int i = 0; i < static_cast<int>(_size.y); i += 6) {
@@ -68,7 +68,7 @@ namespace RType {
             }
         }
 
-        void draw_button_text() const override {
+        void drawButtonText() const override {
             if (get_text().empty()) return;
 
             Color text_color = get_current_text_color();
