@@ -16,25 +16,58 @@ namespace UI {
 
     // Struct to define the base style of input fields
     struct InputFieldStyle {
-        Color _background_color{50, 50, 50, 255};
-        Color _focused_color{70, 70, 70, 255};
-        Color _disabled_color{30, 30, 30, 255};
-        Color _border_color{100, 100, 100, 255};
-        Color _focused_border_color{150, 150, 255, 255};
-        Color _text_color{255, 255, 255, 255};
-        Color _placeholder_color{150, 150, 150, 255};
-        Color _disabled_text_color{100, 100, 100, 255};
-        Color _cursor_color{255, 255, 255, 255};
+        public:
+            // Getters
+            Color getBackgroundColor() const { return _background_color; }
+            Color getFocusedColor() const { return _focused_color; }
+            Color getDisabledColor() const { return _disabled_color; }
+            Color getBorderColor() const { return _border_color; }
+            Color getFocusedBorderColor() const { return _focused_border_color; }
+            Color getTextColor() const { return _text_color; }
+            Color getPlaceholderColor() const { return _placeholder_color; }
+            Color getDisabledTextColor() const { return _disabled_text_color; }
+            Color getCursorColor() const { return _cursor_color; }
+            int getFontSize() const { return _font_size; }
+            float getBorderThickness() const { return _border_thickness; }
+            float getPadding() const { return _padding; }
+            float getCursorBlinkSpeed() const { return _cursor_blink_speed; }
 
-        int _font_size{20};
-        float _border_thickness{1.0f};
-        float _padding{10.0f};
-        float _cursor_blink_speed{0.5f};
+            // Setters
+            void setBackgroundColor(const Color& color) { _background_color = color; }
+            void setFocusedColor(const Color& color) { _focused_color = color; }
+            void setDisabledColor(const Color& color) { _disabled_color = color; }
+            void setBorderColor(const Color& color) { _border_color = color; }
+            void setFocusedBorderColor(const Color& color) { _focused_border_color = color; }
+            void setTextColor(const Color& color) { _text_color = color; }
+            void setPlaceholderColor(const Color& color) { _placeholder_color = color; }
+            void setDisabledTextColor(const Color& color) { _disabled_text_color = color; }
+            void setCursorColor(const Color& color) { _cursor_color = color; }
+            void setFontSize(int font_size) { _font_size = font_size; }
+            void setBorderThickness(float thickness) { _border_thickness = thickness; }
+            void setPadding(float padding) { _padding = padding; }
+            void setCursorBlinkSpeed(float speed) { _cursor_blink_speed = speed; }
+
+        private:
+            Color _background_color{50, 50, 50, 255};
+            Color _focused_color{70, 70, 70, 255};
+            Color _disabled_color{30, 30, 30, 255};
+            Color _border_color{100, 100, 100, 255};
+            Color _focused_border_color{150, 150, 255, 255};
+            Color _text_color{255, 255, 255, 255};
+            Color _placeholder_color{150, 150, 150, 255};
+            Color _disabled_text_color{100, 100, 100, 255};
+            Color _cursor_color{255, 255, 255, 255};
+
+            int _font_size{20};
+            float _border_thickness{1.0f};
+            float _padding{10.0f};
+            float _cursor_blink_speed{0.5f};
     };
 
     class UIInputField : public AUIComponent {
     public:
         UIInputField() = default;
+        InputFieldStyle _style;
 
         UIInputField(float x, float y, float width, float height, const std::string& placeholder = "")
             : _placeholder(placeholder) {
@@ -45,66 +78,65 @@ namespace UI {
         // IUIComponent implementation
         void update(float delta_time) override;
         void render() override;
-        void handle_input() override;
+        void handleInput() override;
 
         // Input field specific methods
-        void set_text(const std::string& text) { _text = text; }
-        const std::string& get_text() const { return _text; }
+        void setText(const std::string& text) { _text = text; }
+        const std::string& getText() const { return _text; }
 
-        void set_placeholder(const std::string& placeholder) { _placeholder = placeholder; }
-        const std::string& get_placeholder() const { return _placeholder; }
+        void setPlaceholder(const std::string& placeholder) { _placeholder = placeholder; }
+        const std::string& getPlaceholder() const { return _placeholder; }
 
-        void set_password(bool is_password) { _is_password = is_password; }
-        bool is_password() const { return _is_password; }
+        void setPassword(bool is_password) { _is_password = is_password; }
+        bool isPassword() const { return _is_password; }
 
-        void set_max_length(int max_length) { _max_length = max_length; }
-        int get_max_length() const { return _max_length; }
+        void setMaxLength(int max_length) { _max_length = max_length; }
+        int getMaxLength() const { return _max_length; }
 
-        void set_focused(bool focused) { _is_focused = focused; }
-        bool is_focused() const { return _is_focused; }
+        void setFocused(bool focused) { _is_focused = focused; }
+        bool isFocused() const { return _is_focused; }
 
-        void set_style(const InputFieldStyle& style) { _style = style; }
-        InputFieldStyle& get_style() { return _style; }
-        const InputFieldStyle& get_style() const { return _style; }
+        void setStyle(const InputFieldStyle& style) { _style = style; }
+        InputFieldStyle& getStyle() { return _style; }
+        const InputFieldStyle& getStyle() const { return _style; }
 
         // Callbacks
-        void set_on_text_changed(std::function<void(const std::string&)> callback) {
+        void setOnTextChanged(std::function<void(const std::string&)> callback) {
             _on_text_changed = std::move(callback);
         }
 
-        void set_on_enter_pressed(std::function<void(const std::string&)> callback) {
+        void setOnEnterPressed(std::function<void(const std::string&)> callback) {
             _on_enter_pressed = std::move(callback);
         }
 
-        void set_on_focus(std::function<void()> callback) {
+        void setOnFocus(std::function<void()> callback) {
             _on_focus = std::move(callback);
         }
 
-        void set_on_focus_lost(std::function<void()> callback) {
+        void setOnFocusLost(std::function<void()> callback) {
             _on_focus_lost = std::move(callback);
         }
 
         // Custom rendering callback
-        void set_custom_render(std::function<void(const UIInputField&)> render_func) {
-            _custom_render = std::move(render_func);
+        void setCustomRender(std::function<void(const UIInputField&)> render_func) {
+            _customRender = std::move(render_func);
         }
 
     protected:
         // Virtual methods that can be overridden for custom styling
-        virtual Color get_current_background_color() const;
-        virtual Color get_current_border_color() const;
-        virtual Color get_current_text_color() const;
-        virtual void draw_input_background() const;
-        virtual void draw_input_text() const;
-        virtual void draw_cursor() const;
-        virtual std::string get_display_text() const;
+        virtual Color getCurrentBackgroundColor() const;
+        virtual Color getCurrentBorderColor() const;
+        virtual Color getCurrentTextColor() const;
+        virtual void drawInputBackground() const;
+        virtual void drawInputText() const;
+        virtual void drawCursor() const;
+        virtual std::string getDisplayText() const;
 
     private:
-        void process_text_input();
+        void processTextInput();
 
         std::string _text;
         std::string _placeholder;
-        InputFieldStyle _style;
 
         bool _is_focused{false};
         bool _is_password{false};
@@ -118,7 +150,7 @@ namespace UI {
         std::function<void(const std::string&)> _on_enter_pressed;
         std::function<void()> _on_focus;
         std::function<void()> _on_focus_lost;
-        std::function<void(const UIInputField&)> _custom_render;
+        std::function<void(const UIInputField&)> _customRender;
 
         // State tracking
         bool _was_focused_last_frame{false};

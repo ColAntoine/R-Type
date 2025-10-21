@@ -12,22 +12,42 @@
 #include <raylib.h>
 
 namespace UI {
-
     // Struct to define the base style of panels
     struct PanelStyle {
-        Color _background_color{40, 40, 40, 200};  // Semi-transparent
-        Color _border_color{100, 100, 100, 255};
+        public:
+        // Getters
+            Color getBackgroundColor() const { return _background_color; }
+            Color getBorderColor() const { return _border_color; }
+            float getBorderThickness() const { return _border_thickness; }
+            float getCornerRadius() const { return _corner_radius; }
+            bool hasShadow() const { return _has_shadow; }
+            Color getShadowColor() const { return _shadow_color; }
+            float getShadowOffset() const { return _shadow_offset; }
 
-        float _border_thickness{1.0f};
-        float _corner_radius{0.0f};  // 0 for sharp corners
-        bool _has_shadow{false};
-        Color _shadow_color{0, 0, 0, 100};
-        float _shadow_offset{5.0f};
+            // Setters
+            void setBackgroundColor(const Color& color) { _background_color = color; }
+            void setBorderColor(const Color& color) { _border_color = color; }
+            void setBorderThickness(float thickness) { _border_thickness = thickness; }
+            void setCornerRadius(float radius) { _corner_radius = radius; }
+            void setHasShadow(bool shadow) { _has_shadow = shadow; }
+            void setShadowColor(const Color& color) { _shadow_color = color; }
+            void setShadowOffset(float offset) { _shadow_offset = offset; }
+
+        private:
+            Color _background_color{40, 40, 40, 200};
+            Color _border_color{100, 100, 100, 255};
+
+            float _border_thickness{1.0f};
+            float _corner_radius{0.0f};
+            bool _has_shadow{false};
+            Color _shadow_color{0, 0, 0, 100};
+            float _shadow_offset{5.0f};
     };
 
     class UIPanel : public AUIComponent {
     public:
         UIPanel() = default;
+        PanelStyle _style;
 
         UIPanel(float x, float y, float width, float height)
             : AUIComponent() {
@@ -38,26 +58,25 @@ namespace UI {
         // IUIComponent implementation
         void update(float delta_time) override;
         void render() override;
-        void handle_input() override;
+        void handleInput() override;
 
         // Panel specific methods
-        void set_style(const PanelStyle& style) { _style = style; }
-        PanelStyle& get_style() { return _style; }
-        const PanelStyle& get_style() const { return _style; }
+        void setStyle(const PanelStyle& style) { _style = style; }
+        PanelStyle& getStyle() { return _style; }
+        const PanelStyle& getStyle() const { return _style; }
 
         // Custom rendering callback
-        void set_custom_render(std::function<void(const UIPanel&)> render_func) {
-            _custom_render = std::move(render_func);
+        void setCustomRender(std::function<void(const UIPanel&)> render_func) {
+            _customRender = std::move(render_func);
         }
 
     protected:
         // Virtual methods that can be overridden for custom styling
-        virtual void draw_panel_background() const;
-        virtual void draw_panel_shadow() const;
-        virtual void draw_panel_border() const;
+        virtual void drawPanelBackground() const;
+        virtual void drawPanelShadow() const;
+        virtual void drawPanelBorder() const;
 
     private:
-        PanelStyle _style;
-        std::function<void(const UIPanel&)> _custom_render;
+        std::function<void(const UIPanel&)> _customRender;
     };
 }

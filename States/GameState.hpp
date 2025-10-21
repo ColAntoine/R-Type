@@ -8,8 +8,8 @@
 #pragma once
 
 #include <string>
+#include "Constants.hpp"
 
-// Forward declarations
 class GameStateManager;
 
 // Base interface for all game states
