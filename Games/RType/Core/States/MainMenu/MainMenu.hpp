@@ -20,10 +20,15 @@ class MainMenuState : public AGameState {
         void pause() override;
         void resume() override;
 
+        void setup_ui() override;
+
         void update(float delta_time) override;
-        void render() override;
+
+        bool blocks_update() const override { return false; }
+        bool blocks_render() const override { return false; }
 
         std::string get_name() const override { return "MainMenu"; }
     private:
+        void on_play_clicked();
         // MainMenu specific members
 };

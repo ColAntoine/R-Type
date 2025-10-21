@@ -20,6 +20,8 @@ class IGameState {
 public:
     enum class GameStateType {
         MenusBackground,
+        MainMenu,
+        InGame
     };
 
     virtual ~IGameState() = default;
@@ -29,6 +31,9 @@ public:
     virtual void exit() = 0;            // Called when leaving this state
     virtual void pause() = 0;           // Called when another state is pushed on top
     virtual void resume() = 0;          // Called when returning to this state
+
+    virtual void cleanup_ui() = 0;
+    virtual void setup_ui() = 0;
 
     // Core update methods
     virtual void update(float delta_time) = 0;

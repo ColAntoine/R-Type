@@ -9,6 +9,54 @@ void MenusBackgroundState::enter()
 {
     std::cout << "[MenusBackground] Entering state" << std::endl;
 
+    setup_ui();
+    this->_initialized = true;
+}
+
+void MenusBackgroundState::exit()
+{
+    std::cout << "[Menus Background] Exiting state" << std::endl;
+    this->cleanup_ui();
+    this->_initialized = false;
+}
+
+void MenusBackgroundState::pause()
+{
+    std::cout << "[Menus Background] Pausing state" << std::endl;
+}
+
+void MenusBackgroundState::resume()
+{
+    std::cout << "[Menus Background] Resuming state" << std::endl;
+}
+
+void MenusBackgroundState::update(float delta_time)
+{
+    if (!this->_initialized)
+        return;
+
+    this->_asciiTimer += delta_time;
+    if (this->_asciiTimer >= this->_asciiInterval) {
+        this->_asciiTimer = 0.0f;
+
+        std::mt19937 rng(std::random_device{}());
+        std::uniform_int_distribution<> char_dist(0, static_cast<int>(this->_asciiCharset.size() - 1));
+        std::uniform_int_distribution<> row_dist(0, this->_asciiRows - 1);
+        std::uniform_int_distribution<> col_dist(0, this->_asciiCols - 1);
+
+        // Change random characters
+        int changes = std::max(1, static_cast<int>(this->_asciiRows * this->_asciiCols / 20));
+        for (int i = 0; i < changes; ++i) {
+            int r = row_dist(rng);
+            int c = col_dist(rng);
+            this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
+        }
+    }
+    this->_uiSystems->update(*this->_uiRegistry, delta_time);
+}
+
+void MenusBackgroundState::setup_ui()
+{
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
     int font_w = std::max(1, this->_asciiFontSize / 2);
@@ -61,61 +109,4 @@ void MenusBackgroundState::enter()
     this->_asciiTextEntity = ascii_text_entity;
 
     this->_asciiTimer = 0.0f;
-    this->_initialized = true;
-}
-
-void MenusBackgroundState::exit()
-{
-    std::cout << "[Menus Background] Exiting state" << std::endl;
-    this->cleanup_ui();
-    this->_initialized = false;
-}
-
-void MenusBackgroundState::pause()
-{
-    std::cout << "[Menus Background] Pausing state" << std::endl;
-}
-
-void MenusBackgroundState::resume()
-{
-    std::cout << "[Menus Background] Resuming state" << std::endl;
-}
-
-void MenusBackgroundState::update(float delta_time)
-{
-    if (!this->_initialized)
-        return;
-
-    if (this->_uiSystems) {
-        this->_uiSystems->update(*this->_uiRegistry, delta_time);
-    }
-
-    this->_asciiTimer += delta_time;
-    if (this->_asciiTimer >= this->_asciiInterval) {
-        this->_asciiTimer = 0.0f;
-
-        std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<> char_dist(0, static_cast<int>(this->_asciiCharset.size() - 1));
-        std::uniform_int_distribution<> row_dist(0, this->_asciiRows - 1);
-        std::uniform_int_distribution<> col_dist(0, this->_asciiCols - 1);
-
-        // Change random characters
-        int changes = std::max(1, static_cast<int>(this->_asciiRows * this->_asciiCols / 20));
-        for (int i = 0; i < changes; ++i) {
-            int r = row_dist(rng);
-            int c = col_dist(rng);
-            this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
-        }
-    }
-}
-
-void MenusBackgroundState::render()
-{
-    if (!this->_initialized)
-        return;
-
-    if (!this->_uiRegistry || !this->_uiSystems)
-        return;
-
-    this->_uiSystems->render(*this->_uiRegistry);
 }

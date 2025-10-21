@@ -15,6 +15,17 @@ AGameState::AGameState()
     this->_uiSystems = std::make_shared<UI::UISystem>();
 }
 
+void AGameState::render()
+{
+    if (!this->_initialized)
+        return;
+
+    if (!this->_uiRegistry || !this->_uiSystems)
+        return;
+
+    this->_uiSystems->render(*this->_uiRegistry);
+}
+
 void AGameState::cleanup_ui()
 {
     if (!_uiRegistry) {

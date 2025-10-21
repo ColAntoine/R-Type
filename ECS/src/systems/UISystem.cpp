@@ -36,8 +36,6 @@ namespace UI {
     void UISystem::render(registry& registry) {
         if (!_enabled) return;
 
-        std::cout << "[UISystem] Rendering UI components" << std::endl;
-
         // Get UI components array
         auto* ui_components = registry.get_if<UI::UIComponent>();
         if (!ui_components) return;

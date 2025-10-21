@@ -2,11 +2,12 @@
 #include "Network/UDPClient.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 // #include "Core/States/Loading/Loading.hpp"
-// #include "Core/States/MainMenu/MainMenu.hpp"
+#include "Core/States/MainMenu/MainMenu.hpp"
 // #include "Core/States/Lobby/Lobby.hpp"
 // #include "Core/States/SoloLobby/SoloLobby.hpp"
-// #include "Core/States/InGame/InGame.hpp"
+#include "Core/States/InGame/InGame.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+#include "Constants.hpp"
 
 #include <iostream>
 #include <csignal>
@@ -27,6 +28,8 @@ void GameClient::register_states() {
     // _stateManager.register_state<SoloLobbyState>("SoloLobby");
     // _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
+    _stateManager.register_state<MainMenuState>("MainMenu");
+    _stateManager.register_state<InGameState>("InGame");
 
     std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
     std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
@@ -40,7 +43,7 @@ bool GameClient::init()
 
     // Initialize Raylib window
     SetTraceLogLevel(LOG_WARNING);
-    InitWindow(1024, 768, "R-Type - Solo Mode Available!");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
     SetTargetFPS(60);
 
     if (!IsWindowReady()) {
@@ -55,6 +58,7 @@ bool GameClient::init()
 
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
+    _stateManager.push_state("MainMenu");
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;

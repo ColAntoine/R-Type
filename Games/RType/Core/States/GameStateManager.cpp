@@ -26,8 +26,11 @@ void GameStateManager::push_state(const std::string& state_name, bool pause_curr
         state_stack_.top()->pause();
     }
 
+    std::cout << "Pushing new state: " << state_name << std::endl;
+    std::cout << "Stack size before push: " << state_stack_.size() << std::endl;
     // Push and enter new state
     state_stack_.push(new_state);
+    std::cout << "Stack size after push: " << state_stack_.size() << std::endl;
     new_state->enter();
 }
 
@@ -58,12 +61,14 @@ void GameStateManager::change_state(const std::string& state_name) {
         return;
     }
 
+    std::cout << "Stack size before clear: " << state_stack_.size() << std::endl;
     // Clear current stack
     while (!state_stack_.empty()) {
+        std::cout << "Exiting state: " << state_stack_.top()->get_name() << std::endl;
         state_stack_.top()->exit();
         state_stack_.pop();
     }
-
+    std::cout << "State stack cleared. Size: " << state_stack_.size() << std::endl;
     // Push new state
     push_state(state_name, false);
 }
@@ -91,8 +96,11 @@ void GameStateManager::update(float delta_time) {
     std::vector<std::shared_ptr<IGameState>> states_to_update;
     auto temp_stack = state_stack_;
 
+    std::cout << "[";
     while (!temp_stack.empty()) {
         auto state = temp_stack.top();
+        std::cout << state->get_name();
+        if (temp_stack.size() > 1) std::cout << ", ";
         states_to_update.push_back(state);
         temp_stack.pop();
 
@@ -101,6 +109,7 @@ void GameStateManager::update(float delta_time) {
             break;
         }
     }
+    std::cout << "] ← " << states_to_update.front()->get_name() << " au sommet" << std::endl;
 
     // Update in reverse order (bottom to top)
     std::reverse(states_to_update.begin(), states_to_update.end());
@@ -162,6 +171,7 @@ bool GameStateManager::has_state(const std::string& state_name) const {
 
 void GameStateManager::process_pending_operations() {
     for (const auto& operation : pending_operations_) {
+        std::cout << "Processing pending operation: " << static_cast<int>(operation.operation) << std::endl;
         switch (operation.operation) {
             case PendingOperation::Push:
                 push_state(operation.state_name, operation.pause_current);

@@ -13,8 +13,9 @@ class MenusBackgroundState : public AGameState {
         void pause() override;
         void resume() override;
 
+        void setup_ui() override;
+
         void update(float delta_time) override;
-        void render() override;
 
         std::string get_name() const override { return "MenusBackground"; }
     private:
