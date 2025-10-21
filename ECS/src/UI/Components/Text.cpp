@@ -24,7 +24,7 @@ namespace UI {
         }
 
         // Default rendering
-        if (_style._has_shadow) {
+        if (_style.hasShadow()) {
             drawTextShadow();
         }
         drawTextContent();
@@ -38,8 +38,8 @@ namespace UI {
         return MeasureTextEx(
             GetFontDefault(),
             _text.c_str(),
-            _style._font_size,
-            _style._spacing
+            _style.getFontSize(),
+            _style.getSpacing()
         );
     }
 
@@ -51,7 +51,7 @@ namespace UI {
         Vector2 text_size = getTextSize();
         Vector2 pos = _position;
 
-        switch (_style._alignment) {
+        switch (_style.getAlignment()) {
             case TextAlignment::Center:
                 pos.x -= text_size.x / 2.0f;
                 break;
@@ -68,21 +68,21 @@ namespace UI {
     }
 
     void UIText::drawTextShadow() const {
-        if (!_style._has_shadow) return;
+        if (!_style.hasShadow()) return;
 
         Vector2 pos = calculateTextPosition();
         Vector2 shadow_pos = {
-            pos.x + _style._shadow_offset.x,
-            pos.y + _style._shadow_offset.y
+            pos.x + _style.getShadowOffset().x,
+            pos.y + _style.getShadowOffset().y
         };
 
         DrawTextEx(
             GetFontDefault(),
             _text.c_str(),
             shadow_pos,
-            _style._font_size,
-            _style._spacing,
-            _style._shadow_color
+            _style.getFontSize(),
+            _style.getSpacing(),
+            _style.getShadowColor()
         );
     }
 
@@ -93,9 +93,9 @@ namespace UI {
             GetFontDefault(),
             _text.c_str(),
             pos,
-            _style._font_size,
-            _style._spacing,
-            _style._text_color
+            _style.getFontSize(),
+            _style.getSpacing(),
+            _style.getTextColor()
         );
     }
 }

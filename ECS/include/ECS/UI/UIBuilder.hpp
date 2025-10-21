@@ -23,7 +23,6 @@
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/InputField.hpp"
-#include "Constants.hpp"
 #include <memory>
 #include <functional>
 #include <algorithm>
@@ -151,7 +150,32 @@ public:
         return *this;
     }
 
-    std::unique_ptr<T> build();
+    UIBuilder& placeholder(const std::string& text) {
+        _placeholderText = text;
+        return *this;
+    }
+
+    UIBuilder& focusedColor(Color color) {
+        _focusedColor = color;
+        return *this;
+    }
+
+    UIBuilder& focusedBorderColor(Color color) {
+        _focusedBorderColor = color;
+        return *this;
+    }
+
+    UIBuilder& placeholderColor(Color color) {
+        _placeholderColor = color;
+        return *this;
+    }
+
+    UIBuilder& cursorColor(Color color) {
+        _cursorColor = color;
+        return *this;
+    }
+
+    std::unique_ptr<T> build(float screenWidth, float screenHeight);
 
 protected:
     float _x = 0.0f;
@@ -168,6 +192,11 @@ protected:
     Color _textColor = WHITE;
     Color _borderColor = WHITE;
     Color _backgroundColor = GRAY;
+    Color _focusedColor = LIGHTGRAY;
+    Color _focusedBorderColor = SKYBLUE;
+    Color _placeholderColor = DARKGRAY;
+    Color _cursorColor = WHITE;
+    std::string _placeholderText = "";
 
     int _fontSize = 24;
     float _borderThickness = 2.0f;
@@ -175,16 +204,16 @@ protected:
     std::function<void()> _onClick = nullptr;
     UI::TextAlignment _alignment = UI::TextAlignment::Left;
 
-    float calculateX() const {
+    float calculateX(float screenWidth) const {
         if (_centered) {
-            return (SCREEN_WIDTH / 2.0f) - (_width / 2.0f);
+            return (screenWidth / 2.0f) - (_width / 2.0f);
         }
         return _x;
     }
 
-    float calculateY() const {
+    float calculateY(float screenHeight) const {
         if (_centered) {
-            return (SCREEN_HEIGHT / 2.0f) - (_height / 2.0f) + _centerYOffset;
+            return (screenHeight / 2.0f) - (_height / 2.0f) + _centerYOffset;
         }
         return _y;
     }
@@ -192,19 +221,19 @@ protected:
 
 // Specializations
 template<>
-inline std::unique_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build() {
+inline std::unique_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build(float screenWidth, float screenHeight) {
     auto button = std::make_unique<UI::UIButton>(
-        calculateX(), calculateY(), _width, _height, _text
+        calculateX(screenWidth), calculateY(screenHeight), _width, _height, _text
     );
 
     UI::ButtonStyle style;
-    style._normal_color = _normalColor;
-    style._hovered_color = _hoveredColor;
-    style._pressed_color = _pressedColor;
-    style._text_color = _textColor;
-    style._font_size = _fontSize;
-    style._border_thickness = _borderThickness;
-    style._border_color = _borderColor;
+    style.setNormalColor(_normalColor);
+    style.setHoveredColor(_hoveredColor);
+    style.setPressedColor(_pressedColor);
+    style.setTextColor(_textColor);
+    style.setFontSize(_fontSize);
+    style.setBorderThickness(_borderThickness);
+    style.setBorderColor(_borderColor);
     button->setStyle(style);
 
     if (_onClick) {
@@ -215,9 +244,9 @@ inline std::unique_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build() {
 }
 
 template<>
-inline std::unique_ptr<UI::UIText> UIBuilder<UI::UIText>::build() {
+inline std::unique_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidth, float screenHeight) {
     auto text = std::make_unique<UI::UIText>(
-        calculateX(), calculateY(), _text, _fontSize, _textColor
+        calculateX(screenWidth), calculateY(screenHeight), _text, _fontSize, _textColor
     );
 
     text->setAlignment(_alignment);
@@ -226,9 +255,9 @@ inline std::unique_ptr<UI::UIText> UIBuilder<UI::UIText>::build() {
 }
 
 template<>
-inline std::unique_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build() {
+inline std::unique_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build(float screenWidth, float screenHeight) {
     auto panel = std::make_unique<UI::UIPanel>(
-        calculateX(), calculateY(), _width, _height
+        calculateX(screenWidth), calculateY(screenHeight), _width, _height
     );
 
     panel->_style.setBackgroundColor(_backgroundColor);
@@ -239,15 +268,20 @@ inline std::unique_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build() {
 }
 
 template<>
-inline std::unique_ptr<UI::UIInputField> UIBuilder<UI::UIInputField>::build() {
+inline std::unique_ptr<UI::UIInputField> UIBuilder<UI::UIInputField>::build(float screenWidth, float screenHeight) {
     auto input = std::make_unique<UI::UIInputField>(
-        calculateX(), calculateY(), _width, _height
+        calculateX(screenWidth), calculateY(screenHeight), _width, _height, _placeholderText
     );
 
     input->_style.setTextColor(_textColor);
     input->_style.setBackgroundColor(_backgroundColor);
     input->_style.setBorderColor(_borderColor);
     input->_style.setBorderThickness(_borderThickness);
+    input->_style.setFocusedColor(_focusedColor);
+    input->_style.setFocusedBorderColor(_focusedBorderColor);
+    input->_style.setPlaceholderColor(_placeholderColor);
+    input->_style.setCursorColor(_cursorColor);
+    input->_style.setFontSize(_fontSize);
     return input;
 }
 

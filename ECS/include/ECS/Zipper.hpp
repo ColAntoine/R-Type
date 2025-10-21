@@ -48,7 +48,7 @@ class ZipperN {
                 }
 
                 template <std::size_t... Is>
-                bool has_all(entity_type entity, std::index_sequence<Is...>) const {
+                bool has_all(__attribute_maybe_unused__ entity_type entity, std::index_sequence<Is...>) const {
                     return (... && (std::get<Is>(otherSets).has(entity)));
                 }
 

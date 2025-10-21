@@ -69,13 +69,14 @@ namespace RType {
         }
 
         void drawButtonText() const override {
-            if (get_text().empty()) return;
+            
+            // if (.empty()) return;
 
-            Color text_color = get_current_text_color();
+            Color text_color = _style.getTextColor();
             Vector2 pos = _position;
             Vector2 size = _size;
 
-            Vector2 text_size = MeasureTextEx(GetFontDefault(), get_text().c_str(), get_style()._font_size, 1.0f);
+            Vector2 text_size = MeasureTextEx(GetFontDefault(), getText().c_str(), _style.getFontSize(), 1.0f);
             float text_x = pos.x + (size.x - text_size.x) / 2.0f;
             float text_y = pos.y + (size.y - text_size.y) / 2.0f;
 
@@ -87,17 +88,17 @@ namespace RType {
 
                 // RGB split effect
                 Color rcol = {255, 50, 80, text_color.a};
-                DrawTextEx(GetFontDefault(), get_text().c_str(),
+                DrawTextEx(GetFontDefault(), getText().c_str(),
                           {text_x + jitter_x + 1, text_y + jitter_y},
-                          get_style()._font_size, 1.0f, rcol);
+                          _style.getFontSize(), 1.0f, rcol);
 
                 Color gcol = {0, 255, 156, static_cast<unsigned char>(text_color.a * 0.6f)};
-                DrawTextEx(GetFontDefault(), get_text().c_str(),
+                DrawTextEx(GetFontDefault(), getText().c_str(),
                           {text_x - jitter_x - 1, text_y - jitter_y},
-                          get_style()._font_size, 1.0f, gcol);
+                          _style.getFontSize(), 1.0f, gcol);
 
-                DrawTextEx(GetFontDefault(), get_text().c_str(),
-                          {text_x, text_y}, get_style()._font_size, 1.0f, text_color);
+                DrawTextEx(GetFontDefault(), getText().c_str(),
+                          {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
 
                 // Scanline flicker
                 if (((static_cast<int>(GetTime() * 10) + _hover_seed) % 5) == 0) {
@@ -110,8 +111,8 @@ namespace RType {
                     text_x += 1;
                     text_y += 1;
                 }
-                DrawTextEx(GetFontDefault(), get_text().c_str(),
-                          {text_x, text_y}, get_style()._font_size, 1.0f, text_color);
+                DrawTextEx(GetFontDefault(), getText().c_str(),
+                          {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
             }
         }
 

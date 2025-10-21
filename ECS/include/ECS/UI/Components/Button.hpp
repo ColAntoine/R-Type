@@ -16,6 +16,32 @@ namespace UI {
 
     // Struct tio define the base colors of the buttons
     struct ButtonStyle {
+    public:
+        // Getters
+        Color getNormalColor() const { return _normal_color; }
+        Color getHoveredColor() const { return _hovered_color; }
+        Color getPressedColor() const { return _pressed_color; }
+        Color getDisabledColor() const { return _disabled_color; }
+        Color getTextColor() const { return _text_color; }
+        Color getDisabledTextColor() const { return _disabled_text_color; }
+        Color getBorderColor() const { return _border_color; }
+        int getFontSize() const { return _font_size; }
+        float getBorderThickness() const { return _border_thickness; }
+        float getPadding() const { return _padding; }
+
+        // Setters
+        void setNormalColor(const Color& color) { _normal_color = color; }
+        void setHoveredColor(const Color& color) { _hovered_color = color; }
+        void setPressedColor(const Color& color) { _pressed_color = color; }
+        void setDisabledColor(const Color& color) { _disabled_color = color; }
+        void setTextColor(const Color& color) { _text_color = color; }
+        void setDisabledTextColor(const Color& color) { _disabled_text_color = color; }
+        void setBorderColor(const Color& color) { _border_color = color; }
+        void setFontSize(int size) { _font_size = size; }
+        void setBorderThickness(float thickness) { _border_thickness = thickness; }
+        void setPadding(float padding) { _padding = padding; }
+
+    private:
         Color _normal_color{70, 70, 70, 255};
         Color _hovered_color{100, 100, 100, 255};
         Color _pressed_color{50, 50, 50, 255};
@@ -45,6 +71,7 @@ namespace UI {
         void handleInput() override;
 
         // Button-specific methods
+        std::string getText() { return _text; }
         void setText(const std::string& text) { _text = text; }
         const std::string& getText() const { return _text; }
 

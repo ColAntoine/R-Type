@@ -8,6 +8,7 @@
 #include "WaitingLobby.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -126,49 +127,62 @@ void WaitingLobbyState::setup_ui() {
 
     // Panel
     auto panel_entity = ui_registry_.spawn_entity();
-    auto panel = std::make_shared<UI::UIPanel>(center_x - 300, 30, 600, 660);
-    UI::PanelStyle panel_style;
-    panel_style._background_color = {20, 20, 25, 230};
-    panel_style._border_color = {0, 229, 255, 255};
-    panel_style._border_thickness = 2.0f;
-    panel_style._has_shadow = true;
-    panel_style._shadow_color = {0, 0, 0, 150};
-    panel_style._shadow_offset = {4.0f};
-    panel->set_style(panel_style);
+    auto panel = std::make_shared<UI::UIPanel>(
+        *PanelBuilder()
+            .at(center_x - 300, 30)
+            .size(600, 660)
+            .backgroundColor({20, 20, 25, 230})
+            .border(2.0f, {0, 229, 255, 255})
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    panel->_style.setHasShadow(true);
+    panel->_style.setShadowColor({0, 0, 0, 150});
+    panel->_style.setShadowOffset(4.0f);
     ui_registry_.add_component(panel_entity, UI::UIComponent(panel));
     ui_registry_.add_component(panel_entity, RType::UIWaitingPanel{});
 
     // Title
     auto title_entity = ui_registry_.spawn_entity();
-    auto title = std::make_shared<UI::UIText>(center_x, 70, "WAITING LOBBY");
-    UI::TextStyle title_style;
-    title_style._text_color = {0, 229, 255, 255};
-    title_style._font_size = 40;
-    title_style._alignment = UI::TextAlignment::Center;
-    title_style._has_shadow = true;
-    title_style._shadow_color = {0, 180, 200, 180};
-    title_style._shadow_offset = {3.0f, 3.0f};
-    title->set_style(title_style);
+    auto title = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x, 70)
+            .text("WAITING LOBBY")
+            .fontSize(40)
+            .textColor({0, 229, 255, 255})
+            .alignment(UI::TextAlignment::Center)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    title->_style.setHasShadow(true);
+    title->_style.setShadowColor({0, 180, 200, 180});
+    title->_style.setShadowOffset({3.0f, 3.0f});
     ui_registry_.add_component(title_entity, UI::UIComponent(title));
     ui_registry_.add_component(title_entity, RType::UIWaitingTitle{});
 
     // Status text
     auto status_entity = ui_registry_.spawn_entity();
-    auto status_text = std::make_shared<UI::UIText>(center_x - 180, 130, "Waiting for other players...");
-    UI::TextStyle status_style;
-    status_style._text_color = {200, 200, 200, 255};
-    status_style._font_size = 22;
-    status_text->set_style(status_style);
+    auto status_text = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x - 180, 130)
+            .text("Waiting for other players...")
+            .fontSize(22)
+            .textColor({200, 200, 200, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(status_entity, UI::UIComponent(status_text));
     ui_registry_.add_component(status_entity, RType::UIWaitingStatus{});
 
     // Player list title
     auto list_title_entity = ui_registry_.spawn_entity();
-    auto list_title = std::make_shared<UI::UIText>(center_x - 280, 180, "Connected Players:");
-    UI::TextStyle list_title_style;
-    list_title_style._text_color = {0, 229, 255, 255};
-    list_title_style._font_size = 24;
-    list_title->set_style(list_title_style);
+    auto list_title = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x - 280, 180)
+            .text("Connected Players:")
+            .fontSize(24)
+            .textColor({0, 229, 255, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(list_title_entity, UI::UIComponent(list_title));
     ui_registry_.add_component(list_title_entity, RType::UIPlayerListTitle{});
 
@@ -176,11 +190,15 @@ void WaitingLobbyState::setup_ui() {
     int y_offset = 220;
     for (int i = 0; i < 8; ++i) {
         auto slot_entity = ui_registry_.spawn_entity();
-        auto slot_text = std::make_shared<UI::UIText>(center_x - 280, y_offset + (i * 35), "---");
-        UI::TextStyle slot_style;
-        slot_style._text_color = {100, 100, 100, 255};
-        slot_style._font_size = 18;
-        slot_text->set_style(slot_style);
+        auto slot_text = std::shared_ptr<UI::UIText>(
+            TextBuilder()
+                .at(center_x - 280, y_offset + (i * 35))
+                .text("---")
+                .fontSize(18)
+                .textColor({100, 100, 100, 255})
+                .alignment(UI::TextAlignment::Left)
+                .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+        );
         ui_registry_.add_component(slot_entity, UI::UIComponent(slot_text));
         
         // Create the tag with designated initialization
@@ -190,44 +208,45 @@ void WaitingLobbyState::setup_ui() {
     }
 
     // Ready button (using GlitchButton)
+    // Button subclasses can't use the builder unless added to the ECS
     auto ready_btn_entity = ui_registry_.spawn_entity();
     auto ready_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 230, 240, 55, "READY");
-    UI::ButtonStyle ready_style;
-    ready_style._normal_color = {20, 30, 20, 220};
-    ready_style._hovered_color = {30, 50, 30, 240};
-    ready_style._pressed_color = {15, 25, 15, 200};
-    ready_style._text_color = {220, 255, 220, 255};
-    ready_style._font_size = 26;
-    ready_button->set_style(ready_style);
+    ready_button->_style.setNormalColor({20, 30, 20, 220});
+    ready_button->_style.setHoveredColor({30, 50, 30, 240});
+    ready_button->_style.setPressedColor({15, 25, 15, 200});
+    ready_button->_style.setTextColor({220, 255, 220, 255});
+    ready_button->_style.setFontSize(26);
     ready_button->set_neon_colors({100, 255, 100, 255}, {80, 200, 80, 120});
     ready_button->set_glitch_params(0.03f, 8.0f, 0.5f);
-    ready_button->set_on_click([this]() { on_ready_clicked(); });
+    ready_button->setOnClick([this]() { on_ready_clicked(); });
     ui_registry_.add_component(ready_btn_entity, UI::UIComponent(ready_button));
     ui_registry_.add_component(ready_btn_entity, RType::UIReadyButton{});
 
     // Disconnect button
     auto disconnect_btn_entity = ui_registry_.spawn_entity();
     auto disconnect_button = std::make_shared<RType::GlitchButton>(40, 680, 200, 50, "DISCONNECT");
-    UI::ButtonStyle disconnect_style;
-    disconnect_style._normal_color = {40, 15, 15, 220};
-    disconnect_style._hovered_color = {70, 20, 20, 240};
-    disconnect_style._pressed_color = {30, 10, 10, 200};
-    disconnect_style._text_color = {255, 180, 180, 255};
-    disconnect_style._font_size = 22;
-    disconnect_button->set_style(disconnect_style);
+    disconnect_button->_style.setNormalColor({40, 15, 15, 220});
+    disconnect_button->_style.setHoveredColor({70, 20, 20, 240});
+    disconnect_button->_style.setPressedColor({30, 10, 10, 200});
+    disconnect_button->_style.setTextColor({255, 180, 180, 255});
+    disconnect_button->_style.setFontSize(22);
     disconnect_button->set_neon_colors({255, 100, 100, 255}, {200, 80, 80, 120});
     disconnect_button->set_glitch_params(0.03f, 8.0f, 0.5f);
-    disconnect_button->set_on_click([this]() { on_back_clicked(); });
+    disconnect_button->setOnClick([this]() { on_back_clicked(); });
     ui_registry_.add_component(disconnect_btn_entity, UI::UIComponent(disconnect_button));
     ui_registry_.add_component(disconnect_btn_entity, RType::UIDisconnectButton{});
 
     // Game status text
     auto game_status_entity = ui_registry_.spawn_entity();
-    auto game_status = std::make_shared<UI::UIText>(center_x - 180, center_y + 310, "");
-    UI::TextStyle status_text_style;
-    status_text_style._text_color = {255, 255, 100, 255};
-    status_text_style._font_size = 20;
-    game_status->set_style(status_text_style);
+    auto game_status = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x - 180, center_y + 310)
+            .text("")
+            .fontSize(20)
+            .textColor({255, 255, 100, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(game_status_entity, UI::UIComponent(game_status));
     ui_registry_.add_component(game_status_entity, RType::UIGameStatus{});
 }
@@ -252,24 +271,24 @@ void WaitingLobbyState::update_player_list() {
         // Update text based on connected players
         if (slot_index < (int)connected_players_.size()) {
             const auto& player = connected_players_[slot_index];
-            text_comp->set_text(player.name);
+            text_comp->setText(player.name);
             
             // Color code based on ready status
             UI::TextStyle style;
-            style._font_size = 18;
+            style.setFontSize(18);
             if (player.is_ready) {
-                style._text_color = {100, 255, 100, 255}; // Green for ready
+                style.setTextColor({100, 255, 100, 255}); // Green for ready
             } else {
-                style._text_color = {255, 200, 100, 255}; // Orange for not ready
+                style.setTextColor({255, 200, 100, 255}); // Orange for not ready
             }
-            text_comp->set_style(style);
+            text_comp->setStyle(style);
         } else {
             // Empty slot
-            text_comp->set_text("---");
+            text_comp->setText("---");
             UI::TextStyle style;
-            style._font_size = 18;
-            style._text_color = {100, 100, 100, 255}; // Gray
-            text_comp->set_style(style);
+            style.setFontSize(18);
+            style.setTextColor({100, 100, 100, 255}); // Gray
+            text_comp->setStyle(style);
         }
     }
 }
@@ -296,15 +315,15 @@ void WaitingLobbyState::update_ready_status() {
         if (!text_comp) continue;
 
         UI::TextStyle style;
-        style._font_size = 20;
+        style.setFontSize(20);
         if (ready_count == total_count && total_count > 0) {
-            text_comp->set_text("All players ready! Starting game...");
-            style._text_color = {100, 255, 100, 255}; // Green
+            text_comp->setText("All players ready! Starting game...");
+            style.setTextColor({100, 255, 100, 255}); // Green
         } else {
-            text_comp->set_text("Players ready: " + std::to_string(ready_count) + "/" + std::to_string(total_count));
-            style._text_color = {255, 255, 100, 255}; // Yellow
+            text_comp->setText("Players ready: " + std::to_string(ready_count) + "/" + std::to_string(total_count));
+            style.setTextColor({255, 255, 100, 255}); // Yellow
         }
-        text_comp->set_style(style);
+        text_comp->setStyle(style);
     }
 }
 
@@ -324,7 +343,7 @@ void WaitingLobbyState::update_ready_button() {
                 if (!button_comp) continue;
 
                 // Button text should indicate what will happen when clicked
-                button_comp->set_text(player.is_ready ? "NOT READY" : "READY");
+                button_comp->setText(player.is_ready ? "NOT READY" : "READY");
             }
             break;
         }

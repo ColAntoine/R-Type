@@ -22,6 +22,26 @@ namespace UI {
 
     // Struct to define the base style of text
     struct TextStyle {
+    public:
+        // Getters
+        Color getTextColor() const { return _text_color; }
+        Color getShadowColor() const { return _shadow_color; }
+        int getFontSize() const { return _font_size; }
+        float getSpacing() const { return _spacing; }
+        bool hasShadow() const { return _has_shadow; }
+        Vector2 getShadowOffset() const { return _shadow_offset; }
+        TextAlignment getAlignment() const { return _alignment; }
+
+        // Setters
+        void setTextColor(const Color& color) { _text_color = color; }
+        void setShadowColor(const Color& color) { _shadow_color = color; }
+        void setFontSize(int size) { _font_size = size; }
+        void setSpacing(float spacing) { _spacing = spacing; }
+        void setHasShadow(bool shadow) { _has_shadow = shadow; }
+        void setShadowOffset(const Vector2& offset) { _shadow_offset = offset; }
+        void setAlignment(TextAlignment alignment) { _alignment = alignment; }
+
+    private:
         Color _text_color{255, 255, 255, 255};
         Color _shadow_color{0, 0, 0, 150};
 
@@ -46,8 +66,8 @@ namespace UI {
         UIText(float x, float y, const std::string& text, int fontSize, Color textColor)
             : _text(text) {
             _position = {x, y};
-            _style._font_size = fontSize;
-            _style._text_color = textColor;
+            _style.setFontSize(fontSize);
+            _style.setTextColor(textColor);
             // Size will be calculated based on text
             updateSize();
         }
@@ -71,8 +91,8 @@ namespace UI {
         TextStyle& getStyle() { return _style; }
         const TextStyle& getStyle() const { return _style; }
 
-        void setAlignment(TextAlignment alignment) { _style._alignment = alignment; }
-        TextAlignment getAlignment() const { return _style._alignment; }
+        void setAlignment(TextAlignment alignment) { _style.setAlignment(alignment); }
+        TextAlignment getAlignment() const { return _style.getAlignment(); }
 
         // Custom rendering callback
         void setCustomRender(std::function<void(const UIText&)> render_func) {
