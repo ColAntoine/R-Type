@@ -8,6 +8,7 @@
 #include "MainMenu.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "UI/Components/GlitchButton.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -103,7 +104,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         if (main_panels) {
             for (auto [ui_comp, panel_tag, ent] : zipper(*ui_components, *main_panels)) {
                 if (ui_comp._ui_element) {
-                    ui_comp._ui_element->set_visible(menu_reveal_progress_ >= 0.0f);
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.0f);
                 }
             }
         }
@@ -111,7 +112,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         if (title_texts) {
             for (auto [ui_comp, title_tag, ent] : zipper(*ui_components, *title_texts)) {
                 if (ui_comp._ui_element) {
-                    ui_comp._ui_element->set_visible(menu_reveal_progress_ >= 0.0f);
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.0f);
                 }
             }
         }
@@ -120,7 +121,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         if (play_buttons) {
             for (auto [ui_comp, play_tag, ent] : zipper(*ui_components, *play_buttons)) {
                 if (ui_comp._ui_element) {
-                    ui_comp._ui_element->set_visible(menu_reveal_progress_ >= 0.33f);
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.33f);
                 }
             }
         }
@@ -129,7 +130,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         if (settings_buttons) {
             for (auto [ui_comp, settings_tag, ent] : zipper(*ui_components, *settings_buttons)) {
                 if (ui_comp._ui_element) {
-                    ui_comp._ui_element->set_visible(menu_reveal_progress_ >= 0.66f);
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.66f);
                 }
             }
         }
@@ -138,7 +139,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         if (quit_buttons) {
             for (auto [ui_comp, quit_tag, ent] : zipper(*ui_components, *quit_buttons)) {
                 if (ui_comp._ui_element) {
-                    ui_comp._ui_element->set_visible(menu_reveal_progress_ >= 0.99f);
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.99f);
                 }
             }
         }
@@ -193,75 +194,74 @@ void MainMenuState::setup_ui() {
 
     // Create panel
     auto panel_entity = ui_registry_.spawn_entity();
-    auto panel = std::make_shared<UI::UIPanel>(center_x - 175, center_y - 150, 350, 350);
-    UI::PanelStyle panel_style;
-    panel_style._background_color = {20, 25, 35, 220};
-    panel_style._border_color = {0, 229, 255, 180};
-    panel_style._border_thickness = 2.0f;
-    panel_style._has_shadow = true;
-    panel_style._shadow_color = {0, 0, 0, 200};
-    panel_style._shadow_offset = {5.0f};
-    panel->set_style(panel_style);
+    auto panel = std::make_shared<UI::UIPanel>(
+        *PanelBuilder()
+            .at(center_x - 175, center_y - 150)
+            .size(350, 350)
+            .backgroundColor({20, 25, 35, 220})
+            .border(2.0f, {0, 229, 255, 180})
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    panel->_style.setHasShadow(true);
+    panel->_style.setShadowColor({0, 0, 0, 200});
+    panel->_style.setShadowOffset(5.0f);
     ui_registry_.add_component(panel_entity, UI::UIComponent(panel));
     ui_registry_.add_component(panel_entity, RType::UIMainPanel{});
 
     // Create title text
     auto title_entity = ui_registry_.spawn_entity();
-    auto title = std::make_shared<UI::UIText>(center_x, center_y - 100, "R-TYPE");
-    UI::TextStyle title_style;
-    title_style._text_color = {0, 229, 255, 255};
-    title_style._font_size = 52;
-    title_style._alignment = UI::TextAlignment::Center;
-    title_style._has_shadow = true;
-    title_style._shadow_color = {0, 150, 200, 180};
-    title_style._shadow_offset = {4.0f, 4.0f};
-    title->set_style(title_style);
+    auto title = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x, center_y - 100)
+            .text("R-TYPE")
+            .fontSize(52)
+            .textColor({0, 229, 255, 255})
+            .alignment(UI::TextAlignment::Center)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    title->_style.setHasShadow(true);
+    title->_style.setShadowColor({0, 150, 200, 180});
+    title->_style.setShadowOffset({4.0f, 4.0f});
     ui_registry_.add_component(title_entity, UI::UIComponent(title));
     ui_registry_.add_component(title_entity, RType::UITitleText{});
 
     // Create play button
     auto play_entity = ui_registry_.spawn_entity();
     auto play_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y - 20, 240, 55, "PLAY");
-    UI::ButtonStyle play_style;
-    play_style._normal_color = {20, 20, 30, 220};
-    play_style._hovered_color = {36, 36, 52, 240};
-    play_style._pressed_color = {16, 16, 24, 200};
-    play_style._text_color = {220, 240, 255, 255};
-    play_style._font_size = 28;
-    play_button->set_style(play_style);
+    play_button->_style.setNormalColor({20, 20, 30, 220});
+    play_button->_style.setHoveredColor({36, 36, 52, 240});
+    play_button->_style.setPressedColor({16, 16, 24, 200});
+    play_button->_style.setTextColor({220, 240, 255, 255});
+    play_button->_style.setFontSize(28);
     play_button->set_neon_colors({0, 229, 255, 255}, {0, 229, 255, 120});
     play_button->set_glitch_params(2.5f, 8.5f, true);
-    play_button->set_on_click([this]() { on_play_clicked(); });
+    play_button->setOnClick([this]() { on_play_clicked(); });
     ui_registry_.add_component(play_entity, UI::UIComponent(play_button));
     ui_registry_.add_component(play_entity, RType::UIPlayButton{});
 
     // Create settings button
     auto settings_entity = ui_registry_.spawn_entity();
     auto settings_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 50, 240, 45, "SETTINGS");
-    UI::ButtonStyle settings_style;
-    settings_style._normal_color = {20, 20, 30, 200};
-    settings_style._hovered_color = {36, 36, 52, 220};
-    settings_style._text_color = {200, 230, 255, 220};
-    settings_style._font_size = 20;
-    settings_button->set_style(settings_style);
+    settings_button->_style.setNormalColor({20, 20, 30, 200});
+    settings_button->_style.setHoveredColor({36, 36, 52, 220});
+    settings_button->_style.setTextColor({200, 230, 255, 220});
+    settings_button->_style.setFontSize(20);
     settings_button->set_neon_colors({0, 229, 255, 220}, {0, 229, 255, 100});
     settings_button->set_glitch_params(1.8f, 7.0f, true);
-    settings_button->set_on_click([this]() { on_settings_clicked(); });
+    settings_button->setOnClick([this]() { on_settings_clicked(); });
     ui_registry_.add_component(settings_entity, UI::UIComponent(settings_button));
     ui_registry_.add_component(settings_entity, RType::UISettingsButton{});
 
     // Create quit button
     auto quit_entity = ui_registry_.spawn_entity();
     auto quit_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 110, 240, 45, "QUIT");
-    UI::ButtonStyle quit_style;
-    quit_style._normal_color = {40, 15, 15, 200};
-    quit_style._hovered_color = {70, 20, 20, 220};
-    quit_style._text_color = {255, 180, 180, 220};
-    quit_style._font_size = 20;
-    quit_button->set_style(quit_style);
+    quit_button->_style.setNormalColor({40, 15, 15, 200});
+    quit_button->_style.setHoveredColor({70, 20, 20, 220});
+    quit_button->_style.setTextColor({255, 180, 180, 220});
+    quit_button->_style.setFontSize(20);
     quit_button->set_neon_colors({255, 100, 100, 220}, {255, 100, 100, 100});
     quit_button->set_glitch_params(2.0f, 7.5f, true);
-    quit_button->set_on_click([this]() { on_quit_clicked(); });
+    quit_button->setOnClick([this]() { on_quit_clicked(); });
     ui_registry_.add_component(quit_entity, UI::UIComponent(quit_button));
     ui_registry_.add_component(quit_entity, RType::UIQuitButton{});
 
@@ -270,7 +270,7 @@ void MainMenuState::setup_ui() {
     if (ui_components) {
         for (auto [comp, ent] : zipper(*ui_components)) {
             if (comp._ui_element) {
-                comp._ui_element->set_visible(false);
+                comp._ui_element->setVisible(false);
             }
         }
     }
@@ -301,7 +301,7 @@ void MainMenuState::cleanup_ui() {
 void MainMenuState::on_play_clicked() {
     std::cout << "[MainMenu] Play button clicked" << std::endl;
     if (state_manager_) {
-        state_manager_->change_state("SoloLobby");
+        state_manager_->change_state("Lobby");
     }
 }
 

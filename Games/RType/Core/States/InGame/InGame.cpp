@@ -10,6 +10,7 @@
 #include "Entity/Components/Score/Score.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components/Position.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 #include <iostream>
 #include <raylib.h>
 #include <random>
@@ -74,7 +75,7 @@ void InGameState::pause() {
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
-                comp._ui_element->set_visible(false);
+                comp._ui_element->setVisible(false);
             }
         }
     }
@@ -88,7 +89,7 @@ void InGameState::resume() {
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
-                comp._ui_element->set_visible(true);
+                comp._ui_element->setVisible(true);
             }
         }
     }
@@ -199,56 +200,71 @@ void InGameState::handle_input() {
 void InGameState::setup_hud() {
     // FPS display
     auto fps_entity = ui_registry_.spawn_entity();
-    auto fps_text = std::make_shared<UI::UIText>(10, 10, "FPS: 0");
-    UI::TextStyle fps_style;
-    fps_style._text_color = {255, 255, 0, 255}; // Yellow
-    fps_style._font_size = 20;
-    fps_style._alignment = UI::TextAlignment::Left;
-    fps_text->set_style(fps_style);
+    auto fps_text = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(10, 10)
+            .text("FPS: 0")
+            .fontSize(20)
+            .textColor({255, 255, 0, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(fps_entity, UI::UIComponent(fps_text));
     ui_registry_.add_component(fps_entity, RType::UIFPSText{});
 
     // Player info
     auto player_entity = ui_registry_.spawn_entity();
-    auto player_info = std::make_shared<UI::UIText>(10, 35, "Player: 0");
-    UI::TextStyle player_style;
-    player_style._text_color = {255, 255, 255, 255}; // White
-    player_style._font_size = 20;
-    player_style._alignment = UI::TextAlignment::Left;
-    player_info->set_style(player_style);
+    auto player_info = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(10, 35)
+            .text("Player: 0")
+            .fontSize(20)
+            .textColor({255, 255, 255, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(player_entity, UI::UIComponent(player_info));
     ui_registry_.add_component(player_entity, RType::UIPlayerInfo{});
 
     // Connection status
     auto status_entity = ui_registry_.spawn_entity();
-    auto connection_status = std::make_shared<UI::UIText>(10, 60, "Status: Disconnected");
-    UI::TextStyle status_style;
-    status_style._text_color = {255, 100, 100, 255}; // Light red
-    status_style._font_size = 20;
-    status_style._alignment = UI::TextAlignment::Left;
-    connection_status->set_style(status_style);
+    auto connection_status = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(10, 60)
+            .text("Status: Disconnected")
+            .fontSize(20)
+            .textColor({255, 100, 100, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(status_entity, UI::UIComponent(connection_status));
     ui_registry_.add_component(status_entity, RType::UIConnectionStatus{});
 
     // Position display
     auto pos_entity = ui_registry_.spawn_entity();
-    auto position_text = std::make_shared<UI::UIText>(10, 85, "Position: (0, 0)");
-    UI::TextStyle pos_style;
-    pos_style._text_color = {200, 200, 200, 255}; // Light gray
-    pos_style._font_size = 20;
-    pos_style._alignment = UI::TextAlignment::Left;
-    position_text->set_style(pos_style);
+    auto position_text = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(10, 85)
+            .text("Position: (0, 0)")
+            .fontSize(20)
+            .textColor({200, 200, 200, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(pos_entity, UI::UIComponent(position_text));
     ui_registry_.add_component(pos_entity, RType::UIPositionText{});
 
     // Score display
     auto score_entity = ui_registry_.spawn_entity();
-    auto score_text = std::make_shared<UI::UIText>(10, 110, "Score: 0");
-    UI::TextStyle score_style;
-    score_style._text_color = {200, 200, 200, 255};
-    score_style._font_size = 20;
-    score_style._alignment = UI::TextAlignment::Left;
-    score_text->set_style(score_style);
+    auto score_text = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(10, 110)
+            .text("Score: 0")
+            .fontSize(20)
+            .textColor({200, 200, 200, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(score_entity, UI::UIComponent(score_text));
     ui_registry_.add_component(score_entity, RType::UIScoreText{});
 

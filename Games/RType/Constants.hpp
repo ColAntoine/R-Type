@@ -1,109 +1,44 @@
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *
- * EPITECH PROJECT - Tue, Oct, 2025                                                     *
+ * EPITECH PROJECT - Sun, Oct, 2025                                                     *
  * Title           - RTYPE                                                              *
  * Description     -                                                                    *
- *     MenuScene                                                                        *
+ *     Constants                                                                        *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ *
  *                                                                                      *
- *       _|_|_|_|  _|_|_|    _|_|_|  _|_|_|_|_|  _|_|_|_|    _|_|_|  _|    _|           *
- *       _|        _|    _|    _|        _|      _|        _|        _|    _|           *
- *       _|_|_|    _|_|_|      _|        _|      _|_|_|    _|        _|_|_|_|           *
- *       _|        _|          _|        _|      _|        _|        _|    _|           *
- *       _|_|_|_|  _|        _|_|_|      _|      _|_|_|_|    _|_|_|  _|    _|           *
+ *         ░        ░       ░░        ░        ░        ░░      ░░  ░░░░  ░             *
+ *         ▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒▒▒▒▒▒▒  ▒▒▒▒  ▒  ▒▒▒▒  ▒             *
+ *         ▓      ▓▓▓       ▓▓▓▓▓  ▓▓▓▓▓▓▓  ▓▓▓▓      ▓▓▓  ▓▓▓▓▓▓▓        ▓             *
+ *         █  ███████  ██████████  ███████  ████  ███████  ████  █  ████  █             *
+ *         █        █  ███████        ████  ████        ██      ██  ████  █             *
  *                                                                                      *
  * ------------------------------------------------------------------------------------ */
 
-#include "MenuScene.hpp"
-#include "Constants.hpp"
-#include "ECS/UI/UIBuilder.hpp"
-#include <optional>
+#ifndef INCLUDED_CONSTANTS_HPP
+    #define INCLUDED_CONSTANTS_HPP
 
-void MenuScene::init(float dt)
-{
-    _shouldStartGame = false;
-    _shouldQuit = false;
+#include <iostream>
 
-    // Create PLAY button using builder
-    _playButton = ButtonBuilder()
-        .centered(200)
-        .size(400, 100)
-        .text("PLAY")
-        .blue()
-        .textColor(WHITE)
-        .fontSize(24)
-        .border(2, WHITE)
-        .onClick([this]() {
-            _shouldStartGame = true;
-        })
-        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+// ====================================WIN======================================
+#define SCREEN_WIDTH        1920
+#define SCREEN_HEIGHT       1080
+// =============================================================================
 
-    // Create QUIT button using builder
-    _quitButton = ButtonBuilder()
-        .centered(350)
-        .size(400, 100)
-        .text("QUIT")
-        .red()
-        .textColor(WHITE)
-        .fontSize(24)
-        .border(2, WHITE)
-        .onClick([this]() {
-            _shouldQuit = true;
-        })
-        .build(SCREEN_WIDTH, SCREEN_HEIGHT);
-}
+// ==================================GRAVITY====================================
+#define GRAVITY             500.f
+// =============================================================================
 
-std::optional<GameState> MenuScene::update(float dt)
-{
+// ===================================BALLS=====================================
+#define MAX_BALLS           3
+// =============================================================================
 
-    if (_playButton) {
-        _playButton->handleInput();
-        _playButton->update(dt);
-    }
-    if (_quitButton) {
-        _quitButton->handleInput();
-        _quitButton->update(dt);
-    }
+// ===================================COLLISION=====================================
+#define COLLISION_WIDTH     40.f
+#define COLLISION_HEIGHT    40.f
+// =============================================================================
 
-
-    if (_shouldStartGame) {
-        _shouldStartGame = false;
-        return GameState::INGAME;
-    }
-
-    if (_shouldQuit) {
-        _shouldQuit = false;
-        return GameState::QUIT;
-    }
-
-    return std::nullopt;
-}
-
-void MenuScene::render(float dt)
-{
-    DrawText("PANG", SCREEN_WIDTH / 2 - 150 + 3, SCREEN_HEIGHT / 2 - 200 + 3, 120, BLACK);
-    DrawText("PANG", SCREEN_WIDTH / 2 - 150, SCREEN_HEIGHT / 2 - 200, 120, RAYWHITE);
-
-    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 250 + 2, SCREEN_HEIGHT / 2 - 50 + 2, 40, BLACK);
-    DrawText("Use Arrow Keys to Move", SCREEN_WIDTH / 2 - 250, SCREEN_HEIGHT / 2 - 50, 40, GRAY);
-
-    DrawText("Press SPACE to Shoot!", SCREEN_WIDTH / 2 - 220 + 2, SCREEN_HEIGHT / 2 - 5 + 2, 40, BLACK);
-    DrawText("Press SPACE to Shoot!", SCREEN_WIDTH / 2 - 220, SCREEN_HEIGHT / 2 - 5, 40, GRAY);
-
-    if (_playButton) {
-        _playButton->render();
-    }
-    if (_quitButton) {
-        _quitButton->render();
-    }
-}
-
-void MenuScene::destroy(float dt)
-{
-    _playButton.reset();
-    _quitButton.reset();
-}
+#endif
 
 /* ------------------------------------------------------------------------------------ *
  *                                                                                      *

@@ -104,8 +104,11 @@ void Core::loop()
         EndDrawing();
     }
 
+    _scenes[_currentState]->destroy(deltaTime);
     CloseWindow();
-}void Core::changeState(GameState newState)
+}
+
+void Core::changeState(GameState newState)
 {
     _currentState = newState;
 }

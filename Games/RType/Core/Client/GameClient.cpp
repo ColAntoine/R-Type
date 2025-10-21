@@ -6,7 +6,7 @@
 #include "Core/States/Loading/Loading.hpp"
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/Lobby/Lobby.hpp"
-#include "Core/States/SoloLobby/SoloLobby.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
@@ -18,7 +18,6 @@ void GameClient::register_states() {
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
     state_manager_.register_state<LobbyState>("Lobby");
-    state_manager_.register_state<SoloLobbyState>("SoloLobby");
 
     std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
     std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
@@ -31,7 +30,7 @@ bool GameClient::init()
 
     // Initialize Raylib window
     SetTraceLogLevel(LOG_WARNING);
-    InitWindow(1920, 1080, "R-Type - Solo Mode Available!");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
     SetTargetFPS(60);
 
     if (!IsWindowReady()) {

@@ -8,6 +8,7 @@
 #include "Lobby.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include "../../UI/Components/GlitchButton.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 #include <iostream>
 #include <raylib.h>
@@ -123,108 +124,127 @@ void LobbyState::setup_ui() {
 
     // Main lobby panel
     auto panel_entity = ui_registry_.spawn_entity();
-    auto lobby_panel = std::make_shared<UI::UIPanel>(center_x - 200, center_y - 150, 400, 320);
-    UI::PanelStyle panel_style;
-    panel_style._background_color = {20, 25, 35, 220};
-    panel_style._border_color = {0, 229, 255, 180};
-    panel_style._border_thickness = 2.0f;
-    panel_style._has_shadow = true;
-    panel_style._shadow_color = {0, 0, 0, 200};
-    panel_style._shadow_offset = 5.0f;
-    lobby_panel->set_style(panel_style);
+    auto lobby_panel = std::shared_ptr<UI::UIPanel>(
+        PanelBuilder()
+            .at(center_x - 200, center_y - 150)
+            .size(400, 320)
+            .backgroundColor({20, 25, 35, 220})
+            .border(2.0f, {0, 229, 255, 180})
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    lobby_panel->_style.setHasShadow(true);
+    lobby_panel->_style.setShadowColor({0, 0, 0, 200});
+    lobby_panel->_style.setShadowOffset(5.0f);
     ui_registry_.add_component(panel_entity, UI::UIComponent(lobby_panel));
     ui_registry_.add_component(panel_entity, RType::UILobbyPanel{});
 
     // Title
     auto title_entity = ui_registry_.spawn_entity();
-    auto title = std::make_shared<UI::UIText>(center_x, center_y - 120, "SERVER LOBBY");
-    UI::TextStyle title_style;
-    title_style._text_color = {0, 229, 255, 255};
-    title_style._font_size = 36;
-    title_style._alignment = UI::TextAlignment::Center;
-    title_style._has_shadow = true;
-    title_style._shadow_color = {0, 150, 200, 180};
-    title_style._shadow_offset = {3.0f, 3.0f};
-    title->set_style(title_style);
+    auto title = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x, center_y - 120)
+            .text("SERVER LOBBY")
+            .fontSize(36)
+            .textColor({0, 229, 255, 255})
+            .alignment(UI::TextAlignment::Center)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    title->_style.setHasShadow(true);
+    title->_style.setShadowColor({0, 150, 200, 180});
+    title->_style.setShadowOffset({3.0f, 3.0f});
     ui_registry_.add_component(title_entity, UI::UIComponent(title));
     ui_registry_.add_component(title_entity, RType::UILobbyTitle{});
 
     // Server IP label
     auto ip_label_entity = ui_registry_.spawn_entity();
-    auto ip_label = std::make_shared<UI::UIText>(center_x - 180, center_y - 70, "Server IP:");
-    UI::TextStyle label_style;
-    label_style._text_color = {200, 200, 200, 255};
-    label_style._font_size = 18;
-    label_style._alignment = UI::TextAlignment::Left;
-    ip_label->set_style(label_style);
+    auto ip_label = std::shared_ptr<UI::UIText>(
+        TextBuilder()
+            .at(center_x - 180, center_y - 70)
+            .text("Server IP:")
+            .fontSize(18)
+            .textColor({200, 200, 200, 255})
+            .alignment(UI::TextAlignment::Left)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
     ui_registry_.add_component(ip_label_entity, UI::UIComponent(ip_label));
     ui_registry_.add_component(ip_label_entity, RType::UIIPLabel{});
 
     // Server IP input
     auto ip_input_entity = ui_registry_.spawn_entity();
-    auto ip_input = std::make_shared<UI::UIInputField>(center_x - 180, center_y - 45, 240, 35, "127.0.0.1");
-    ip_input->set_text(server_ip_);
-    UI::InputFieldStyle ip_input_style;
-    ip_input_style._background_color = {30, 35, 45, 255};
-    ip_input_style._focused_color = {40, 45, 60, 255};
-    ip_input_style._border_color = {80, 80, 120, 255};
-    ip_input_style._focused_border_color = {0, 229, 255, 255};
-    ip_input_style._text_color = {255, 255, 255, 255};
-    ip_input_style._placeholder_color = {150, 150, 150, 255};
-    ip_input_style._cursor_color = {0, 229, 255, 255};
-    ip_input_style._font_size = 18;
-    ip_input_style._border_thickness = 1.5f;
-    ip_input->set_style(ip_input_style);
-    ip_input->set_on_text_changed([this](const std::string& ip) { on_server_ip_changed(ip); });
+    auto ip_input = std::shared_ptr<UI::UIInputField>(
+        InputBuilder()
+            .at(center_x - 180, center_y - 45)
+            .size(240, 35)
+            .placeholder("127.0.0.1")
+            .backgroundColor({30, 35, 45, 255})
+            .focusedColor({40, 45, 60, 255})
+            .border(1.5f, {80, 80, 120, 255})
+            .focusedBorderColor({0, 229, 255, 255})
+            .textColor({255, 255, 255, 255})
+            .placeholderColor({150, 150, 150, 255})
+            .cursorColor({0, 229, 255, 255})
+            .fontSize(18)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    ip_input->setText(server_ip_);
+    ip_input->setOnTextChanged([this](const std::string& ip) { on_server_ip_changed(ip); });
     ui_registry_.add_component(ip_input_entity, UI::UIComponent(ip_input));
     ui_registry_.add_component(ip_input_entity, RType::UIIPInput{});
 
     // Server Port label
     auto port_label_entity = ui_registry_.spawn_entity();
-    auto port_label = std::make_shared<UI::UIText>(center_x + 70, center_y - 70, "Port:");
-    port_label->set_style(label_style);
+    auto port_label = std::make_shared<UI::UIText>(center_x + 70, center_y - 70, "Port:", 18, Color{200, 200, 200, 255});
     ui_registry_.add_component(port_label_entity, UI::UIComponent(port_label));
     ui_registry_.add_component(port_label_entity, RType::UIPortLabel{});
 
     // Server Port input
     auto port_input_entity = ui_registry_.spawn_entity();
-    auto port_input = std::make_shared<UI::UIInputField>(center_x + 70, center_y - 45, 110, 35, "8080");
-    port_input->set_text(std::to_string(server_port_));
-    port_input->set_style(ip_input_style);
-    port_input->set_max_length(5);
-    port_input->set_on_text_changed([this](const std::string& port) { on_server_port_changed(port); });
+    auto port_input = std::shared_ptr<UI::UIInputField>(
+        InputBuilder()
+            .at(center_x + 70, center_y - 45)
+            .size(110, 35)
+            .placeholder("8080")
+            .backgroundColor({30, 35, 45, 255})
+            .focusedColor({40, 45, 60, 255})
+            .border(1.5f, {80, 80, 120, 255})
+            .focusedBorderColor({0, 229, 255, 255})
+            .textColor({255, 255, 255, 255})
+            .placeholderColor({150, 150, 150, 255})
+            .cursorColor({0, 229, 255, 255})
+            .fontSize(18)
+            .build(SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
+    port_input->setText(std::to_string(server_port_));
+    port_input->setMaxLength(5);
+    port_input->setOnTextChanged([this](const std::string& port) { on_server_port_changed(port); });
     ui_registry_.add_component(port_input_entity, UI::UIComponent(port_input));
     ui_registry_.add_component(port_input_entity, RType::UIPortInput{});
 
     // Connect button
     auto connect_entity = ui_registry_.spawn_entity();
     auto connect_button = std::make_shared<RType::GlitchButton>(center_x - 100, center_y + 20, 200, 50, "CONNECT");
-    UI::ButtonStyle connect_style;
-    connect_style._normal_color = {20, 80, 20, 220};
-    connect_style._hovered_color = {30, 120, 30, 240};
-    connect_style._pressed_color = {15, 60, 15, 200};
-    connect_style._text_color = {200, 255, 200, 255};
-    connect_style._font_size = 24;
-    connect_button->set_style(connect_style);
+    connect_button->_style.setNormalColor({20, 80, 20, 220});
+    connect_button->_style.setHoveredColor({30, 120, 30, 240});
+    connect_button->_style.setPressedColor({15, 60, 15, 200});
+    connect_button->_style.setTextColor({200, 255, 200, 255});
+    connect_button->_style.setFontSize(24);
     connect_button->set_neon_colors({100, 255, 100, 255}, {100, 255, 100, 120});
     connect_button->set_glitch_params(2.2f, 8.0f, true);
-    connect_button->set_on_click([this]() { on_connect_clicked(); });
+    connect_button->setOnClick([this]() { on_connect_clicked(); });
     ui_registry_.add_component(connect_entity, UI::UIComponent(connect_button));
     ui_registry_.add_component(connect_entity, RType::UIConnectButton{});
 
     // Back button
     auto back_entity = ui_registry_.spawn_entity();
     auto back_button = std::make_shared<RType::GlitchButton>(center_x - 100, center_y + 90, 200, 40, "BACK");
-    UI::ButtonStyle back_style;
-    back_style._normal_color = {20, 20, 30, 220};
-    back_style._hovered_color = {36, 36, 52, 240};
-    back_style._pressed_color = {16, 16, 24, 200};
-    back_style._text_color = {220, 240, 255, 255};
-    back_style._font_size = 20;
-    back_button->set_style(back_style);
+    back_button->_style.setNormalColor({20, 20, 30, 220});
+    back_button->_style.setHoveredColor({36, 36, 52, 240});
+    back_button->_style.setPressedColor({16, 16, 24, 200});
+    back_button->_style.setTextColor({220, 240, 255, 255});
+    back_button->_style.setFontSize(20);
     back_button->set_neon_colors({0, 229, 255, 220}, {0, 229, 255, 100});
     back_button->set_glitch_params(1.8f, 7.0f, true);
-    back_button->set_on_click([this]() { on_back_clicked(); });
+    back_button->setOnClick([this]() { on_back_clicked(); });
     ui_registry_.add_component(back_entity, UI::UIComponent(back_button));
     ui_registry_.add_component(back_entity, RType::UILobbyBackButton{});
 
