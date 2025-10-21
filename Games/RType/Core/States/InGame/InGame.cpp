@@ -14,6 +14,7 @@
 #include <raylib.h>
 #include <random>
 #include <string>
+#include <algorithm>
 
 InGameState::InGameState(Application* app) : app_(app) {}
 

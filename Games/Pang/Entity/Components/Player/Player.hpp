@@ -1,0 +1,32 @@
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** Player component
+*/
+
+#pragma once
+
+#include "ECS/Components/IComponent.hpp"
+#include "ECS/Components.hpp"
+#include "ECS/DLLoader.hpp"
+#include "ECS/Registry.hpp"
+#include "Entity/Components/Invincibility/Invincibility.hpp"
+
+struct Player : public IComponent {
+    int _life{3};
+    unsigned _score{0};
+    float _cooldown{0.5f};
+    float _currentCooldown{0.f};
+    float _moveSpeed{300.f};
+    bool _isHit{false};
+    bool _isShooting{false};
+    float _shootCd{2.f};
+
+    Player();
+    Player(int life, float cooldown, float currentCooldown,
+        int score, float moveSpeed, bool isHit);
+
+    public:
+        void spawn(IComponentFactory *factory, registry &r, position pos);
+};
