@@ -22,6 +22,7 @@ void MainMenuState::enter() {
     ui_registry_.register_component<RType::UIMainPanel>();
     ui_registry_.register_component<RType::UITitleText>();
     ui_registry_.register_component<RType::UIPlayButton>();
+    ui_registry_.register_component<RType::UISoloPlayButton>();
     ui_registry_.register_component<RType::UISettingsButton>();
     ui_registry_.register_component<RType::UIQuitButton>();
 
@@ -95,6 +96,7 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         auto* main_panels = ui_registry_.get_if<RType::UIMainPanel>();
         auto* title_texts = ui_registry_.get_if<RType::UITitleText>();
         auto* play_buttons = ui_registry_.get_if<RType::UIPlayButton>();
+        auto* solo_play_buttons = ui_registry_.get_if<RType::UISoloPlayButton>();
         auto* settings_buttons = ui_registry_.get_if<RType::UISettingsButton>();
         auto* quit_buttons = ui_registry_.get_if<RType::UIQuitButton>();
 
@@ -120,6 +122,15 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         // Play button at 33%
         if (play_buttons) {
             for (auto [ui_comp, play_tag, ent] : zipper(*ui_components, *play_buttons)) {
+                if (ui_comp._ui_element) {
+                    ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.33f);
+                }
+            }
+        }
+
+        // Solo play button at 33% (same as play)
+        if (solo_play_buttons) {
+            for (auto [ui_comp, solo_tag, ent] : zipper(*ui_components, *solo_play_buttons)) {
                 if (ui_comp._ui_element) {
                     ui_comp._ui_element->setVisible(menu_reveal_progress_ >= 0.33f);
                 }
@@ -239,9 +250,23 @@ void MainMenuState::setup_ui() {
     ui_registry_.add_component(play_entity, UI::UIComponent(play_button));
     ui_registry_.add_component(play_entity, RType::UIPlayButton{});
 
+    // Create solo play button
+    auto solo_play_entity = ui_registry_.spawn_entity();
+    auto solo_play_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 45, 240, 45, "SOLO PLAY");
+    solo_play_button->_style.setNormalColor({20, 30, 20, 220});
+    solo_play_button->_style.setHoveredColor({36, 52, 36, 240});
+    solo_play_button->_style.setPressedColor({16, 24, 16, 200});
+    solo_play_button->_style.setTextColor({220, 255, 220, 255});
+    solo_play_button->_style.setFontSize(22);
+    solo_play_button->set_neon_colors({0, 255, 100, 255}, {0, 255, 100, 120});
+    solo_play_button->set_glitch_params(2.0f, 7.0f, true);
+    solo_play_button->setOnClick([this]() { on_solo_play_clicked(); });
+    ui_registry_.add_component(solo_play_entity, UI::UIComponent(solo_play_button));
+    ui_registry_.add_component(solo_play_entity, RType::UISoloPlayButton{});
+
     // Create settings button
     auto settings_entity = ui_registry_.spawn_entity();
-    auto settings_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 50, 240, 45, "SETTINGS");
+    auto settings_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 100, 240, 45, "SETTINGS");
     settings_button->_style.setNormalColor({20, 20, 30, 200});
     settings_button->_style.setHoveredColor({36, 36, 52, 220});
     settings_button->_style.setTextColor({200, 230, 255, 220});
@@ -254,7 +279,7 @@ void MainMenuState::setup_ui() {
 
     // Create quit button
     auto quit_entity = ui_registry_.spawn_entity();
-    auto quit_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 110, 240, 45, "QUIT");
+    auto quit_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 155, 240, 45, "QUIT");
     quit_button->_style.setNormalColor({40, 15, 15, 200});
     quit_button->_style.setHoveredColor({70, 20, 20, 220});
     quit_button->_style.setTextColor({255, 180, 180, 220});
@@ -293,6 +318,7 @@ void MainMenuState::cleanup_ui() {
         ui_registry_.remove_component<RType::UIMainPanel>(ent);
         ui_registry_.remove_component<RType::UITitleText>(ent);
         ui_registry_.remove_component<RType::UIPlayButton>(ent);
+        ui_registry_.remove_component<RType::UISoloPlayButton>(ent);
         ui_registry_.remove_component<RType::UISettingsButton>(ent);
         ui_registry_.remove_component<RType::UIQuitButton>(ent);
     }
@@ -302,6 +328,13 @@ void MainMenuState::on_play_clicked() {
     std::cout << "[MainMenu] Play button clicked" << std::endl;
     if (state_manager_) {
         state_manager_->change_state("Lobby");
+    }
+}
+
+void MainMenuState::on_solo_play_clicked() {
+    std::cout << "[MainMenu] Solo Play button clicked" << std::endl;
+    if (state_manager_) {
+        state_manager_->change_state("SoloLobby");
     }
 }
 

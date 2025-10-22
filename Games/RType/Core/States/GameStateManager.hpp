@@ -48,6 +48,11 @@ class GameStateManager {
             };
         }
 
+        // State factory registration with custom factory
+        void register_state(const std::string& name, std::function<std::shared_ptr<IGameState>()> factory) {
+            state_factories_[name] = factory;
+        }
+
         // Register state with custom factory function
         void register_state_with_factory(const std::string& name, std::function<std::shared_ptr<IGameState>()> factory) {
             state_factories_[name] = factory;

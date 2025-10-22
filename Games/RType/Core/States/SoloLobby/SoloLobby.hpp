@@ -2,7 +2,7 @@
 ** EPITECH PROJECT, 2025
 ** R-Type
 ** File description:
-** Settings Game State
+** Solo Lobby Game State - Simple setup for solo play
 */
 
 #pragma once
@@ -14,29 +14,19 @@
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
-#include "ECS/UI/Components/InputField.hpp"
-#include "Core/IGameCore.hpp"
 #include <memory>
-#include <vector>
-#include <string>
 #include <random>
 
-typedef IGameCore Application;
-
-// Tag components for Settings UI elements
+// Tag components for Solo Lobby UI elements
 namespace RType {
-    struct UISettingsPanel : public IComponent {};
-    struct UISettingsTitle : public IComponent {};
-    struct UINameLabel : public IComponent {};
-    struct UINameInput : public IComponent {};
-    struct UIAudioLabel : public IComponent {};
-    struct UIGraphicsLabel : public IComponent {};
-    struct UIBackButton : public IComponent {};
+    struct UISoloLobbyPanel : public IComponent {};
+    struct UISoloLobbyTitle : public IComponent {};
+    struct UIStartSoloButton : public IComponent {};
+    struct UISoloLobbyBackButton : public IComponent {};
 }
 
-class SettingsState : public IGameState {
+class SoloLobbyState : public IGameState {
 private:
-    Application* app_;
     bool initialized_{false};
 
     // ECS UI system
@@ -53,9 +43,15 @@ private:
     std::mt19937 ascii_rng_{std::random_device{}()};
     std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
+    // Menu appearance timing
+    float menu_show_delay_{1.0f};
+    float menu_elapsed_{0.0f};
+    float menu_reveal_duration_{0.8f};
+    float menu_reveal_progress_{0.0f};
+
 public:
-    SettingsState(Application* app);
-    ~SettingsState() override = default;
+    SoloLobbyState() = default;
+    ~SoloLobbyState() override = default;
 
     // IGameState implementation
     void enter() override;
@@ -67,14 +63,15 @@ public:
     void render() override;
     void handle_input() override;
 
-    std::string get_name() const override { return "Settings"; }
-    bool blocks_render() const override { return false; } // Allow main menu to render behind
+    std::string get_name() const override { return "SoloLobby"; }
 
 private:
     void setup_ui();
     void cleanup_ui();
+    void update_reveal_animation(float delta_time);
+    void render_ascii_background();
 
     // Button callbacks
+    void on_start_solo_clicked();
     void on_back_clicked();
-    void on_player_name_changed(const std::string& name);
 };

@@ -26,6 +26,7 @@ namespace RType {
     struct UIMainPanel : public IComponent {};
     struct UITitleText : public IComponent {};
     struct UIPlayButton : public IComponent {};
+    struct UISoloPlayButton : public IComponent {};
     struct UISettingsButton : public IComponent {};
     struct UIQuitButton : public IComponent {};
 }
@@ -54,6 +55,7 @@ private:
 
     // Button callbacks
     void on_play_clicked();
+    void on_solo_play_clicked();
     void on_settings_clicked();
     void on_quit_clicked();
 

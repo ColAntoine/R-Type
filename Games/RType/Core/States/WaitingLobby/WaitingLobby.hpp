@@ -13,12 +13,13 @@
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
+#include "../IGameCore.hpp"
 #include <vector>
 #include <string>
 #include <random>
 
 // Forward declarations
-class Application;
+typedef IGameCore Application;
 
 struct PlayerInfo {
     int player_id;

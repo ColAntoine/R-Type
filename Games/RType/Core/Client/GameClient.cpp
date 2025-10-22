@@ -6,6 +6,9 @@
 #include "Core/States/Loading/Loading.hpp"
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/Lobby/Lobby.hpp"
+#include "Core/States/SoloLobby/SoloLobby.hpp"
+#include "Core/States/WaitingLobby/WaitingLobby.hpp"
+#include "Core/States/SimpleGame/SimpleGame.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
 GameClient::GameClient() {}
@@ -18,8 +21,15 @@ void GameClient::register_states() {
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
     state_manager_.register_state<LobbyState>("Lobby");
+    state_manager_.register_state<SoloLobbyState>("SoloLobby");
+    state_manager_.register_state("WaitingLobby", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<WaitingLobbyState>(this);
+    });
+    state_manager_.register_state("SimpleGame", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<SimpleGameState>(this, ecs_registry_);
+    });
 
-    std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
+    std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby, WaitingLobby, SimpleGame" << std::endl;
     std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
     std::cout << "[GameClient] ✓ Asset Manager, Renderer, Physics, Audio, Messaging, Plugin API" << std::endl;
 }
@@ -30,7 +40,7 @@ bool GameClient::init()
 
     // Initialize Raylib window
     SetTraceLogLevel(LOG_WARNING);
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
+    InitWindow(1024, 768, "R-Type - Solo Mode Available!");
     SetTargetFPS(60);
 
     if (!IsWindowReady()) {
