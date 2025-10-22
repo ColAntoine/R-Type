@@ -33,6 +33,15 @@ namespace RType::Network {
         std::vector<ReceivedPacket> packets;
         msgq_->drain(packets);
 
+        // ACK system and state history
+        store_past_states_for_ack_system();
+        track_client_acks_and_rtt();
+        handle_packet_loss();
+
+        // Lag compensation
+        apply_lag_compensation();
+        backdate_inputs_for_fairness();
+
         // Ensure Position component is registered
         registry_.register_component<position>();
 
@@ -107,6 +116,14 @@ namespace RType::Network {
     void ServerECS::tick(float dt) {
         // run all registered systems (systems may consume net_input components)
         loader_.update_all_systems(registry_, dt);
+
+        // Apply delta compression for efficient state updates
+        apply_delta_compression();
+        send_compressed_entity_states();
+
+        // Rollback-based netcode
+        predict_remote_player_states();
+        correct_remote_states_with_rollback();
     }
 
     registry& ServerECS::GetRegistry() {
@@ -209,6 +226,52 @@ namespace RType::Network {
         std::memcpy(buffer.data() + 1, &start_msg, sizeof(start_msg));
 
         udp_server_->broadcast(buffer.data(), buffer.size());
+    }
+
+    // Network optimization placeholders
+    void ServerECS::apply_delta_compression() {
+        // Placeholder for delta compression
+        // Send only changed fields, reduced bandwidth usage
+    }
+
+    void ServerECS::send_compressed_entity_states() {
+        // Placeholder for sending compressed entity states
+        // Broadcast compressed state updates to all clients
+    }
+
+    void ServerECS::store_past_states_for_ack_system() {
+        // Placeholder for storing past states for ACK system
+        // Store past states to handle packet loss and resending
+    }
+
+    void ServerECS::track_client_acks_and_rtt() {
+        // Placeholder for tracking client ACKs and RTT
+        // Track client acknowledgments and round-trip time
+    }
+
+    void ServerECS::handle_packet_loss() {
+        // Placeholder for handling packet loss
+        // Detect and handle lost packets, resend if necessary
+    }
+
+    void ServerECS::apply_lag_compensation() {
+        // Placeholder for applying lag compensation
+        // Compensate for network latency in hit detection
+    }
+
+    void ServerECS::backdate_inputs_for_fairness() {
+        // Placeholder for backdating inputs for fairness
+        // Backdate player inputs to account for their latency
+    }
+
+    void ServerECS::predict_remote_player_states() {
+        // Placeholder for predicting remote player states
+        // Predict states of remote players for rollback netcode
+    }
+
+    void ServerECS::correct_remote_states_with_rollback() {
+        // Placeholder for correcting remote states with rollback
+        // Correct predictions when authoritative state arrives
     }
 
 } // namespace RType::Network

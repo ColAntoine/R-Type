@@ -65,6 +65,17 @@ class ServerECS {
         // Lobby state
         std::vector<PlayerInfo> players_;
         bool game_started_{false};
+
+        // Network optimization placeholders
+        void apply_delta_compression();
+        void send_compressed_entity_states();
+        void store_past_states_for_ack_system();
+        void track_client_acks_and_rtt();
+        void handle_packet_loss();
+        void apply_lag_compensation();
+        void backdate_inputs_for_fairness();
+        void predict_remote_player_states();
+        void correct_remote_states_with_rollback();
 };
 
 } // namespace RType::Network

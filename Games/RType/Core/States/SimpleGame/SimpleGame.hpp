@@ -56,6 +56,14 @@ private:
     void render_falling_background();
     void update_background(float delta_time);
 
+    // Client-side prediction placeholders
+    void predict_local_movement();
+    void apply_client_side_prediction();
+    void perform_server_reconciliation();
+    void rewind_and_replay_on_misprediction();
+    void interpolate_remote_entity_positions();
+    void smooth_remote_entity_movement();
+
     // Game state
     bool game_running_{true};
 

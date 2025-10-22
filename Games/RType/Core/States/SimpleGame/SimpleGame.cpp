@@ -133,7 +133,7 @@ void SimpleGameState::update(float delta_time) {
         return;
     }
 
-    // Update player based on input
+        // Update player based on input
     for (auto [player, pos, vel, ent] : zipper(*player_components, *position_components, *velocity_components)) {
         // Reset velocity
         vel.vx = 0.f;
@@ -153,6 +153,10 @@ void SimpleGameState::update(float delta_time) {
             vel.vx = player.speed;
         }
 
+        // Apply client-side prediction
+        predict_local_movement();
+        apply_client_side_prediction();
+
         // Update position
         pos.x += vel.vx * delta_time;
         pos.y += vel.vy * delta_time;
@@ -165,11 +169,19 @@ void SimpleGameState::update(float delta_time) {
 
         // Send position update to server
         send_position_update(pos.x, pos.y);
+
+        // Perform server reconciliation if needed
+        perform_server_reconciliation();
+        rewind_and_replay_on_misprediction();
     }
 }
 
 void SimpleGameState::render() {
     if (!initialized_) return;
+
+    // Entity interpolation for smooth remote movement
+    interpolate_remote_entity_positions();
+    smooth_remote_entity_movement();
 
     // Draw animated background
     render_falling_background();
@@ -277,3 +289,35 @@ void SimpleGameState::render_falling_background() {
     DrawRectangle(0, 0, GetScreenWidth(), 40, {0, 0, 0, 80});
     DrawRectangle(0, GetScreenHeight()-40, GetScreenWidth(), 40, {0, 0, 0, 80});
 }
+
+// Client-side prediction placeholders
+void SimpleGameState::predict_local_movement() {
+    // Placeholder for predicting local movement
+    // Predict own movement locally for responsive feel
+}
+
+void SimpleGameState::apply_client_side_prediction() {
+    // Placeholder for applying client-side prediction
+    // Apply predicted movement before server confirmation
+}
+
+void SimpleGameState::perform_server_reconciliation() {
+    // Placeholder for server reconciliation
+    // Check for mispredictions and correct client state
+}
+
+void SimpleGameState::rewind_and_replay_on_misprediction() {
+    // Placeholder for rewinding and replaying on misprediction
+    // Rewind to server state and replay inputs
+}
+
+void SimpleGameState::interpolate_remote_entity_positions() {
+    // Placeholder for interpolating remote entity positions
+    // Smooth movement of remote entities between server updates
+}
+
+void SimpleGameState::smooth_remote_entity_movement() {
+    // Placeholder for smoothing remote entity movement
+    // Apply interpolation to make remote entities move smoothly
+}
+
