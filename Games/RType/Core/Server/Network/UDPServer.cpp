@@ -330,9 +330,24 @@ namespace RType::Network {
                         dispatcher_data.push_back(header->message_type);
                         dispatcher_data.insert(dispatcher_data.end(), payload, payload + header->payload_size);
 
-                        // Handle system messages like CLIENT_CONNECT before queuing
+
+                        // Handle system messages like CLIENT_CONNECT and CLIENT_READY before queuing
                         if (header->message_type == static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_CONNECT)) {
                             handle_client_connect(session, payload, header->payload_size);
+                        } else if (header->message_type == static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_READY)) {
+                            // Parse CLIENT_READY payload
+                            if (payload && header->payload_size >= sizeof(Protocol::ClientReady)) {
+                                Protocol::ClientReady ready_msg;
+                                std::memcpy(&ready_msg, payload, sizeof(Protocol::ClientReady));
+                                // Find session by player_id and update ready status
+                                for (auto& [id, s] : sessions_) {
+                                    if (s->get_player_id() == static_cast<int>(ready_msg.player_id)) {
+                                        s->set_ready(ready_msg.ready_state != 0);
+                                    }
+                                }
+                                // Broadcast updated player list to all clients
+                                broadcast_player_list();
+                            }
                         }
 
                         // If a message_queue_ is set, enqueue the packet for the server ECS
@@ -450,6 +465,9 @@ namespace RType::Network {
         if (player_connect_callback_) {
             player_connect_callback_(assigned_player_id, std::string(connect_msg.player_name));
         }
+
+        // Broadcast updated player list to all clients
+        broadcast_player_list();
     }
 
 } // namespace RType::Network
