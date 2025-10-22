@@ -2,89 +2,63 @@
 ** EPITECH PROJECT, 2025
 ** R-Type
 ** File description:
-** Simple Game State - Basic solo gameplay with player movement
+** Simple Solo Game State
 */
 
 #pragma once
 
 #include "Core/States/GameState.hpp"
 #include "ECS/Registry.hpp"
-#include "ECS/Systems/UISystem.hpp"
-#include "ECS/Components/UIComponent.hpp"
-#include "ECS/UI/Components/Text.hpp"
+#include "ECS/Components/IComponent.hpp"
 #include <memory>
 #include <vector>
 
-// Forward declarations
-class GameClient;
+// Tag components for identifying game entities
+struct SimpleGamePlayer : public IComponent {
+    float speed{300.f};
+    float size{40.f};
 
-// Tag components for SimpleGame HUD elements
-namespace RType {
-    struct UIPlayerInfo : public IComponent {};
-    struct UIInstructions : public IComponent {};
-    struct UINetworkStatus : public IComponent {};
-}
+    SimpleGamePlayer() = default;
+    SimpleGamePlayer(float s, float sz) : speed(s), size(sz) {}
+};
+
+class GameClient;  // Forward declaration
 
 class SimpleGameState : public IGameState {
-    private:
-        GameClient* client_;
-        bool initialized_{false};
-        bool paused_{false};
+public:
+    SimpleGameState(GameClient* client, registry& reg);
+    ~SimpleGameState() override = default;
 
-        // ECS registries
-        registry& game_registry_;  // Reference to client's game registry
-        registry ui_registry_;     // UI registry
+    // IGameState implementation
+    void enter() override;
+    void exit() override;
+    void pause() override;
+    void resume() override;
 
-        // ECS UI system for HUD
-        UI::UISystem ui_system_;
+    void update(float delta_time) override;
+    void render() override;
+    void handle_input() override;
 
-        // Player entity
-        entity player_entity_{};
+    std::string get_name() const override { return "SimpleGame"; }
 
-        // Game background state
-        float bg_time_{0.0f};
-        struct DataStream { float x; float y; float speed; float length; int chars; };
-        std::vector<DataStream> bg_streams_;
-        int bg_stream_count_{0};
+private:
+    GameClient* client_;
+    registry& game_registry_;
+    entity player_entity_{UINT32_MAX};
+    bool initialized_{false};
 
-        // Network placeholders
-        bool network_connected_{false};
-        float last_movement_confirmation_{0.0f};
-        std::vector<std::pair<float, float>> predicted_positions_;
+    void setup_game();
+    void cleanup_game();
+    void spawn_player();
+    void render_falling_background();
+    void update_background(float delta_time);
 
-    public:
-        SimpleGameState(GameClient* client, registry& game_registry);
-        ~SimpleGameState() override = default;
+    // Game state
+    bool game_running_{true};
 
-        // IGameState implementation
-        void enter() override;
-        void exit() override;
-        void pause() override;
-        void resume() override;
-
-        void update(float delta_time) override;
-        void render() override;
-        void handle_input() override;
-
-        std::string get_name() const override { return "SimpleGame"; }
-        bool blocks_update() const override { return true; }
-        bool blocks_render() const override { return true; }
-
-    private:
-        void setup_hud();
-        void cleanup_hud();
-        void update_hud();
-
-        void create_player();
-        void update_player(float delta_time);
-        void handle_player_input();
-
-        // Render helpers
-        void render_falling_background();
-        void render_game_entities();
-
-        // Network placeholders
-        void send_movement_to_server(float x, float y);
-        void receive_server_confirmations();
-        void apply_client_prediction();
+    // Background animation state
+    float bg_time_{0.0f};
+    struct DataStream { float x; float y; float speed; float length; int chars; };
+    std::vector<DataStream> bg_streams_;
+    int bg_stream_count_{0};
 };
