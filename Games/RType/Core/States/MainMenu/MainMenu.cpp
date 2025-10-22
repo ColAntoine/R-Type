@@ -50,20 +50,36 @@ void MainMenuState::on_play_clicked()
     }
 }
 
+// void MainMenuState::setup_ui()
+// {
+//     std::cout << "[MainMenu] Setting up UI" << std::endl;
+//     int sw = GetScreenWidth();
+//     int sh = GetScreenHeight();
+//     int center_x = sw / 2.0f;
+//     int center_y = sh / 2.0f;
+
 void MainMenuState::setup_ui()
 {
     std::cout << "[MainMenu] Setting up UI" << std::endl;
-    int sw = GetScreenWidth();
-    int sh = GetScreenHeight();
-    int center_x = sw / 2.0f;
-    int center_y = sh / 2.0f;
 
-    auto button_entity = this->_registry.spawn_entity();
-
-    auto componentFactory = this->_systemLoader.get_factory();
-    if (componentFactory) {
-        componentFactory->create_component<UI::UIButton>(this->_registry, button_entity, center_x - 100, center_y - 25, 200, 50, "PLAY");
-    }
+    // auto play_button = std::make_shared<UI::UIButton>(400, 300, 200, 60, "Play Game");
+    // UI::ButtonStyle style;
+    // style.setNormalColor({70, 70, 70, 255});
+    // style.setHoveredColor({100, 100, 255, 255});
+    // style.setPressedColor({50, 50, 150, 255});
+    // style.setFontSize(24);
+    // play_button->setStyle(style);
+    // play_button->setOnClick([this]() {
+    //     std::cout << "[MainMenu] Play button clicked" << std::endl;
+    //     if (this->_stateManager)
+    //         this->_stateManager->change_state("InGame");
+    // });
+    // auto button_entity = this->_registry.spawn_entity();
+    // this->_registry.add_component(
+    //     button_entity,
+    //     UI::UIComponent(play_button)  // ← Wrap le button dans UIComponent
+    // );
+}
     // auto button = std::make_shared<UI::UIButton>(center_x - 100, center_y - 25, 200, 50, "PLAY");
     // UI::ButtonStyle play_style;
     // play_style.setHoveredColor({36, 36, 52, 240});
@@ -74,4 +90,3 @@ void MainMenuState::setup_ui()
     // button->setStyle(play_style);
     // button->setOnClick([this]() { this->on_play_clicked(); });
     // _registry.add_component(button_entity, UI::UIComponent(button));
-}
