@@ -14,7 +14,13 @@
 #include <raylib.h>
 #include <random>
 
-LobbyState::LobbyState() {}
+LobbyState::LobbyState(std::shared_ptr<NetworkState> network_state)
+    : network_state_(network_state) 
+{
+    if (!network_state_->udp_client) {
+        network_state_->udp_client = std::make_shared<UdpClient>();
+    }
+}
 
 void LobbyState::enter() {
     std::cout << "[Lobby] Entering state" << std::endl;
@@ -256,7 +262,36 @@ void LobbyState::cleanup_ui() {
 }
 
 void LobbyState::on_connect_clicked() {
-    // Update status
+    std::cout << "[Lobby] Connect button clicked - attempting to connect to " 
+              << server_ip_ << ":" << server_port_ << std::endl;
+
+    if (!network_state_ || !network_state_->udp_client) {
+        std::cerr << "[Lobby] ERROR: Network state not initialized" << std::endl;
+        return;
+    }
+
+    // Attempt to connect with handshake
+    auto result = network_state_->udp_client->connect(
+        server_ip_, 
+        static_cast<uint16_t>(server_port_), 
+        "Player", 
+        1, 
+        2000
+    );
+    
+    if (result.has_value()) {
+        network_state_->player_id = result->player_id;
+        network_state_->connected = true;
+        std::cout << "[Lobby] Successfully connected! Player ID: " << network_state_->player_id << std::endl;
+        
+        // Transition to SimpleGame state (the solo game that will also send updates to server)
+        if (state_manager_) {
+            state_manager_->change_state("SimpleGame");
+        }
+    } else {
+        std::cerr << "[Lobby] Failed to connect to server" << std::endl;
+        network_state_->connected = false;
+    }
 }
 
 void LobbyState::on_back_clicked() {

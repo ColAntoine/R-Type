@@ -8,6 +8,7 @@
 #include "SimpleGame.hpp"
 #include "Core/Client/GameClient.hpp"
 #include "Core/States/GameStateManager.hpp"
+#include "Core/Server/Protocol/Protocol.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Zipper.hpp"
@@ -17,8 +18,8 @@
 #include <random>
 #include <algorithm>
 
-SimpleGameState::SimpleGameState(GameClient* client, registry& reg)
-    : client_(client), game_registry_(reg) {}
+SimpleGameState::SimpleGameState(GameClient* client, registry& reg, std::shared_ptr<NetworkState> network_state)
+    : client_(client), game_registry_(reg), network_state_(network_state) {}
 
 void SimpleGameState::enter() {
     std::cout << "[SimpleGame] Entering Solo Game State" << std::endl;
@@ -92,6 +93,31 @@ void SimpleGameState::spawn_player() {
     std::cout << "[SimpleGame] Player spawned at (" << start_x << ", " << start_y << ")" << std::endl;
 }
 
+void SimpleGameState::send_position_update(float x, float y) {
+    // Only send if connected to server
+    if (!network_state_ || !network_state_->connected || !network_state_->udp_client) {
+        return;
+    }
+
+    // Build POSITION_UPDATE packet
+    RType::Protocol::PacketBuilder builder;
+    builder.begin_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::POSITION_UPDATE));
+    
+    RType::Protocol::PositionUpdate pos_update;
+    pos_update.entity_id = network_state_->player_id;
+    pos_update.x = x;
+    pos_update.y = y;
+    pos_update.vx = 0.f;
+    pos_update.vy = 0.f;
+    pos_update.timestamp = static_cast<uint32_t>(GetTime() * 1000);
+    
+    builder.add_struct(pos_update);
+    auto packet = builder.finalize();
+    
+    // Send to server
+    network_state_->udp_client->send(packet.data(), packet.size());
+}
+
 void SimpleGameState::update(float delta_time) {
     if (!initialized_ || !game_running_) return;
 
@@ -136,6 +162,9 @@ void SimpleGameState::update(float delta_time) {
         if (pos.x + player.size > GetScreenWidth()) pos.x = GetScreenWidth() - player.size;
         if (pos.y < 0.f) pos.y = 0.f;
         if (pos.y + player.size > GetScreenHeight()) pos.y = GetScreenHeight() - player.size;
+
+        // Send position update to server
+        send_position_update(pos.x, pos.y);
     }
 }
 

@@ -23,6 +23,7 @@ public:
 
 private:
     void run_tick_loop();
+    void render_game_state();
 
     std::unique_ptr<asio::io_context> io_context_;
     std::unique_ptr<RType::Network::NetworkManager> network_manager_;

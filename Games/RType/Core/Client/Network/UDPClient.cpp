@@ -63,3 +63,16 @@ void UdpClient::disconnect() {
     asio::error_code ec;
     if (socket_.is_open()) socket_.close(ec);
 }
+
+void UdpClient::send(const void* data, size_t size) {
+    if (!socket_.is_open()) {
+        std::cerr << "UDPClient::send error: socket not open" << std::endl;
+        return;
+    }
+    
+    try {
+        socket_.send_to(asio::buffer(data, size), server_endpoint_);
+    } catch (const std::exception& e) {
+        std::cerr << "UDPClient::send error: " << e.what() << std::endl;
+    }
+}

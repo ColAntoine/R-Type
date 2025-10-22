@@ -19,6 +19,9 @@ class UdpClient {
 
         void disconnect();
 
+        // Send raw packet data to server
+        void send(const void* data, size_t size);
+
     private:
         asio::io_context io_context_;
         asio::ip::udp::socket socket_;

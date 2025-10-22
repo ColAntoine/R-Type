@@ -15,6 +15,7 @@
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/UI/Components/InputField.hpp"
+#include "Core/States/NetworkState.hpp"
 #include <memory>
 #include <random>
 
@@ -36,6 +37,9 @@ private:
     std::string server_ip_{"127.0.0.1"};
     int server_port_{8080};
 
+    // Network connection state (shared with InGame)
+    std::shared_ptr<NetworkState> network_state_;
+
     // ECS UI system
     registry ui_registry_;
     UI::UISystem ui_system_;
@@ -51,7 +55,7 @@ private:
     std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
 public:
-    LobbyState();
+    LobbyState(std::shared_ptr<NetworkState> network_state);
     ~LobbyState() override = default;
 
     // IGameState implementation

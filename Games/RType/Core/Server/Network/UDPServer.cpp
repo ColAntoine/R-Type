@@ -330,6 +330,11 @@ namespace RType::Network {
                         dispatcher_data.push_back(header->message_type);
                         dispatcher_data.insert(dispatcher_data.end(), payload, payload + header->payload_size);
 
+                        // Handle system messages like CLIENT_CONNECT before queuing
+                        if (header->message_type == static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_CONNECT)) {
+                            handle_client_connect(session, payload, header->payload_size);
+                        }
+
                         // If a message_queue_ is set, enqueue the packet for the server ECS
                         if (message_queue_) {
                             ReceivedPacket pkt;
@@ -400,6 +405,46 @@ namespace RType::Network {
                 setup_cleanup_timer(); // Reschedule
             }
         });
+    }
+
+    void UdpServer::handle_client_connect(std::shared_ptr<Session> session, const char* payload, size_t payload_size) {
+        if (!session || payload_size < sizeof(Protocol::ClientConnect)) {
+            std::cerr << Console::red("[UdpServer] ") << "Invalid CLIENT_CONNECT message" << std::endl;
+            return;
+        }
+
+        // Parse CLIENT_CONNECT payload
+        Protocol::ClientConnect connect_msg;
+        std::memcpy(&connect_msg, payload, sizeof(Protocol::ClientConnect));
+
+        std::cout << Console::cyan("[UdpServer] ") << "CLIENT_CONNECT from " 
+                  << connect_msg.player_name << " (version " << connect_msg.client_version << ")" << std::endl;
+
+        // Assign player ID and authenticate session
+        static uint32_t next_player_id = 1;
+        uint32_t assigned_player_id = next_player_id++;
+        
+        session->set_player_id(static_cast<int>(assigned_player_id));
+        session->set_player_name(std::string(connect_msg.player_name));
+        session->set_authenticated(true);
+
+        // Build SERVER_ACCEPT response
+        Protocol::ServerAccept accept_msg;
+        accept_msg.player_id = assigned_player_id;
+        accept_msg.session_id = 0; // Can use a hash or just 0 for simplicity
+        accept_msg.spawn_x = 100.0f;
+        accept_msg.spawn_y = 100.0f;
+
+        auto packet = Protocol::create_packet(
+            static_cast<uint8_t>(Protocol::SystemMessage::SERVER_ACCEPT),
+            accept_msg
+        );
+
+        // Send response to client
+        session->send(reinterpret_cast<const char*>(packet.data()), packet.size());
+
+        std::cout << Console::green("[UdpServer] ") << "Sent SERVER_ACCEPT to player " 
+                  << accept_msg.player_id << std::endl;
     }
 
 } // namespace RType::Network

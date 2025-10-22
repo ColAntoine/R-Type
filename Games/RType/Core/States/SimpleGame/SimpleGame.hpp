@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Core/States/GameState.hpp"
+#include "Core/States/NetworkState.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components/IComponent.hpp"
 #include <memory>
@@ -26,7 +27,7 @@ class GameClient;  // Forward declaration
 
 class SimpleGameState : public IGameState {
 public:
-    SimpleGameState(GameClient* client, registry& reg);
+    SimpleGameState(GameClient* client, registry& reg, std::shared_ptr<NetworkState> network_state);
     ~SimpleGameState() override = default;
 
     // IGameState implementation
@@ -44,12 +45,14 @@ public:
 private:
     GameClient* client_;
     registry& game_registry_;
+    std::shared_ptr<NetworkState> network_state_;
     entity player_entity_{UINT32_MAX};
     bool initialized_{false};
 
     void setup_game();
     void cleanup_game();
     void spawn_player();
+    void send_position_update(float x, float y);
     void render_falling_background();
     void update_background(float delta_time);
 

@@ -11,7 +11,9 @@
 #include "Core/States/SimpleGame/SimpleGame.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
-GameClient::GameClient() {}
+GameClient::GameClient() {
+    network_state_ = std::make_shared<NetworkState>();
+}
 GameClient::~GameClient() {}
 
 void GameClient::register_states() {
@@ -20,13 +22,15 @@ void GameClient::register_states() {
     // Register all available states
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
-    state_manager_.register_state<LobbyState>("Lobby");
+    state_manager_.register_state("Lobby", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<LobbyState>(network_state_);
+    });
     state_manager_.register_state<SoloLobbyState>("SoloLobby");
     state_manager_.register_state("WaitingLobby", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<WaitingLobbyState>(this);
     });
     state_manager_.register_state("SimpleGame", [this]() -> std::shared_ptr<IGameState> {
-        return std::make_shared<SimpleGameState>(this, ecs_registry_);
+        return std::make_shared<SimpleGameState>(this, ecs_registry_, network_state_);
     });
 
     std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby, WaitingLobby, SimpleGame" << std::endl;

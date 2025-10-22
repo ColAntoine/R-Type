@@ -144,6 +144,7 @@ namespace RType::Network {
         void handle_receive(const std::error_code& ec, size_t bytes_received);
         std::shared_ptr<Session> get_or_create_session(const endpoint_type& endpoint);
         void setup_cleanup_timer();
+        void handle_client_connect(std::shared_ptr<Session> session, const char* payload, size_t payload_size);
         RType::Protocol::ClientListUpdate generate_player_list();
 
         asio::io_context& io_context_;

@@ -7,6 +7,7 @@
 #include "Core/AGameCore.hpp"
 #include <string>
 #include <chrono>
+#include <unordered_map>
 
 namespace RType::Network {
 
@@ -35,6 +36,9 @@ class ServerECS {
         registry registry_;
         IComponentFactory* factory_{nullptr};
         MessageQueue* msgq_{nullptr};
+
+        // Map player_id to entity
+        std::unordered_map<uint32_t, entity> player_entities_;
 };
 
 } // namespace RType::Network
