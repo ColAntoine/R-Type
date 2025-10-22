@@ -445,6 +445,11 @@ namespace RType::Network {
 
         std::cout << Console::green("[UdpServer] ") << "Sent SERVER_ACCEPT to player " 
                   << accept_msg.player_id << std::endl;
+
+        // Notify ServerECS of new player connection
+        if (player_connect_callback_) {
+            player_connect_callback_(assigned_player_id, std::string(connect_msg.player_name));
+        }
     }
 
 } // namespace RType::Network

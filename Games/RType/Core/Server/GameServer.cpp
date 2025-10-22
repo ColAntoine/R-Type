@@ -61,9 +61,15 @@ bool GameServer::init()
     RType::Network::MessageQueue* msg_ptr = message_queue_.get();
     server->set_message_queue(msg_ptr);
 
+    // Set up player connect callback to notify ServerECS
+    server->set_player_connect_callback([this](uint32_t player_id, const std::string& player_name) {
+        server_ecs_->add_player(player_id, player_name);
+    });
+
     // Create ServerECS (game logic)
     server_ecs_ = std::make_unique<RType::Network::ServerECS>();
     server_ecs_->set_message_queue(msg_ptr);
+    server_ecs_->set_udp_server(server.get());
 
     // Start network with worker threads
     if (!network_manager_->start(2)) {
@@ -157,63 +163,78 @@ void GameServer::render_game_state() {
     DrawText("R-Type Server", 10, 10, 30, {0, 229, 255, 255});
     DrawText(TextFormat("Port: %d", port_), 10, 50, 20, {150, 150, 150, 255});
 
-    // Get and render all player positions
-    if (!server_ecs_) return;
+    // Check if game has started
+    if (server_ecs_ && server_ecs_->are_all_players_ready()) {
+        // Game has started - show game state
+        DrawText("GAME IN PROGRESS", 10, 90, 24, {0, 229, 255, 255});
 
-    auto& reg = server_ecs_->GetRegistry();
-    auto* positions = reg.get_if<position>();
-    
-    if (!positions || positions->size() == 0) {
-        DrawText("Waiting for clients to connect...", 10, 90, 20, {200, 200, 200, 255});
-        return;
-    }
-
-    // Render all player entities as colored squares
-    int player_count = 0;
-    Color player_colors[] = {
-        {0, 229, 255, 255},   // Cyan
-        {255, 100, 200, 255}, // Pink
-        {100, 255, 100, 255}, // Green
-        {255, 200, 100, 255}, // Orange
-        {200, 100, 255, 255}, // Purple
-        {255, 255, 100, 255}, // Yellow
-        {100, 200, 255, 255}, // Light Blue
-        {255, 150, 150, 255}  // Light Red
-    };
-
-    for (auto [pos, ent] : zipper(*positions)) {
-        Color color = player_colors[player_count % 8];
+        // Get and render all player positions
+        auto& reg = server_ecs_->GetRegistry();
+        auto* positions = reg.get_if<position>();
         
-        // Draw player square (40x40 like client)
-        DrawRectangle(
-            static_cast<int>(pos.x),
-            static_cast<int>(pos.y),
-            40,
-            40,
-            color
-        );
+        if (!positions || positions->size() == 0) {
+            DrawText("No active players", 10, 130, 20, {200, 200, 200, 255});
+            return;
+        }
+
+        // Render all player entities as colored squares
+        int player_count = 0;
+        Color player_colors[] = {
+            {0, 229, 255, 255},   // Cyan
+            {255, 100, 200, 255}, // Pink
+            {100, 255, 100, 255}, // Green
+            {255, 200, 100, 255}, // Orange
+            {200, 100, 255, 255}, // Purple
+            {255, 255, 100, 255}, // Yellow
+            {100, 200, 255, 255}, // Light Blue
+            {255, 150, 150, 255}  // Light Red
+        };
+
+        for (auto [pos, ent] : zipper(*positions)) {
+            Color color = player_colors[player_count % 8];
+            
+            // Draw player square (40x40 like client)
+            DrawRectangle(
+                static_cast<int>(pos.x),
+                static_cast<int>(pos.y),
+                40,
+                40,
+                color
+            );
+            
+            // Draw border
+            DrawRectangleLines(
+                static_cast<int>(pos.x),
+                static_cast<int>(pos.y),
+                40,
+                40,
+                WHITE
+            );
+
+            // Draw player ID above square
+            DrawText(
+                TextFormat("P%d", player_count + 1),
+                static_cast<int>(pos.x) + 5,
+                static_cast<int>(pos.y) - 20,
+                16,
+                color
+            );
+
+            player_count++;
+        }
+
+        // Draw player count
+        DrawText(TextFormat("Active Players: %d", player_count), 10, 130, 20, {0, 229, 255, 255});
+    } else {
+        // Lobby state - show waiting for players
+        DrawText("LOBBY - Waiting for players...", 10, 90, 24, {0, 229, 255, 255});
         
-        // Draw border
-        DrawRectangleLines(
-            static_cast<int>(pos.x),
-            static_cast<int>(pos.y),
-            40,
-            40,
-            WHITE
-        );
-
-        // Draw player ID above square
-        DrawText(
-            TextFormat("P%d", player_count + 1),
-            static_cast<int>(pos.x) + 5,
-            static_cast<int>(pos.y) - 20,
-            16,
-            color
-        );
-
-        player_count++;
+        // Show connected players and their ready status
+        if (server_ecs_) {
+            // This is a bit of a hack - we need to access the players vector
+            // For now, just show basic info
+            DrawText("Players will appear here when connected", 10, 130, 18, {200, 200, 200, 255});
+            DrawText("All players must be ready to start the game", 10, 160, 18, {200, 200, 200, 255});
+        }
     }
-
-    // Draw player count
-    DrawText(TextFormat("Connected Players: %d", player_count), 10, 90, 20, {0, 229, 255, 255});
 }

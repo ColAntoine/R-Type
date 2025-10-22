@@ -20,6 +20,9 @@ LobbyState::LobbyState(std::shared_ptr<NetworkState> network_state)
     if (!network_state_->udp_client) {
         network_state_->udp_client = std::make_shared<UdpClient>();
     }
+    if (!network_state_->message_queue) {
+        network_state_->message_queue = std::make_unique<RType::Network::MessageQueue>();
+    }
 }
 
 void LobbyState::enter() {
@@ -284,9 +287,12 @@ void LobbyState::on_connect_clicked() {
         network_state_->connected = true;
         std::cout << "[Lobby] Successfully connected! Player ID: " << network_state_->player_id << std::endl;
         
-        // Transition to SimpleGame state (the solo game that will also send updates to server)
+        // Start receiving messages
+        network_state_->udp_client->start_receiving(network_state_->message_queue.get());
+        
+        // Transition to WaitingLobby state to show lobby with other players
         if (state_manager_) {
-            state_manager_->change_state("SimpleGame");
+            state_manager_->change_state("WaitingLobby");
         }
     } else {
         std::cerr << "[Lobby] Failed to connect to server" << std::endl;

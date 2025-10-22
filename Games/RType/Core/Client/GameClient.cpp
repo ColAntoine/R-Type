@@ -27,7 +27,7 @@ void GameClient::register_states() {
     });
     state_manager_.register_state<SoloLobbyState>("SoloLobby");
     state_manager_.register_state("WaitingLobby", [this]() -> std::shared_ptr<IGameState> {
-        return std::make_shared<WaitingLobbyState>(this);
+        return std::make_shared<WaitingLobbyState>(this, network_state_);
     });
     state_manager_.register_state("SimpleGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<SimpleGameState>(this, ecs_registry_, network_state_);

@@ -54,8 +54,16 @@ namespace RType::Network {
             message_handler_ = std::move(handler);
         }
 
+        /**
+         * @brief Set callback for when a player connects
+         * @param callback Function called with (player_id, player_name) when a player connects
+         */
+        void set_player_connect_callback(std::function<void(uint32_t, const std::string&)> callback) {
+            player_connect_callback_ = std::move(callback);
+        }
+
         // Set a message queue to which parsed packets will be enqueued.
-        void set_message_queue(class RType::Network::MessageQueue* queue) { message_queue_ = queue; }
+        void set_message_queue(RType::Network::MessageQueue* queue) { message_queue_ = queue; }
 
         /**
          * @brief Send data to specific client
@@ -159,6 +167,7 @@ namespace RType::Network {
         message_handler_type message_handler_;
         // Optional pointer to external message queue (not owned)
         RType::Network::MessageQueue* message_queue_ = nullptr;
+        std::function<void(uint32_t, const std::string&)> player_connect_callback_;
         bool running_;
         uint16_t port_;
     };

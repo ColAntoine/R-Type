@@ -7,10 +7,14 @@
 
 #pragma once
 
-#include "GameState.hpp"
+#include "Core/States/GameState.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
+#include "ECS/UI/Components/Panel.hpp"
+#include "ECS/UI/Components/Text.hpp"
+#include "../IGameCore.hpp"
+#include "../NetworkState.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
 #include "../IGameCore.hpp"
@@ -45,6 +49,7 @@ class WaitingLobbyState : public IGameState {
         Application* app_;
         bool initialized_{false};
         std::vector<PlayerInfo> connected_players_;
+        std::shared_ptr<NetworkState> network_state_;
 
         // ECS UI system
         registry ui_registry_;
@@ -61,7 +66,7 @@ class WaitingLobbyState : public IGameState {
         std::string ascii_charset_{" .,:;i!lI|/\\()1{}[]?-_+~<>^*abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"};
 
     public:
-        WaitingLobbyState(Application* app);
+        WaitingLobbyState(Application* app, std::shared_ptr<NetworkState> network_state);
         ~WaitingLobbyState() override = default;
 
         // IGameState implementation
@@ -82,6 +87,7 @@ class WaitingLobbyState : public IGameState {
         void update_player_list();
         void update_ready_status();
         void update_ready_button();
+        void process_messages();
 
         // Button callbacks
         void on_ready_clicked();

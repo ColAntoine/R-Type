@@ -10,10 +10,13 @@
 #include "../../UI/Components/GlitchButton.hpp"
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
+#include "Core/Server/Protocol/Protocol.hpp"
 #include <iostream>
 #include <raylib.h>
+#include <cstring>
 
-WaitingLobbyState::WaitingLobbyState(Application* app) : app_(app) {
+WaitingLobbyState::WaitingLobbyState(Application* app, std::shared_ptr<NetworkState> network_state) 
+    : app_(app), network_state_(network_state) {
 }
 
 void WaitingLobbyState::enter() {
@@ -32,7 +35,7 @@ void WaitingLobbyState::enter() {
 
     // Add local player to the list (will be updated by server data)
     PlayerInfo local_player;
-    local_player.player_id = /* app_ ? app_->get_local_player_id() : */ 1;
+    local_player.player_id = network_state_ ? network_state_->player_id : 1;
     local_player.name = "Player " + std::to_string(local_player.player_id);
     local_player.is_ready = false;
     local_player.is_local_player = true;
@@ -73,6 +76,9 @@ void WaitingLobbyState::update(float delta_time) {
 
     // Update UI system
     ui_system_.update(ui_registry_, delta_time);
+
+    // Process incoming network messages
+    process_messages();
 
     // Update player list and ready status periodically
     update_ready_status();
@@ -356,6 +362,18 @@ void WaitingLobbyState::on_ready_clicked() {
         if (player.is_local_player) {
             player.is_ready = !player.is_ready;
             update_ready_button();
+            
+            // Send ready message to server
+            if (network_state_ && network_state_->udp_client && network_state_->connected) {
+                RType::Protocol::PacketBuilder builder;
+                builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_READY));
+                RType::Protocol::ClientReady ready_msg;
+                ready_msg.player_id = network_state_->player_id;
+                ready_msg.ready_state = player.is_ready ? 1 : 0;
+                builder.add_struct(ready_msg);
+                auto packet = builder.finalize();
+                network_state_->udp_client->send(packet.data(), packet.size());
+            }
             break;
         }
     }
@@ -365,8 +383,59 @@ void WaitingLobbyState::on_ready_clicked() {
 }
 
 void WaitingLobbyState::on_back_clicked() {
+    // Stop receiving messages
+    if (network_state_ && network_state_->udp_client) {
+        network_state_->udp_client->stop_receiving();
+    }
 
     if (state_manager_) {
         state_manager_->change_state("Lobby"); // Go back to connection screen
+    }
+}
+
+void WaitingLobbyState::process_messages() {
+    if (!network_state_ || !network_state_->message_queue) return;
+
+    std::vector<RType::Network::ReceivedPacket> packets;
+    network_state_->message_queue->drain(packets);
+
+    for (auto& pkt : packets) {
+        if (pkt.data.size() < 1) continue;
+        
+        uint8_t message_type = static_cast<uint8_t>(pkt.data[0]);
+        const char* payload = pkt.data.data() + 1;
+        size_t payload_size = pkt.data.size() - 1;
+
+        if (message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_LIST)) {
+            if (payload_size >= sizeof(RType::Protocol::ClientListUpdate)) {
+                RType::Protocol::ClientListUpdate update;
+                std::memcpy(&update, payload, sizeof(update));
+
+                // Update connected players
+                connected_players_.clear();
+                for (uint8_t i = 0; i < update.player_count && i < 8; ++i) {
+                    PlayerInfo player;
+                    player.player_id = update.players[i].player_id;
+                    player.name = std::string(update.players[i].name);
+                    player.is_ready = update.players[i].ready_state != 0;
+                    player.is_local_player = (player.player_id == static_cast<int>(network_state_->player_id));
+                    connected_players_.push_back(player);
+                }
+
+                update_player_list();
+                update_ready_button();
+            }
+        }
+        else if (message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::START_GAME)) {
+            std::cout << "[WaitingLobby] Game starting!" << std::endl;
+            // Stop receiving messages
+            if (network_state_ && network_state_->udp_client) {
+                network_state_->udp_client->stop_receiving();
+            }
+            // Transition to game
+            if (state_manager_) {
+                state_manager_->change_state("SimpleGame");
+            }
+        }
     }
 }
