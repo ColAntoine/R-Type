@@ -35,7 +35,7 @@ public:
 
 protected:
     GameStateManager* _stateManager{nullptr};
-    registry _uiRegistry;
+    registry _registry;
 
     friend class GameStateManager;
     void set_state_manager(GameStateManager* manager) { _stateManager = manager; }

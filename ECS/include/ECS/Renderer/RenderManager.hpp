@@ -29,7 +29,9 @@ class RenderManager {
 
         bool should_close() const;
         int get_fps() const;
-
+        void draw_text(const char *text, int posX, int posY, int fontSize, Color color) const;
+        bool is_window_ready() const;
+        bool window_should_close() const;
     private:
         RenderManager()
             : clear_color_(BLACK)

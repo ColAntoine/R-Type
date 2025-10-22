@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IGameCore.hpp"
-#include "ECS/RegisterAllComponents.hpp"
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
@@ -19,13 +18,11 @@ class AGameCore : public IGameCore {
         AGameCore();
         virtual ~AGameCore();
 
-        static void RegisterComponents(registry &r);
-
         // Default lifecycle implementations forward to overridable hooks
-        bool init() override;
-        void run() override;
-        void update(float) override;
-        void shutdown() override;
+        virtual bool init() override;
+        virtual void run() override;
+        virtual void update(float) override;
+        virtual void shutdown() override;
 
     protected:
         // Hooks for derived classes

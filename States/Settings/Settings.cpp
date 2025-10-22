@@ -20,14 +20,14 @@ void SettingsState::enter() {
     std::cout << "[Settings] Entering state" << std::endl;
 
     // Register all component types
-    _uiRegistry.register_component<UI::UIComponent>();
-    _uiRegistry.register_component<RType::UISettingsPanel>();
-    _uiRegistry.register_component<RType::UISettingsTitle>();
-    _uiRegistry.register_component<RType::UINameLabel>();
-    _uiRegistry.register_component<RType::UINameInput>();
-    _uiRegistry.register_component<RType::UIAudioLabel>();
-    _uiRegistry.register_component<RType::UIGraphicsLabel>();
-    _uiRegistry.register_component<RType::UIBackButton>();
+    _registry.register_component<UI::UIComponent>();
+    _registry.register_component<RType::UISettingsPanel>();
+    _registry.register_component<RType::UISettingsTitle>();
+    _registry.register_component<RType::UINameLabel>();
+    _registry.register_component<RType::UINameInput>();
+    _registry.register_component<RType::UIAudioLabel>();
+    _registry.register_component<RType::UIGraphicsLabel>();
+    _registry.register_component<RType::UIBackButton>();
 
     // Prepare ascii background
     int sw = GetScreenWidth();
@@ -50,7 +50,7 @@ void SettingsState::exit() {
 void SettingsState::pause() {
     std::cout << "[Settings] Pausing state" << std::endl;
     // Hide UI when paused
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
@@ -63,7 +63,7 @@ void SettingsState::pause() {
 void SettingsState::resume() {
     std::cout << "[Settings] Resuming state" << std::endl;
     // Show UI when resumed
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto& comp : *ui_components) {
             if (comp._ui_element) {
@@ -77,7 +77,7 @@ void SettingsState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(_uiRegistry, delta_time);
+    ui_system_.update(_registry, delta_time);
 
     // Update ascii background
     ascii_timer_ += delta_time;
@@ -117,7 +117,7 @@ void SettingsState::render() {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 140});
 
     // Render UI via system
-    ui_system_.render(_uiRegistry);
+    ui_system_.render(_registry);
 }
 
 void SettingsState::handle_input() {
@@ -129,7 +129,7 @@ void SettingsState::handle_input() {
         return;
     }
 
-    ui_system_.process_input(_uiRegistry);
+    ui_system_.process_input(_registry);
 }
 
 void SettingsState::setup_ui() {
@@ -237,7 +237,7 @@ void SettingsState::setup_ui() {
     ui_registry_.add_component(graphics_label_entity, RType::UIGraphicsLabel{});
 
     // Back button
-    auto back_button_entity = _uiRegistry.spawn_entity();
+    auto back_button_entity = _registry.spawn_entity();
     auto back_button = std::make_shared<RType::GlitchButton>(center_x - 75, center_y + 90, 150, 40, "BACK");
     back_button->_style.setNormalColor({20, 20, 30, 220});
     back_button->_style.setHoveredColor({36, 36, 52, 240});
@@ -248,8 +248,8 @@ void SettingsState::setup_ui() {
     back_button->set_glitch_params(1.8f, 7.0f, true);
 <<<<<<< HEAD:States/Settings/Settings.cpp
     back_button->set_on_click([this]() { on_back_clicked(); });
-    _uiRegistry.add_component(back_button_entity, UI::UIComponent(back_button));
-    _uiRegistry.add_component(back_button_entity, RType::UIBackButton{});
+    _registry.add_component(back_button_entity, UI::UIComponent(back_button));
+    _registry.add_component(back_button_entity, RType::UIBackButton{});
 =======
     back_button->setOnClick([this]() { on_back_clicked(); });
     ui_registry_.add_component(back_button_entity, UI::UIComponent(back_button));

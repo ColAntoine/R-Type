@@ -17,12 +17,12 @@ void MainMenuState::enter() {
     std::cout << "[MainMenu] Entering state" << std::endl;
 
     // Register all component types
-    _uiRegistry.register_component<UI::UIComponent>();
-    _uiRegistry.register_component<RType::UIMainPanel>();
-    _uiRegistry.register_component<RType::UITitleText>();
-    _uiRegistry.register_component<RType::UIPlayButton>();
-    _uiRegistry.register_component<RType::UISettingsButton>();
-    _uiRegistry.register_component<RType::UIQuitButton>();
+    _registry.register_component<UI::UIComponent>();
+    _registry.register_component<RType::UIMainPanel>();
+    _registry.register_component<RType::UITitleText>();
+    _registry.register_component<RType::UIPlayButton>();
+    _registry.register_component<RType::UISettingsButton>();
+    _registry.register_component<RType::UIQuitButton>();
 
     // Prepare ascii grid
     ascii_font_size_ = 12;
@@ -61,7 +61,7 @@ void MainMenuState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(_uiRegistry, delta_time);
+    ui_system_.update(_registry, delta_time);
 
     // Update ascii background
     ascii_timer_ += delta_time;
@@ -90,12 +90,12 @@ void MainMenuState::update_reveal_animation(float delta_time) {
         menu_reveal_progress_ = std::min(1.0f, t / menu_reveal_duration_);
 
         // Use zipper to update visibility based on component tags
-        auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
-        auto* main_panels = _uiRegistry.get_if<RType::UIMainPanel>();
-        auto* title_texts = _uiRegistry.get_if<RType::UITitleText>();
-        auto* play_buttons = _uiRegistry.get_if<RType::UIPlayButton>();
-        auto* settings_buttons = _uiRegistry.get_if<RType::UISettingsButton>();
-        auto* quit_buttons = _uiRegistry.get_if<RType::UIQuitButton>();
+        auto* ui_components = _registry.get_if<UI::UIComponent>();
+        auto* main_panels = _registry.get_if<RType::UIMainPanel>();
+        auto* title_texts = _registry.get_if<RType::UITitleText>();
+        auto* play_buttons = _registry.get_if<RType::UIPlayButton>();
+        auto* settings_buttons = _registry.get_if<RType::UISettingsButton>();
+        auto* quit_buttons = _registry.get_if<RType::UIQuitButton>();
 
         if (!ui_components) return;
 
@@ -169,7 +169,7 @@ void MainMenuState::render() {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 120});
 
     // Render UI via system
-    ui_system_.render(_uiRegistry);
+    ui_system_.render(_registry);
 
     // Scanline effect during reveal
     if (menu_reveal_progress_ > 0.0f && menu_reveal_progress_ < 1.0f) {
@@ -182,7 +182,7 @@ void MainMenuState::render() {
 
 void MainMenuState::handle_input() {
     if (!initialized_) return;
-    ui_system_.process_input(_uiRegistry);
+    ui_system_.process_input(_registry);
 }
 
 void MainMenuState::setup_ui() {
@@ -192,7 +192,7 @@ void MainMenuState::setup_ui() {
     float center_y = screen_height / 2.0f;
 
     // Create panel
-    auto panel_entity = _uiRegistry.spawn_entity();
+    auto panel_entity = _registry.spawn_entity();
     auto panel = std::make_shared<UI::UIPanel>(center_x - 175, center_y - 150, 350, 350);
     UI::PanelStyle panel_style;
     panel_style._background_color = {20, 25, 35, 220};
@@ -202,11 +202,11 @@ void MainMenuState::setup_ui() {
     panel_style._shadow_color = {0, 0, 0, 200};
     panel_style._shadow_offset = {5.0f};
     panel->set_style(panel_style);
-    _uiRegistry.add_component(panel_entity, UI::UIComponent(panel));
-    _uiRegistry.add_component(panel_entity, RType::UIMainPanel{});
+    _registry.add_component(panel_entity, UI::UIComponent(panel));
+    _registry.add_component(panel_entity, RType::UIMainPanel{});
 
     // Create title text
-    auto title_entity = _uiRegistry.spawn_entity();
+    auto title_entity = _registry.spawn_entity();
     auto title = std::make_shared<UI::UIText>(center_x, center_y - 100, "R-TYPE");
     UI::TextStyle title_style;
     title_style._text_color = {0, 229, 255, 255};
@@ -216,11 +216,11 @@ void MainMenuState::setup_ui() {
     title_style._shadow_color = {0, 150, 200, 180};
     title_style._shadow_offset = {4.0f, 4.0f};
     title->set_style(title_style);
-    _uiRegistry.add_component(title_entity, UI::UIComponent(title));
-    _uiRegistry.add_component(title_entity, RType::UITitleText{});
+    _registry.add_component(title_entity, UI::UIComponent(title));
+    _registry.add_component(title_entity, RType::UITitleText{});
 
     // Create play button
-    auto play_entity = _uiRegistry.spawn_entity();
+    auto play_entity = _registry.spawn_entity();
     auto play_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y - 20, 240, 55, "PLAY");
     UI::ButtonStyle play_style;
     play_style._normal_color = {20, 20, 30, 220};
@@ -232,11 +232,11 @@ void MainMenuState::setup_ui() {
     play_button->set_neon_colors({0, 229, 255, 255}, {0, 229, 255, 120});
     play_button->set_glitch_params(2.5f, 8.5f, true);
     play_button->set_on_click([this]() { on_play_clicked(); });
-    _uiRegistry.add_component(play_entity, UI::UIComponent(play_button));
-    _uiRegistry.add_component(play_entity, RType::UIPlayButton{});
+    _registry.add_component(play_entity, UI::UIComponent(play_button));
+    _registry.add_component(play_entity, RType::UIPlayButton{});
 
     // Create settings button
-    auto settings_entity = _uiRegistry.spawn_entity();
+    auto settings_entity = _registry.spawn_entity();
     auto settings_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 50, 240, 45, "SETTINGS");
     UI::ButtonStyle settings_style;
     settings_style._normal_color = {20, 20, 30, 200};
@@ -247,11 +247,11 @@ void MainMenuState::setup_ui() {
     settings_button->set_neon_colors({0, 229, 255, 220}, {0, 229, 255, 100});
     settings_button->set_glitch_params(1.8f, 7.0f, true);
     settings_button->set_on_click([this]() { on_settings_clicked(); });
-    _uiRegistry.add_component(settings_entity, UI::UIComponent(settings_button));
-    _uiRegistry.add_component(settings_entity, RType::UISettingsButton{});
+    _registry.add_component(settings_entity, UI::UIComponent(settings_button));
+    _registry.add_component(settings_entity, RType::UISettingsButton{});
 
     // Create quit button
-    auto quit_entity = _uiRegistry.spawn_entity();
+    auto quit_entity = _registry.spawn_entity();
     auto quit_button = std::make_shared<RType::GlitchButton>(center_x - 120, center_y + 110, 240, 45, "QUIT");
     UI::ButtonStyle quit_style;
     quit_style._normal_color = {40, 15, 15, 200};
@@ -262,11 +262,11 @@ void MainMenuState::setup_ui() {
     quit_button->set_neon_colors({255, 100, 100, 220}, {255, 100, 100, 100});
     quit_button->set_glitch_params(2.0f, 7.5f, true);
     quit_button->set_on_click([this]() { on_quit_clicked(); });
-    _uiRegistry.add_component(quit_entity, UI::UIComponent(quit_button));
-    _uiRegistry.add_component(quit_entity, RType::UIQuitButton{});
+    _registry.add_component(quit_entity, UI::UIComponent(quit_button));
+    _registry.add_component(quit_entity, RType::UIQuitButton{});
 
     // Set all invisible initially
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto [comp, ent] : zipper(*ui_components)) {
             if (comp._ui_element) {
@@ -280,7 +280,7 @@ void MainMenuState::cleanup_ui() {
     // Collect all entity IDs first to avoid modifying while iterating
     std::vector<entity> entities_to_cleanup;
     
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
     if (ui_components) {
         for (auto [comp, ent] : zipper(*ui_components)) {
             entities_to_cleanup.push_back(entity(ent));
@@ -289,12 +289,12 @@ void MainMenuState::cleanup_ui() {
     
     // Now remove all components from collected entities
     for (auto ent : entities_to_cleanup) {
-        _uiRegistry.remove_component<UI::UIComponent>(ent);
-        _uiRegistry.remove_component<RType::UIMainPanel>(ent);
-        _uiRegistry.remove_component<RType::UITitleText>(ent);
-        _uiRegistry.remove_component<RType::UIPlayButton>(ent);
-        _uiRegistry.remove_component<RType::UISettingsButton>(ent);
-        _uiRegistry.remove_component<RType::UIQuitButton>(ent);
+        _registry.remove_component<UI::UIComponent>(ent);
+        _registry.remove_component<RType::UIMainPanel>(ent);
+        _registry.remove_component<RType::UITitleText>(ent);
+        _registry.remove_component<RType::UIPlayButton>(ent);
+        _registry.remove_component<RType::UISettingsButton>(ent);
+        _registry.remove_component<RType::UIQuitButton>(ent);
     }
 }
 

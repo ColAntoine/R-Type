@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/States/AGameState.hpp"
+#include "ECS/Entity.hpp"
 
 class InGameState : public AGameState {
     public:
@@ -19,4 +20,5 @@ class InGameState : public AGameState {
         std::string get_name() const override { return "InGame"; }
     private:
         // InGame specific members
+        entity _playerEntity;
 };

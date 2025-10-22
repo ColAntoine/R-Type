@@ -15,6 +15,8 @@
 #include <thread>
 #include <chrono>
 
+auto &renderManager = RenderManager::instance();
+
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
 
@@ -30,28 +32,18 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
-
-    std::cout << "[GameClient] States registered: Loading, MainMenu, Lobby, SoloLobby" << std::endl;
-    std::cout << "[GameClient] ✓ Track 1 features are all implemented!" << std::endl;
-    std::cout << "[GameClient] ✓ Asset Manager, Renderer, Physics, Audio, Messaging, Plugin API" << std::endl;
 }
 
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
-    AGameCore::RegisterComponents(ecs_registry_);
 
-    // Initialize Raylib window
-    SetTraceLogLevel(LOG_WARNING);
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
-    SetTargetFPS(60);
+    renderManager.init(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
 
-    if (!IsWindowReady()) {
+    if (!renderManager.is_window_ready()) {
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;
         return false;
     }
-
-    std::cout << "[GameClient] Raylib window initialized: 1024x768" << std::endl;
 
     // Register states
     register_states();
@@ -59,6 +51,7 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
+    // _stateManager.push_state("InGame");
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
@@ -72,7 +65,7 @@ void GameClient::run()
 
     float last_frame_time = 0.0f;
 
-    while (_running && !WindowShouldClose() && !_stateManager.is_empty()) {
+    while (_running && !renderManager.window_should_close() && !_stateManager.is_empty()) {
         // Calculate delta time
         float current_time = GetTime();
         float delta_time = current_time - last_frame_time;
@@ -85,12 +78,11 @@ void GameClient::run()
         _stateManager.update(delta_time);
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
-        auto &render_mgr = RenderManager::instance();
-        render_mgr.begin_frame();
+        renderManager.begin_frame();
 
         _stateManager.render();
 
-        render_mgr.end_frame();
+        renderManager.end_frame();
 
         // Handle input
         _stateManager.handle_input();
@@ -111,11 +103,9 @@ void GameClient::shutdown()
     _stateManager.clear_states();
 
     // Close Raylib window
-    if (IsWindowReady()) {
-        CloseWindow();
+    if (renderManager.is_window_ready()) {
+        renderManager.shutdown();
     }
 
     _running = false;
 }
-
-registry& GameClient::GetRegistry() { return ecs_registry_; }

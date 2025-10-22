@@ -46,7 +46,7 @@ class SoloLobbyState : public IGameState {
         IComponentFactory* component_factory_{nullptr};
 
         // UI Registry and System
-        registry _uiRegistry;
+        registry _registry;
         UI::UISystem ui_system_;
 
         // Test entities

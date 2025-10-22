@@ -58,7 +58,7 @@ private:
     void on_quit_clicked();
 
     // ECS UI system
-    registry _uiRegistry;
+    registry _registry;
     UI::UISystem ui_system_;
 
     bool initialized_{false};

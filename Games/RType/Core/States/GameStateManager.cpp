@@ -26,11 +26,8 @@ void GameStateManager::push_state(const std::string& state_name, bool pause_curr
         state_stack_.top()->pause();
     }
 
-    std::cout << "Pushing new state: " << state_name << std::endl;
-    std::cout << "Stack size before push: " << state_stack_.size() << std::endl;
     // Push and enter new state
     state_stack_.push(new_state);
-    std::cout << "Stack size after push: " << state_stack_.size() << std::endl;
     new_state->enter();
 }
 
@@ -61,14 +58,11 @@ void GameStateManager::change_state(const std::string& state_name) {
         return;
     }
 
-    std::cout << "[IN GAMESTATEMANAGER] Stack size before clear: " << state_stack_.size() << std::endl;
     // Clear current stack
     while (!state_stack_.empty()) {
-        std::cout << "Exiting state: " << state_stack_.top()->get_name() << std::endl;
         state_stack_.top()->exit();
         state_stack_.pop();
     }
-    std::cout << "State stack cleared. Size: " << state_stack_.size() << std::endl;
     // Push new state
     push_state(state_name, false);
 }
@@ -167,7 +161,6 @@ bool GameStateManager::has_state(const std::string& state_name) const {
 
 void GameStateManager::process_pending_operations() {
     for (const auto& operation : pending_operations_) {
-        std::cout << "Processing pending operation: " << static_cast<int>(operation.operation) << std::endl;
         switch (operation.operation) {
             case PendingOperation::Push:
                 push_state(operation.state_name, operation.pause_current);

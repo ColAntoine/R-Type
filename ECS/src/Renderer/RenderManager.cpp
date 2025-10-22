@@ -56,3 +56,15 @@ bool RenderManager::should_close() const {
 int RenderManager::get_fps() const {
     return GetFPS();
 }
+
+void RenderManager::draw_text(const char *text, int posX, int posY, int fontSize, Color color) const {
+    return DrawText(text, posX, posY, fontSize, color);
+}
+
+bool RenderManager::is_window_ready() const {
+    return IsWindowReady();
+}
+
+bool RenderManager::window_should_close() const {
+    return WindowShouldClose();
+}

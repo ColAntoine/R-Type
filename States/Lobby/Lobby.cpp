@@ -20,15 +20,15 @@ void LobbyState::enter() {
     std::cout << "[Lobby] Entering state" << std::endl;
 
     // Register all component types
-    _uiRegistry.register_component<UI::UIComponent>();
-    _uiRegistry.register_component<RType::UILobbyPanel>();
-    _uiRegistry.register_component<RType::UILobbyTitle>();
-    _uiRegistry.register_component<RType::UIIPLabel>();
-    _uiRegistry.register_component<RType::UIIPInput>();
-    _uiRegistry.register_component<RType::UIPortLabel>();
-    _uiRegistry.register_component<RType::UIPortInput>();
-    _uiRegistry.register_component<RType::UIConnectButton>();
-    _uiRegistry.register_component<RType::UILobbyBackButton>();
+    _registry.register_component<UI::UIComponent>();
+    _registry.register_component<RType::UILobbyPanel>();
+    _registry.register_component<RType::UILobbyTitle>();
+    _registry.register_component<RType::UIIPLabel>();
+    _registry.register_component<RType::UIIPInput>();
+    _registry.register_component<RType::UIPortLabel>();
+    _registry.register_component<RType::UIPortInput>();
+    _registry.register_component<RType::UIConnectButton>();
+    _registry.register_component<RType::UILobbyBackButton>();
 
     // Prepare ascii background
     int sw = GetScreenWidth();
@@ -60,7 +60,7 @@ void LobbyState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(_uiRegistry, delta_time);
+    ui_system_.update(_registry, delta_time);
 
     // Update ascii background
     ascii_timer_ += delta_time;
@@ -100,7 +100,7 @@ void LobbyState::render() {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), {0, 0, 0, 120});
 
     // Render UI via system
-    ui_system_.render(_uiRegistry);
+    ui_system_.render(_registry);
 }
 
 void LobbyState::handle_input() {
@@ -112,7 +112,7 @@ void LobbyState::handle_input() {
         return;
     }
 
-    ui_system_.process_input(_uiRegistry);
+    ui_system_.process_input(_registry);
 }
 
 void LobbyState::setup_ui() {
@@ -221,7 +221,7 @@ void LobbyState::setup_ui() {
     ui_registry_.add_component(port_input_entity, RType::UIPortInput{});
 
     // Connect button
-    auto connect_entity = _uiRegistry.spawn_entity();
+    auto connect_entity = _registry.spawn_entity();
     auto connect_button = std::make_shared<RType::GlitchButton>(center_x - 100, center_y + 20, 200, 50, "CONNECT");
     connect_button->_style.setNormalColor({20, 80, 20, 220});
     connect_button->_style.setHoveredColor({30, 120, 30, 240});
@@ -235,7 +235,7 @@ void LobbyState::setup_ui() {
     ui_registry_.add_component(connect_entity, RType::UIConnectButton{});
 
     // Back button
-    auto back_entity = _uiRegistry.spawn_entity();
+    auto back_entity = _registry.spawn_entity();
     auto back_button = std::make_shared<RType::GlitchButton>(center_x - 100, center_y + 90, 200, 40, "BACK");
     back_button->_style.setNormalColor({20, 20, 30, 220});
     back_button->_style.setHoveredColor({36, 36, 52, 240});

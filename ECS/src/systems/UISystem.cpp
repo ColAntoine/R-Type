@@ -24,6 +24,7 @@ namespace UI {
                 ui_comp._ui_element->update(deltaTime);
             }
         }
+        this->process_input(registry);
     }
 
     void UISystem::process_input(registry& registry) {

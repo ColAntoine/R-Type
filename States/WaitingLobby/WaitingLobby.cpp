@@ -20,15 +20,15 @@ void WaitingLobbyState::enter() {
     std::cout << "[WaitingLobby] Entering state" << std::endl;
 
     // Register all component types
-    _uiRegistry.register_component<UI::UIComponent>();
-    _uiRegistry.register_component<RType::UIWaitingPanel>();
-    _uiRegistry.register_component<RType::UIWaitingTitle>();
-    _uiRegistry.register_component<RType::UIWaitingStatus>();
-    _uiRegistry.register_component<RType::UIPlayerListTitle>();
-    _uiRegistry.register_component<RType::UIPlayerSlot>();
-    _uiRegistry.register_component<RType::UIReadyButton>();
-    _uiRegistry.register_component<RType::UIDisconnectButton>();
-    _uiRegistry.register_component<RType::UIGameStatus>();
+    _registry.register_component<UI::UIComponent>();
+    _registry.register_component<RType::UIWaitingPanel>();
+    _registry.register_component<RType::UIWaitingTitle>();
+    _registry.register_component<RType::UIWaitingStatus>();
+    _registry.register_component<RType::UIPlayerListTitle>();
+    _registry.register_component<RType::UIPlayerSlot>();
+    _registry.register_component<RType::UIReadyButton>();
+    _registry.register_component<RType::UIDisconnectButton>();
+    _registry.register_component<RType::UIGameStatus>();
 
     // Add local player to the list (will be updated by server data)
     PlayerInfo local_player;
@@ -72,7 +72,7 @@ void WaitingLobbyState::update(float delta_time) {
     if (!initialized_) return;
 
     // Update UI system
-    ui_system_.update(_uiRegistry, delta_time);
+    ui_system_.update(_registry, delta_time);
 
     // Update player list and ready status periodically
     update_ready_status();
@@ -113,12 +113,12 @@ void WaitingLobbyState::render() {
         }
     }
 
-    ui_system_.render(_uiRegistry);
+    ui_system_.render(_registry);
 }
 
 void WaitingLobbyState::handle_input() {
     if (!initialized_) return;
-    ui_system_.process_input(_uiRegistry);
+    ui_system_.process_input(_registry);
 }
 
 void WaitingLobbyState::setup_ui() {
@@ -204,7 +204,7 @@ void WaitingLobbyState::setup_ui() {
         // Create the tag with designated initialization
         RType::UIPlayerSlot slot_tag{};
         slot_tag.slot_index = i;
-        _uiRegistry.add_component(slot_entity, std::move(slot_tag));
+        _registry.add_component(slot_entity, std::move(slot_tag));
     }
 
     // Ready button (using GlitchButton)
@@ -223,7 +223,7 @@ void WaitingLobbyState::setup_ui() {
     ui_registry_.add_component(ready_btn_entity, RType::UIReadyButton{});
 
     // Disconnect button
-    auto disconnect_btn_entity = _uiRegistry.spawn_entity();
+    auto disconnect_btn_entity = _registry.spawn_entity();
     auto disconnect_button = std::make_shared<RType::GlitchButton>(40, 680, 200, 50, "DISCONNECT");
     disconnect_button->_style.setNormalColor({40, 15, 15, 220});
     disconnect_button->_style.setHoveredColor({70, 20, 20, 240});
@@ -257,8 +257,8 @@ void WaitingLobbyState::cleanup_ui() {
 
 void WaitingLobbyState::update_player_list() {
     // Use zipper to iterate through all player slot components
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
-    auto* player_slots = _uiRegistry.get_if<RType::UIPlayerSlot>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
+    auto* player_slots = _registry.get_if<RType::UIPlayerSlot>();
     
     if (!ui_components || !player_slots) return;
 
@@ -305,8 +305,8 @@ void WaitingLobbyState::update_ready_status() {
     }
 
     // Use zipper to find and update game status text
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
-    auto* game_statuses = _uiRegistry.get_if<RType::UIGameStatus>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
+    auto* game_statuses = _registry.get_if<RType::UIGameStatus>();
     
     if (!ui_components || !game_statuses) return;
 
@@ -329,8 +329,8 @@ void WaitingLobbyState::update_ready_status() {
 
 void WaitingLobbyState::update_ready_button() {
     // Use zipper to find and update ready button
-    auto* ui_components = _uiRegistry.get_if<UI::UIComponent>();
-    auto* ready_buttons = _uiRegistry.get_if<RType::UIReadyButton>();
+    auto* ui_components = _registry.get_if<UI::UIComponent>();
+    auto* ready_buttons = _registry.get_if<RType::UIReadyButton>();
     
     if (!ui_components || !ready_buttons) return;
 

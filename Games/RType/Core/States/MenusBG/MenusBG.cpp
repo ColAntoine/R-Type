@@ -1,8 +1,8 @@
 #include "MenusBG.hpp"
 #include "ECS/UI/Components/Text.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <iostream>
 #include <random>
-#include <raylib.h>
 #include <cmath>
 
 void MenusBackgroundState::enter()
@@ -52,7 +52,7 @@ void MenusBackgroundState::update(float delta_time)
             this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
         }
     }
-    this->_uiSystems.update(this->_uiRegistry, delta_time);
+    this->_systemLoader.update_all_systems(this->_registry, delta_time, DLLoader::LogicSystem);
 }
 
 void MenusBackgroundState::setup_ui()
@@ -77,7 +77,7 @@ void MenusBackgroundState::setup_ui()
         this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
     }
 
-    auto ascii_text_entity = this->_uiRegistry.spawn_entity();
+    auto ascii_text_entity = this->_registry.spawn_entity();
     auto ascii_text = std::make_shared<UI::UIText>(0, 0, " ");
 
     UI::TextStyle ascii_text_style;
@@ -101,11 +101,12 @@ void MenusBackgroundState::setup_ui()
                 int y = static_cast<int>(pos.y) + r * font_size;
 
                 std::string ch_str(1, ch);
-                DrawText(ch_str.c_str(), x, y, font_size, color);
+                auto &renderer = RenderManager::instance();
+                renderer.draw_text(ch_str.c_str(), x, y, font_size, color);
             }
         }
     });
-    this->_uiRegistry.add_component(ascii_text_entity, UI::UIComponent(ascii_text));
+    this->_registry.add_component(ascii_text_entity, UI::UIComponent(ascii_text));
     this->_asciiTextEntity = ascii_text_entity;
 
     this->_asciiTimer = 0.0f;

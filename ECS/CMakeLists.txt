@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.21)
 
 # Project name and version
 project(ECS_Library VERSION 1.0 LANGUAGES CXX)
@@ -64,7 +64,6 @@ set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
     src/dlloader.cpp
-    src/RegisterAllComponents.cpp
     src/components/position.cpp
     src/components/velocity.cpp
     src/components/sprite.cpp
@@ -119,9 +118,9 @@ set(UI_SYSTEM_SOURCES
 )
 
 # Add the main ECS shared library (components + core functionality)
-# Include UI components and system if raylib is available
+# Include UI components but NOT UISystem
 if (BUILD_UI_COMPONENTS)
-    add_library(ECS SHARED ${LIB_ECS_SOURCES} ${UI_COMPONENT_SOURCES} ${UI_SYSTEM_SOURCES})
+    add_library(ECS SHARED ${LIB_ECS_SOURCES} ${UI_COMPONENT_SOURCES})
     target_link_libraries(ECS dl raylib)
     
     # Link with glfw3 if available
@@ -130,7 +129,7 @@ if (BUILD_UI_COMPONENTS)
         message(STATUS "Linking ECS with glfw")
     endif()
     
-    message(STATUS "Building ECS with UI components and UISystem")
+    message(STATUS "Building ECS with UI components")
 else()
     add_library(ECS SHARED ${LIB_ECS_SOURCES})
     target_link_libraries(ECS dl)
@@ -147,7 +146,7 @@ if (BUILD_UI_COMPONENTS)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
     )
     target_include_directories(position_system PRIVATE include)
-    target_link_libraries(position_system PRIVATE raylib)
+    target_link_libraries(position_system PRIVATE ECS raylib)
 
     add_library(collision_system SHARED ${COLLISION_SYSTEM_SOURCES})
     set_target_properties(collision_system PROPERTIES
@@ -155,7 +154,7 @@ if (BUILD_UI_COMPONENTS)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
     )
     target_include_directories(collision_system PRIVATE include)
-    target_link_libraries(collision_system PRIVATE raylib)
+    target_link_libraries(collision_system PRIVATE ECS raylib)
 
     add_library(sprite_system SHARED ${SPRITE_SYSTEM_SOURCES})
     set_target_properties(sprite_system PROPERTIES
@@ -163,7 +162,7 @@ if (BUILD_UI_COMPONENTS)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
     )
     target_include_directories(sprite_system PRIVATE include)
-    target_link_libraries(sprite_system PRIVATE raylib)
+    target_link_libraries(sprite_system PRIVATE ECS raylib)
 
     add_library(animation_system SHARED ${ANIMATION_SYSTEM_SOURCES})
     set_target_properties(animation_system PROPERTIES
@@ -171,7 +170,16 @@ if (BUILD_UI_COMPONENTS)
         LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
     )
     target_include_directories(animation_system PRIVATE include)
-    target_link_libraries(animation_system PRIVATE raylib)
+    target_link_libraries(animation_system PRIVATE ECS raylib)
+
+    # ✅ UISystem as plugin
+    add_library(render_UISystem SHARED ${UI_SYSTEM_SOURCES})
+    set_target_properties(render_UISystem PROPERTIES
+        OUTPUT_NAME "render_UISystem"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
+    target_include_directories(render_UISystem PRIVATE include)
+    target_link_libraries(render_UISystem PRIVATE ECS raylib)
     
     message(STATUS "Building ECS system plugins with raylib support")
 else()
@@ -180,13 +188,14 @@ endif()
 
 # Build UI components and system only if raylib is found
 if (BUILD_UI_COMPONENTS)
-    # UI components and UISystem are now part of the main ECS library
-    # No need for separate libraries anymore
+    # UI components are part of the main ECS library
+    # UISystem is now a separate plugin
     
     # Create lib/ui directory for backward compatibility (if needed)
     file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/ui)
 
-    message(STATUS "  - UI components and UISystem included in libECS.so")
+    message(STATUS "  - UI components included in libECS.so")
+    message(STATUS "  - UISystem built as lib/systems/librender_UISystem.so")
 endif()
 
 # Create lib/systems directory
@@ -206,3 +215,4 @@ message(STATUS "  - lib/systems/libposition_system.so: Position update system")
 message(STATUS "  - lib/systems/libcollision_system.so: Collision detection system")
 message(STATUS "  - lib/systems/libsprite_system.so: Sprite rendering system")
 message(STATUS "  - lib/systems/libanimation_system.so: Animation system")
+message(STATUS "  - lib/systems/librender_UISystem.so: UI system plugin")

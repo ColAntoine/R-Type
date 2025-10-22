@@ -1,6 +1,6 @@
 #include "ServerECS.hpp"
 #include <iostream>
-#include "Utils/Console.hpp"
+#include "ECS/Utils/Console.hpp"
 
 namespace RType::Network {
 
@@ -45,7 +45,7 @@ namespace RType::Network {
 
     void ServerECS::tick(float dt) {
         // run all registered systems (systems may consume net_input components)
-        loader_.update_all_systems(registry_, dt);
+        loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
     }
 
     registry& ServerECS::GetRegistry() {

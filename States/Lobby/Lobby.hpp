@@ -37,7 +37,7 @@ private:
     int server_port_{8080};
 
     // ECS UI system
-    registry _uiRegistry;
+    registry _registry;
     UI::UISystem ui_system_;
 
     // ASCII background state

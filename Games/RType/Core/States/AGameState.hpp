@@ -2,6 +2,7 @@
 
 #include "IGameState.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/DLLoader.hpp"
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/UI/Components/Button.hpp"
@@ -26,8 +27,8 @@ class AGameState : public IGameState {
         virtual bool blocks_render() const override { return true; }
     protected:
         GameStateManager* _stateManager;
-        registry _uiRegistry;
-        UI::UISystem _uiSystems;
+        registry _registry;
+        DLLoader _systemLoader;
 
         bool _initialized{false};
 

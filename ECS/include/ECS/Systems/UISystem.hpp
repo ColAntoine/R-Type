@@ -47,3 +47,7 @@ namespace UI {
         void handle_keyboard_input(registry& registry);
     };
 }
+
+extern "C" {
+    std::unique_ptr<ISystem> create_system();
+}

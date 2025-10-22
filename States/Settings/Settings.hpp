@@ -39,7 +39,7 @@ private:
     bool initialized_{false};
 
     // ECS UI system
-    registry _uiRegistry;
+    registry _registry;
     UI::UISystem ui_system_;
 
     // ASCII background state
