@@ -52,7 +52,7 @@ void MenusBackgroundState::update(float delta_time)
             this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
         }
     }
-    this->_uiSystems->update(*this->_uiRegistry, delta_time);
+    this->_uiSystems.update(this->_uiRegistry, delta_time);
 }
 
 void MenusBackgroundState::setup_ui()
@@ -77,19 +77,19 @@ void MenusBackgroundState::setup_ui()
         this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
     }
 
-    auto ascii_text_entity = this->_uiRegistry->spawn_entity();
+    auto ascii_text_entity = this->_uiRegistry.spawn_entity();
     auto ascii_text = std::make_shared<UI::UIText>(0, 0, " ");
 
     UI::TextStyle ascii_text_style;
-    ascii_text_style._text_color = {100, 150, 200, 150};  // Semi-transparent blue
-    ascii_text_style._font_size = this->_asciiFontSize;
-    ascii_text_style._alignment = UI::TextAlignment::Left;
-    ascii_text->set_style(ascii_text_style);
+    ascii_text_style.setTextColor({100, 150, 200, 150});  // Semi-transparent blue
+    ascii_text_style.setFontSize(this->_asciiFontSize);
+    ascii_text_style.setAlignment(UI::TextAlignment::Left);
+    ascii_text->setStyle(ascii_text_style);
 
-    ascii_text->set_custom_render([this](const UI::UIText& text) {
-        Vector2 pos = text.get_position();
-        Color color = text.get_style()._text_color;
-        int font_size = text.get_style()._font_size;
+    ascii_text->setCustomRender([this](const UI::UIText& text) {
+        Vector2 pos = text.getPosition();
+        Color color = text.getStyle().getTextColor();
+        int font_size = text.getStyle().getFontSize();
         int font_w = std::max(1, font_size / 2);
 
         for (int r = 0; r < static_cast<int>(this->_asciiRows); ++r) {
@@ -105,7 +105,7 @@ void MenusBackgroundState::setup_ui()
             }
         }
     });
-    this->_uiRegistry->add_component(ascii_text_entity, UI::UIComponent(ascii_text));
+    this->_uiRegistry.add_component(ascii_text_entity, UI::UIComponent(ascii_text));
     this->_asciiTextEntity = ascii_text_entity;
 
     this->_asciiTimer = 0.0f;

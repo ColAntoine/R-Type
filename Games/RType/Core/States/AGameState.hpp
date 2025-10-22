@@ -25,14 +25,13 @@ class AGameState : public IGameState {
         virtual bool blocks_update() const override { return true; }
         virtual bool blocks_render() const override { return true; }
     protected:
-        std::shared_ptr<GameStateManager> _stateManager;
-        std::shared_ptr<registry> _uiRegistry;
-        std::shared_ptr<UI::UISystem> _uiSystems;
+        GameStateManager* _stateManager;
+        registry _uiRegistry;
+        UI::UISystem _uiSystems;
 
         bool _initialized{false};
 
-        void set_state_manager(std::shared_ptr<GameStateManager> manager) override { _stateManager = manager; }
-        void set_ui_registry(std::shared_ptr<registry> uiRegistry) override { _uiRegistry = uiRegistry; }
+        void set_state_manager(GameStateManager* manager) override { _stateManager = manager; }
 };
 
 inline std::string state_type_to_string(IGameState::GameStateType type) {

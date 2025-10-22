@@ -61,7 +61,7 @@ void GameStateManager::change_state(const std::string& state_name) {
         return;
     }
 
-    std::cout << "Stack size before clear: " << state_stack_.size() << std::endl;
+    std::cout << "[IN GAMESTATEMANAGER] Stack size before clear: " << state_stack_.size() << std::endl;
     // Clear current stack
     while (!state_stack_.empty()) {
         std::cout << "Exiting state: " << state_stack_.top()->get_name() << std::endl;
@@ -96,11 +96,8 @@ void GameStateManager::update(float delta_time) {
     std::vector<std::shared_ptr<IGameState>> states_to_update;
     auto temp_stack = state_stack_;
 
-    std::cout << "[";
     while (!temp_stack.empty()) {
         auto state = temp_stack.top();
-        std::cout << state->get_name();
-        if (temp_stack.size() > 1) std::cout << ", ";
         states_to_update.push_back(state);
         temp_stack.pop();
 
@@ -109,7 +106,6 @@ void GameStateManager::update(float delta_time) {
             break;
         }
     }
-    std::cout << "] ← " << states_to_update.front()->get_name() << " au sommet" << std::endl;
 
     // Update in reverse order (bottom to top)
     std::reverse(states_to_update.begin(), states_to_update.end());
@@ -199,8 +195,7 @@ std::shared_ptr<IGameState> GameStateManager::create_state(const std::string& st
 
     auto state = it->second();
     if (state) {
-        auto self = std::make_shared<GameStateManager>(*this);
-        state->set_state_manager(self);
+        state->set_state_manager(this);
     }
     return state;
 }

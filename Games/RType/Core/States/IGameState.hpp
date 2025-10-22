@@ -45,8 +45,7 @@ public:
     virtual bool blocks_update() const = 0;    // Does this state block states below it from updating?
     virtual bool blocks_render() const = 0;    // Does this state block states below it from rendering?
 protected:
-    virtual void set_state_manager(std::shared_ptr<GameStateManager> manager) = 0;
-    virtual void set_ui_registry(std::shared_ptr<registry> uiRegistry) = 0;
+    virtual void set_state_manager(GameStateManager* manager) = 0;
 
     friend class GameStateManager;
 };

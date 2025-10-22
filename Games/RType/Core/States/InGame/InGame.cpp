@@ -27,11 +27,10 @@ void InGameState::resume()
 
 void InGameState::update(float delta_time)
 {
-    std::cout << "[InGame] Updating state" << std::endl;
     if  (!this->_initialized)
         return;
 
-    this->_uiSystems->update(*this->_uiRegistry, delta_time);
+    this->_uiSystems.update(this->_uiRegistry, delta_time);
 }
 
 void on_play_clicked()
