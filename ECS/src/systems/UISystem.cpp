@@ -20,11 +20,12 @@ namespace UI {
 
         // Use zipper to iterate through UI components with their entity IDs
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
-            if (ui_comp._ui_element && ui_comp._ui_element->isVisible()) {
+            if (ui_comp._ui_element) {
                 ui_comp._ui_element->update(deltaTime);
             }
         }
         this->process_input(registry);
+        this->render(registry);
     }
 
     void UISystem::process_input(registry& registry) {
@@ -42,7 +43,7 @@ namespace UI {
         if (!ui_components) return;
 
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
-            if (ui_comp._ui_element && ui_comp._ui_element->isVisible()) {
+            if (ui_comp._ui_element) {
                 ui_comp._ui_element->render();
             }
         }

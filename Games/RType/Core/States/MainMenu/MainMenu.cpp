@@ -1,4 +1,7 @@
 #include "MainMenu.hpp"
+#include "Constants.hpp"
+#include "ECS/UI/Components/Button.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 
 void MainMenuState::enter()
 {
@@ -7,11 +10,12 @@ void MainMenuState::enter()
     this->_systemLoader.load_components_from_so("build/lib/libECS.so", this->_registry);
     this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
-    _registry.register_component<RType::UIMainPanel>();
-    _registry.register_component<RType::UITitleText>();
+    this->_registry.register_component<UI::UIButton>();
+    // _registry.register_component<RType::UIMainPanel>();
+    // _registry.register_component<RType::UITitleText>();
     _registry.register_component<RType::UIPlayButton>();
-    _registry.register_component<RType::UISettingsButton>();
-    _registry.register_component<RType::UIQuitButton>();
+    // _registry.register_component<RType::UISettingsButton>();
+    // _registry.register_component<RType::UIQuitButton>();
 
     this->setup_ui();
     this->_initialized = true;
@@ -50,43 +54,24 @@ void MainMenuState::on_play_clicked()
     }
 }
 
-// void MainMenuState::setup_ui()
-// {
-//     std::cout << "[MainMenu] Setting up UI" << std::endl;
-//     int sw = GetScreenWidth();
-//     int sh = GetScreenHeight();
-//     int center_x = sw / 2.0f;
-//     int center_y = sh / 2.0f;
-
 void MainMenuState::setup_ui()
 {
     std::cout << "[MainMenu] Setting up UI" << std::endl;
 
-    // auto play_button = std::make_shared<UI::UIButton>(400, 300, 200, 60, "Play Game");
-    // UI::ButtonStyle style;
-    // style.setNormalColor({70, 70, 70, 255});
-    // style.setHoveredColor({100, 100, 255, 255});
-    // style.setPressedColor({50, 50, 150, 255});
-    // style.setFontSize(24);
-    // play_button->setStyle(style);
-    // play_button->setOnClick([this]() {
-    //     std::cout << "[MainMenu] Play button clicked" << std::endl;
-    //     if (this->_stateManager)
-    //         this->_stateManager->change_state("InGame");
-    // });
-    // auto button_entity = this->_registry.spawn_entity();
-    // this->_registry.add_component(
-    //     button_entity,
-    //     UI::UIComponent(play_button)  // ← Wrap le button dans UIComponent
-    // );
+    auto playButton = ButtonBuilder()
+        .centered(200)
+        .size(400, 100)
+        .text("PLAY")
+        .blue()
+        .textColor(WHITE)
+        .fontSize(24)
+        .border(2, WHITE)
+        .onClick([this]() {
+            this->on_play_clicked();
+        }
+    )
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    auto playButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component(playButtonEntity, UI::UIComponent(playButton));
+
 }
-    // auto button = std::make_shared<UI::UIButton>(center_x - 100, center_y - 25, 200, 50, "PLAY");
-    // UI::ButtonStyle play_style;
-    // play_style.setHoveredColor({36, 36, 52, 240});
-    // play_style.setNormalColor({20, 20, 30, 220});
-    // play_style.setPressedColor({16, 16, 24, 200});
-    // play_style.setTextColor({220, 240, 255, 255});
-    // play_style.setFontSize(28);
-    // button->setStyle(play_style);
-    // button->setOnClick([this]() { this->on_play_clicked(); });
-    // _registry.add_component(button_entity, UI::UIComponent(button));

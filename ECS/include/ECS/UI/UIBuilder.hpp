@@ -175,7 +175,7 @@ public:
         return *this;
     }
 
-    std::unique_ptr<T> build(float screenWidth, float screenHeight);
+    std::shared_ptr<T> build(float screenWidth, float screenHeight);
 
 protected:
     float _x = 0.0f;
@@ -221,8 +221,8 @@ protected:
 
 // Specializations
 template<>
-inline std::unique_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build(float screenWidth, float screenHeight) {
-    auto button = std::make_unique<UI::UIButton>(
+inline std::shared_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build(float screenWidth, float screenHeight) {
+    auto button = std::make_shared<UI::UIButton>(
         calculateX(screenWidth), calculateY(screenHeight), _width, _height, _text
     );
 
@@ -244,8 +244,8 @@ inline std::unique_ptr<UI::UIButton> UIBuilder<UI::UIButton>::build(float screen
 }
 
 template<>
-inline std::unique_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidth, float screenHeight) {
-    auto text = std::make_unique<UI::UIText>(
+inline std::shared_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidth, float screenHeight) {
+    auto text = std::make_shared<UI::UIText>(
         calculateX(screenWidth), calculateY(screenHeight), _text, _fontSize, _textColor
     );
 
@@ -255,8 +255,8 @@ inline std::unique_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidt
 }
 
 template<>
-inline std::unique_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build(float screenWidth, float screenHeight) {
-    auto panel = std::make_unique<UI::UIPanel>(
+inline std::shared_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build(float screenWidth, float screenHeight) {
+    auto panel = std::make_shared<UI::UIPanel>(
         calculateX(screenWidth), calculateY(screenHeight), _width, _height
     );
 
@@ -268,8 +268,8 @@ inline std::unique_ptr<UI::UIPanel> UIBuilder<UI::UIPanel>::build(float screenWi
 }
 
 template<>
-inline std::unique_ptr<UI::UIInputField> UIBuilder<UI::UIInputField>::build(float screenWidth, float screenHeight) {
-    auto input = std::make_unique<UI::UIInputField>(
+inline std::shared_ptr<UI::UIInputField> UIBuilder<UI::UIInputField>::build(float screenWidth, float screenHeight) {
+    auto input = std::make_shared<UI::UIInputField>(
         calculateX(screenWidth), calculateY(screenHeight), _width, _height, _placeholderText
     );
 

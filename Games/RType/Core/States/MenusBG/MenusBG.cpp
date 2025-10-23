@@ -1,6 +1,7 @@
 #include "MenusBG.hpp"
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/UI/UIBuilder.hpp"
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -8,6 +9,11 @@
 void MenusBackgroundState::enter()
 {
     std::cout << "[MenusBackground] Entering state" << std::endl;
+
+    this->_systemLoader.load_components_from_so("build/lib/libECS.so", this->_registry);
+    this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+
+    this->_registry.register_component<UI::UIText>();
 
     setup_ui();
     this->_initialized = true;
@@ -77,16 +83,15 @@ void MenusBackgroundState::setup_ui()
         this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
     }
 
-    auto ascii_text_entity = this->_registry.spawn_entity();
-    auto ascii_text = std::make_shared<UI::UIText>(0, 0, " ");
+    auto asciiText = TextBuilder()
+        .at(0, 0)
+        .text(" ")
+        .fontSize(this->_asciiFontSize)
+        .textColor({100, 150, 200, 150})
+        .alignment(UI::TextAlignment::Left)
+    .build(sw, sh);
 
-    UI::TextStyle ascii_text_style;
-    ascii_text_style.setTextColor({100, 150, 200, 150});  // Semi-transparent blue
-    ascii_text_style.setFontSize(this->_asciiFontSize);
-    ascii_text_style.setAlignment(UI::TextAlignment::Left);
-    ascii_text->setStyle(ascii_text_style);
-
-    ascii_text->setCustomRender([this](const UI::UIText& text) {
+    asciiText->setCustomRender([this](const UI::UIText& text) {
         Vector2 pos = text.getPosition();
         Color color = text.getStyle().getTextColor();
         int font_size = text.getStyle().getFontSize();
@@ -106,8 +111,9 @@ void MenusBackgroundState::setup_ui()
             }
         }
     });
-    this->_registry.add_component(ascii_text_entity, UI::UIComponent(ascii_text));
-    this->_asciiTextEntity = ascii_text_entity;
 
+    auto asciiTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component(asciiTextEntity, UI::UIComponent(asciiText));
+    this->_asciiTextEntity = asciiTextEntity;
     this->_asciiTimer = 0.0f;
 }
