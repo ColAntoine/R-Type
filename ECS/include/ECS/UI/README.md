@@ -279,13 +279,13 @@ public:
         : UIButton(x, y, w, h, text) {}
 
 protected:
-    void draw_button_background() const override {
+    void drawButtonBackground() const override {
         // Custom neon glow rendering
-        UIButton::draw_button_background();
+        UIButton::drawButtonBackground();
         // Add neon effects...
     }
 
-    void draw_button_text() const override {
+    void drawButtonText() const override {
         // Custom text with glitch effect
         // ...
     }

@@ -6,6 +6,7 @@
 */
 
 #include "ECS/UI/Components/Text.hpp"
+#include <iostream>
 
 namespace UI {
     void UIText::update(float delta_time) {
@@ -16,42 +17,41 @@ namespace UI {
     void UIText::render() {
         if (!_visible) return;
         if (_text.empty()) return;
-
         // If custom render function is set, use it instead
-        if (_custom_render) {
-            _custom_render(*this);
+        if (_customRender) {
+            _customRender(*this);
             return;
         }
 
         // Default rendering
-        if (_style._has_shadow) {
-            draw_text_shadow();
+        if (_style.hasShadow()) {
+            drawTextShadow();
         }
-        draw_text_content();
+        drawTextContent();
     }
 
-    void UIText::handle_input() {
+    void UIText::handleInput() {
         // Text typically doesn't handle input
     }
 
-    Vector2 UIText::get_text_size() const {
+    Vector2 UIText::getTextSize() const {
         return MeasureTextEx(
             GetFontDefault(),
             _text.c_str(),
-            _style._font_size,
-            _style._spacing
+            _style.getFontSize(),
+            _style.getSpacing()
         );
     }
 
-    void UIText::update_size() {
-        _size = get_text_size();
+    void UIText::updateSize() {
+        _size = getTextSize();
     }
 
-    Vector2 UIText::calculate_text_position() const {
-        Vector2 text_size = get_text_size();
+    Vector2 UIText::calculateTextPosition() const {
+        Vector2 text_size = getTextSize();
         Vector2 pos = _position;
 
-        switch (_style._alignment) {
+        switch (_style.getAlignment()) {
             case TextAlignment::Center:
                 pos.x -= text_size.x / 2.0f;
                 break;
@@ -67,35 +67,35 @@ namespace UI {
         return pos;
     }
 
-    void UIText::draw_text_shadow() const {
-        if (!_style._has_shadow) return;
+    void UIText::drawTextShadow() const {
+        if (!_style.hasShadow()) return;
 
-        Vector2 pos = calculate_text_position();
+        Vector2 pos = calculateTextPosition();
         Vector2 shadow_pos = {
-            pos.x + _style._shadow_offset.x,
-            pos.y + _style._shadow_offset.y
+            pos.x + _style.getShadowOffset().x,
+            pos.y + _style.getShadowOffset().y
         };
 
         DrawTextEx(
             GetFontDefault(),
             _text.c_str(),
             shadow_pos,
-            _style._font_size,
-            _style._spacing,
-            _style._shadow_color
+            _style.getFontSize(),
+            _style.getSpacing(),
+            _style.getShadowColor()
         );
     }
 
-    void UIText::draw_text_content() const {
-        Vector2 pos = calculate_text_position();
+    void UIText::drawTextContent() const {
+        Vector2 pos = calculateTextPosition();
 
         DrawTextEx(
             GetFontDefault(),
             _text.c_str(),
             pos,
-            _style._font_size,
-            _style._spacing,
-            _style._text_color
+            _style.getFontSize(),
+            _style.getSpacing(),
+            _style.getTextColor()
         );
     }
 }

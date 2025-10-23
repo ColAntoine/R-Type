@@ -244,11 +244,11 @@ class MainMenu : public IGameState {
 private:
     UIManager ui_manager_;
     ServiceManager& services_;
-    GameStateManager& state_manager_;
+    GameStateManager& _stateManager;
 
 public:
     MainMenu(ServiceManager& services, GameStateManager& states)
-        : services_(services), state_manager_(states) {}
+        : services_(services), _stateManager(states) {}
     
     void on_enter() override {
         // Create UI buttons
@@ -256,7 +256,7 @@ public:
             "Play", 300, 200, 200, 50
         );
         play_btn->set_callback([this]() {
-            state_manager_.change_state("InGame");
+            _stateManager.change_state("InGame");
         });
         ui_manager_.add_component("play_button", play_btn);
     }
@@ -422,7 +422,7 @@ class Application {
 private:
     EventManager event_manager_;
     ServiceManager service_manager_;
-    GameStateManager state_manager_;
+    GameStateManager _stateManager;
     registry ecs_registry_;
     bool running_{false};
 
@@ -438,12 +438,12 @@ public:
         service_manager_.initialize_all();
         
         // 3. Register game states
-        state_manager_.register_state<MainMenu>("MainMenu");
-        state_manager_.register_state<InGame>("InGame");
-        state_manager_.register_state<GameOver>("GameOver");
+        _stateManager.register_state<MainMenu>("MainMenu");
+        _stateManager.register_state<InGame>("InGame");
+        _stateManager.register_state<GameOver>("GameOver");
         
         // 4. Start with main menu
-        state_manager_.push_state("MainMenu");
+        _stateManager.push_state("MainMenu");
         
         running_ = true;
         return true;
@@ -460,7 +460,7 @@ public:
             event_manager_.process_queue();
             
             // 3. Update active state
-            state_manager_.update(dt);
+            _stateManager.update(dt);
             
             // 4. Update ECS systems
             // (called by active state or here)
@@ -468,13 +468,13 @@ public:
             // 5. Render
             BeginDrawing();
             ClearBackground(BLACK);
-            state_manager_.render();
+            _stateManager.render();
             EndDrawing();
         }
     }
     
     void shutdown() {
-        state_manager_.clear();
+        _stateManager.clear();
         service_manager_.shutdown_all();
         running_ = false;
     }

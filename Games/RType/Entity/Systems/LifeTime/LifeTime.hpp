@@ -7,12 +7,13 @@
 
 #pragma once
 
+#include "Constants.hpp"
 #include "ECS/Systems/ISystem.hpp"
 
 class LifetimeSystem : public ISystem {
 private:
-    int window_width = 1024;
-    int window_height = 768;
+    int window_width = SCREEN_WIDTH;
+    int window_height = SCREEN_HEIGHT;
 
 public:
     void update(registry& r, float dt = 0.0f) override;

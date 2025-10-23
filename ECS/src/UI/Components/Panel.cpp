@@ -17,41 +17,41 @@ namespace UI {
         if (!_visible) return;
 
         // If custom render function is set, use it instead
-        if (_custom_render) {
-            _custom_render(*this);
+        if (_customRender) {
+            _customRender(*this);
             return;
         }
 
         // Default rendering
-        if (_style._has_shadow) {
-            draw_panel_shadow();
+        if (_style.hasShadow()) {
+            drawPanelShadow();
         }
-        draw_panel_background();
-        draw_panel_border();
+        drawPanelBackground();
+        drawPanelBorder();
     }
 
-    void UIPanel::handle_input() {}
+    void UIPanel::handleInput() {}
 
-    void UIPanel::draw_panel_shadow() const {
-        if (!_style._has_shadow) return;
+    void UIPanel::drawPanelShadow() const {
+        if (!_style.hasShadow()) return;
 
         DrawRectangle(
-            _position.x + _style._shadow_offset,
-            _position.y + _style._shadow_offset,
+            _position.x + _style.getShadowOffset(),
+            _position.y + _style.getShadowOffset(),
             _size.x,
             _size.y,
-            _style._shadow_color
+            _style.getShadowColor()
         );
     }
 
-    void UIPanel::draw_panel_background() const {
-        if (_style._corner_radius > 0) {
+    void UIPanel::drawPanelBackground() const {
+        if (_style.getCornerRadius() > 0) {
             // Draw rounded rectangle
             DrawRectangleRounded(
                 {_position.x, _position.y, _size.x, _size.y},
-                _style._corner_radius / _size.y,  // Normalize radius
+                _style.getCornerRadius() / _size.y,  // Normalize radius
                 8,  // Segments for rounding
-                _style._background_color
+                _style.getBackgroundColor()
             );
         } else {
             // Draw regular rectangle
@@ -60,28 +60,28 @@ namespace UI {
                 _position.y,
                 _size.x,
                 _size.y,
-                _style._background_color
+                _style.getBackgroundColor()
             );
         }
     }
 
-    void UIPanel::draw_panel_border() const {
-        if (_style._border_thickness <= 0) return;
+    void UIPanel::drawPanelBorder() const {
+        if (_style.getBorderThickness() <= 0) return;
 
-        if (_style._corner_radius > 0) {
+        if (_style.getCornerRadius() > 0) {
             // Draw rounded rectangle border
             DrawRectangleRoundedLines(
                 {_position.x, _position.y, _size.x, _size.y},
-                _style._corner_radius / _size.y,
+                _style.getCornerRadius() / _size.y,
                 8,
-                _style._border_color
+                _style.getBorderColor()
             );
         } else {
             // Draw regular rectangle border
             DrawRectangleLinesEx(
                 {_position.x, _position.y, _size.x, _size.y},
-                _style._border_thickness,
-                _style._border_color
+                _style.getBorderThickness(),
+                _style.getBorderColor()
             );
         }
     }

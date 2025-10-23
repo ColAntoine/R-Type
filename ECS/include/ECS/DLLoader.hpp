@@ -18,6 +18,10 @@ class registry;
 
 class DLLoader {
     public:
+        enum SystemType {
+            LogicSystem,
+            RenderSystem
+        };
         DLLoader();
         ~DLLoader();
 
@@ -26,14 +30,14 @@ class DLLoader {
         IComponentFactory* get_factory() const;
 
         // System loading (new functionality)
-        bool load_system_from_so(const std::string &so_path);
-        void update_all_systems(registry& r, float dt);
-        void update_system_by_name(const std::string& name, registry& r, float dt);
+        bool load_system_from_so(const std::string &so_path, SystemType type);
+        void update_all_systems(registry& r, float dt, SystemType type);
+        void update_system_by_name(const std::string& name, registry& r, float dt, SystemType type);
 
         // General status
         bool is_loaded() const;
-        size_t get_system_count() const;
-        std::vector<std::string> get_system_names() const;
+        size_t get_system_count(SystemType type) const;
+        std::vector<std::string> get_system_names(SystemType type) const;
 
     private:
         struct LoadedSystem {
@@ -44,7 +48,8 @@ class DLLoader {
 
         void* library_handle_;           // For components
         IComponentFactory* factory_;     // For components
-        std::vector<LoadedSystem> systems_; // For systems
+        std::vector<LoadedSystem> _logicSystems; // For logic systems
+        std::vector<LoadedSystem> _renderSystems; // For render systems
 
         // Non-copyable, movable
         DLLoader(const DLLoader&) = delete;

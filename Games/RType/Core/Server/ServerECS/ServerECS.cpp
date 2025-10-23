@@ -1,14 +1,7 @@
 #include "ServerECS.hpp"
 #include "Communication/Multiplayer.hpp"
 #include <iostream>
-#include "Utils/Console.hpp"
-#include <unordered_map>
-#include <chrono>
-#include "ECS/Components/InputBuffer.hpp"
-#include "Protocol/Protocol.hpp"
-#include "ECS/Components/Position.hpp"
-#include "ECS/Components/Velocity.hpp"
-#include "Entity/Components/Controllable/Controllable.hpp"
+#include "ECS/Utils/Console.hpp"
 
 namespace RType::Network {
 
@@ -48,7 +41,8 @@ namespace RType::Network {
     }
 
     void ServerECS::tick(float dt) {
-        loader_.update_all_systems(registry_, dt);
+        // run all registered systems (systems may consume net_input components)
+        loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
     }
 
     registry& ServerECS::GetRegistry() {

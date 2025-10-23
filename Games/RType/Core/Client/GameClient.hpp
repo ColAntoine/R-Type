@@ -20,14 +20,12 @@ class GameClient : public AGameCore {
         registry &GetRegistry();
         DLLoader &GetDLLoader();
 
-        void load_systems();
-
     private:
         registry ecs_registry_;
         DLLoader ecs_loader_;
         std::unique_ptr<NetworkManager> network_manager_;
-        GameStateManager state_manager_;
         bool running_{false};
 
+        GameStateManager _stateManager;
         void register_states();
 };

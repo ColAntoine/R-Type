@@ -3,13 +3,13 @@
 #include <dlfcn.h>
 #include <iostream>
 #include <filesystem>
-#include "Utils/Console.hpp"
+#include "ECS/Utils/Console.hpp"
 
 DLLoader::DLLoader() : library_handle_(nullptr), factory_(nullptr) {}
 
 DLLoader::~DLLoader() {
     // Clean up systems - destroy objects before unloading libraries
-    for (auto& loaded_sys : systems_) {
+    for (auto& loaded_sys : _logicSystems) {
         // Explicitly reset the unique_ptr to destroy the system object first
         loaded_sys.system.reset();
         // Now it's safe to close the library handle
@@ -17,7 +17,17 @@ DLLoader::~DLLoader() {
             dlclose(loaded_sys.handle);
         }
     }
-    systems_.clear();
+    _logicSystems.clear();
+
+    for (auto& loaded_sys : _renderSystems) {
+        // Explicitly reset the unique_ptr to destroy the system object first
+        loaded_sys.system.reset();
+        // Now it's safe to close the library handle
+        if (loaded_sys.handle) {
+            dlclose(loaded_sys.handle);
+        }
+    }
+    _renderSystems.clear();
 
     // Clean up component library
     if (library_handle_) {
@@ -27,7 +37,8 @@ DLLoader::~DLLoader() {
     }
 }
 
-bool DLLoader::load_system_from_so(const std::string &so_path) {
+bool DLLoader::load_system_from_so(const std::string &so_path, SystemType type) {
+    auto &systems = (type == LogicSystem) ? _logicSystems : _renderSystems;
     // Check if file exists
     if (!std::filesystem::exists(so_path)) {
         std::cerr << "System library file does not exist: " << so_path << std::endl;
@@ -78,15 +89,16 @@ bool DLLoader::load_system_from_so(const std::string &so_path) {
     loaded_sys.system = std::move(system);
     loaded_sys.name = std::filesystem::path(so_path).stem().string();
 
-    systems_.push_back(std::move(loaded_sys));
+    systems.push_back(std::move(loaded_sys));
 
-    std::cout << "Loaded system: " << systems_.back().system->get_name()
+    std::cout << "Loaded system: " << systems.back().system->get_name()
               << " from " << so_path << std::endl;
     return true;
 }
 
-void DLLoader::update_all_systems(registry& r, float dt) {
-    for (auto& loaded_sys : systems_) {
+void DLLoader::update_all_systems(registry& r, float dt, SystemType type) {
+    auto &systems = (type == LogicSystem) ? _logicSystems : _renderSystems;
+    for (auto& loaded_sys : systems) {
         if (loaded_sys.system) {
             try {
                 loaded_sys.system->update(r, dt);
@@ -98,8 +110,9 @@ void DLLoader::update_all_systems(registry& r, float dt) {
     }
 }
 
-void DLLoader::update_system_by_name(const std::string& name, registry& r, float dt) {
-    for (auto& loaded_sys : systems_) {
+void DLLoader::update_system_by_name(const std::string& name, registry& r, float dt, SystemType type) {
+    auto &systems = (type == LogicSystem) ? _logicSystems : _renderSystems;
+    for (auto& loaded_sys : systems) {
         if (loaded_sys.system && loaded_sys.system->get_name() == name) {
             try {
                 loaded_sys.system->update(r, dt);
@@ -186,16 +199,33 @@ bool DLLoader::is_loaded() const {
     return library_handle_ != nullptr;
 }
 
-size_t DLLoader::get_system_count() const {
-    return systems_.size();
+size_t DLLoader::get_system_count(SystemType type) const {
+    switch (type) {
+        case LogicSystem: return _logicSystems.size();
+        case RenderSystem: return _renderSystems.size();
+        default: return 0;
+    }
 }
 
-std::vector<std::string> DLLoader::get_system_names() const {
+std::vector<std::string> DLLoader::get_system_names(SystemType type) const {
     std::vector<std::string> names;
-    for (const auto& loaded_sys : systems_) {
-        if (loaded_sys.system) {
-            names.push_back(loaded_sys.system->get_name());
-        }
+    switch (type) {
+        case LogicSystem:
+            for (const auto& loaded_sys : _logicSystems) {
+                if (loaded_sys.system) {
+                    names.push_back(loaded_sys.system->get_name());
+                }
+            }
+            break;
+        case RenderSystem:
+            for (const auto& loaded_sys : _renderSystems) {
+                if (loaded_sys.system) {
+                    names.push_back(loaded_sys.system->get_name());
+                }
+            }
+            break;
+        default:
+            break;
     }
     return names;
 }
@@ -204,7 +234,9 @@ std::vector<std::string> DLLoader::get_system_names() const {
 DLLoader::DLLoader(DLLoader&& other) noexcept
     : library_handle_(other.library_handle_)
     , factory_(other.factory_)
-    , systems_(std::move(other.systems_)) {
+    , _logicSystems(std::move(other._logicSystems))
+    , _renderSystems(std::move(other._renderSystems))
+{
     other.library_handle_ = nullptr;
     other.factory_ = nullptr;
 }
@@ -217,7 +249,8 @@ DLLoader& DLLoader::operator=(DLLoader&& other) noexcept {
         // Move from other
         library_handle_ = other.library_handle_;
         factory_ = other.factory_;
-        systems_ = std::move(other.systems_);
+        _logicSystems = std::move(other._logicSystems);
+        _renderSystems = std::move(other._renderSystems);
 
         // Reset other
         other.library_handle_ = nullptr;

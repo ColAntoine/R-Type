@@ -8,6 +8,7 @@
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/Zipper.hpp"
+#include <iostream>
 
 namespace UI {
     void UISystem::update(registry& registry, float deltaTime) {
@@ -19,10 +20,12 @@ namespace UI {
 
         // Use zipper to iterate through UI components with their entity IDs
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
-            if (ui_comp._ui_element && ui_comp._ui_element->is_visible()) {
+            if (ui_comp._ui_element) {
                 ui_comp._ui_element->update(deltaTime);
             }
         }
+        this->process_input(registry);
+        this->render(registry);
     }
 
     void UISystem::process_input(registry& registry) {
@@ -40,7 +43,7 @@ namespace UI {
         if (!ui_components) return;
 
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
-            if (ui_comp._ui_element && ui_comp._ui_element->is_visible()) {
+            if (ui_comp._ui_element) {
                 ui_comp._ui_element->render();
             }
         }
@@ -54,9 +57,9 @@ namespace UI {
         // Handle input for all UI components using zipper
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
             if (ui_comp._ui_element &&
-                ui_comp._ui_element->is_visible() &&
-                ui_comp._ui_element->is_enabled()) {
-                ui_comp._ui_element->handle_input();
+                ui_comp._ui_element->isVisible() &&
+                ui_comp._ui_element->isEnabled()) {
+                ui_comp._ui_element->handleInput();
             }
         }
 
@@ -81,7 +84,7 @@ namespace UI {
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
             if (entity_id == _focused_entity_id &&
                 ui_comp._ui_element &&
-                ui_comp._ui_element->is_enabled()) {
+                ui_comp._ui_element->isEnabled()) {
                 // Keyboard handling for focused element
                 // This can be extended based on component type (e.g., text input)
                 break;
@@ -99,9 +102,9 @@ namespace UI {
         // Use zipper to find all components under the cursor
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
             if (ui_comp._ui_element &&
-                ui_comp._ui_element->is_visible() &&
-                ui_comp._ui_element->is_enabled() &&
-                ui_comp._ui_element->is_point_inside(x, y)) {
+                ui_comp._ui_element->isVisible() &&
+                ui_comp._ui_element->isEnabled() &&
+                ui_comp._ui_element->isPointInside(x, y)) {
                 clickable_entities.push_back({entity_id, 0});
             }
         }

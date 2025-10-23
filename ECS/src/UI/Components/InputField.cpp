@@ -14,7 +14,7 @@ namespace UI {
         // Update cursor blink timer
         if (_is_focused) {
             _cursor_blink_timer += delta_time;
-            if (_cursor_blink_timer >= _style._cursor_blink_speed) {
+            if (_cursor_blink_timer >= _style.getCursorBlinkSpeed()) {
                 _cursor_blink_timer = 0.0f;
                 _show_cursor = !_show_cursor;
             }
@@ -34,25 +34,25 @@ namespace UI {
         if (!_visible) return;
 
         // If custom render function is set, use it instead
-        if (_custom_render) {
-            _custom_render(*this);
+        if (_customRender) {
+            _customRender(*this);
             return;
         }
 
         // Default rendering
-        draw_input_background();
-        draw_input_text();
+        drawInputBackground();
+        drawInputText();
 
         if (_is_focused && _show_cursor) {
-            draw_cursor();
+            drawCursor();
         }
     }
 
-    void UIInputField::handle_input() {
+    void UIInputField::handleInput() {
         if (!_visible || !_enabled) return;
 
         Vector2 mouse_pos = GetMousePosition();
-        bool is_hovered = is_point_inside(mouse_pos.x, mouse_pos.y);
+        bool is_hovered = isPointInside(mouse_pos.x, mouse_pos.y);
 
         // Handle focus on click
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -61,11 +61,11 @@ namespace UI {
 
         // Process text input if focused
         if (_is_focused) {
-            process_text_input();
+            processTextInput();
         }
     }
 
-    void UIInputField::process_text_input() {
+    void UIInputField::processTextInput() {
         // Handle backspace
         if (IsKeyPressed(KEY_BACKSPACE) && !_text.empty()) {
             _text.pop_back();
@@ -93,27 +93,27 @@ namespace UI {
         }
     }
 
-    Color UIInputField::get_current_background_color() const {
+    Color UIInputField::getCurrentBackgroundColor() const {
         if (!_enabled) {
-            return _style._disabled_color;
+            return _style.getBackgroundColor();
         }
-        return _is_focused ? _style._focused_color : _style._background_color;
+        return _is_focused ? _style.getFocusedColor() : _style.getBackgroundColor();
     }
 
-    Color UIInputField::get_current_border_color() const {
+    Color UIInputField::getCurrentBorderColor() const {
         if (!_enabled) {
-            return _style._border_color;
+            return _style.getBorderColor();
         }
-        return _is_focused ? _style._focused_border_color : _style._border_color;
+        return _is_focused ? _style.getFocusedBorderColor() : _style.getBorderColor();
     }
 
-    Color UIInputField::get_current_text_color() const {
-        return _enabled ? _style._text_color : _style._disabled_text_color;
+    Color UIInputField::getCurrentTextColor() const {
+        return _enabled ? _style.getTextColor() : _style.getDisabledTextColor();
     }
 
-    void UIInputField::draw_input_background() const {
-        Color bg_color = get_current_background_color();
-        Color border_color = get_current_border_color();
+    void UIInputField::drawInputBackground() const {
+        Color bg_color = getCurrentBackgroundColor();
+        Color border_color = getCurrentBorderColor();
 
         // Draw background
         DrawRectangle(_position.x, _position.y, _size.x, _size.y, bg_color);
@@ -121,53 +121,53 @@ namespace UI {
         // Draw border
         DrawRectangleLinesEx(
             {_position.x, _position.y, _size.x, _size.y},
-            _style._border_thickness,
+            _style.getBorderThickness(),
             border_color
         );
     }
 
-    void UIInputField::draw_input_text() const {
-        std::string display_text = get_display_text();
-        Color text_color = get_current_text_color();
+    void UIInputField::drawInputText() const {
+        std::string display_text = getDisplayText();
+        Color text_color = getCurrentTextColor();
 
         // Show placeholder if empty
         if (display_text.empty() && !_placeholder.empty()) {
             display_text = _placeholder;
-            text_color = _style._placeholder_color;
+            text_color = _style.getPlaceholderColor();
         }
 
         if (display_text.empty()) return;
 
         // Calculate text position with padding
-        float text_x = _position.x + _style._padding;
-        float text_y = _position.y + (_size.y - _style._font_size) / 2.0f;
+        float text_x = _position.x + _style.getPadding();
+        float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 
         DrawTextEx(
             GetFontDefault(),
             display_text.c_str(),
             {text_x, text_y},
-            _style._font_size,
+            _style.getFontSize(),
             1.0f,
             text_color
         );
     }
 
-    void UIInputField::draw_cursor() const {
-        std::string display_text = get_display_text();
+    void UIInputField::drawCursor() const {
+        std::string display_text = getDisplayText();
 
         // Calculate cursor position
-        float text_x = _position.x + _style._padding;
-        float text_y = _position.y + (_size.y - _style._font_size) / 2.0f;
+        float text_x = _position.x + _style.getPadding();
+        float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 
         Vector2 text_size = MeasureTextEx(
             GetFontDefault(),
             display_text.c_str(),
-            _style._font_size,
+            _style.getFontSize(),
             1.0f
         );
 
         float cursor_x = text_x + text_size.x + 2.0f;
-        float cursor_height = _style._font_size;
+        float cursor_height = _style.getFontSize();
 
         // Draw cursor
         DrawRectangle(
@@ -175,11 +175,11 @@ namespace UI {
             text_y,
             2.0f,
             cursor_height,
-            _style._cursor_color
+            _style.getCursorColor()
         );
     }
 
-    std::string UIInputField::get_display_text() const {
+    std::string UIInputField::getDisplayText() const {
         if (_is_password && !_text.empty()) {
             return std::string(_text.length(), '*');
         }

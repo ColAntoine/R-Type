@@ -32,7 +32,7 @@
 //     }
 
 // protected:
-//     void draw_button_background() const override {
+//     void drawButtonBackground() const override {
 //         Color bg_color = get_current_background_color();
 //         Vector2 pos = get_position();
 //         Vector2 size = get_size();
@@ -82,7 +82,7 @@
 //         }
 //     }
 
-//     void draw_button_text() const override {
+//     void drawButtonText() const override {
 //         if (get_text().empty()) return;
 
 //         Vector2 pos = get_position();

@@ -40,8 +40,11 @@ void HealthSys::checkAndKillEnemy(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            addScore(r);
-            r.kill_entity(ent);
+            // Check if entity still exists before killing
+            if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
+                addScore(r);
+                r.kill_entity(ent);
+            }
         }
     }
 }
@@ -64,34 +67,37 @@ void HealthSys::checkAndKillPlayer(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            r.kill_entity(ent);
+            // Check if entity still exists before killing
+            if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
+                r.kill_entity(ent);
+            }
         }
     }
 }
 
 void HealthSys::addScore(registry &r)
 {
-    // find existing Score entity or create one
-    auto *scoreArr = r.get_if<Score>();
-    entity scoreEnt = static_cast<entity>(-1);
+    // // find existing Score entity or create one
+    // auto *scoreArr = r.get_if<Score>();
+    // entity scoreEnt = static_cast<entity>(-1);
 
-    if (scoreArr) {
-        for (auto [s, ent] : zipper(*scoreArr)) {
-            scoreEnt = entity(ent);
-            break;
-        }
-    }
+    // if (scoreArr) {
+    //     for (auto [s, ent] : zipper(*scoreArr)) {
+    //         scoreEnt = entity(ent);
+    //         break;
+    //     }
+    // }
 
-    if (scoreEnt == static_cast<entity>(-1)) {
-        scoreEnt = r.spawn_entity();
-        r.emplace_component<Score>(scoreEnt, Score(0));
-    }
+    // if (scoreEnt == static_cast<entity>(-1)) {
+    //     scoreEnt = r.spawn_entity();
+    //     r.emplace_component<Score>(scoreEnt, Score(0));
+    // }
 
-    // increment the score by 1
-    scoreArr = r.get_if<Score>();
-    if (scoreArr && static_cast<size_t>(scoreEnt) < scoreArr->size()) {
-        (*scoreArr)[static_cast<size_t>(scoreEnt)]._score += 1;
-    }
+    // // increment the score by 1
+    // scoreArr = r.get_if<Score>();
+    // if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
+    //     scoreArr->get(static_cast<size_t>(scoreEnt))._score += 1;
+    // }
 }
 
 extern "C" {
