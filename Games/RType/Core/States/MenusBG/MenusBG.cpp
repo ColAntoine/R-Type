@@ -63,8 +63,10 @@ void MenusBackgroundState::update(float delta_time)
 
 void MenusBackgroundState::setup_ui()
 {
-    int sw = GetScreenWidth();
-    int sh = GetScreenHeight();
+    auto &renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+    int sw = winInfos.getWidth();
+    int sh = winInfos.getHeight();
     int font_w = std::max(1, this->_asciiFontSize / 2);
     int font_h = this->_asciiFontSize;
 

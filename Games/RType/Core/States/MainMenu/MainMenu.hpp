@@ -30,5 +30,7 @@ class MainMenuState : public AGameState {
         std::string get_name() const override { return "MainMenu"; }
     private:
         void on_play_clicked();
+        void on_settings_clicked();
+        void on_quit_clicked();
         // MainMenu specific members
 };

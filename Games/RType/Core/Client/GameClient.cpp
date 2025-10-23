@@ -1,12 +1,10 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
-// #include "Core/States/Loading/Loading.hpp"
 #include "Core/States/MainMenu/MainMenu.hpp"
-// #include "Core/States/Lobby/Lobby.hpp"
-// #include "Core/States/SoloLobby/SoloLobby.hpp"
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+#include "Core/States/Settings/Settings.hpp"
 #include "Constants.hpp"
 
 #include <iostream>
@@ -28,17 +26,17 @@ void GameClient::register_states() {
     // _stateManager.register_state<MainMenuState>("MainMenu");
     // _stateManager.register_state<LobbyState>("Lobby");
     // _stateManager.register_state<SoloLobbyState>("SoloLobby");
-    // _stateManager.register_state<InGameState>("InGame");
-    _stateManager.register_state<MenusBackgroundState>("MenusBackground");
-    _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<MainMenuState>("MainMenu");
+    _stateManager.register_state<MenusBackgroundState>("MenusBackground");
+    _stateManager.register_state<SettingsState>("Settings");
 }
 
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
+    renderManager.init("R-Type");
 
     if (!renderManager.is_window_ready()) {
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;

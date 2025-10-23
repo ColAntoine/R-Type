@@ -21,7 +21,8 @@ public:
     enum class GameStateType {
         MenusBackground,
         MainMenu,
-        InGame
+        InGame,
+        Settings
     };
 
     virtual ~IGameState() = default;

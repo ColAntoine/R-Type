@@ -248,7 +248,14 @@ inline std::shared_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidt
     auto text = std::make_shared<UI::UIText>(
         calculateX(screenWidth), calculateY(screenHeight), _text, _fontSize, _textColor
     );
-
+    if (_centered) {
+        Vector2 textSize = MeasureTextEx(GetFontDefault(), _text.c_str(), static_cast<float>(_fontSize), 0.0f);
+        float centeredX = calculateX(screenWidth) + (_width * 0.5f) - (textSize.x * 0.5f);
+        float centeredY = calculateY(screenHeight) + (_height * 0.5f) - (textSize.y * 0.5f);
+        text->setPosition(centeredX, centeredY);
+    } else {
+        text->setPosition(calculateX(screenWidth), calculateY(screenHeight));
+    }
     text->setAlignment(_alignment);
 
     return text;

@@ -11,11 +11,29 @@
 #include "Batch/SpriteBatch.hpp"
 #include <raylib.h>
 
+#define BASE_WIDTH 1920
+#define BASE_HEIGHT 1080
+
 class RenderManager {
     public:
+        class ScreenInfos {
+            public:
+                int getHeight() const { return _height; }
+                int getWidth() const { return _width; }
+                int getFps() const { return _fps; }
+
+                void setHeight(int height) { _height = height; }
+                void setWidth(int width) { _width = width; }
+                void setFps(int fps) { _fps = fps; }
+            private:
+                int _height;
+                int _width;
+                int _fps;
+        };
+
         static RenderManager& instance();
 
-        void init(int width, int height, const char* title);
+        void init(const char *title);
         void shutdown();
 
         void begin_frame();
@@ -26,12 +44,18 @@ class RenderManager {
 
         void set_clear_color(Color color) { clear_color_ = color; }
         Color get_clear_color() const { return clear_color_; }
+        ScreenInfos get_screen_infos() const { return _winInfos; }
 
         bool should_close() const;
         int get_fps() const;
         void draw_text(const char *text, int posX, int posY, int fontSize, Color color) const;
         bool is_window_ready() const;
         bool window_should_close() const;
+
+        int scalePosX(int x) const;
+        int scalePosY(int y) const;
+        int scaleSizeW(int w) const;
+        int scaleSizeH(int h) const;
     private:
         RenderManager()
             : clear_color_(BLACK)
@@ -46,4 +70,5 @@ class RenderManager {
         Color clear_color_;
         Camera2D_ECS camera_;
         SpriteBatch batch_;
+        ScreenInfos _winInfos;
 };

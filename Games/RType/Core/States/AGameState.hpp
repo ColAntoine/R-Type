@@ -39,7 +39,7 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
     switch (type) {
         case IGameState::GameStateType::MenusBackground: return "MenusBackground";
         case IGameState::GameStateType::MainMenu: return "MainMenu";
-        // case IGameState::GameStateType::Settings: return "Settings";
+        case IGameState::GameStateType::Settings: return "Settings";
         // case IGameState::GameStateType::Lobby: return "Lobby";
         case IGameState::GameStateType::InGame: return "InGame";
         // case IGameState::GameStateType::GameOver: return "GameOver";
