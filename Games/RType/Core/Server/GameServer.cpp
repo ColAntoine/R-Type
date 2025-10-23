@@ -26,15 +26,11 @@ bool GameServer::init()
 
     // Create io_context
     io_context_ = std::make_unique<asio::io_context>();
-
-    // Create NetworkManager
     network_manager_ = std::make_unique<RType::Network::NetworkManager>();
     if (!network_manager_->initialize(port_)) {
         std::cerr << Console::red("[GameServer] ") << "Failed to initialize NetworkManager" << std::endl;
         return false;
     }
-
-    // Create MessageQueue
     message_queue_ = std::make_unique<RType::Network::MessageQueue>();
 
     // Attach message queue to server
@@ -54,6 +50,8 @@ bool GameServer::init()
         if (!server) return;
         server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     });
+
+    server_ecs_->init("lib/libECS.so");
 
     // Start network with worker threads
     if (!network_manager_->start(2)) {

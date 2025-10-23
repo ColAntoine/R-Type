@@ -13,6 +13,8 @@
 
 namespace RType::Network {
 
+class Multiplayer;
+
 class ServerECS {
     public:
         ServerECS();
@@ -45,6 +47,11 @@ class ServerECS {
         std::unordered_map<std::string, uint32_t> session_token_map_;
         // Optional callback to send data back to clients (session_id, raw packet bytes)
         std::function<void(const std::string&, const std::vector<uint8_t>&)> send_callback_;
+        // Multiplayer handler
+        std::unique_ptr<Multiplayer> multiplayer_;
+
+        // Allow Multiplayer implementation to access internals for now
+        friend class Multiplayer;
 
     public:
         void set_send_callback(std::function<void(const std::string&, const std::vector<uint8_t>&)> cb) { send_callback_ = std::move(cb); }
@@ -53,6 +60,9 @@ class ServerECS {
         void process_inputs();
         // Build and send snapshots to connected clients
         void send_snapshots();
+    public:
+        // Minimal accessors used by Multiplayer
+        IComponentFactory* get_factory() const { return factory_; }
 };
 
 } // namespace RType::Network

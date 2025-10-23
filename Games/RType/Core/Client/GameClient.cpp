@@ -1,5 +1,3 @@
-
-
 #include "GameClient.hpp"
 #include <iostream>
 #include "Network/UDPClient.hpp"
@@ -9,6 +7,7 @@
 #include "Core/States/Lobby/Lobby.hpp"
 #include "Core/States/SoloLobby/SoloLobby.hpp"
 #include "Core/States/InGame/InGame.hpp"
+#include "Network/NetworkManager.hpp"
 
 
 GameClient::GameClient() {}
@@ -20,7 +19,10 @@ void GameClient::register_states() {
     // Register all available states
     state_manager_.register_state<Loading>("Loading");
     state_manager_.register_state<MainMenuState>("MainMenu");
-    state_manager_.register_state<InGameState>("InGame");
+    // Register InGame with factory to inject the application's ECS registry reference and loader pointer
+    state_manager_.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
+    });
     state_manager_.register_state<LobbyState>("Lobby");
     state_manager_.register_state<SoloLobbyState>("SoloLobby");
 }
@@ -29,7 +31,7 @@ bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
     AGameCore::RegisterComponents(ecs_registry_);
-
+    load_systems();
     // Initialize Raylib window
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(1024, 768, "R-Type - Solo Mode Available!");
@@ -52,6 +54,11 @@ bool GameClient::init()
     auto client = std::make_shared<UdpClient>();
     RType::Network::set_client(client);
 
+    // Create and start the network manager which encapsulates receive loop and dispatching
+    network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
+    network_manager_->register_default_handlers();
+    network_manager_->start();
+
     running_ = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
 
@@ -73,15 +80,12 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
-        // Update current state
-        state_manager_.update(delta_time);
-
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();
         render_mgr.begin_frame();
-
+        if (network_manager_) network_manager_->process_pending();
+        state_manager_.update(delta_time);
         state_manager_.render();
-
         render_mgr.end_frame();
 
         // Handle input
@@ -91,7 +95,6 @@ void GameClient::run()
 
 void GameClient::update(float delta)
 {
-    // State manager handles updates now
     (void)delta;
 }
 
@@ -102,6 +105,13 @@ void GameClient::shutdown()
     // Clear all states
     state_manager_.clear_states();
 
+    // Notify server of voluntary disconnect if a network client exists
+    if (auto client = RType::Network::get_client()) {
+        uint32_t token = client->get_session_token();
+        if (token != 0) {
+            client->send_disconnect(token);
+        }
+    }
     // Close Raylib window
     if (IsWindowReady()) {
         CloseWindow();
@@ -110,4 +120,21 @@ void GameClient::shutdown()
     running_ = false;
 }
 
-registry& GameClient::GetRegistry() { return ecs_registry_; }
+registry &GameClient::GetRegistry() { return ecs_registry_; }
+DLLoader &GameClient::GetDLLoader() { return ecs_loader_; }
+
+void GameClient::load_systems() {
+    if (!ecs_loader_.load_components_from_so("lib/libECS.so", ecs_registry_)) {
+        std::cerr << "[GameClient] Failed to load ECS components from shared library" << std::endl;
+        return;
+    }
+    // Example system loading
+    ecs_loader_.load_system_from_so("lib/systems/libanimation_system.so");
+    ecs_loader_.load_system_from_so("lib/systems/libcollision_system.so");
+    ecs_loader_.load_system_from_so("lib/systems/libgame_Control.so");
+    ecs_loader_.load_system_from_so("lib/systems/libgame_Draw.so");
+    ecs_loader_.load_system_from_so("lib/systems/libsprite_system.so");
+    ecs_loader_.load_system_from_so("lib/systems/libposition_system.so");
+
+    // Add more systems as needed
+}

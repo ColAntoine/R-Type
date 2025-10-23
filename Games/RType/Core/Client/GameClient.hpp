@@ -2,8 +2,10 @@
 
 #include "../AGameCore.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/DLLoader.hpp"
 #include "Core/States/GameStateManager.hpp"
 #include <raylib.h>
+#include "Network/NetworkManager.hpp"
 
 class GameClient : public AGameCore {
     public:
@@ -15,10 +17,15 @@ class GameClient : public AGameCore {
         void update(float delta) override;
         void shutdown() override;
 
-        registry& GetRegistry();
+        registry &GetRegistry();
+        DLLoader &GetDLLoader();
+
+        void load_systems();
 
     private:
         registry ecs_registry_;
+        DLLoader ecs_loader_;
+        std::unique_ptr<NetworkManager> network_manager_;
         GameStateManager state_manager_;
         bool running_{false};
 

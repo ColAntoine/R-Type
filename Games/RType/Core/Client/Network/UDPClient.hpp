@@ -5,6 +5,7 @@
 #include <vector>
 #include <optional>
 #include <thread>
+#include <atomic>
 
 #include "Core/Server/Protocol/Protocol.hpp"
 
@@ -23,10 +24,20 @@ class UdpClient {
         void set_session_token(uint32_t token) { session_token_ = token; }
         uint32_t get_session_token() const { return session_token_; }
 
+        // Send a voluntary disconnect message to the server (best-effort)
+        void send_disconnect(uint32_t player_id);
+
+    // Start/stop background receive loop. Handler invoked on each received message: (message_type, payload, size)
+    void start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler);
+    void stop_receive_loop(bool close_socket = true);
+
         // Helper to send an input packet (auto-includes session token and input sequence)
     private:
         asio::io_context io_context_;
         asio::ip::udp::socket socket_;
         asio::ip::udp::endpoint server_endpoint_;
         uint32_t session_token_{0};
+        std::atomic<bool> recv_running_{false};
+        std::thread recv_thread_;
+        std::function<void(uint8_t,const char*,size_t)> recv_handler_;
 };

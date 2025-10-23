@@ -22,14 +22,16 @@ void RenderManager::init(int width, int height, const char* title) {
     } else {
         std::cout << "RenderManager: Using existing window" << std::endl;
     }
-    
+
     // For Camera2D: offset = screen viewport center, target = world point to look at
     // To make world coordinates match screen coordinates (0,0 = top-left):
     // We don't use camera transform - just set offset=target=0 or disable camera
     camera_.set_position(0.0f, 0.0f);
-    
+
     std::cout << "RenderManager initialized (camera disabled for 1:1 screen mapping)" << std::endl;
-}void RenderManager::shutdown() {
+}
+
+void RenderManager::shutdown() {
     CloseWindow();
     std::cout << "RenderManager shutdown" << std::endl;
 }
