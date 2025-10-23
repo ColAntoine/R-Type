@@ -18,6 +18,7 @@
 #include <raylib.h>
 #include <random>
 #include <string>
+#include <algorithm>
 
 InGameState::InGameState(registry &ecs, DLLoader* loader)
 : ecs_registry_(ecs), ecs_loader_(loader)

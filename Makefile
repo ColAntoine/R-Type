@@ -5,7 +5,7 @@
 ## makefile for easier compilation
 ##
 
-.PHONY: all build clean fclean re
+.PHONY: all build clean fclean re pang
 
 all: build
 
@@ -18,9 +18,18 @@ clean:
 
 fclean:
 	@echo "Removing lib directory, rtype binary, and build directory..."
-	rm -rf lib rtype build r-type_client r-type_server lib
+	rm -rf lib rtype build r-type_client r-type_server lib pang
 
 re: fclean all
+
+pang:
+	@echo "Building Pang game..."
+	cd Games/Pang && $(MAKE)
+	@if [ -f Games/Pang/build/pang ]; then \
+		cp Games/Pang/build/pang .; \
+		cp -r Games/Pang/build/libECS.so . 2>/dev/null || true; \
+		echo "Pang game built successfully! Run with: ./pang"; \
+	fi
 
 test: build
 	cd build && ctest --output-on-failure

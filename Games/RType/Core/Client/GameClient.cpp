@@ -34,7 +34,7 @@ bool GameClient::init()
     load_systems();
     // Initialize Raylib window
     SetTraceLogLevel(LOG_WARNING);
-    InitWindow(1024, 768, "R-Type - Solo Mode Available!");
+    InitWindow(1920, 1080, "R-Type - Solo Mode Available!");
     SetTargetFPS(60);
 
     if (!IsWindowReady()) {
