@@ -53,6 +53,7 @@ void MainMenuState::play_coop()
 {
     if (this->_stateManager) {
         this->_stateManager->pop_state();
+        this->_stateManager->push_state("SettingsPanel");
         this->_stateManager->push_state("Connection");
     }
 }

@@ -47,17 +47,6 @@ void Connection::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
-    // Create centered panel
-    auto connectionPanel = PanelBuilder()
-        .centered(renderManager.scalePosY(0))
-        .size(renderManager.scaleSizeW(90), renderManager.scaleSizeH(90))
-        .backgroundColor(Color{128, 128, 128, 200})
-        .border(5, Color{230, 230, 230, 255})
-        .build(winInfos.getWidth(), winInfos.getHeight());
-
-    auto panelEntity = _registry.spawn_entity();
-    _registry.add_component(panelEntity, UI::UIComponent(connectionPanel));
-
     // Create bar to split the panel
     auto bar = PanelBuilder()
         .centered(renderManager.scalePosY(0))
@@ -120,4 +109,70 @@ void Connection::setup_ui()
 
     auto portInputEntity = _registry.spawn_entity();
     _registry.add_component(portInputEntity, UI::UIComponent(portInput));
+
+    // Back Button (Red)
+    auto backButton = ButtonBuilder()
+        .at(renderManager.scalePosX(63), renderManager.scalePosY(85))
+        .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
+        .text("BACK")
+        .red()
+        .textColor(WHITE)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, WHITE)
+        .onClick([this]() {
+            if (this->_stateManager) {
+                this->_stateManager->pop_state();
+                this->_stateManager->pop_state();
+                this->_stateManager->push_state("MainMenu");
+            }
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto backButtonEntity = _registry.spawn_entity();
+    _registry.add_component(backButtonEntity, UI::UIComponent(backButton));
+
+    // Connection Button (Green)
+    auto connectButton = ButtonBuilder()
+        .at(renderManager.scalePosX(79), renderManager.scalePosY(85))
+        .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
+        .text("CONNECT")
+        .green()
+        .textColor(WHITE)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, WHITE)
+        .onClick([]() {
+            // Connection logic will be implemented here
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto connectButtonEntity = _registry.spawn_entity();
+    _registry.add_component(connectButtonEntity, UI::UIComponent(connectButton));
+
+    // right side: Input fields for IP and Port
+    // IP Label
+    auto nameLabel = TextBuilder()
+        .at(renderManager.scalePosX(60), renderManager.scalePosY(13))
+        .text("Name:")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(WHITE)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto nameLabelEntity = _registry.spawn_entity();
+    _registry.add_component(nameLabelEntity, UI::UIComponent(nameLabel));
+
+    // IP Input Field
+    auto nameInput = InputBuilder()
+        .at(renderManager.scalePosX(60), renderManager.scalePosY(18))
+        .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
+        .placeholder("Enter your name")
+        .backgroundColor(Color{50, 50, 50, 255})
+        .textColor(WHITE)
+        .placeholderColor(Color{150, 150, 150, 255})
+        .border(2, Color{200, 200, 200, 255})
+        .fontSize(renderManager.scaleSizeW(2))
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto nameInputEntity = _registry.spawn_entity();
+    _registry.add_component(nameInputEntity, UI::UIComponent(nameInput));
+
 }
