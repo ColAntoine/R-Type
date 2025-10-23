@@ -10,13 +10,19 @@
 #include "ECS/Systems/ISystem.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/ComponentFactory.hpp"
+
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
+
 #include "Entity/Components/Health/Health.hpp"
+
+#include "Constants.hpp"
+
 #include <random>
 #include <memory>
 
@@ -29,8 +35,8 @@ private:
     float spawn_interval_{3.0f};
     size_t max_enemies_{10};
 
-    float world_width_{1024.0f};
-    float world_height_{768.0f};
+    float world_width_{SCREEN_WIDTH};
+    float world_height_{SCREEN_HEIGHT};
 
     std::mt19937 rng_;
     std::uniform_int_distribution<> type_dist_;
