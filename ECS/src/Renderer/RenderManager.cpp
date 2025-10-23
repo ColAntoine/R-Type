@@ -37,25 +37,59 @@ int RenderManager::scaleSizeH(int percent) const
 void RenderManager::init(const char *title)
 {
     int monitor = 0;
-    float scale = 0.8f; // Useful for testing on smaller screens, in production set to 1.0f
+    float scale = 1.0f; // Useful for testing on smaller screens, in production set to 1.0f
 
     if (!IsWindowReady()) {
-        InitWindow(100, 100, "Temp init");
+        // Detect display environment and set appropriate flags
+        const char* session_type = std::getenv("XDG_SESSION_TYPE");
+        const char* wayland_display = std::getenv("WAYLAND_DISPLAY");
 
+        if (wayland_display != nullptr && std::string(wayland_display).length() > 0) {
+            // Running on Wayland - prefer Wayland backend over X11
+            std::cout << "RenderManager: Detected Wayland session, preferring Wayland backend" << std::endl;
+        } else {
+            // Running on X11
+            std::cout << "RenderManager: Using X11/GLX backend" << std::endl;
+        }
+
+        // Initialize window with resizable flag
+        SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+        InitWindow(100, 100, title);
+
+        if (!IsWindowReady()) {
+            std::cerr << "RenderManager: Failed to create main window" << std::endl;
+            std::cerr << "  - Requested resolution: " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() << std::endl;
+            std::cerr << "  - Check if display server is available" << std::endl;
+            std::cerr << "  - DISPLAY=" << (std::getenv("DISPLAY") != nullptr ? std::getenv("DISPLAY") : "unset") << std::endl;
+            std::cerr << "  - WAYLAND_DISPLAY=" << (wayland_display != nullptr ? wayland_display : "unset") << std::endl;
+            std::cerr << "  - XDG_SESSION_TYPE=" << (session_type != nullptr ? session_type : "unset") << std::endl;
+            return;
+        }
+
+        // Now adjust window based on monitor info
         monitor = GetCurrentMonitor();
-        this->_winInfos.setHeight(GetMonitorHeight(monitor) * scale);
-        this->_winInfos.setWidth(GetMonitorWidth(monitor) * scale);
-        this->_winInfos.setFps(GetMonitorRefreshRate(monitor));
+        _winInfos.setFps(GetMonitorRefreshRate(monitor));
+        _winInfos.setHeight(GetMonitorHeight(monitor));
+        _winInfos.setWidth(GetMonitorWidth(monitor));
 
-        CloseWindow(); // Close temp init
+        // Only adjust if monitor values are reasonable (> 0)
+        if (_winInfos.getWidth() > 0 && _winInfos.getHeight() > 0) {
+            this->_winInfos.setHeight(_winInfos.getHeight() * scale);
+            this->_winInfos.setWidth(_winInfos.getWidth() * scale);
+            SetWindowMinSize(_winInfos.getWidth(), _winInfos.getHeight());
+            SetWindowState(FLAG_WINDOW_RESIZABLE);
+        }
 
-        InitWindow(this->_winInfos.getWidth(), this->_winInfos.getHeight(), title);
-        SetTargetFPS(this->_winInfos.getFps());
+        if (_winInfos.getFps() > 0) {
+            SetTargetFPS(this->_winInfos.getFps());
+        }
 
-        std::cout << "RenderManager: Created new window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() << std::endl;
+        std::cout << "RenderManager: Created window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() 
+                  << " @ " << this->_winInfos.getFps() << "Hz on monitor " << monitor << std::endl;
     } else {
         std::cout << "RenderManager: Using existing window" << std::endl;
     }
+
     // For Camera2D: offset = screen viewport center, target = world point to look at
     // To make world coordinates match screen coordinates (0,0 = top-left):
     // We don't use camera transform - just set offset=target=0 or disable camera
