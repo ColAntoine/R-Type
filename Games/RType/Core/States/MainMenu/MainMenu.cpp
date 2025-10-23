@@ -14,7 +14,6 @@ void MainMenuState::enter()
     this->_registry.register_component<UI::UIButton>();
     // _registry.register_component<RType::UIMainPanel>();
     // _registry.register_component<RType::UITitleText>();
-    _registry.register_component<RType::UIPlayButton>();
     // _registry.register_component<RType::UISettingsButton>();
     // _registry.register_component<RType::UIQuitButton>();
 
@@ -65,7 +64,6 @@ void MainMenuState::on_quit_clicked()
         this->_stateManager->clear_states();
     }
 }
-
 
 void MainMenuState::setup_ui()
 {

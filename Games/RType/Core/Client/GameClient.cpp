@@ -29,7 +29,7 @@ void GameClient::register_states() {
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
-    _stateManager.register_state<SettingsState>("Settings");
+    // _stateManager.register_state<SettingsState>("Settings");
 }
 
 bool GameClient::init()
