@@ -1,13 +1,12 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
-// #include "Core/States/Loading/Loading.hpp"
+
 #include "Core/States/MainMenu/MainMenu.hpp"
-// #include "Core/States/Lobby/Lobby.hpp"
-// #include "Core/States/SoloLobby/SoloLobby.hpp"
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+
 #include "Constants.hpp"
 
 #include <iostream>
@@ -25,11 +24,6 @@ void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
 
     // Register all available states
-    // _stateManager.register_state<Loading>("Loading");
-    // _stateManager.register_state<MainMenuState>("MainMenu");
-    // _stateManager.register_state<LobbyState>("Lobby");
-    // _stateManager.register_state<SoloLobbyState>("SoloLobby");
-    // _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");

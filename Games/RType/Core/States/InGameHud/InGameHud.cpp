@@ -31,21 +31,76 @@ void InGameHudState::resume()
 
 void InGameHudState::setup_ui()
 {
-    auto playButton = ButtonBuilder()
-        .centered(200)
-        .size(400, 100)
-        .text("PLAY")
-        .blue()
-        .textColor(WHITE)
-        .fontSize(24)
-        .border(2, WHITE)
-        .onClick([this]() {
-            std::cout << "clicked" << std::endl;
-        }
-    )
+    auto warningText = TextBuilder()
+        .at(SCREEN_WIDTH / 2, 20)
+        .textColor(RED)
+        .text("!!!!The HUD is just a mockup!!!!")
+        .alignment(UI::TextAlignment::Center)
+        .fontSize(30)
     .build(SCREEN_WIDTH, SCREEN_HEIGHT);
-    auto playButtonEntity = this->_registry.spawn_entity();
-    this->_registry.add_component(playButtonEntity, UI::UIComponent(playButton));
+
+    auto warningTextEnt = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(warningTextEnt, UI::UIComponent(warningText));
+
+    auto posText = TextBuilder()
+        .at(10.f, 10.f)
+        .text("Position: (FAKEPOS, FAKEPOS)")
+        .fontSize(30)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto posTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(posTextent, UI::UIComponent(posText));
+
+    auto scoreText = TextBuilder()
+        .at(10.f, 45.f)
+        .text("Score: FAKE SCORE")
+        .fontSize(30)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto scoreTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(scoreTextent, UI::UIComponent(scoreText));
+
+    auto fpsText = TextBuilder()
+        .at(SCREEN_WIDTH - 10.f, 10.f)
+        .text("FPS: 60")
+        .textColor(GREEN)
+        .fontSize(30)
+        .alignment(UI::TextAlignment::Right)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto fpsTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(fpsTextent, UI::UIComponent(fpsText));
+
+    auto weaponText = TextBuilder()
+        .at(10.f, SCREEN_HEIGHT - 85.f)
+        .text("Weapon: Plasma Cannon")
+        .textColor(YELLOW)
+        .fontSize(30)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto weaponTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(weaponTextent, UI::UIComponent(weaponText));
+
+    auto ammoText = TextBuilder()
+        .at(10.f, SCREEN_HEIGHT - 55.f)
+        .text("Ammo: 25/100")
+        .textColor(WHITE)
+        .fontSize(25)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto ammoTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(ammoTextent, UI::UIComponent(ammoText));
+
+    auto damageText = TextBuilder()
+        .at(10.f, SCREEN_HEIGHT - 30.f)
+        .text("Damage: 45")
+        .textColor(ORANGE)
+        .fontSize(20)
+    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    auto damageTextent = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(damageTextent, UI::UIComponent(damageText));
+
 }
 
 void InGameHudState::update(float delta_time)
