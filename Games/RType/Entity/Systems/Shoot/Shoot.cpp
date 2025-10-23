@@ -9,6 +9,7 @@
 #include <raylib.h>
 #include <iostream>
 #include <algorithm>
+#include <string>
 
 #include "Shoot.hpp"
 
@@ -63,13 +64,12 @@ void Shoot::spawnProjectiles(registry &r, float dt)
             // Spawn projectile vertically centered on entity position
             spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
-
         auto projectile = r.spawn_entity();
 
         r.emplace_component<Projectile>(projectile, Projectile(entity, weapon._damage, weapon._projectileSpeed, dirX, dirY, life, radius, true));
         r.emplace_component<position>(projectile, spawnX, spawnY);
         r.emplace_component<velocity>(projectile, dirX * weapon._projectileSpeed, dirY * weapon._projectileSpeed);
-        r.emplace_component<animation>(projectile, "assets/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+        r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
         r.emplace_component<lifetime>(projectile);
         r.emplace_component<Gravity>(projectile, 100.0f);
 
@@ -134,7 +134,10 @@ void Shoot::checkEnnemyHits(registry &r)
         entityToKill.erase(std::unique(entityToKill.begin(), entityToKill.end()), entityToKill.end());
 
         for (auto ent : entityToKill) {
-            r.kill_entity(ent);
+            // Only kill if the entity still exists
+            if (r.get_if<position>() && r.get_if<position>()->has(static_cast<size_t>(ent))) {
+                r.kill_entity(ent);
+            }
         }
     }
 }

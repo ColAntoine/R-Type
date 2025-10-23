@@ -15,7 +15,7 @@ struct Weapon : public IComponent {
     std::string _projectileType{"bullet"};   // identifier for which projectile to spawn
     float _fireRate{3.f};                   // shots per second
     float _cooldown{0.0f};                   // seconds until next shot (runtime)
-    int _damage{1};                          // base damage applied to projectile
+    int _damage{10};                          // base damage applied to projectile
     float _projectileSpeed{400.0f};          // default projectile speed
     int _ammo{-1};                           // -1 = infinite
     bool _automatic{false};                  // hold to fire
