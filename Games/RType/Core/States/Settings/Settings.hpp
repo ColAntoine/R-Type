@@ -17,7 +17,14 @@ class SettingsState : public AGameState {
 
         void update(float delta_time) override;
 
+        bool blocks_update() const override { return false; }
+        bool blocks_render() const override { return false; }
+
         std::string get_name() const override { return "Settings"; }
     private:
-        // Settings specific members
+        void play_back_menu();
+        void play_bind_menu();
+        void play_audio_menu();
+        void play_video_menu();
+        void play_credit_menu();
 };

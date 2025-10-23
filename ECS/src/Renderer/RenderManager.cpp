@@ -72,11 +72,18 @@ void RenderManager::init(const char *title)
         _winInfos.setHeight(GetMonitorHeight(monitor));
         _winInfos.setWidth(GetMonitorWidth(monitor));
 
-        // Only adjust if monitor values are reasonable (> 0)
         if (_winInfos.getWidth() > 0 && _winInfos.getHeight() > 0) {
             this->_winInfos.setHeight(_winInfos.getHeight() * scale);
             this->_winInfos.setWidth(_winInfos.getWidth() * scale);
-            SetWindowMinSize(_winInfos.getWidth(), _winInfos.getHeight());
+
+            SetWindowSize(_winInfos.getWidth(), _winInfos.getHeight());
+
+            Vector2 monitorPos = GetMonitorPosition(monitor);
+            int windowX = monitorPos.x + (GetMonitorWidth(monitor) - _winInfos.getWidth()) / 2;
+            int windowY = monitorPos.y + (GetMonitorHeight(monitor) - _winInfos.getHeight()) / 2;
+            SetWindowPosition(windowX, windowY);
+
+            SetWindowMinSize(_winInfos.getWidth() / 2, _winInfos.getHeight() / 2);
             SetWindowState(FLAG_WINDOW_RESIZABLE);
         }
 

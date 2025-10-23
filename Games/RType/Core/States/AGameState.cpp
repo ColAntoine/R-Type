@@ -23,6 +23,13 @@ void AGameState::render()
     this->_systemLoader.update_all_systems(this->_registry, 0.0f, DLLoader::RenderSystem);
 }
 
+void AGameState::update(float delta_time)
+{
+    if (!this->_initialized)
+        return;
+    this->_systemLoader.update_all_systems(this->_registry, delta_time, DLLoader::LogicSystem);
+}
+
 void AGameState::cleanup_ui()
 {
     // Collect all entity IDs first to avoid modifying while iterating
