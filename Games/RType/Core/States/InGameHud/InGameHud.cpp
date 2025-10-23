@@ -61,9 +61,6 @@ void InGameHudState::setup_ui()
     auto scoreTextEnt = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(scoreTextEnt, UI::UIComponent(scoreText));
 
-    auto scoreTextent = _registry.spawn_entity();
-    _registry.add_component<UI::UIComponent>(scoreTextent, UI::UIComponent(scoreText));
-
     auto fpsText = TextBuilder()
         .at(SCREEN_WIDTH - 10.f, 10.f)
         .text("FPS: " + std::to_string(GetFPS()))

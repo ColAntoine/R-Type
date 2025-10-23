@@ -72,7 +72,6 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
         r.emplace_component<lifetime>(projectile);
         r.emplace_component<Gravity>(projectile, 100.0f);
-        r.emplace_component<Gravity>(projectile, 100.0f);
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;
         if (weapon._ammo > 0) --weapon._ammo;
