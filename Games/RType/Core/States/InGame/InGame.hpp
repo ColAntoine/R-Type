@@ -30,8 +30,11 @@ class InGameState : public IGameState {
         bool initialized_{false};
         bool paused_{false};
 
-        // ECS UI system for HUD
+    // ECS UI system for HUD
         registry ui_registry_;
+        registry &ecs_registry_;
+        DLLoader* ecs_loader_;
+        IComponentFactory* factory_;
         UI::UISystem ui_system_;
 
         // In-game background state
@@ -41,7 +44,7 @@ class InGameState : public IGameState {
         int bg_stream_count_{0};
 
     public:
-        InGameState();
+        InGameState(registry &ecs, DLLoader* loader);
         ~InGameState() override = default;
 
         // IGameState implementation

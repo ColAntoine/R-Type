@@ -19,7 +19,9 @@
 #include <random>
 #include <string>
 
-InGameState::InGameState() {}
+InGameState::InGameState(registry &ecs, DLLoader* loader)
+: ecs_registry_(ecs), ecs_loader_(loader)
+{}
 
 void InGameState::enter() {
     std::cout << "[InGame] Entering state" << std::endl;
@@ -33,6 +35,15 @@ void InGameState::enter() {
     ui_registry_.register_component<RType::UIScoreText>();
 
     setup_hud();
+
+    factory_ = ecs_loader_->get_factory();
+
+    // entity test_player = ecs_registry_.spawn_entity();
+    // factory_->create_component<position>(ecs_registry_, test_player, 300.0f, 300.0f);
+    // factory_->create_component<velocity>(ecs_registry_, test_player, 0.0f, 0.0f);
+    // factory_->create_component<controllable>(ecs_registry_, test_player, 100.0f);
+    // factory_->create_component<animation>(ecs_registry_, test_player, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+
 
     // Initialize background streams
     bg_time_ = 0.0f;
@@ -98,6 +109,9 @@ void InGameState::update(float delta_time) {
     // Update UI system
     ui_system_.update(ui_registry_, delta_time);
     update_hud();
+    ecs_loader_->update_system_by_name("PositionSystem", ecs_registry_, delta_time);
+    ecs_loader_->update_system_by_name("ControlSystem", ecs_registry_, delta_time);
+    ecs_loader_->update_system_by_name("AnimationSystem", ecs_registry_, delta_time);
 
     // Update background
     bg_time_ += delta_time;
