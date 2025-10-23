@@ -38,7 +38,7 @@ void MainMenuState::resume()
     std::cout << "[MainMenu] Resuming state" << std::endl;
 }
 
-void MainMenuState::update(float delta_time)
+void MainMenuState::update(__attribute_maybe_unused__ float delta_time)
 {
     // if  (!this->_initialized)
     //     return;
@@ -49,6 +49,7 @@ void MainMenuState::on_play_clicked()
 {
     if (this->_stateManager) {
         this->_stateManager->change_state("InGame");
+        this->_stateManager->push_state("InGameHud");
     }
 }
 

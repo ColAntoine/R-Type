@@ -42,6 +42,7 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::Settings: return "Settings";
         // case IGameState::GameStateType::Lobby: return "Lobby";
         case IGameState::GameStateType::InGame: return "InGame";
+        case IGameState::GameStateType::InGameHud: return "InGameHud";
         // case IGameState::GameStateType::GameOver: return "GameOver";
         // case IGameState::GameStateType::Loading: return "Loading";
         // case IGameState::GameStateType::WaitingLobby: return "WaitingLobby";

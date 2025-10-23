@@ -50,6 +50,12 @@ void LifetimeSystem::update(registry& r, float dt) {
 
     // Remove expired entities and update spawner counts
     for (entity ent : entities_to_remove) {
+        // Check if entity still exists before removing
+        auto *health_check = r.get_if<lifetime>();
+        if (!health_check || !health_check->has(static_cast<size_t>(ent))) {
+            continue; // Entity already removed, skip
+        }
+
         // If entity was an enemy, decrease spawner count
         if (r.get_if<Enemy>() && r.get_if<Enemy>()->has(static_cast<size_t>(ent))) {
             if (spawner_arr) {

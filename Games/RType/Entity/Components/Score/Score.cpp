@@ -7,5 +7,4 @@
 
 #include "Score.hpp"
 
-Score::Score() {}
 Score::Score(unsigned score) : _score(score) {}

@@ -1,10 +1,19 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
+#include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+<<<<<<< HEAD
 #include "Core/States/Settings/Settings.hpp"
+=======
+
+>>>>>>> main
 #include "Constants.hpp"
 
 #include <iostream>
@@ -22,14 +31,10 @@ void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
 
     // Register all available states
-    // _stateManager.register_state<Loading>("Loading");
-    // _stateManager.register_state<MainMenuState>("MainMenu");
-    // _stateManager.register_state<LobbyState>("Lobby");
-    // _stateManager.register_state<SoloLobbyState>("SoloLobby");
-    _stateManager.register_state<InGameState>("InGame");
-    _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
-    // _stateManager.register_state<SettingsState>("Settings");
+    _stateManager.register_state<MainMenuState>("MainMenu");
+    _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<InGameHudState>("InGameHud");
 }
 
 bool GameClient::init()
@@ -49,7 +54,6 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
-    // _stateManager.push_state("InGame");
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;

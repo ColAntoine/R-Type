@@ -12,6 +12,5 @@
 struct Score : public IComponent {
     unsigned _score{0};
 
-    Score();
-    Score(unsigned score=0);
+    Score(unsigned score = 0);
 };

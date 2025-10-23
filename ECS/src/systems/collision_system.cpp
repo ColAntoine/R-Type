@@ -63,10 +63,16 @@ void CollisionSystem::update(registry& r, float dt) {
 
     // Step 3: Check and resolve actual collisions
     for (auto [entity_i, entity_j] : collision_pairs) {
-        auto& pi = (*pos_arr)[entity_i];
-        auto& ci = (*col_arr)[entity_i];
-        auto& pj = (*pos_arr)[entity_j];
-        auto& cj = (*col_arr)[entity_j];
+        // Check if both entities still exist before accessing them
+        if (!pos_arr->has(static_cast<size_t>(entity_i)) || !col_arr->has(static_cast<size_t>(entity_i)) ||
+            !pos_arr->has(static_cast<size_t>(entity_j)) || !col_arr->has(static_cast<size_t>(entity_j))) {
+            continue;
+        }
+
+        auto& pi = pos_arr->get(static_cast<size_t>(entity_i));
+        auto& ci = col_arr->get(static_cast<size_t>(entity_i));
+        auto& pj = pos_arr->get(static_cast<size_t>(entity_j));
+        auto& cj = col_arr->get(static_cast<size_t>(entity_j));
 
         Rect a = make_rect(pi, ci);
         Rect b = make_rect(pj, cj);
