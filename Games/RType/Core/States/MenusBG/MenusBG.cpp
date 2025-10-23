@@ -22,7 +22,6 @@ void MenusBackgroundState::enter()
 void MenusBackgroundState::exit()
 {
     std::cout << "[Menus Background] Exiting state" << std::endl;
-    this->cleanup_ui();
     this->_initialized = false;
 }
 

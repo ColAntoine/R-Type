@@ -23,8 +23,6 @@ void MainMenuState::enter()
 
 void MainMenuState::exit()
 {
-    std::cout << "[MainMenu] Exiting state" << std::endl;
-    this->cleanup_ui();
     this->_initialized = false;
 }
 
@@ -40,26 +38,26 @@ void MainMenuState::resume()
 
 void MainMenuState::update(__attribute_maybe_unused__ float delta_time)
 {
-    // if  (!this->_initialized)
-    //     return;
-    // this->_systemLoader.update_all_systems(this->_registry, delta_time, DLLoader::LogicSystem);
 }
 
-void MainMenuState::on_play_clicked()
+void MainMenuState::play_solo()
+{
+
+}
+
+void MainMenuState::play_coop()
+{
+
+}
+
+void MainMenuState::play_settings()
 {
     if (this->_stateManager) {
-        this->_stateManager->change_state("InGame");
-        this->_stateManager->push_state("InGameHud");
+        this->_stateManager->push_state("Settings");
     }
 }
 
-void MainMenuState::on_settings_clicked()
-{
-    // if (this->_stateManager) {
-    // }
-}
-
-void MainMenuState::on_quit_clicked()
+void MainMenuState::play_quit()
 {
     if (this->_stateManager) {
         this->_stateManager->clear_states();
@@ -91,26 +89,42 @@ void MainMenuState::setup_ui()
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto titleEntity = this->_registry.spawn_entity();
-    this->_registry.add_component(titleEntity, UI::UIComponent(title));
+    this->_registry.add_component<UI::UIComponent>(titleEntity, UI::UIComponent(title));
 
-    auto playButton = ButtonBuilder()
-        .centered(renderManager.scalePosY(2))
+    auto soloButton = ButtonBuilder()
+        .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
-        .text("PLAY")
+        .text("SOLO MODE")
         .color(Color{75, 174, 204, 255})
         .textColor(WHITE)
         .fontSize(24)
         .border(2, WHITE)
         .onClick([this]() {
-            this->on_play_clicked();
+            this->play_solo();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
-    auto playButtonEntity = this->_registry.spawn_entity();
-    this->_registry.add_component(playButtonEntity, UI::UIComponent(playButton));
+    auto soloButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(soloButtonEntity, UI::UIComponent(soloButton));
+
+    auto coopButton = ButtonBuilder()
+        .centered(renderManager.scalePosY(10))
+        .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
+        .text("COOP MODE")
+        .color(Color{75, 174, 204, 255})
+        .textColor(WHITE)
+        .fontSize(24)
+        .border(2, WHITE)
+        .onClick([this]() {
+            this->play_solo();
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto coopButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(coopButtonEntity, UI::UIComponent(coopButton));
 
     auto settingsButton = ButtonBuilder()
-        .centered(renderManager.scalePosY(12))
+        .centered(renderManager.scalePosY(20))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("SETTINGS")
         .color(Color{75, 174, 204, 255})
@@ -118,15 +132,15 @@ void MainMenuState::setup_ui()
         .fontSize(24)
         .border(2, WHITE)
         .onClick([this]() {
-            this->on_settings_clicked();
+            this->play_settings();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto settingsButtonEntity = this->_registry.spawn_entity();
-    this->_registry.add_component(settingsButtonEntity, UI::UIComponent(settingsButton));
+    this->_registry.add_component<UI::UIComponent>(settingsButtonEntity, UI::UIComponent(settingsButton));
 
     auto quitButton = ButtonBuilder()
-        .centered(renderManager.scalePosY(22))
+        .centered(renderManager.scalePosY(30))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("QUIT GAME")
         .red()
@@ -134,10 +148,10 @@ void MainMenuState::setup_ui()
         .fontSize(24)
         .border(2, WHITE)
         .onClick([this]() {
-            this->on_quit_clicked();
+            this->play_quit();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto quitButtonEntity = this->_registry.spawn_entity();
-    this->_registry.add_component(quitButtonEntity, UI::UIComponent(quitButton));
+    this->_registry.add_component<UI::UIComponent>(quitButtonEntity, UI::UIComponent(quitButton));
 }

@@ -36,8 +36,6 @@ void InGameState::enter()
 
 void InGameState::exit()
 {
-    std::cout << "[InGame] Exiting state" << std::endl;
-    cleanup_ui();
     _initialized = false;
 }
 
@@ -62,7 +60,6 @@ void InGameState::update(float delta_time)
 void InGameState::setup_ui()
 {
     std::cout << "[InGame] Setting up UI" << std::endl;
-
 }
 
 void InGameState::createPlayer()

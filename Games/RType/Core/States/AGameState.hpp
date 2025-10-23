@@ -14,7 +14,7 @@
 class AGameState : public IGameState {
     public:
         AGameState();
-        virtual ~AGameState() = default;
+        virtual ~AGameState() override;
 
         void render() override;
 

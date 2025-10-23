@@ -1,19 +1,13 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
-<<<<<<< HEAD
 #include "Core/States/Settings/Settings.hpp"
-=======
 
->>>>>>> main
 #include "Constants.hpp"
 
 #include <iostream>
@@ -35,6 +29,7 @@ void GameClient::register_states() {
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
+    _stateManager.register_state<SettingsState>("Settings");
 }
 
 bool GameClient::init()

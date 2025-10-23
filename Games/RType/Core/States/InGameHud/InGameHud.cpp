@@ -15,7 +15,6 @@ void InGameHudState::enter()
 
 void InGameHudState::exit()
 {
-    cleanup_ui();
     _initialized = false;
 }
 

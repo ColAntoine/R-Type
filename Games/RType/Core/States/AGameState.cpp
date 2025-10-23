@@ -11,6 +11,11 @@
 
 AGameState::AGameState() {}
 
+AGameState::~AGameState()
+{
+    cleanup_ui();
+}
+
 void AGameState::render()
 {
     if (!this->_initialized)

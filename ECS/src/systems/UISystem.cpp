@@ -16,8 +16,8 @@ namespace UI {
 
         // Get UI components array
         auto* ui_components = registry.get_if<UI::UIComponent>();
-        if (!ui_components) return;
-
+        if (!ui_components)
+            return;
         // Use zipper to iterate through UI components with their entity IDs
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
             if (ui_comp._ui_element) {
