@@ -7,6 +7,7 @@ void InGameHudState::enter()
 
 
     this->_registry.register_component<UI::UIButton>();
+    this->_registry.register_component<FPSText>();
 
     setup_ui();
     _initialized = true;
@@ -57,12 +58,15 @@ void InGameHudState::setup_ui()
         .fontSize(30)
     .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 
+    auto scoreTextEnt = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(scoreTextEnt, UI::UIComponent(scoreText));
+
     auto scoreTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(scoreTextent, UI::UIComponent(scoreText));
 
     auto fpsText = TextBuilder()
         .at(SCREEN_WIDTH - 10.f, 10.f)
-        .text("FPS: 60")
+        .text("FPS: " + std::to_string(GetFPS()))
         .textColor(GREEN)
         .fontSize(30)
         .alignment(UI::TextAlignment::Right)
@@ -70,6 +74,7 @@ void InGameHudState::setup_ui()
 
     auto fpsTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(fpsTextent, UI::UIComponent(fpsText));
+    _registry.add_component<FPSText>(fpsTextent, FPSText());    // ? Tag to access it quickly
 
     auto weaponText = TextBuilder()
         .at(10.f, SCREEN_HEIGHT - 85.f)
@@ -100,13 +105,18 @@ void InGameHudState::setup_ui()
 
     auto damageTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(damageTextent, UI::UIComponent(damageText));
-
 }
 
 void InGameHudState::update(float delta_time)
 {
     if  (!_initialized)
         return;
+
+    auto fps_text = get_fps_text();
+    if (fps_text) {
+        fps_text->setText("FPS: " + std::to_string(GetFPS()));
+    }
+
     _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
 }
 
