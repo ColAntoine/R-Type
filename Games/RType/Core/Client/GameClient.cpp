@@ -6,6 +6,7 @@
 // #include "Core/States/Lobby/Lobby.hpp"
 // #include "Core/States/SoloLobby/SoloLobby.hpp"
 #include "Core/States/InGame/InGame.hpp"
+#include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
 #include "Constants.hpp"
 
@@ -32,6 +33,7 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<InGameHudState>("InGameHud");
 }
 
 bool GameClient::init()
@@ -51,7 +53,6 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
-    // _stateManager.push_state("InGame");
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
