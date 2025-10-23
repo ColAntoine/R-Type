@@ -7,6 +7,7 @@
 
 #include "GameStateManager.hpp"
 #include <algorithm>
+#include <memory>
 
 void GameStateManager::push_state(const std::string& state_name, bool pause_current) {
     if (processing_states_) {
@@ -62,7 +63,6 @@ void GameStateManager::change_state(const std::string& state_name) {
         state_stack_.top()->exit();
         state_stack_.pop();
     }
-
     // Push new state
     push_state(state_name, false);
 }

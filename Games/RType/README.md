@@ -503,10 +503,10 @@ public:
 };
 
 // 2. Register state in Application::initialize()
-state_manager_.register_state<NewState>("NewState");
+_stateManager.register_state<NewState>("NewState");
 
 // 3. Transition to state
-state_manager_.push_state("NewState");
+_stateManager.push_state("NewState");
 ```
 
 ### Creating a Custom Event

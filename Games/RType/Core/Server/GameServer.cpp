@@ -2,7 +2,7 @@
 #include "Network/NetworkManager.hpp"
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
-#include "Utils/Console.hpp"
+#include "ECS/Utils/Console.hpp"
 #include <iostream>
 #include <thread>
 #include <chrono>

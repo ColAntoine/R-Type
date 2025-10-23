@@ -14,22 +14,6 @@ bool AGameCore::init()
     return onInit();
 }
 
-void AGameCore::RegisterComponents(registry &r) {
-    RegisterAllComponents(r);
-
-    // Register game-specific components
-    r.register_component<controllable>();
-    r.register_component<Enemy>();
-    r.register_component<Gravity>();
-    r.register_component<Health>();
-    r.register_component<lifetime>();
-    r.register_component<Projectile>();
-    r.register_component<remote_player>();
-    r.register_component<Score>();
-    r.register_component<spawner>();
-    r.register_component<Weapon>();
-}
-
 void AGameCore::run()
 {
     std::cout << "AGameCore::run" << std::endl;

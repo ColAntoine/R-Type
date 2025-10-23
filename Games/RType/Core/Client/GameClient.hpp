@@ -15,12 +15,8 @@ class GameClient : public AGameCore {
         void update(float delta) override;
         void shutdown() override;
 
-        registry& GetRegistry();
-
     private:
-        registry ecs_registry_;
-        GameStateManager state_manager_;
-        bool running_{false};
+        GameStateManager _stateManager;
 
         void register_states();
 };

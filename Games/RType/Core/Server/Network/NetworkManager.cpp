@@ -1,6 +1,6 @@
 #include "NetworkManager.hpp"
 #include <iostream>
-#include "Utils/Console.hpp"
+#include "ECS/Utils/Console.hpp"
 
 namespace RType::Network {
 

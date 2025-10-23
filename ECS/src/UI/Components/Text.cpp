@@ -6,6 +6,7 @@
 */
 
 #include "ECS/UI/Components/Text.hpp"
+#include <iostream>
 
 namespace UI {
     void UIText::update(float delta_time) {
@@ -16,7 +17,6 @@ namespace UI {
     void UIText::render() {
         if (!_visible) return;
         if (_text.empty()) return;
-
         // If custom render function is set, use it instead
         if (_customRender) {
             _customRender(*this);
