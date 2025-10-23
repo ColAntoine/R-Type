@@ -1,0 +1,8 @@
+- [ ] Server tickrate system — fixed 30 Hz tick loop, global tick counter, batched input processing  
+- [ ] Delta compression — send only changed fields, reduced bandwidth usage  
+- [ ] ACK system and state history — store past states, track client ACKs and RTT, handle packet loss  
+- [x] Client-side prediction — predict own movement locally  
+- [x] Server reconciliation — rewind and replay on misprediction  
+- [ ] Entity interpolation — smooth remote entity movement  
+- [ ] Lag compensation — backdate inputs on server for fairness  
+- [ ] Rollback-based netcode — predict and correct remote player states

@@ -170,6 +170,9 @@ void SimpleGameState::update(float delta_time) {
         // Send position update to server
         send_position_update(pos.x, pos.y);
 
+        // Process incoming server messages for reconciliation
+        process_server_messages();
+
         // Perform server reconciliation if needed
         perform_server_reconciliation();
         rewind_and_replay_on_misprediction();
@@ -290,20 +293,106 @@ void SimpleGameState::render_falling_background() {
     DrawRectangle(0, GetScreenHeight()-40, GetScreenWidth(), 40, {0, 0, 0, 80});
 }
 
+void SimpleGameState::process_server_messages() {
+    if (!network_state_ || !network_state_->message_queue) return;
+
+    // Process all available messages
+    RType::Network::ReceivedPacket pkt;
+    while (network_state_->message_queue->try_pop(pkt)) {
+        // Parse packet
+        if (pkt.data.size() < sizeof(RType::Protocol::PacketHeader)) continue;
+        
+        RType::Protocol::PacketHeader header;
+        std::memcpy(&header, pkt.data.data(), sizeof(header));
+        
+        if (header.message_type == static_cast<uint8_t>(RType::Protocol::GameMessage::POSITION_UPDATE)) {
+            // Server sent position update
+            size_t payload_offset = sizeof(RType::Protocol::PacketHeader);
+            if (pkt.data.size() >= payload_offset + sizeof(RType::Protocol::PositionUpdate)) {
+                RType::Protocol::PositionUpdate pos_update;
+                std::memcpy(&pos_update, pkt.data.data() + payload_offset, sizeof(pos_update));
+                
+                // If it's for our player, use for reconciliation
+                if (pos_update.entity_id == network_state_->player_id) {
+                    last_server_timestamp_ = pos_update.timestamp;
+                    // Store server position for reconciliation
+                    server_position_ = {pos_update.x, pos_update.y, pos_update.timestamp};
+                }
+            }
+        }
+    }
+}
+
 // Client-side prediction placeholders
 void SimpleGameState::predict_local_movement() {
-    // Placeholder for predicting local movement
-    // Predict own movement locally for responsive feel
+    // Predict local movement by calculating future position based on velocity
+    auto* position_components = game_registry_.get_if<position>();
+    auto* velocity_components = game_registry_.get_if<velocity>();
+    
+    if (!position_components || !velocity_components) return;
+    if (!position_components->has(player_entity_) || !velocity_components->has(player_entity_)) return;
+    
+    auto& pos = position_components->get(player_entity_);
+    auto& vel = velocity_components->get(player_entity_);
+    
+    PredictedState pred;
+    // Predict position for next frame (assuming 60 FPS, delta ~0.016)
+    float delta_pred = 1.0f / 60.0f;
+    pred.x = pos.x + vel.vx * delta_pred;
+    pred.y = pos.y + vel.vy * delta_pred;
+    pred.timestamp = static_cast<uint32_t>(GetTime() * 1000);
+    
+    // Store prediction history (keep last 10)
+    prediction_history_.push_back(pred);
+    if (prediction_history_.size() > 10) {
+        prediction_history_.erase(prediction_history_.begin());
+    }
 }
 
 void SimpleGameState::apply_client_side_prediction() {
-    // Placeholder for applying client-side prediction
-    // Apply predicted movement before server confirmation
+    // Apply the latest predicted position to the entity
+    if (!prediction_history_.empty()) {
+        auto* position_components = game_registry_.get_if<position>();
+        if (position_components && position_components->has(player_entity_)) {
+            auto& pos = position_components->get(player_entity_);
+            const auto& latest_pred = prediction_history_.back();
+            pos.x = latest_pred.x;
+            pos.y = latest_pred.y;
+        }
+    }
 }
 
 void SimpleGameState::perform_server_reconciliation() {
-    // Placeholder for server reconciliation
-    // Check for mispredictions and correct client state
+    // Check if we have a new server position
+    if (server_position_.timestamp > last_server_timestamp_) {
+        last_server_timestamp_ = server_position_.timestamp;
+        
+        // Find the predicted state at this timestamp
+        auto it = std::find_if(prediction_history_.begin(), prediction_history_.end(),
+            [this](const PredictedState& pred) { return pred.timestamp == server_position_.timestamp; });
+        
+        if (it != prediction_history_.end()) {
+            // Check if prediction matches server
+            float dx = std::abs(it->x - server_position_.x);
+            float dy = std::abs(it->y - server_position_.y);
+            
+            if (dx > 1.0f || dy > 1.0f) {  // Threshold for misprediction
+                // Misprediction detected, correct position
+                auto* position_components = game_registry_.get_if<position>();
+                if (position_components && position_components->has(player_entity_)) {
+                    auto& pos = position_components->get(player_entity_);
+                    pos.x = server_position_.x;
+                    pos.y = server_position_.y;
+                    
+                    // Clear predictions after this timestamp
+                    prediction_history_.erase(
+                        std::remove_if(prediction_history_.begin(), prediction_history_.end(),
+                            [this](const PredictedState& pred) { return pred.timestamp >= server_position_.timestamp; }),
+                        prediction_history_.end());
+                }
+            }
+        }
+    }
 }
 
 void SimpleGameState::rewind_and_replay_on_misprediction() {

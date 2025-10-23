@@ -55,6 +55,7 @@ private:
     void send_position_update(float x, float y);
     void render_falling_background();
     void update_background(float delta_time);
+    void process_server_messages();
 
     // Client-side prediction placeholders
     void predict_local_movement();
@@ -63,6 +64,15 @@ private:
     void rewind_and_replay_on_misprediction();
     void interpolate_remote_entity_positions();
     void smooth_remote_entity_movement();
+
+    // Prediction state
+    struct PredictedState {
+        float x, y;
+        uint32_t timestamp;
+    };
+    std::vector<PredictedState> prediction_history_;
+    uint32_t last_server_timestamp_{0};
+    PredictedState server_position_;
 
     // Game state
     bool game_running_{true};
