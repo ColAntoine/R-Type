@@ -51,7 +51,10 @@ void MainMenuState::play_solo()
 
 void MainMenuState::play_coop()
 {
-
+    if (this->_stateManager) {
+        this->_stateManager->pop_state();
+        this->_stateManager->push_state("Connection");
+    }
 }
 
 void MainMenuState::play_settings()
@@ -121,7 +124,7 @@ void MainMenuState::setup_ui()
         .fontSize(24)
         .border(2, WHITE)
         .onClick([this]() {
-            this->play_solo();
+            this->play_coop();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 

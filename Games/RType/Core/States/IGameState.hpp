@@ -23,7 +23,8 @@ public:
         MainMenu,
         InGame,
         Settings,
-        InGameHud
+        InGameHud,
+        Connection
     };
 
     virtual ~IGameState() = default;

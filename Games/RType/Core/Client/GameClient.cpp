@@ -6,6 +6,7 @@
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+#include "Core/States/Connection/Connection.hpp"
 #include "Core/States/Settings/Settings.hpp"
 
 #include "Constants.hpp"
@@ -30,6 +31,7 @@ void GameClient::register_states() {
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<SettingsState>("Settings");
+    _stateManager.register_state<Connection>("Connection");
 }
 
 bool GameClient::init()
