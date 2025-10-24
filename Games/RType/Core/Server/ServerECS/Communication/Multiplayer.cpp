@@ -1,7 +1,7 @@
 #include "Multiplayer.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include <iostream>
-#include "Utils/Console.hpp"
+#include "ECS/Utils/Console.hpp"
 #include "ECS/Components/InputBuffer.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
@@ -213,14 +213,16 @@ void Multiplayer::handle_game_message(const std::string &session_id, uint8_t msg
         auto* buffers = registry.get_if<InputBuffer>();
         // make a copy of payload to construct Input
         std::vector<char> payload_copy = payload;
+        uint64_t timestamp = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now().time_since_epoch()).count());
         if (buffers && buffers->has(player_ent)) {
             auto& buf = (*buffers)[player_ent];
-            Input input{msg_type, std::move(payload_copy), static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now().time_since_epoch()).count())};
+            Input input{msg_type, std::move(payload_copy), timestamp};
             buf.inputs.push_back(std::move(input));
         } else {
-            InputBuffer ib; Input input{msg_type, std::move(payload_copy), static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now().time_since_epoch()).count())}; ib.inputs.push_back(std::move(input));
+            InputBuffer ib;
+            Input input{msg_type, std::move(payload_copy), timestamp};
+            ib.inputs.push_back(std::move(input));
             if (ecs_.get_factory()) ecs_.get_factory()->create_component<InputBuffer>(ecs_.GetRegistry(), player_ent, std::move(ib));
             else std::cout << Console::yellow("[Multiplayer] ") << "Cannot create InputBuffer: factory missing" << std::endl;
         }

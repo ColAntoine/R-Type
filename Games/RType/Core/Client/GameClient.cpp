@@ -1,5 +1,6 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
+#include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
@@ -28,7 +29,7 @@ void GameClient::register_states() {
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
-    // state_manager_.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
     //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
     // });
 }
@@ -85,8 +86,8 @@ void GameClient::run()
         auto &render_mgr = RenderManager::instance();
         render_mgr.begin_frame();
         if (network_manager_) network_manager_->process_pending();
-        state_manager_.update(delta_time);
-        state_manager_.render();
+        _stateManager.update(delta_time);
+        _stateManager.render();
         render_mgr.end_frame();
 
         // Handle input
