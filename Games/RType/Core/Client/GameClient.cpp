@@ -61,7 +61,7 @@ bool GameClient::init()
     network_manager_->register_default_handlers();
     network_manager_->start();
 
-    running_ = true;
+    _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
 
     return true;

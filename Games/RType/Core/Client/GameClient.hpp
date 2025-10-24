@@ -24,7 +24,6 @@ class GameClient : public AGameCore {
         registry ecs_registry_;
         DLLoader ecs_loader_;
         std::unique_ptr<NetworkManager> network_manager_;
-        bool running_{false};
 
         GameStateManager _stateManager;
         void register_states();
