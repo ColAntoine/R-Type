@@ -6,6 +6,7 @@
 */
 
 #include "EnemySpawnSystem.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <iostream>
 
 EnemySpawnSystem::EnemySpawnSystem()
@@ -73,17 +74,22 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
 }
 
 void EnemySpawnSystem::spawn_random_enemy(registry& r) {
+    auto& renderManager = RenderManager::instance();
+    float screen_width = renderManager.get_screen_infos().getWidth();
+    float screen_height = renderManager.get_screen_infos().getHeight();
+    
     uint8_t enemy_type = type_dist_(rng_);
-    float spawn_x = world_width_ + 50.0f;
+    float spawn_x = screen_width + 50.0f;
     float spawn_y = y_dist_(rng_);
 
     spawn_enemy(r, enemy_type, spawn_x, spawn_y);
 }
 
 void EnemySpawnSystem::set_world_bounds(float width, float height) {
-    world_width_ = width;
-    world_height_ = height;
-    y_dist_ = std::uniform_real_distribution<>(50.0f, height - 50.0f);
+    // World bounds are now managed by RenderManager
+    // This method is kept for backward compatibility but is no longer used
+    // Y distribution is updated based on screen height from RenderManager
+    y_dist_ = std::uniform_real_distribution<>(50.0f, std::max(height - 50.0f, 100.0f));
 }
 
 std::unique_ptr<ISystem> create_system() {

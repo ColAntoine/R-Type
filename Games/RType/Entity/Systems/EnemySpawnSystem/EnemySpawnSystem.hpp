@@ -35,9 +35,6 @@ private:
     float spawn_interval_{3.0f};
     size_t max_enemies_{10};
 
-    float world_width_{SCREEN_WIDTH};
-    float world_height_{SCREEN_HEIGHT};
-
     std::mt19937 rng_;
     std::uniform_int_distribution<> type_dist_;
     std::uniform_real_distribution<> y_dist_;
