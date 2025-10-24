@@ -1,4 +1,6 @@
 #include "InGameHud.hpp"
+#include "ECS/UI/UIBuilder.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 void InGameHudState::enter()
 {
@@ -15,7 +17,6 @@ void InGameHudState::enter()
 
 void InGameHudState::exit()
 {
-    cleanup_ui();
     _initialized = false;
 }
 
@@ -32,13 +33,16 @@ void InGameHudState::resume()
 
 void InGameHudState::setup_ui()
 {
+    auto &renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+
     auto warningText = TextBuilder()
-        .at(SCREEN_WIDTH / 2, 20)
+        .at(winInfos.getWidth() / 2, 20)
         .textColor(RED)
         .text("!!!!The HUD is just a mockup!!!!")
         .alignment(UI::TextAlignment::Center)
         .fontSize(30)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto warningTextEnt = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(warningTextEnt, UI::UIComponent(warningText));
@@ -47,7 +51,7 @@ void InGameHudState::setup_ui()
         .at(10.f, 10.f)
         .text("Position: (FAKEPOS, FAKEPOS)")
         .fontSize(30)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto posTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(posTextent, UI::UIComponent(posText));
@@ -56,49 +60,49 @@ void InGameHudState::setup_ui()
         .at(10.f, 45.f)
         .text("Score: FAKE SCORE")
         .fontSize(30)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto scoreTextEnt = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(scoreTextEnt, UI::UIComponent(scoreText));
 
     auto fpsText = TextBuilder()
-        .at(SCREEN_WIDTH - 10.f, 10.f)
+        .at(winInfos.getWidth() - 10.f, 10.f)
         .text("FPS: " + std::to_string(GetFPS()))
         .textColor(GREEN)
         .fontSize(30)
         .alignment(UI::TextAlignment::Right)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto fpsTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(fpsTextent, UI::UIComponent(fpsText));
     _registry.add_component<FPSText>(fpsTextent, FPSText());    // ? Tag to access it quickly
 
     auto weaponText = TextBuilder()
-        .at(10.f, SCREEN_HEIGHT - 85.f)
+        .at(10.f, winInfos.getWidth() - 85.f)
         .text("Weapon: Plasma Cannon")
         .textColor(YELLOW)
         .fontSize(30)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto weaponTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(weaponTextent, UI::UIComponent(weaponText));
 
     auto ammoText = TextBuilder()
-        .at(10.f, SCREEN_HEIGHT - 55.f)
+        .at(10.f, winInfos.getWidth() - 55.f)
         .text("Ammo: 25/100")
         .textColor(WHITE)
         .fontSize(25)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto ammoTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(ammoTextent, UI::UIComponent(ammoText));
 
     auto damageText = TextBuilder()
-        .at(10.f, SCREEN_HEIGHT - 30.f)
+        .at(10.f, winInfos.getWidth() - 30.f)
         .text("Damage: 45")
         .textColor(ORANGE)
         .fontSize(20)
-    .build(SCREEN_WIDTH, SCREEN_HEIGHT);
+    .build(winInfos.getWidth(), winInfos.getWidth());
 
     auto damageTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(damageTextent, UI::UIComponent(damageText));

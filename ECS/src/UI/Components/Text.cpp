@@ -6,6 +6,7 @@
 */
 
 #include "ECS/UI/Components/Text.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <iostream>
 
 namespace UI {
@@ -35,8 +36,9 @@ namespace UI {
     }
 
     Vector2 UIText::getTextSize() const {
+        auto &renderManager = RenderManager::instance();
         return MeasureTextEx(
-            GetFontDefault(),
+            renderManager.get_font(),
             _text.c_str(),
             _style.getFontSize(),
             _style.getSpacing()
@@ -68,6 +70,7 @@ namespace UI {
     }
 
     void UIText::drawTextShadow() const {
+        auto &renderManager = RenderManager::instance();
         if (!_style.hasShadow()) return;
 
         Vector2 pos = calculateTextPosition();
@@ -77,7 +80,7 @@ namespace UI {
         };
 
         DrawTextEx(
-            GetFontDefault(),
+            renderManager.get_font(),
             _text.c_str(),
             shadow_pos,
             _style.getFontSize(),
@@ -87,10 +90,11 @@ namespace UI {
     }
 
     void UIText::drawTextContent() const {
+        auto &renderManager = RenderManager::instance();
         Vector2 pos = calculateTextPosition();
 
         DrawTextEx(
-            GetFontDefault(),
+            renderManager.get_font(),
             _text.c_str(),
             pos,
             _style.getFontSize(),

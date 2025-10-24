@@ -11,11 +11,23 @@
 
 AGameState::AGameState() {}
 
+AGameState::~AGameState()
+{
+    cleanup_ui();
+}
+
 void AGameState::render()
 {
     if (!this->_initialized)
         return;
     this->_systemLoader.update_all_systems(this->_registry, 0.0f, DLLoader::RenderSystem);
+}
+
+void AGameState::update(float delta_time)
+{
+    if (!this->_initialized)
+        return;
+    this->_systemLoader.update_all_systems(this->_registry, delta_time, DLLoader::LogicSystem);
 }
 
 void AGameState::cleanup_ui()

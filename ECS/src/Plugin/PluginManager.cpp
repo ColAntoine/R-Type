@@ -28,9 +28,9 @@ void PluginManager::shutdown() {
 
 bool PluginManager::discover_plugins() {
     auto files = scan_directory(plugin_directory_);
-    
+
     std::cout << "Discovered " << files.size() << " potential plugins" << std::endl;
-    
+
     int loaded = 0;
     for (const auto& file : files) {
         if (is_plugin_file(file)) {
@@ -39,7 +39,7 @@ bool PluginManager::discover_plugins() {
             }
         }
     }
-    
+
     std::cout << "Successfully loaded " << loaded << " plugins" << std::endl;
     return loaded > 0;
 }
@@ -53,7 +53,7 @@ bool PluginManager::load_plugin(const std::string& path) {
     }
 
     auto plugin = std::make_unique<Plugin>(path, handle);
-    
+
     if (!plugin->load_metadata()) {
         std::cerr << "Plugin missing create_system function: " << path << std::endl;
         return false;
@@ -63,7 +63,7 @@ bool PluginManager::load_plugin(const std::string& path) {
 
     std::string name = plugin->get_metadata().name;
     plugins_[name] = std::move(plugin);
-    
+
     std::cout << "Loaded plugin: " << name << " from " << path << std::endl;
     return true;
 }
@@ -88,7 +88,7 @@ bool PluginManager::reload_plugin(const std::string& name) {
     }
 
     std::string path = it->second->get_path();
-    
+
     if (!unload_plugin(name)) {
         return false;
     }
@@ -112,7 +112,7 @@ std::vector<std::string> PluginManager::get_plugin_names() const {
 
 std::vector<std::string> PluginManager::scan_directory(const std::string& directory) {
     std::vector<std::string> files;
-    
+
     DIR* dir = opendir(directory.c_str());
     if (!dir) {
         std::cerr << "Failed to open directory: " << directory << std::endl;
@@ -132,7 +132,7 @@ std::vector<std::string> PluginManager::scan_directory(const std::string& direct
 }
 
 bool PluginManager::is_plugin_file(const std::string& filename) {
-    return filename.size() > 3 && 
+    return filename.size() > 3 &&
            filename.substr(filename.size() - 3) == ".so" &&
            filename.substr(0, 3) == "lib";
 }

@@ -1,5 +1,6 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
+#include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
@@ -7,6 +8,14 @@
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/InGameBackground/InGameBackground.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+#include "Core/States/Connection/Connection.hpp"
+#include "Core/States/Settings/Settings.hpp"
+#include "Core/States/SettingsPanel/SettingsPanel.hpp"
+#include "Core/States/Credits/Credits.hpp"
+#include "Core/States/Lobby/Lobby.hpp"
+#include "Core/States/AudioSettings/AudioSettings.hpp"
+#include "Core/States/VideoSettings/VideoSettings.hpp"
+#include "Core/States/BindsSettings/BindsSettings.hpp"
 
 #include "Constants.hpp"
 
@@ -15,6 +24,7 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <string>
 
 auto &renderManager = RenderManager::instance();
 
@@ -30,14 +40,31 @@ void GameClient::register_states() {
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<InGameBackground>("InGameBackground");
+    _stateManager.register_state<SettingsState>("Settings");
+    _stateManager.register_state<Connection>("Connection");
+    _stateManager.register_state<SettingsPanelState>("SettingsPanel");
+    _stateManager.register_state<CreditsState>("Credits");
+    _stateManager.register_state<Lobby>("Lobby");
+    _stateManager.register_state<AudioSettingsState>("AudioSettings");
+    _stateManager.register_state<VideoSettingsState>("VideoSettings");
+    _stateManager.register_state<BindsSettingsState>("BindsSettings");
 
+    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
+    // });
 }
 
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
+    renderManager.init("R-Type");
+
+    std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
+    if (!renderManager.load_font(fontPath.c_str())) {
+        std::cerr << "[GameClient] Failed to load font: " << fontPath << std::endl;
+        std::cerr << "Using default font." << std::endl;
+    }
 
     if (!renderManager.is_window_ready()) {
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;
@@ -50,6 +77,15 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
+
+    // Create shared client service for in-game/network states
+    auto client = std::make_shared<UdpClient>();
+    RType::Network::set_client(client);
+
+    // Create and start the network manager which encapsulates receive loop and dispatching
+    network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
+    network_manager_->register_default_handlers();
+    network_manager_->start();
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
@@ -73,13 +109,11 @@ void GameClient::run()
         if (delta_time > 0.1f) delta_time = 0.1f;
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
-        renderManager.begin_frame();
-
-        // Update current state
+        auto &render_mgr = RenderManager::instance();
+        render_mgr.begin_frame();
+        if (network_manager_) network_manager_->process_pending();
         _stateManager.update(delta_time);
-
         _stateManager.render();
-
         renderManager.end_frame();
 
         // Handle input
@@ -89,7 +123,6 @@ void GameClient::run()
 
 void GameClient::update(float delta)
 {
-    // State manager handles updates now
     (void)delta;
 }
 
@@ -100,6 +133,13 @@ void GameClient::shutdown()
     // Clear all states
     _stateManager.clear_states();
 
+    // Notify server of voluntary disconnect if a network client exists
+    if (auto client = RType::Network::get_client()) {
+        uint32_t token = client->get_session_token();
+        if (token != 0) {
+            client->send_disconnect(token);
+        }
+    }
     // Close Raylib window
     if (renderManager.is_window_ready()) {
         renderManager.shutdown();
@@ -107,3 +147,6 @@ void GameClient::shutdown()
 
     _running = false;
 }
+
+registry &GameClient::GetRegistry() { return ecs_registry_; }
+DLLoader &GameClient::GetDLLoader() { return ecs_loader_; }
