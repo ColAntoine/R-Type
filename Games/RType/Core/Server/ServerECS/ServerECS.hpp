@@ -32,7 +32,9 @@ class ServerECS {
         // Run ECS systems for one tick (dt in seconds)
         void tick(float dt);
 
-        // Access registry for advanced ops/tests
+        void set_send_callback(std::function<void(const std::string&, const std::vector<uint8_t>&)> cb) { send_callback_ = std::move(cb); }
+
+        IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
 
     private:
@@ -53,16 +55,11 @@ class ServerECS {
         // Allow Multiplayer implementation to access internals for now
         friend class Multiplayer;
 
-    public:
-        void set_send_callback(std::function<void(const std::string&, const std::vector<uint8_t>&)> cb) { send_callback_ = std::move(cb); }
     private:
         // Process buffered inputs for all players and apply to components
         void process_inputs();
         // Build and send snapshots to connected clients
         void send_snapshots();
-    public:
-        // Minimal accessors used by Multiplayer
-        IComponentFactory* get_factory() const { return factory_; }
 };
 
 } // namespace RType::Network
