@@ -3,6 +3,7 @@
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
 
 void MainMenuState::enter()
 {
@@ -101,7 +102,7 @@ void MainMenuState::setup_ui()
     auto titleEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(titleEntity, UI::UIComponent(title));
 
-    auto soloButton = ButtonBuilder()
+    auto soloButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("SOLO MODE")
@@ -109,6 +110,8 @@ void MainMenuState::setup_ui()
         .textColor(WHITE)
         .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
+        .neonColors(Color{0, 229, 255, 255}, Color{0, 229, 255, 100})
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_solo();
         })

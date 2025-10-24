@@ -19,6 +19,13 @@ namespace RType {
             _hover_seed = rand() % 1000;
         }
 
+        // Class variables (static) - shared across all GlitchButton instances
+        static Color default_neon_color;
+        static Color default_neon_glow_color;
+        static float default_jitter_amplitude;
+        static float default_jitter_speed;
+        static bool default_enable_glitch;
+
         void set_neon_colors(Color neon, Color glow) {
             _neon_color = neon;
             _neon_glow_color = glow;
@@ -69,8 +76,6 @@ namespace RType {
         }
 
         void drawButtonText() const override {
-            
-            // if (.empty()) return;
 
             Color text_color = _style.getTextColor();
             Vector2 pos = _position;
@@ -116,12 +121,108 @@ namespace RType {
             }
         }
 
-    private:
-        Color _neon_color{0, 229, 255, 255};
-        Color _neon_glow_color{0, 229, 255, 100};
-        float _hover_jitter_amplitude{2.0f};
-        float _hover_jitter_speed{8.0f};
-        bool _enable_glitch_on_hover{true};
-        int _hover_seed{0};
+        private:
+            Color _neon_color{0, 229, 255, 255};
+            Color _neon_glow_color{0, 229, 255, 100};
+            float _hover_jitter_amplitude{2.0f};
+            float _hover_jitter_speed{8.0f};
+            bool _enable_glitch_on_hover{true};
+            int _hover_seed{0};
     };
 }
+
+// Builder class for GlitchButton with glitch-specific methods
+// This wraps UIBuilder<UI::UIButton> to add neon/glitch configuration
+#include "ECS/UI/UIBuilder.hpp"
+
+class GlitchButtonBuilder {
+public:
+    // Delegate UIBuilder methods
+    GlitchButtonBuilder& at(float x, float y) {
+        _builder.at(x, y);
+        return *this;
+    }
+
+    GlitchButtonBuilder& centered(float yOffset = 0) {
+        _builder.centered(yOffset);
+        return *this;
+    }
+
+    GlitchButtonBuilder& size(float width, float height) {
+        _builder.size(width, height);
+        return *this;
+    }
+
+    GlitchButtonBuilder& text(const std::string& text) {
+        _builder.text(text);
+        return *this;
+    }
+
+    GlitchButtonBuilder& color(Color baseColor, int hoverAmount = 20, int pressAmount = 20) {
+        _builder.color(baseColor, hoverAmount, pressAmount);
+        return *this;
+    }
+
+    GlitchButtonBuilder& textColor(Color color) {
+        _builder.textColor(color);
+        return *this;
+    }
+
+    GlitchButtonBuilder& fontSize(float size) {
+        _builder.fontSize(size);
+        return *this;
+    }
+
+    GlitchButtonBuilder& border(int thickness, Color color) {
+        _builder.border(thickness, color);
+        return *this;
+    }
+
+    GlitchButtonBuilder& red() {
+        _builder.red();
+        return *this;
+    }
+
+    GlitchButtonBuilder& onClick(std::function<void()> callback) {
+        _builder.onClick(callback);
+        return *this;
+    }
+
+    // GlitchButton-specific methods
+    GlitchButtonBuilder& neonColors(Color neon, Color glow) {
+        _neonColor = neon;
+        _neonGlowColor = glow;
+        return *this;
+    }
+
+    GlitchButtonBuilder& glitchParams(float amplitude, float speed, bool enabled = true) {
+        _jitterAmplitude = amplitude;
+        _jitterSpeed = speed;
+        _enableGlitch = enabled;
+        return *this;
+    }
+
+    std::shared_ptr<RType::GlitchButton> build(float screenWidth, float screenHeight) {
+        auto baseButton = _builder.build(screenWidth, screenHeight);
+
+        auto button = std::make_shared<RType::GlitchButton>(
+            baseButton->getPosition().x,
+            baseButton->getPosition().y,
+            baseButton->getSize().x,
+            baseButton->getSize().y,
+            baseButton->getText()
+        );
+        button->setStyle(baseButton->getStyle());
+        button->set_neon_colors(_neonColor, _neonGlowColor);
+        button->set_glitch_params(_jitterAmplitude, _jitterSpeed, _enableGlitch);
+        return button;
+    }
+
+private:
+    UIBuilder<UI::UIButton> _builder;
+    Color _neonColor{RType::GlitchButton::default_neon_color};
+    Color _neonGlowColor{RType::GlitchButton::default_neon_glow_color};
+    float _jitterAmplitude{RType::GlitchButton::default_jitter_amplitude};
+    float _jitterSpeed{RType::GlitchButton::default_jitter_speed};
+    bool _enableGlitch{RType::GlitchButton::default_enable_glitch};
+};
