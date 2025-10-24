@@ -27,14 +27,12 @@ void PlayerHandler::on_player_join(const char* payload, size_t size) {
     float spawn_x = 100.0f;
     float spawn_y = 100.0f;
 
-    if (&loader_) {
-        auto factory = loader_.get_factory();
-        if (factory) {
-            // Try to use position component factory if available
-            factory->create_component<position>(registry_, ent, spawn_x, spawn_y);
-            factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-            return;
-        }
+    auto factory = loader_.get_factory();
+    if (factory) {
+        // Try to use position component factory if available
+        factory->create_component<position>(registry_, ent, spawn_x, spawn_y);
+        factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+        return;
     }
 
     registry_.emplace_component<position>(ent, spawn_x, spawn_y);
@@ -57,15 +55,13 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
 
     float x = ec.x;
     float y = ec.y;
-    if (&loader_) {
-        auto factory = loader_.get_factory();
-        if (factory) {
-            factory->create_component<position>(registry_, ent, x, y);
-            factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
-            factory->create_component<controllable>(registry_, ent, 100.0f);
-            factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-            return;
-        }
+    auto factory = loader_.get_factory();
+    if (factory) {
+        factory->create_component<position>(registry_, ent, x, y);
+        factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+        factory->create_component<controllable>(registry_, ent, 100.0f);
+        factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+        return;
     }
     registry_.emplace_component<position>(ent, x, y);
 }
@@ -88,15 +84,13 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
 
     float x = ps.x;
     float y = ps.y;
-    if (&loader_) {
-        auto factory = loader_.get_factory();
-        if (factory) {
-            factory->create_component<position>(registry_, ent, x, y);
-            factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
-            factory->create_component<controllable>(registry_, ent, 100.0f);
-            factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-            return;
-        }
+    auto factory = loader_.get_factory();
+    if (factory) {
+        factory->create_component<position>(registry_, ent, x, y);
+        factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+        factory->create_component<controllable>(registry_, ent, 100.0f);
+        factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+        return;
     }
     registry_.emplace_component<position>(ent, x, y);
 }
@@ -118,14 +112,12 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
 
     float x = ps.x;
     float y = ps.y;
-    if (&loader_) {
-        auto factory = loader_.get_factory();
-        if (factory) {
-            factory->create_component<position>(registry_, ent, x, y);
-            factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
-            factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-            return;
-        }
+    auto factory = loader_.get_factory();
+    if (factory) {
+        factory->create_component<position>(registry_, ent, x, y);
+        factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+        factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+        return;
     }
     registry_.emplace_component<position>(ent, x, y);
 }
