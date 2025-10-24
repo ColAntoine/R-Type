@@ -22,7 +22,8 @@ public:
         MenusBackground,
         MainMenu,
         InGame,
-        InGameHud
+        InGameHud,
+        InGameBackground
     };
 
     virtual ~IGameState() = default;

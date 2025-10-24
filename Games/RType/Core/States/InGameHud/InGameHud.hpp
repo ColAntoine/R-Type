@@ -26,7 +26,7 @@ class InGameHudState : public AGameState {
 
         void update(float delta_time) override;
 
-        std::string get_name() const override { return "InGame"; }
+        std::string get_name() const override { return "InGameHud"; }
 
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }

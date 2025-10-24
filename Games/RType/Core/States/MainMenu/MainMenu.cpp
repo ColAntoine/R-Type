@@ -50,8 +50,11 @@ void MainMenuState::on_play_clicked()
 {
     std::cout << "[MainMenu] Play button clicked" << std::endl;
     if (this->_stateManager) {
-        this->_stateManager->change_state("InGame");
+
+        this->_stateManager->pop_state();
+        this->_stateManager->push_state("InGame");
         this->_stateManager->push_state("InGameHud");
+        this->_stateManager->push_state("InGameBackground");
     }
 }
 

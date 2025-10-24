@@ -8,6 +8,7 @@
 #pragma once
 
 #include "ECS/UI/Components/Button.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <cmath>
 #include <raylib.h>
 
@@ -35,19 +36,21 @@ namespace RType {
             // Call base implementation
             UIButton::drawButtonBackground();
 
+            auto& renderManager = RenderManager::instance();
+
             // Add scanline texture
             for (int i = 0; i < static_cast<int>(_size.y); i += 6) {
-                DrawRectangle(_position.x, _position.y + i, _size.x, 1, {0, 0, 0, 10});
+                renderManager.draw_rectangle(_position.x, _position.y + i, _size.x, 1, {0, 0, 0, 10});
             }
 
             // Add neon glow when hovered
             if (_state == UI::UIState::Hovered) {
-                DrawRectangleLinesEx(
+                renderManager.draw_rectangle_lines_ex(
                     {_position.x - 2, _position.y - 2, _size.x + 4, _size.y + 4},
                     2.0f,
                     _neon_color
                 );
-                DrawRectangle(
+                renderManager.draw_rectangle(
                     _position.x - 4,
                     _position.y - 4,
                     _size.x + 8,
@@ -58,7 +61,7 @@ namespace RType {
 
             // Pressed state highlight
             if (_state == UI::UIState::Pressed) {
-                DrawRectangle(
+                renderManager.draw_rectangle(
                     _position.x + 2,
                     _position.y + 2,
                     _size.x - 4,
@@ -80,6 +83,8 @@ namespace RType {
             float text_x = pos.x + (size.x - text_size.x) / 2.0f;
             float text_y = pos.y + (size.y - text_size.y) / 2.0f;
 
+            auto& renderManager = RenderManager::instance();
+
             // Glitch effect on hover
             if (_state == UI::UIState::Hovered && _enable_glitch_on_hover) {
                 float t = GetTime() * _hover_jitter_speed + _hover_seed;
@@ -88,21 +93,21 @@ namespace RType {
 
                 // RGB split effect
                 Color rcol = {255, 50, 80, text_color.a};
-                DrawTextEx(GetFontDefault(), getText().c_str(),
+                renderManager.draw_text_ex(GetFontDefault(), getText().c_str(),
                           {text_x + jitter_x + 1, text_y + jitter_y},
                           _style.getFontSize(), 1.0f, rcol);
 
                 Color gcol = {0, 255, 156, static_cast<unsigned char>(text_color.a * 0.6f)};
-                DrawTextEx(GetFontDefault(), getText().c_str(),
+                renderManager.draw_text_ex(GetFontDefault(), getText().c_str(),
                           {text_x - jitter_x - 1, text_y - jitter_y},
                           _style.getFontSize(), 1.0f, gcol);
 
-                DrawTextEx(GetFontDefault(), getText().c_str(),
+                renderManager.draw_text_ex(GetFontDefault(), getText().c_str(),
                           {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
 
                 // Scanline flicker
                 if (((static_cast<int>(GetTime() * 10) + _hover_seed) % 5) == 0) {
-                    DrawRectangle(text_x - 4, text_y + text_size.y + 2,
+                    renderManager.draw_rectangle(text_x - 4, text_y + text_size.y + 2,
                                 text_size.x + 8, 2, {255, 255, 255, 10});
                 }
             } else {
@@ -111,7 +116,7 @@ namespace RType {
                     text_x += 1;
                     text_y += 1;
                 }
-                DrawTextEx(GetFontDefault(), getText().c_str(),
+                renderManager.draw_text_ex(GetFontDefault(), getText().c_str(),
                           {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
             }
         }

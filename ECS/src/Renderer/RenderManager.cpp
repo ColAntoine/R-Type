@@ -61,6 +61,27 @@ void RenderManager::draw_text(const char *text, int posX, int posY, int fontSize
     return DrawText(text, posX, posY, fontSize, color);
 }
 
+void RenderManager::draw_text_ex(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint) const {
+    DrawTextEx(font, text, position, fontSize, spacing, tint);
+}
+
+void RenderManager::draw_circle(int centerX, int centerY, float radius, Color color) {
+    DrawCircle(centerX, centerY, radius, color);
+}
+
+void RenderManager::draw_rectangle(int posX, int posY, int width, int height, Color color) {
+    DrawRectangle(posX, posY, width, height, color);
+}
+
+void RenderManager::draw_rectangle_lines_ex(Rectangle rec, float lineThick, Color color) {
+    DrawRectangleLinesEx(rec, lineThick, color);
+}
+
+void RenderManager::draw_sprite(Texture2D* texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint, int layer) {
+    if (!texture || texture->id == 0) return;
+    batch_.draw(texture, source, dest, origin, rotation, tint, layer);
+}
+
 bool RenderManager::is_window_ready() const {
     return IsWindowReady();
 }

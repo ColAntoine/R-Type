@@ -81,13 +81,3 @@ void InGameState::createPlayer()
         componentFactory->create_component<Health>(_registry, _playerEntity);
     }
 }
-
-void InGameState::createEnemySpawner()
-{
-    // auto componentFactory = _systemLoader.get_factory();
-
-    // auto enemySpawner = _registry.spawn_entity();
-    // if (componentFactory) {
-    //     componentFactory->create_component<>
-    // }
-}

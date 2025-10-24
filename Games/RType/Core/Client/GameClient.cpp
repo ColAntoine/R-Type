@@ -5,6 +5,7 @@
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
+#include "Core/States/InGameBackground/InGameBackground.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
 
 #include "Constants.hpp"
@@ -28,6 +29,8 @@ void GameClient::register_states() {
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
+    _stateManager.register_state<InGameBackground>("InGameBackground");
+
 }
 
 bool GameClient::init()
@@ -69,11 +72,11 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
-        // Update current state
-        _stateManager.update(delta_time);
-
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         renderManager.begin_frame();
+
+        // Update current state
+        _stateManager.update(delta_time);
 
         _stateManager.render();
 
