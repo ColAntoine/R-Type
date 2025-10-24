@@ -65,6 +65,8 @@ namespace RType::Protocol {
     enum class GameMessage : uint8_t {
         // Entity management
         ENTITY_CREATE     = 0xC0,
+    PLAYER_SPAWN      = 0xC3,
+    PLAYER_SPAWN_REMOTE = 0xC4,
         ENTITY_UPDATE     = 0xC1,
         ENTITY_DESTROY    = 0xC2,
 
@@ -90,6 +92,26 @@ namespace RType::Protocol {
     struct ClientConnect {
         char player_name[32];    ///< Player name (null-terminated)
         uint32_t client_version; ///< Client version
+    } __attribute__((packed));
+
+    /**
+     * @brief Player spawn message (sent to the owning client)
+     */
+    struct PlayerSpawn {
+        uint32_t player_token;   ///< Public session token assigned by server
+        uint32_t server_entity;  ///< Server internal entity id (optional mapping)
+        float x, y;              ///< Spawn position
+        float health;            ///< Initial health
+    } __attribute__((packed));
+
+    /**
+     * @brief Enemy spawn message (sent to other clients)
+     */
+    struct PlayerRemoteSpawn {
+        uint32_t player_token;   ///< Public session token of the player represented
+        uint32_t server_entity;  ///< Server internal entity id
+        float x, y;              ///< Spawn position
+        float health;            ///< Initial health
     } __attribute__((packed));
 
     /**
