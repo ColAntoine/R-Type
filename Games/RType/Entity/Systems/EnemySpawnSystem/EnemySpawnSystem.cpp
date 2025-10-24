@@ -12,16 +12,17 @@
 EnemySpawnSystem::EnemySpawnSystem()
     : rng_(std::random_device{}()),
       type_dist_(1, 4),
-      y_dist_(50.0f, 718.0f)
+      y_dist_(50.0f, 700.0f)
 {
 }
 
 void EnemySpawnSystem::initialize_if_needed(registry& r) {
     if (initialized_) return;
 
-    // Retrieve factory from the registry (via DLLoader)
-    // Note: We assume the registry has a method to access the factory
-    // Otherwise, the factory must be passed to the constructor
+    // Initialize y_dist_ with actual screen height from RenderManager
+    auto& renderManager = RenderManager::instance();
+    float screen_height = renderManager.get_screen_infos().getHeight();
+    y_dist_ = std::uniform_real_distribution<>(50.0f, screen_height - 50.0f);
 
     initialized_ = true;
 }

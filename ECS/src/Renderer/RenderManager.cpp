@@ -52,7 +52,7 @@ void RenderManager::init(const char *title)
             std::cout << "RenderManager: Using X11/GLX backend" << std::endl;
         }
 
-        // Initialize window with resizable flag
+        // Initialize window with fullscreen and resizable flags
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(100, 100, title);
 
@@ -84,14 +84,14 @@ void RenderManager::init(const char *title)
             SetWindowPosition(windowX, windowY);
 
             SetWindowMinSize(_winInfos.getWidth() / 2, _winInfos.getHeight() / 2);
-            SetWindowState(FLAG_WINDOW_RESIZABLE);
+            SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_FULLSCREEN_MODE);
         }
 
         if (_winInfos.getFps() > 0) {
             SetTargetFPS(this->_winInfos.getFps());
         }
 
-        std::cout << "RenderManager: Created window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() 
+        std::cout << "RenderManager: Created fullscreen window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() 
                   << " @ " << this->_winInfos.getFps() << "Hz on monitor " << monitor << std::endl;
     } else {
         std::cout << "RenderManager: Using existing window" << std::endl;
