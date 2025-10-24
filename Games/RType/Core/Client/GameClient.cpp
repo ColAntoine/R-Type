@@ -1,5 +1,6 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
+#include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
@@ -46,6 +47,9 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
 
+    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
+    // });
 }
 
 bool GameClient::init()
@@ -72,6 +76,15 @@ bool GameClient::init()
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
 
+    // Create shared client service for in-game/network states
+    auto client = std::make_shared<UdpClient>();
+    RType::Network::set_client(client);
+
+    // Create and start the network manager which encapsulates receive loop and dispatching
+    network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
+    network_manager_->register_default_handlers();
+    network_manager_->start();
+
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
 
@@ -93,15 +106,13 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
-        // Update current state
-        _stateManager.update(delta_time);
-
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
-        renderManager.begin_frame();
-
+        auto &render_mgr = RenderManager::instance();
+        render_mgr.begin_frame();
+        if (network_manager_) network_manager_->process_pending();
+        _stateManager.update(delta_time);
         _stateManager.render();
-
-        renderManager.end_frame();
+        render_mgr.end_frame();
 
         // Handle input
         _stateManager.handle_input();
@@ -110,7 +121,6 @@ void GameClient::run()
 
 void GameClient::update(float delta)
 {
-    // State manager handles updates now
     (void)delta;
 }
 
@@ -121,6 +131,13 @@ void GameClient::shutdown()
     // Clear all states
     _stateManager.clear_states();
 
+    // Notify server of voluntary disconnect if a network client exists
+    if (auto client = RType::Network::get_client()) {
+        uint32_t token = client->get_session_token();
+        if (token != 0) {
+            client->send_disconnect(token);
+        }
+    }
     // Close Raylib window
     if (renderManager.is_window_ready()) {
         renderManager.shutdown();
@@ -128,3 +145,6 @@ void GameClient::shutdown()
 
     _running = false;
 }
+
+registry &GameClient::GetRegistry() { return ecs_registry_; }
+DLLoader &GameClient::GetDLLoader() { return ecs_loader_; }

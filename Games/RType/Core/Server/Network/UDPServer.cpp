@@ -307,7 +307,6 @@ namespace RType::Network {
         if (!running_) return;
 
         if (!ec && bytes_received > 0) {
-            // Get or create session for this endpoint
             auto session = get_or_create_session(remote_endpoint_);
 
             if (session) {
@@ -347,6 +346,13 @@ namespace RType::Network {
                                       << ":" << remote_endpoint_.port() << " appears to have disconnected (zero payload)" << std::endl;
                             if (session) {
                                 session->disconnect();
+                            }
+                            // Inform server ECS via message queue that this session disconnected
+                            if (message_queue_) {
+                                ReceivedPacket pkt;
+                                pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
+                                pkt.data.push_back(static_cast<char>(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT)));
+                                message_queue_->push(std::move(pkt));
                             }
                         } else {
                             std::cerr << "Payload size mismatch: expected " << header->payload_size

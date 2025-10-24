@@ -104,8 +104,7 @@ void RenderManager::init(const char *title)
     std::cout << "RenderManager initialized (camera disabled for 1:1 screen mapping)" << std::endl;
 }
 
-void RenderManager::shutdown()
-{
+void RenderManager::shutdown() {
     CloseWindow();
     std::cout << "RenderManager shutdown" << std::endl;
 }
