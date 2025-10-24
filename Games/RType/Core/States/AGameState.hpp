@@ -14,9 +14,10 @@
 class AGameState : public IGameState {
     public:
         AGameState();
-        virtual ~AGameState() = default;
+        virtual ~AGameState() override;
 
         void render() override;
+        virtual void update(float delta_time) override;
 
         virtual void setup_ui() = 0;
         void cleanup_ui() override;
@@ -39,13 +40,16 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
     switch (type) {
         case IGameState::GameStateType::MenusBackground: return "MenusBackground";
         case IGameState::GameStateType::MainMenu: return "MainMenu";
-        // case IGameState::GameStateType::Settings: return "Settings";
-        // case IGameState::GameStateType::Lobby: return "Lobby";
+        case IGameState::GameStateType::Settings: return "Settings";
+        case IGameState::GameStateType::SettingsPanel: return "SettingsPanel";
         case IGameState::GameStateType::InGame: return "InGame";
         case IGameState::GameStateType::InGameHud: return "InGameHud";
-        // case IGameState::GameStateType::GameOver: return "GameOver";
-        // case IGameState::GameStateType::Loading: return "Loading";
-        // case IGameState::GameStateType::WaitingLobby: return "WaitingLobby";
+        case IGameState::GameStateType::Connection: return "Connection";
+        case IGameState::GameStateType::Credits: return "Credits";
+        case IGameState::GameStateType::Lobby: return "Lobby";
+        case IGameState::GameStateType::AudioSettings: return "AudioSettings";
+        case IGameState::GameStateType::VideoSettings: return "VideoSettings";
+        case IGameState::GameStateType::BindingsSettings: return "BindsSettings";
         default: return "Unknown";
     }
 }

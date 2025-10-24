@@ -22,7 +22,15 @@ public:
         MenusBackground,
         MainMenu,
         InGame,
-        InGameHud
+        Settings,
+        InGameHud,
+        Connection,
+        SettingsPanel,
+        Credits,
+        Lobby,
+        AudioSettings,
+        VideoSettings,
+        BindingsSettings
     };
 
     virtual ~IGameState() = default;

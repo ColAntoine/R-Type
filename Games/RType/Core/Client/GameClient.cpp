@@ -7,6 +7,14 @@
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
+#include "Core/States/Connection/Connection.hpp"
+#include "Core/States/Settings/Settings.hpp"
+#include "Core/States/SettingsPanel/SettingsPanel.hpp"
+#include "Core/States/Credits/Credits.hpp"
+#include "Core/States/Lobby/Lobby.hpp"
+#include "Core/States/AudioSettings/AudioSettings.hpp"
+#include "Core/States/VideoSettings/VideoSettings.hpp"
+#include "Core/States/BindsSettings/BindsSettings.hpp"
 
 #include "Constants.hpp"
 
@@ -15,6 +23,7 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <string>
 
 auto &renderManager = RenderManager::instance();
 
@@ -29,6 +38,15 @@ void GameClient::register_states() {
     _stateManager.register_state<MainMenuState>("MainMenu");
     _stateManager.register_state<InGameState>("InGame");
     _stateManager.register_state<InGameHudState>("InGameHud");
+    _stateManager.register_state<SettingsState>("Settings");
+    _stateManager.register_state<Connection>("Connection");
+    _stateManager.register_state<SettingsPanelState>("SettingsPanel");
+    _stateManager.register_state<CreditsState>("Credits");
+    _stateManager.register_state<Lobby>("Lobby");
+    _stateManager.register_state<AudioSettingsState>("AudioSettings");
+    _stateManager.register_state<VideoSettingsState>("VideoSettings");
+    _stateManager.register_state<BindsSettingsState>("BindsSettings");
+
     // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
     //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
     // });
@@ -38,7 +56,13 @@ bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init(SCREEN_WIDTH, SCREEN_HEIGHT, "R-Type - Solo Mode Available!");
+    renderManager.init("R-Type");
+
+    std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
+    if (!renderManager.load_font(fontPath.c_str())) {
+        std::cerr << "[GameClient] Failed to load font: " << fontPath << std::endl;
+        std::cerr << "Using default font." << std::endl;
+    }
 
     if (!renderManager.is_window_ready()) {
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;
