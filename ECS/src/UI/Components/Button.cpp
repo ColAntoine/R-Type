@@ -7,6 +7,7 @@
 
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include <iostream>
 
 namespace UI {
     void UIButton::update(float delta_time) {
@@ -33,6 +34,7 @@ namespace UI {
             _on_release();
         }
 
+        if ()
         _was_hovered_last_frame = is_hovered;
         _was_pressed_last_frame = is_pressed;
     }

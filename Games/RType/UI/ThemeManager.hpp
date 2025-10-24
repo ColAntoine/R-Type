@@ -11,6 +11,7 @@ class ThemeManager {
 
         void setTheme(const ColorPalette& palette);
         const ColorPalette& getTheme() const;
+        const std::string getThemeName() const;
 
     private:
         ThemeManager() = default;

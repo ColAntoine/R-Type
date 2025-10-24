@@ -9,3 +9,8 @@ const ColorPalette& ThemeManager::getTheme() const
 {
     return this->_current;
 }
+
+const std::string ThemeManager::getThemeName() const
+{
+    return this->_current.name;
+}

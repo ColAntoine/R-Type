@@ -16,6 +16,7 @@ struct ColorPalette {
     Color background;
     Color panelColor;
     Color panelBorderColor;
+    Color secondaryTextColor;
     Color textColor;
     Color textBackgroundColor;
     ButtonColors buttonColors;
@@ -25,15 +26,16 @@ struct ColorPalette {
 static const ColorPalette DefaultPalette = {
     .name = "Default",
     .background = BLACK,
-    .panelColor = Color{75, 174, 204, 200},
-    .panelBorderColor = Color{230, 230, 230, 255},
-    .textColor = WHITE,
-    .textBackgroundColor = Color{100, 150, 200, 150},
+    .panelColor = Color{15, 130, 140, 150},
+    .panelBorderColor = Color{230, 230, 230, 150},
+    .secondaryTextColor = Color{255, 200, 50, 255},
+    .textColor = Color{152, 227, 221, 255},
+    .textBackgroundColor = Color{118, 74, 181, 150},
     .buttonColors = {
-        .normal = Color{75, 174, 204, 255},
+        .normal = Color{10, 120, 200, 255},
         .border = WHITE,
-        .neonColor = Color{0, 229, 255, 255},
-        .neonGlowColor = Color{0, 229, 255, 100}
+        .neonColor = Color{0, 180, 255, 255},
+        .neonGlowColor = Color{0, 180, 255, 100}
     },
     .exitButtonColors = {
         .normal = Color{194, 27, 27, 255},

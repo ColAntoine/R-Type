@@ -51,6 +51,7 @@ class RenderManager {
         bool window_should_close() const;
         bool load_font(const char *fontPath);
         void unload_font();
+        void set_window_size(int width, int height);
 
         int scalePosX(int x) const;
         int scalePosY(int y) const;

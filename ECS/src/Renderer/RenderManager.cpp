@@ -177,3 +177,10 @@ void RenderManager::unload_font()
         _font = Font{};
     }
 }
+
+void RenderManager::set_window_size(int width, int height)
+{
+    SetWindowSize(width, height);
+    _winInfos.setWidth(width);
+    _winInfos.setHeight(height);
+}
