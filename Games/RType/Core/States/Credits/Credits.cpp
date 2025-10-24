@@ -92,7 +92,7 @@ void CreditsState::setup_ui()
     auto titleEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(titleEntity, UI::UIComponent(title));
 
-        auto backButton = ButtonBuilder()
+    auto backButton = ButtonBuilder()
         .at(renderManager.scalePosX(11), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK TO SETTINGS")

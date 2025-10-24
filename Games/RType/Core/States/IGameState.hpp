@@ -27,7 +27,10 @@ public:
         Connection,
         SettingsPanel,
         Credits,
-        Lobby
+        Lobby,
+        AudioSettings,
+        VideoSettings,
+        BindingsSettings
     };
 
     virtual ~IGameState() = default;

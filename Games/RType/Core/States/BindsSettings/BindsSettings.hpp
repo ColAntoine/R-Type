@@ -2,11 +2,12 @@
 
 #include "Core/States/AGameState.hpp"
 #include "ECS/Entity.hpp"
+#include "ECS/Components.hpp"
 
-class SettingsState : public AGameState {
+class BindsSettingsState : public AGameState {
     public:
-        SettingsState() = default;
-        ~SettingsState() override = default;
+        BindsSettingsState() = default;
+        ~BindsSettingsState() override = default;
 
         void enter() override;
         void exit() override;
@@ -15,14 +16,10 @@ class SettingsState : public AGameState {
 
         void setup_ui() override;
 
+        std::string get_name() const override { return "BindsSettings"; }
+
         bool blocks_update() const override { return false; }
         bool blocks_render() const override { return false; }
-
-        std::string get_name() const override { return "Settings"; }
     private:
-        void play_back_menu();
-        void play_bind_menu();
-        void play_audio_menu();
-        void play_video_menu();
-        void play_credit_menu();
+        // BindsSettingsState specific members
 };

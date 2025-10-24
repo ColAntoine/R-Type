@@ -11,6 +11,9 @@
 #include "Core/States/SettingsPanel/SettingsPanel.hpp"
 #include "Core/States/Credits/Credits.hpp"
 #include "Core/States/Lobby/Lobby.hpp"
+#include "Core/States/AudioSettings/AudioSettings.hpp"
+#include "Core/States/VideoSettings/VideoSettings.hpp"
+#include "Core/States/BindsSettings/BindsSettings.hpp"
 
 #include "Constants.hpp"
 
@@ -38,6 +41,10 @@ void GameClient::register_states() {
     _stateManager.register_state<SettingsPanelState>("SettingsPanel");
     _stateManager.register_state<CreditsState>("Credits");
     _stateManager.register_state<Lobby>("Lobby");
+    _stateManager.register_state<AudioSettingsState>("AudioSettings");
+    _stateManager.register_state<VideoSettingsState>("VideoSettings");
+    _stateManager.register_state<BindsSettingsState>("BindsSettings");
+
 }
 
 bool GameClient::init()
