@@ -3,6 +3,8 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
 #include <iostream>
+#include "UI/Components/GlitchButton.hpp"
+#include "UI/ThemeManager.hpp"
 
 void VideoSettingsState::enter()
 {
@@ -37,14 +39,18 @@ void VideoSettingsState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
-    auto backButton = ButtonBuilder()
+    auto &theme = ThemeManager::instance().getTheme();
+
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(11), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK TO SETTINGS")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             if (this->_stateManager) {
                 this->_stateManager->pop_state();
@@ -55,4 +61,98 @@ void VideoSettingsState::setup_ui()
 
     auto backButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(backButtonEntity, UI::UIComponent(backButton));
+
+    // RESOLUTION SETTINGS
+    auto resolution = TextBuilder()
+        .centered(renderManager.scalePosY(-27))
+        .text("Resolution")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto resolutionEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(resolutionEntity, UI::UIComponent(resolution));
+
+    auto resLeftButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(30), renderManager.scalePosY(28))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text("<")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            std::cout << "Changed resolution" << std::endl;
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto resLeftButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(resLeftButtonEntity, UI::UIComponent(resLeftButton));
+
+    auto resRightButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(28))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text(">")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            std::cout << "Changed resolution" << std::endl;
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto resRightButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(resRightButtonEntity, UI::UIComponent(resRightButton));
+
+    // COLOR SETTINGS
+    auto colorMode = TextBuilder()
+        .centered(renderManager.scalePosY(-5))
+        .text("Color Mode")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto colorModeEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeEntity, UI::UIComponent(colorMode));
+
+    auto colorModeLeftButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(30), renderManager.scalePosY(50))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text("<")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            std::cout << "Changed color mode" << std::endl;
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto colorModeLeftButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeLeftButtonEntity, UI::UIComponent(colorModeLeftButton));
+
+    auto colorModeRightButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(50))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text(">")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            std::cout << "Changed color mode" << std::endl;
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto colorModeRightButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeRightButtonEntity, UI::UIComponent(colorModeRightButton));
 }
