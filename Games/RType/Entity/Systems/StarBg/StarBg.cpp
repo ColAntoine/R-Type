@@ -19,10 +19,10 @@ void StarBg::update(registry& r, float dt)
     if (_stars.empty()) {
         generate_stars();
     }
-    
+
     // Update star positions with actual delta time
     update_stars(dt);
-    
+
     // Render stars
     render_stars();
 }
@@ -31,7 +31,12 @@ void StarBg::generate_stars()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> dis_y(0.0, SCREEN_HEIGHT);
+    
+    auto& renderManager = RenderManager::instance();
+    int screen_width = renderManager.get_screen_infos().getWidth();
+    int screen_height = renderManager.get_screen_infos().getHeight();
+    
+    std::uniform_real_distribution<> dis_y(0.0, screen_height);
     std::uniform_real_distribution<> dis_speed(50.0, 300.0);
     std::uniform_real_distribution<> dis_size(0.5, 3.0);
 
@@ -40,7 +45,7 @@ void StarBg::generate_stars()
 
     for (int i = 0; i < num_stars; ++i) {
         Star star;
-        star.x = static_cast<float>(rand() % SCREEN_WIDTH);
+        star.x = static_cast<float>(rand() % screen_width);
         star.y = dis_y(gen);
         star.speed = dis_speed(gen);
         star.size = dis_size(gen);
@@ -51,14 +56,18 @@ void StarBg::generate_stars()
 
 void StarBg::update_stars(float delta_time)
 {
+    auto& renderManager = RenderManager::instance();
+    int screen_width = renderManager.get_screen_infos().getWidth();
+    int screen_height = renderManager.get_screen_infos().getHeight();
+    
     for (auto& star : _stars) {
         // Move star from right to left
         star.x -= star.speed * delta_time;
 
         // Wrap around: if star goes off left side, reset to right side
         if (star.x < -10.0f) {
-            star.x = SCREEN_WIDTH + 10.0f;
-            std::uniform_real_distribution<> dis_y(0.0, SCREEN_HEIGHT);
+            star.x = screen_width + 10.0f;
+            std::uniform_real_distribution<> dis_y(0.0, screen_height);
             std::random_device rd;
             std::mt19937 gen(rd());
             star.y = dis_y(gen);
