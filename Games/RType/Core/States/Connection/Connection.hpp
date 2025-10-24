@@ -28,8 +28,4 @@ class Connection : public AGameState {
         virtual bool blocks_render() const override { return false; }
 
     private:
-        // InGame specific members
-        void createPlayer();
-        void createEnemySpawner();
-
 };

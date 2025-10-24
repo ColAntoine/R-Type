@@ -98,7 +98,7 @@ void CreditsState::setup_ui()
         .text("BACK TO SETTINGS")
         .red()
         .textColor(WHITE)
-        .fontSize(24)
+        .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
         .onClick([this]() {
             this->play_back_settings();

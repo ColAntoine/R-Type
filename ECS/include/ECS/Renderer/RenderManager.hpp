@@ -11,9 +11,6 @@
 #include "Batch/SpriteBatch.hpp"
 #include <raylib.h>
 
-#define BASE_WIDTH 1920
-#define BASE_HEIGHT 1080
-
 class RenderManager {
     public:
         class ScreenInfos {
