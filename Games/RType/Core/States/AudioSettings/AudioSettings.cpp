@@ -2,6 +2,8 @@
 #include "AudioSettings.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "UI/Components/GlitchButton.hpp"
+#include "UI/ThemeManager.hpp"
 #include <iostream>
 
 void AudioSettingsState::enter()
@@ -38,14 +40,18 @@ void AudioSettingsState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
-    auto backButton = ButtonBuilder()
+    auto &theme = ThemeManager::instance().getTheme();
+
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(11), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK TO SETTINGS")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             if (this->_stateManager) {
                 this->_stateManager->pop_state();
@@ -62,20 +68,22 @@ void AudioSettingsState::setup_ui()
         .centered(renderManager.scalePosY(-37))
         .text("General volume")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto generalEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(generalEntity, UI::UIComponent(general));
 
-    auto downGeneralButton = ButtonBuilder()
+    auto downGeneralButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(18))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("-")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Decrease general volume button clicked" << std::endl;
         })
@@ -84,14 +92,16 @@ void AudioSettingsState::setup_ui()
     auto downGeneralButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(downGeneralButtonEntity, UI::UIComponent(downGeneralButton));
 
-    auto upGeneralButton = ButtonBuilder()
+    auto upGeneralButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(18))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("+")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Increase general volume button clicked" << std::endl;
         })
@@ -105,20 +115,22 @@ void AudioSettingsState::setup_ui()
         .centered(renderManager.scalePosY(-15))
         .text("Music volume")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto musicEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(musicEntity, UI::UIComponent(music));
 
-    auto downMusicButton = ButtonBuilder()
+    auto downMusicButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(40))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("-")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Decrease music button clicked" << std::endl;
         })
@@ -127,14 +139,16 @@ void AudioSettingsState::setup_ui()
     auto downMusicButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(downMusicButtonEntity, UI::UIComponent(downMusicButton));
 
-    auto upMusicButton = ButtonBuilder()
+    auto upMusicButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(40))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("+")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Increase music button clicked" << std::endl;
         })
@@ -148,20 +162,22 @@ void AudioSettingsState::setup_ui()
         .centered(renderManager.scalePosY(7))
         .text("Game sound volume")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto sfxEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(sfxEntity, UI::UIComponent(sfx));
 
-    auto downSfxButton = ButtonBuilder()
+    auto downSfxButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(62))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("-")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Decrease sfx button clicked" << std::endl;
         })
@@ -170,14 +186,16 @@ void AudioSettingsState::setup_ui()
     auto downSfxButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(downSfxButtonEntity, UI::UIComponent(downSfxButton));
 
-    auto upSfxButton = ButtonBuilder()
+    auto upSfxButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(62))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
         .text("+")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             std::cout << "Increase sfx button clicked" << std::endl;
         })

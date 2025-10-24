@@ -6,6 +6,7 @@
 */
 
 #include "GlitchButton.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 namespace RType {
     // Initialize static class variables with default values
@@ -53,11 +54,13 @@ namespace RType {
     }
 
     void GlitchButton::drawButtonText() const {
+        RenderManager& renderManager = RenderManager::instance();
+        Font font = renderManager.get_font();
         Color text_color = _style.getTextColor();
         Vector2 pos = _position;
         Vector2 size = _size;
 
-        Vector2 text_size = MeasureTextEx(GetFontDefault(), getText().c_str(), _style.getFontSize(), 1.0f);
+        Vector2 text_size = MeasureTextEx(font, getText().c_str(), _style.getFontSize(), 1.0f);
         float text_x = pos.x + (size.x - text_size.x) / 2.0f;
         float text_y = pos.y + (size.y - text_size.y) / 2.0f;
 
@@ -69,16 +72,16 @@ namespace RType {
 
             // RGB split effect
             Color rcol = {255, 50, 80, text_color.a};
-            DrawTextEx(GetFontDefault(), getText().c_str(),
+            DrawTextEx(font, getText().c_str(),
                       {text_x + jitter_x + 1, text_y + jitter_y},
                       _style.getFontSize(), 1.0f, rcol);
 
             Color gcol = {0, 255, 156, static_cast<unsigned char>(text_color.a * 0.6f)};
-            DrawTextEx(GetFontDefault(), getText().c_str(),
+            DrawTextEx(font, getText().c_str(),
                       {text_x - jitter_x - 1, text_y - jitter_y},
                       _style.getFontSize(), 1.0f, gcol);
 
-            DrawTextEx(GetFontDefault(), getText().c_str(),
+            DrawTextEx(font, getText().c_str(),
                       {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
 
             // Scanline flicker
@@ -92,7 +95,7 @@ namespace RType {
                 text_x += 1;
                 text_y += 1;
             }
-            DrawTextEx(GetFontDefault(), getText().c_str(),
+            DrawTextEx(font, getText().c_str(),
                       {text_x, text_y}, _style.getFontSize(), 1.0f, text_color);
         }
     }
