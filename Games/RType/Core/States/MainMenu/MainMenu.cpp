@@ -107,7 +107,7 @@ void MainMenuState::setup_ui()
         .text("SOLO MODE")
         .color(Color{75, 174, 204, 255})
         .textColor(WHITE)
-        .fontSize(24)
+        .fontSize(renderManager.scaleSizeW(3))
         .border(2, WHITE)
         .onClick([this]() {
             this->play_solo();
@@ -123,7 +123,7 @@ void MainMenuState::setup_ui()
         .text("COOP MODE")
         .color(Color{75, 174, 204, 255})
         .textColor(WHITE)
-        .fontSize(24)
+        .fontSize(renderManager.scaleSizeW(3))
         .border(2, WHITE)
         .onClick([this]() {
             this->play_coop();
@@ -139,7 +139,7 @@ void MainMenuState::setup_ui()
         .text("SETTINGS")
         .color(Color{75, 174, 204, 255})
         .textColor(WHITE)
-        .fontSize(24)
+        .fontSize(renderManager.scaleSizeW(3))
         .border(2, WHITE)
         .onClick([this]() {
             this->play_settings();
@@ -155,7 +155,7 @@ void MainMenuState::setup_ui()
         .text("QUIT GAME")
         .red()
         .textColor(WHITE)
-        .fontSize(24)
+        .fontSize(renderManager.scaleSizeW(3))
         .border(2, WHITE)
         .onClick([this]() {
             this->play_quit();

@@ -46,6 +46,7 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::InGameHud: return "InGameHud";
         case IGameState::GameStateType::Connection: return "Connection";
         case IGameState::GameStateType::Credits: return "Credits";
+        case IGameState::GameStateType::Lobby: return "Lobby";
         default: return "Unknown";
     }
 }

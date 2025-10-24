@@ -26,7 +26,8 @@ public:
         InGameHud,
         Connection,
         SettingsPanel,
-        Credits
+        Credits,
+        Lobby
     };
 
     virtual ~IGameState() = default;

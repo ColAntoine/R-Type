@@ -120,6 +120,8 @@ void Connection::setup_ui()
         .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
         .onClick([this]() {
+            // ? THIS IS PRINTED 2 times ?
+            std::cout << "++++++++TEST++++++++++" << std::endl;
             if (this->_stateManager) {
                 this->_stateManager->pop_state();
                 this->_stateManager->pop_state();
@@ -140,7 +142,11 @@ void Connection::setup_ui()
         .textColor(WHITE)
         .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
-        .onClick([]() {
+        .onClick([this]() {
+            if (_stateManager) {
+                _stateManager->pop_state();
+                _stateManager->push_state("Lobby");
+            }
             // Connection logic will be implemented here
         })
         .build(winInfos.getWidth(), winInfos.getHeight());

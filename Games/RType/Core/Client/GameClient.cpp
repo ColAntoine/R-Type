@@ -10,6 +10,7 @@
 #include "Core/States/Settings/Settings.hpp"
 #include "Core/States/SettingsPanel/SettingsPanel.hpp"
 #include "Core/States/Credits/Credits.hpp"
+#include "Core/States/Lobby/Lobby.hpp"
 
 #include "Constants.hpp"
 
@@ -36,6 +37,7 @@ void GameClient::register_states() {
     _stateManager.register_state<Connection>("Connection");
     _stateManager.register_state<SettingsPanelState>("SettingsPanel");
     _stateManager.register_state<CreditsState>("Credits");
+    _stateManager.register_state<Lobby>("Lobby");
 }
 
 bool GameClient::init()
