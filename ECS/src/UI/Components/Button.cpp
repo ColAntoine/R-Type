@@ -6,6 +6,7 @@
 */
 
 #include "ECS/UI/Components/Button.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 namespace UI {
     void UIButton::update(float delta_time) {
@@ -95,15 +96,16 @@ namespace UI {
     }
 
     void UIButton::drawButtonText() const {
+        auto &renderManager = RenderManager::instance();
         if (_text.empty()) return;
 
         Color text_color = getCurrentTextColor();
 
         // Calculate text position to center it in the button
-        Vector2 textSize = MeasureTextEx(GetFontDefault(), _text.c_str(), _style.getFontSize(), 1.0f);
+        Vector2 textSize = MeasureTextEx(renderManager.get_font(), _text.c_str(), _style.getFontSize(), 1.0f);
         float textX = _position.x + (_size.x - textSize.x) / 2.0f;
         float textY = _position.y + (_size.y - textSize.y) / 2.0f;
 
-        DrawTextEx(GetFontDefault(), _text.c_str(), {textX, textY}, _style.getFontSize(), 1.0f, text_color);
+        DrawTextEx(renderManager.get_font(), _text.c_str(), {textX, textY}, _style.getFontSize(), 1.0f, text_color);
     }
 }

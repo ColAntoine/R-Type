@@ -22,6 +22,7 @@
 #include <atomic>
 #include <thread>
 #include <chrono>
+#include <string>
 
 auto &renderManager = RenderManager::instance();
 
@@ -52,6 +53,12 @@ bool GameClient::init()
     std::cout << "GameClient::init" << std::endl;
 
     renderManager.init("R-Type");
+
+    std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
+    if (!renderManager.load_font(fontPath.c_str())) {
+        std::cerr << "[GameClient] Failed to load font: " << fontPath << std::endl;
+        std::cerr << "Using default font." << std::endl;
+    }
 
     if (!renderManager.is_window_ready()) {
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;

@@ -139,7 +139,12 @@ int RenderManager::get_fps() const
 
 void RenderManager::draw_text(const char *text, int posX, int posY, int fontSize, Color color) const
 {
-    DrawText(text, posX, posY, fontSize, color);
+    if (_font.texture.id != 0) {
+        DrawTextEx(_font, text, {static_cast<float>(posX), static_cast<float>(posY)},
+                   static_cast<float>(fontSize), 1.0f, color);
+    } else {
+        DrawText(text, posX, posY, fontSize, color);
+    }
 }
 
 bool RenderManager::is_window_ready() const
@@ -150,4 +155,26 @@ bool RenderManager::is_window_ready() const
 bool RenderManager::window_should_close() const
 {
     return WindowShouldClose();
+}
+
+bool RenderManager::load_font(const char *fontPath)
+{
+    Font font = LoadFontEx(fontPath, 128, nullptr, 0);
+    if (font.texture.id == 0) {
+        std::cerr << "RenderManager: Failed to load font from " << fontPath << std::endl;
+        return false;
+    }
+    SetTextureFilter(font.texture, TEXTURE_FILTER_POINT);
+    std::cout << "RenderManager: Loaded font from " << fontPath << std::endl;
+    _font = font;
+    return true;
+}
+
+void RenderManager::unload_font()
+{
+    if (_font.texture.id != 0) {
+        UnloadFont(_font);
+        std::cout << "RenderManager: Unloaded font" << std::endl;
+        _font = Font{};
+    }
 }

@@ -6,6 +6,7 @@
 */
 
 #include "ECS/UI/Components/InputField.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 namespace UI {
     void UIInputField::update(float delta_time) {
@@ -127,6 +128,7 @@ namespace UI {
     }
 
     void UIInputField::drawInputText() const {
+        auto &renderManager = RenderManager::instance();
         std::string display_text = getDisplayText();
         Color text_color = getCurrentTextColor();
 
@@ -143,7 +145,7 @@ namespace UI {
         float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 
         DrawTextEx(
-            GetFontDefault(),
+            renderManager.get_font(),
             display_text.c_str(),
             {text_x, text_y},
             _style.getFontSize(),
@@ -153,6 +155,7 @@ namespace UI {
     }
 
     void UIInputField::drawCursor() const {
+        auto &renderManager = RenderManager::instance();
         std::string display_text = getDisplayText();
 
         // Calculate cursor position
@@ -160,7 +163,7 @@ namespace UI {
         float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 
         Vector2 text_size = MeasureTextEx(
-            GetFontDefault(),
+            renderManager.get_font(),
             display_text.c_str(),
             _style.getFontSize(),
             1.0f

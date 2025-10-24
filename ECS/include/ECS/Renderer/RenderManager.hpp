@@ -45,12 +45,15 @@ class RenderManager {
         void set_clear_color(Color color) { clear_color_ = color; }
         Color get_clear_color() const { return clear_color_; }
         ScreenInfos get_screen_infos() const { return _winInfos; }
+        Font get_font() const { return _font; }
 
         bool should_close() const;
         int get_fps() const;
         void draw_text(const char *text, int posX, int posY, int fontSize, Color color) const;
         bool is_window_ready() const;
         bool window_should_close() const;
+        bool load_font(const char *fontPath);
+        void unload_font();
 
         int scalePosX(int x) const;
         int scalePosY(int y) const;
@@ -71,4 +74,5 @@ class RenderManager {
         Camera2D_ECS camera_;
         SpriteBatch batch_;
         ScreenInfos _winInfos;
+        Font _font;
 };

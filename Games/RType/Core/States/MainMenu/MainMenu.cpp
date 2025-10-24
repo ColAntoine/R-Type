@@ -93,7 +93,7 @@ void MainMenuState::setup_ui()
 
     auto title = TextBuilder()
         .centered(renderManager.scalePosY(-20))
-        .text("R - TYPE")
+        .text("R-TYPE")
         .fontSize(renderManager.scaleSizeW(12))
         .textColor(WHITE)
         .build(winInfos.getWidth(), winInfos.getHeight());
