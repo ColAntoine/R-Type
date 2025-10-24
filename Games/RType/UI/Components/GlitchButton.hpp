@@ -69,7 +69,7 @@ namespace RType {
         }
 
         void drawButtonText() const override {
-            
+
             // if (.empty()) return;
 
             Color text_color = _style.getTextColor();

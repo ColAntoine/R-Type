@@ -57,6 +57,7 @@ void InGameState::update(float delta_time)
         return;
 
     _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
+    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
 }
 
 void InGameState::setup_ui()
