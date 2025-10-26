@@ -19,10 +19,8 @@
 Shoot::Shoot()
     : _shootType()
 {
-    // Register shoot functions for different weapon types
-    _shootType["bullet"] = [this](const ProjectileContext& ctx) {
-        shoot_base_bullets(ctx);
-    };
+    _shootType["bullet"] = [this](const ProjectileContext& ctx) { shootBaseBullets(ctx); };
+    _shootType["hardBullet"] = [this](const ProjectileContext& ctx) { shootHardBullets(ctx); };
 }
 
 void Shoot::checkShootIntention(registry & r)
@@ -145,7 +143,7 @@ void Shoot::checkEnnemyHits(registry &r)
     }
 }
 
-void Shoot::shoot_base_bullets(const ProjectileContext& ctx)
+void Shoot::shootBaseBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
@@ -156,6 +154,18 @@ void Shoot::shoot_base_bullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<lifetime>(projectile);
     ctx.r.emplace_component<Gravity>(projectile, 100.0f);
 }
+
+void Shoot::shootHardBullets(const ProjectileContext& ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<lifetime>(projectile);
+}
+
 
 void Shoot::update(registry& r, float dt) {
     checkShootIntention(r);

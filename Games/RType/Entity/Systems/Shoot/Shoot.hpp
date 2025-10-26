@@ -49,7 +49,8 @@ private:
     void checkEnnemyHits(registry & r);
 
     /* SHOOT FUNCTIONS */
-    void shoot_base_bullets(const ProjectileContext& ctx);
+    void shootBaseBullets(const ProjectileContext& ctx);
+    void shootHardBullets(const ProjectileContext& ctx);
 
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
 };
