@@ -15,6 +15,16 @@
 
 #include <raylib.h>
 #include <cmath>
+
+Shoot::Shoot()
+    : _shootType()
+{
+    // Register shoot functions for different weapon types
+    _shootType["bullet"] = [this](const ProjectileContext& ctx) {
+        shoot_base_bullets(ctx);
+    };
+}
+
 void Shoot::checkShootIntention(registry & r)
 {
     auto *ctrl_arr = r.get_if<controllable>();
@@ -38,7 +48,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
     if (!weaponArr || !posArr) return;
 
-    for (auto [weapon, pos, entity]: zipper(*weaponArr, *posArr)) {
+    for (auto [weapon, pos, entityId]: zipper(*weaponArr, *posArr)) {
         if (weapon._cooldown > 0.0f) {
             weapon._cooldown = std::max(0.0f, weapon._cooldown - dt);
         }
@@ -54,28 +64,21 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         float dirX = 1.0f;
         float dirY = 0.0f;
 
-        float life = 5.0f;
-        float radius = 4.0f;
-
-        if (colArr && colArr->has(static_cast<size_t>(entity))) {
-            auto &col = colArr->get(static_cast<size_t>(entity));
-            // With centered colliders (offset_x = -w/2), pos.x + offset_x + w == pos.x + w/2 (right edge)
+        if (colArr && colArr->has(static_cast<size_t>(entityId))) {
+            auto &col = colArr->get(static_cast<size_t>(entityId));
             spawnX = pos.x + col.offset_x + col.w;
-            // Spawn projectile vertically centered on entity position
             spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
-        auto projectile = r.spawn_entity();
 
-        r.emplace_component<Projectile>(projectile, Projectile(entity, weapon._damage, weapon._projectileSpeed, dirX, dirY, life, radius, true));
-        r.emplace_component<position>(projectile, spawnX, spawnY);
-        r.emplace_component<velocity>(projectile, dirX * weapon._projectileSpeed, dirY * weapon._projectileSpeed);
-        r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
-        r.emplace_component<lifetime>(projectile);
-        r.emplace_component<Gravity>(projectile, 100.0f);
+        ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY};
+
+        auto it = _shootType.find(weapon._projectileType);
+        if (it != _shootType.end()) {
+            it->second(ctx);
+        }
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;
         if (weapon._ammo > 0) --weapon._ammo;
-    // Mark that this weapon actually fired so other systems (e.g. network) can react
         weapon._justFired = true;
         if (!weapon._automatic) weapon._wantsToFire = false;
     }
@@ -140,6 +143,18 @@ void Shoot::checkEnnemyHits(registry &r)
             }
         }
     }
+}
+
+void Shoot::shoot_base_bullets(const ProjectileContext& ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<lifetime>(projectile);
+    ctx.r.emplace_component<Gravity>(projectile, 100.0f);
 }
 
 void Shoot::update(registry& r, float dt) {

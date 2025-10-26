@@ -23,9 +23,23 @@
 #include "ECS/Components.hpp"
 
 #include "Constants.hpp"
+#include <map>
+#include <functional>
+
+struct ProjectileContext {
+    registry& r;
+    entity owner_entity;
+    const Weapon& weapon;
+    float spawn_x;
+    float spawn_y;
+    float dir_x;
+    float dir_y;
+};
 
 class Shoot : public ISystem {
 public:
+    Shoot();
+    ~Shoot() override = default;
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "Shoot"; }
 
@@ -33,6 +47,11 @@ private:
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);
+
+    /* SHOOT FUNCTIONS */
+    void shoot_base_bullets(const ProjectileContext& ctx);
+
+    std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
 };
 
 extern "C" {
