@@ -47,10 +47,12 @@ private:
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);
+    void renderHitboxes(registry &r);
 
     /* SHOOT FUNCTIONS */
     void shootBaseBullets(const ProjectileContext& ctx);
     void shootHardBullets(const ProjectileContext& ctx);
+    void shootBigBullets(const ProjectileContext& ctx);
 
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
 };

@@ -15,12 +15,14 @@
 
 #include <raylib.h>
 #include <cmath>
+#include "ECS/Renderer/RenderManager.hpp"
 
 Shoot::Shoot()
     : _shootType()
 {
     _shootType["bullet"] = [this](const ProjectileContext& ctx) { shootBaseBullets(ctx); };
     _shootType["hardBullet"] = [this](const ProjectileContext& ctx) { shootHardBullets(ctx); };
+    _shootType["bigBullet"] = [this](const ProjectileContext& ctx) { shootBigBullets(ctx); };
 }
 
 void Shoot::checkShootIntention(registry & r)
@@ -68,11 +70,14 @@ void Shoot::spawnProjectiles(registry &r, float dt)
             spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
 
-        ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY};
+        // Shoot all weapon types in the vector
+        for (const auto& projType : weapon._projectileType) {
+            ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY};
 
-        auto it = _shootType.find(weapon._projectileType);
-        if (it != _shootType.end()) {
-            it->second(ctx);
+            auto it = _shootType.find(projType);
+            if (it != _shootType.end()) {
+                it->second(ctx);
+            }
         }
 
         weapon._cooldown = (weapon._fireRate > 0.0f) ? (1.0f / weapon._fireRate) : 1.0f;
@@ -99,11 +104,6 @@ void Shoot::checkEnnemyHits(registry &r)
         int pdmg = proj._damage;        // projectile damage
         std::size_t owner = proj._ownerId;  // projectile owner id (skip friendly fire)
 
-    // Compute projectile collision center including projectile offset along its direction
-    // (moves collision origin forward by radius so collision matches visual projectile tip)
-        float pcenterX = ppos.x + proj._dirX * pr;
-        float pcenterY = ppos.y + proj._dirY * pr;
-
         // If we have collider data for targets, iterate only entities that have Health+Position+Collider.
         // Use direct AABB extents (no half-width computation).
         for (auto [hlt, hpos, c, enemyEnt, targetEntity] : zipper(*healthArr, *posArr, *colArr, *enemyArr)) {
@@ -115,10 +115,10 @@ void Shoot::checkEnnemyHits(registry &r)
             float top    = hpos.y + c.offset_y;
             float bottom = hpos.y + c.offset_y + c.h;
 
-            float closestX = std::max(left, std::min(pcenterX, right));
-            float closestY = std::max(top, std::min(pcenterY, bottom));
-            float dx = pcenterX - closestX;
-            float dy = pcenterY - closestY;
+            float closestX = std::max(left, std::min(ppos.x, right));
+            float closestY = std::max(top, std::min(ppos.y, bottom));
+            float dx = ppos.x - closestX;
+            float dy = ppos.y - closestY;
             float dist2 = dx * dx + dy * dy;
 
             if (dist2 <= pr * pr) {
@@ -166,11 +166,42 @@ void Shoot::shootHardBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<lifetime>(projectile);
 }
 
+void Shoot::shootBigBullets(const ProjectileContext& ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage * 2, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 110.0f, true));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 1.0f, 1.0f, 0, false);
+    ctx.r.emplace_component<lifetime>(projectile);
+}
+
+void Shoot::renderHitboxes(registry &r)
+{
+    auto *projArr = r.get_if<Projectile>();
+    auto *posArr = r.get_if<position>();
+
+    if (!projArr || !posArr) return;
+
+    for (auto [proj, pos, projEntity] : zipper(*projArr, *posArr)) {
+        float pcenterX = pos.x;
+        float pcenterY = pos.y;
+
+        RenderManager::instance().draw_circle(
+            static_cast<int>(pcenterX),
+            static_cast<int>(pcenterY),
+            proj._radius,
+            RED
+        );
+    }
+}
 
 void Shoot::update(registry& r, float dt) {
     checkShootIntention(r);
     spawnProjectiles(r, dt);
     checkEnnemyHits(r);
+    // renderHitboxes(r);
 }
 
 extern "C" {

@@ -9,10 +9,11 @@
 
 #include "ECS/Components/IComponent.hpp"
 #include <string>
+#include <vector>
 
 struct Weapon : public IComponent {
     int _ownerId{-1};                        // entity id that owns the weapon (optional)
-    std::string _projectileType{"hardBullet"};   // identifier for which projectile to spawn
+    std::vector<std::string> _projectileType{"bullet", "hardBullet"};   // identifier for which projectile to spawn
     float _fireRate{3.f};                   // shots per second
     float _cooldown{0.0f};                   // seconds until next shot (runtime)
     int _damage{10};                          // base damage applied to projectile
