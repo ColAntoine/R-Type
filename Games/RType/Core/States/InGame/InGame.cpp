@@ -22,6 +22,8 @@ void InGameState::enter()
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
+        loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+        createPlayer();
     }
 
     loader.load_components_from_so("build/lib/libECS.so", reg);
@@ -42,8 +44,8 @@ void InGameState::enter()
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
     // TODO: Create a condition that only work in solo
-    // loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-    // createPlayer();
+    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+    createPlayer();
     setup_ui();
     _initialized = true;
 }
