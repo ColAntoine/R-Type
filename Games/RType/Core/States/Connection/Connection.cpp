@@ -34,14 +34,6 @@ void Connection::resume()
     std::cout << "[Connection] Resuming state" << std::endl;
 }
 
-void Connection::update(float delta_time)
-{
-    if  (!_initialized)
-        return;
-
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
-}
-
 void Connection::setup_ui()
 {
     std::cout << "[Connection] Setting up UI" << std::endl;
@@ -77,6 +69,7 @@ void Connection::setup_ui()
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter IP address")
         .backgroundColor(Color{50, 50, 50, 255})
+        .text("127.0.0.1")
         .textColor(WHITE)
         .placeholderColor(Color{150, 150, 150, 255})
         .border(2, Color{200, 200, 200, 255})
@@ -105,6 +98,7 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(10), renderManager.scalePosY(33))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter port")
+        .text("8080")
         .backgroundColor(Color{50, 50, 50, 255})
         .textColor(WHITE)
         .placeholderColor(Color{150, 150, 150, 255})

@@ -78,31 +78,31 @@ void InGameHudState::setup_ui()
     _registry.add_component<FPSText>(fpsTextent, FPSText());    // ? Tag to access it quickly
 
     auto weaponText = TextBuilder()
-        .at(10.f, winInfos.getWidth() - 85.f)
+        .at(10.f, winInfos.getHeight() - 85.f)
         .text("Weapon: Plasma Cannon")
         .textColor(YELLOW)
         .fontSize(30)
-    .build(winInfos.getWidth(), winInfos.getWidth());
+    .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto weaponTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(weaponTextent, UI::UIComponent(weaponText));
 
     auto ammoText = TextBuilder()
-        .at(10.f, winInfos.getWidth() - 55.f)
+        .at(10.f, winInfos.getHeight() - 55.f)
         .text("Ammo: 25/100")
         .textColor(WHITE)
         .fontSize(25)
-    .build(winInfos.getWidth(), winInfos.getWidth());
+    .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto ammoTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(ammoTextent, UI::UIComponent(ammoText));
 
     auto damageText = TextBuilder()
-        .at(10.f, winInfos.getWidth() - 30.f)
+        .at(10.f, winInfos.getHeight() - 30.f)
         .text("Damage: 45")
         .textColor(ORANGE)
         .fontSize(20)
-    .build(winInfos.getWidth(), winInfos.getWidth());
+    .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto damageTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(damageTextent, UI::UIComponent(damageText));

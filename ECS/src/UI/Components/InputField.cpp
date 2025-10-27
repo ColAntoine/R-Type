@@ -7,6 +7,7 @@
 
 #include "ECS/UI/Components/InputField.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+    #include <iostream>
 
 namespace UI {
     void UIInputField::update(float delta_time) {
@@ -126,6 +127,7 @@ namespace UI {
             border_color
         );
     }
+
 
     void UIInputField::drawInputText() const {
         auto &renderManager = RenderManager::instance();

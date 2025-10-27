@@ -75,6 +75,7 @@ void InGameState::update(float delta_time)
     registry& reg = _shared_registry ? *_shared_registry : _registry;
 
     loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
+    loader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
 }
 
 void InGameState::setup_ui()
@@ -96,14 +97,4 @@ void InGameState::createPlayer()
         componentFactory->create_component<Score>(_registry, _playerEntity);
         componentFactory->create_component<Health>(_registry, _playerEntity);
     }
-}
-
-void InGameState::createEnemySpawner()
-{
-    // auto componentFactory = _systemLoader.get_factory();
-
-    // auto enemySpawner = _registry.spawn_entity();
-    // if (componentFactory) {
-    //     componentFactory->create_component<>
-    // }
 }

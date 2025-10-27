@@ -107,9 +107,8 @@ void AnimationSystem::update(registry& r, float dt) {
 
             Vector2 origin = {0.0f, 0.0f};
 
-            // Use SpriteBatch instead of direct DrawTexturePro
-            auto& batch = RenderManager::instance().get_batch();
-            batch.draw(&texture, source, dest, origin, 0.0f, WHITE, 0);
+            // Use RenderManager wrapper to draw sprite
+            RenderManager::instance().draw_sprite(&texture, source, dest, origin, 0.0f, WHITE, 0);
         }
     }
 }

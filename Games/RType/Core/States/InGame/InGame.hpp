@@ -31,7 +31,6 @@ class InGameState : public AGameState {
     private:
         // InGame specific members
         void createPlayer();
-        void createEnemySpawner();
 
         entity _playerEntity;
 };

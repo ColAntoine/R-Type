@@ -7,6 +7,8 @@
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
+#include "Core/States/InGameBackground/InGameBackground.hpp"
+#include "Core/States/InGamePause/InGamePause.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
 #include "Core/States/Connection/Connection.hpp"
 #include "Core/States/Settings/Settings.hpp"
@@ -28,7 +30,7 @@
 
 auto &renderManager = RenderManager::instance();
 
-GameClient::GameClient() {}
+GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
 
 void GameClient::register_states() {
@@ -44,6 +46,7 @@ void GameClient::register_states() {
     });
 
     _stateManager.register_state<InGameHudState>("InGameHud");
+    _stateManager.register_state<InGameBackground>("InGameBackground");
     _stateManager.register_state<SettingsState>("Settings");
     _stateManager.register_state<Connection>("Connection");
     _stateManager.register_state<SettingsPanelState>("SettingsPanel");
@@ -52,13 +55,18 @@ void GameClient::register_states() {
     _stateManager.register_state<AudioSettingsState>("AudioSettings");
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
+    _stateManager.register_state<InGamePauseState>("InGamePause");
+
+    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
+    // });
 }
 
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init("R-Type");
+    renderManager.init("R-Type", _scale, !_windowed);
 
     std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
     if (!renderManager.load_font(fontPath.c_str())) {
@@ -122,7 +130,7 @@ void GameClient::run()
         if (network_manager_) network_manager_->process_pending();
         _stateManager.update(delta_time);
         _stateManager.render();
-        render_mgr.end_frame();
+        renderManager.end_frame();
 
         // Handle input
         _stateManager.handle_input();
