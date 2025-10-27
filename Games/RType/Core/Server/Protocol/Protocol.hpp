@@ -50,6 +50,7 @@ namespace RType::Protocol {
         CLIENT_DISCONNECT = 0x03,
         SERVER_DISCONNECT = 0x04,
         CLIENT_READY      = 0x07,
+        CLIENT_UNREADY    = 0x08,
         PING              = 0x05,
         PONG              = 0x06,
 
@@ -65,8 +66,8 @@ namespace RType::Protocol {
     enum class GameMessage : uint8_t {
         // Entity management
         ENTITY_CREATE     = 0xC0,
-    PLAYER_SPAWN      = 0xC3,
-    PLAYER_SPAWN_REMOTE = 0xC4,
+        PLAYER_SPAWN      = 0xC3,
+        PLAYER_SPAWN_REMOTE = 0xC4,
         ENTITY_UPDATE     = 0xC1,
         ENTITY_DESTROY    = 0xC2,
 

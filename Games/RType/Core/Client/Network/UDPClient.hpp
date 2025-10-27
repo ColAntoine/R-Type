@@ -27,9 +27,12 @@ class UdpClient {
         // Send a voluntary disconnect message to the server (best-effort)
         void send_disconnect(uint32_t player_id);
 
-    // Start/stop background receive loop. Handler invoked on each received message: (message_type, payload, size)
-    void start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler);
-    void stop_receive_loop(bool close_socket = true);
+        // Generic send method for sending raw packet data
+        void send_packet(const char* data, size_t length);
+
+        // Start/stop background receive loop. Handler invoked on each received message: (message_type, payload, size)
+        void start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler);
+        void stop_receive_loop(bool close_socket = true);
 
         // Helper to send an input packet (auto-includes session token and input sequence)
     private:

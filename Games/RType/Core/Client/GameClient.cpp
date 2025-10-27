@@ -1,6 +1,7 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "Core/Client/Network/ClientService.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
@@ -36,7 +37,12 @@ void GameClient::register_states() {
     // Register all available states
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
-    _stateManager.register_state<InGameState>("InGame");
+
+    // Register InGame with shared registry for multiplayer
+    _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);
+    });
+
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<SettingsState>("Settings");
     _stateManager.register_state<Connection>("Connection");
@@ -46,10 +52,6 @@ void GameClient::register_states() {
     _stateManager.register_state<AudioSettingsState>("AudioSettings");
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
-
-    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
-    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
-    // });
 }
 
 bool GameClient::init()
@@ -76,6 +78,11 @@ bool GameClient::init()
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
 
+    // Load components into shared registry BEFORE starting network manager
+    // This ensures components are registered when PLAYER_SPAWN messages arrive
+    std::cout << "[GameClient] Loading components into shared registry..." << std::endl;
+    ecs_loader_.load_components_from_so("build/lib/libECS.so", ecs_registry_);
+
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
     RType::Network::set_client(client);
@@ -84,6 +91,9 @@ bool GameClient::init()
     network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
     network_manager_->register_default_handlers();
     network_manager_->start();
+
+    // Set network manager in service for states to access
+    RType::Network::set_network_manager(network_manager_.get());
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;

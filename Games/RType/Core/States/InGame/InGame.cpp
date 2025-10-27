@@ -14,23 +14,37 @@ void InGameState::enter()
 {
     std::cout << "[InGame] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+    // Use shared registry if available (for multiplayer), otherwise use local registry
+    registry& reg = _shared_registry ? *_shared_registry : _registry;
+    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
 
-    _systemLoader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    if (_shared_registry) {
+        std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
+    } else {
+        std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
+    }
 
+    loader.load_components_from_so("build/lib/libECS.so", reg);
+    loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+
+    loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+
+    // Debug: Check how many entities exist in the registry
+    std::cout << "[InGame] Registry has entities at startup" << std::endl;
+
+    // TODO: Create a condition that only work in solo
+    // loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+    // createPlayer();
     setup_ui();
-    createPlayer();
     _initialized = true;
 }
 
@@ -54,7 +68,11 @@ void InGameState::update(float delta_time)
     if  (!_initialized)
         return;
 
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
+    // Use shared loader if available
+    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    registry& reg = _shared_registry ? *_shared_registry : _registry;
+
+    loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
 }
 
 void InGameState::setup_ui()
