@@ -18,6 +18,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
+#include "ECS/Components/Animation.hpp"
 
 #include "Entity/Components/Health/Health.hpp"
 

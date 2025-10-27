@@ -48,25 +48,25 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
     uint32_t net_id = next_network_id_++;
 
     r.emplace_component<position>(e, x, y);
-    r.emplace_component<collider>(e, 30.0f, 30.0f, -15.0f, -15.0f, false);
+    r.emplace_component<collider>(e, 65.0f, 132.0f, -32.5f, -66.0f, false);
     r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
     r.emplace_component<Health>(e, 15); // DEFAULT VALUE, TO CHANGE LATER
 
     switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
         case Enemy::EnemyAIType::BASIC:
-            r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 0, 0, 255);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -80.0f, 0.0f);
             break;
         case Enemy::EnemyAIType::SINE_WAVE:
-            r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 255, 0, 255);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -60.0f, 0.0f);
             break;
         case Enemy::EnemyAIType::FAST:
-            r.emplace_component<drawable>(e, 30.0f, 30.0f, 0, 0, 255, 255);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -120.0f, 0.0f);
             break;
         case Enemy::EnemyAIType::ZIGZAG:
-            r.emplace_component<drawable>(e, 30.0f, 30.0f, 255, 255, 0, 255);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -70.0f, 50.0f);
             break;
     }
@@ -78,7 +78,7 @@ void EnemySpawnSystem::spawn_random_enemy(registry& r) {
     auto& renderManager = RenderManager::instance();
     float screen_width = renderManager.get_screen_infos().getWidth();
     float screen_height = renderManager.get_screen_infos().getHeight();
-    
+
     uint8_t enemy_type = type_dist_(rng_);
     float spawn_x = screen_width + 50.0f;
     float spawn_y = y_dist_(rng_);

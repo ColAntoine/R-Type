@@ -185,7 +185,7 @@ void Shoot::shootParabolBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
     ctx.r.emplace_component<lifetime>(projectile);
     ctx.r.emplace_component<Gravity>(projectile, 500.0f);
     ctx.r.emplace_component<Parabol>(projectile, ctx.spawn_x, ctx.spawn_y, 200.0f, false);
@@ -195,7 +195,7 @@ void Shoot::shootParabolBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<Projectile>(projectile2, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile2, ctx.spawn_x, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile2, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile2, std::string(RTYPE_PATH_ASSETS) + "Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<animation>(projectile2, std::string(RTYPE_PATH_ASSETS) + "pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
     ctx.r.emplace_component<lifetime>(projectile2);
     ctx.r.emplace_component<Gravity>(projectile2, -500.0f);
     ctx.r.emplace_component<Parabol>(projectile2, ctx.spawn_x, ctx.spawn_y, 200.0f, true);
