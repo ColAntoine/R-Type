@@ -37,7 +37,7 @@ void Connection::update(float delta_time)
     if  (!_initialized)
         return;
 
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
+    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
 }
 
 void Connection::setup_ui()
