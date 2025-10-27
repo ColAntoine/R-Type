@@ -9,7 +9,7 @@
 
 class GameClient : public AGameCore {
     public:
-        GameClient(float scale = 1.0f);
+        GameClient(float scale = 1.0f, bool windowed = false);
         ~GameClient();
 
         bool init() override;
@@ -27,5 +27,6 @@ class GameClient : public AGameCore {
 
         GameStateManager _stateManager;
         float _scale;
+        bool _windowed;
         void register_states();
 };

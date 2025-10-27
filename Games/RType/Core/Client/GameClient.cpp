@@ -29,7 +29,7 @@
 
 auto &renderManager = RenderManager::instance();
 
-GameClient::GameClient(float scale) : _scale(scale) {}
+GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
 
 void GameClient::register_states() {
@@ -60,7 +60,7 @@ bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init("R-Type", _scale);
+    renderManager.init("R-Type", _scale, !_windowed);
 
     std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
     if (!renderManager.load_font(fontPath.c_str())) {
@@ -79,7 +79,6 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
-    _stateManager.push_state("InGamePause");
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();

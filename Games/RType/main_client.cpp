@@ -5,6 +5,7 @@
 int main(int argc, char *argv[])
 {
     float scale = 1.0f;
+    bool windowed = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -15,13 +16,15 @@ int main(int argc, char *argv[])
                 std::cerr << "Invalid scale value: " << argv[i] << std::endl;
                 return 1;
             }
+        } else if (arg == "-w" || arg == "--windowed") {
+            windowed = true;
         } else {
             std::cerr << "Unknown argument: " << arg << std::endl;
             return 1;
         }
     }
 
-    GameClient client(scale);
+    GameClient client(scale, windowed);
     if (!client.init())
         return 1;
     client.run();
