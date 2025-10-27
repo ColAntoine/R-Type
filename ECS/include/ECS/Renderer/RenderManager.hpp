@@ -32,6 +32,8 @@ class RenderManager {
 
         void init(const char *title);
         void init(const char *title, float scale);
+        void init(const char *title, bool windowed);
+        void init(const char *title, float scale, bool fullscreen);
         void shutdown();
 
         void begin_frame();
