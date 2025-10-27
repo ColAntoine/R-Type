@@ -145,10 +145,6 @@ void Lobby::setup_ui()
 }
 
 void Lobby::update_player_list(const std::vector<RType::Protocol::PlayerInfo>& players) {
-    for (size_t i = 0; i < players.size(); ++i) {
-        const auto& player = players[i];
-        std::string name(player.name, strnlen(player.name, sizeof(player.name)));
-    }
     current_players_ = players;
     rebuild_player_ui(players);
 }
