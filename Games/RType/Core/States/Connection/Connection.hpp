@@ -20,8 +20,6 @@ class Connection : public AGameState {
 
         void setup_ui() override;
 
-        void update(float delta_time) override;
-
         std::string get_name() const override { return "Connection"; }
 
         virtual bool blocks_update() const override { return false; }

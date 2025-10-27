@@ -30,13 +30,10 @@ void ParabolSys::handleParabols(registry &r)
         if (std::abs(y_distance) >= parabol._range && y_distance > 0 && !parabol._flickedUp) {
             parabol._flickedUp = true;
             gravity._force = -gravity._force;
-            // vel.vy /= 2;
         }
-        std::cout << (y_distance >= parabol._range) << " " <<  (y_distance < 0) << " " <<  parabol._flickedUp << std::endl;
         if (std::abs(y_distance) >= parabol._range && y_distance < 0 && parabol._flickedUp) {
             parabol._flickedUp = false;
             gravity._force = -gravity._force;
-            // vel.vy /= 2;
         }
     }
 }

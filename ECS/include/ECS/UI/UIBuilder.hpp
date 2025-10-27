@@ -282,6 +282,7 @@ inline std::shared_ptr<UI::UIText> UIBuilder<UI::UIText>::build(float screenWidt
             calculateX(screenWidth), calculateY(screenHeight), _width, _height, _placeholderText
         );
 
+        input->setText(_text);
         input->_style.setTextColor(_textColor);
         input->_style.setBackgroundColor(_backgroundColor);
         input->_style.setBorderColor(_borderColor);
