@@ -56,7 +56,7 @@ void RenderManager::init(const char *title, float scale)
             std::cout << "RenderManager: Using X11/GLX backend" << std::endl;
         }
 
-        // Initialize window with resizable flag
+        // Initialize window with fullscreen and resizable flags
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(100, 100, title);
 
@@ -88,14 +88,14 @@ void RenderManager::init(const char *title, float scale)
             SetWindowPosition(windowX, windowY);
 
             SetWindowMinSize(_winInfos.getWidth() / 2, _winInfos.getHeight() / 2);
-            SetWindowState(FLAG_WINDOW_RESIZABLE);
+            SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_FULLSCREEN_MODE);
         }
 
         if (_winInfos.getFps() > 0) {
             SetTargetFPS(this->_winInfos.getFps());
         }
 
-        std::cout << "RenderManager: Created window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() 
+        std::cout << "RenderManager: Created fullscreen window " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() 
                   << " @ " << this->_winInfos.getFps() << "Hz on monitor " << monitor << std::endl;
     } else {
         std::cout << "RenderManager: Using existing window" << std::endl;
@@ -148,6 +148,27 @@ void RenderManager::draw_text(const char *text, int posX, int posY, int fontSize
     } else {
         DrawText(text, posX, posY, fontSize, color);
     }
+}
+
+void RenderManager::draw_text_ex(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint) const {
+    DrawTextEx(font, text, position, fontSize, spacing, tint);
+}
+
+void RenderManager::draw_circle(int centerX, int centerY, float radius, Color color) {
+    DrawCircle(centerX, centerY, radius, color);
+}
+
+void RenderManager::draw_rectangle(int posX, int posY, int width, int height, Color color) {
+    DrawRectangle(posX, posY, width, height, color);
+}
+
+void RenderManager::draw_rectangle_lines_ex(Rectangle rec, float lineThick, Color color) {
+    DrawRectangleLinesEx(rec, lineThick, color);
+}
+
+void RenderManager::draw_sprite(Texture2D* texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint, int layer) {
+    if (!texture || texture->id == 0) return;
+    batch_.draw(texture, source, dest, origin, rotation, tint, layer);
 }
 
 bool RenderManager::is_window_ready() const

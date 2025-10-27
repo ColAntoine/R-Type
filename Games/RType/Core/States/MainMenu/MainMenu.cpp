@@ -45,8 +45,11 @@ void MainMenuState::play_solo()
 {
 
     if (this->_stateManager) {
+
+        this->_stateManager->pop_state();
         this->_stateManager->push_state("InGame");
         this->_stateManager->push_state("InGameHud");
+        this->_stateManager->push_state("InGameBackground");
     }
 }
 
@@ -59,19 +62,19 @@ void MainMenuState::play_coop()
     }
 }
 
+void MainMenuState::play_quit()
+{
+    if (this->_stateManager) {
+        this->_stateManager->clear_states();
+    }
+}
+
 void MainMenuState::play_settings()
 {
     if (this->_stateManager) {
         this->_stateManager->pop_state();
         this->_stateManager->push_state("SettingsPanel");
         this->_stateManager->push_state("Settings");
-    }
-}
-
-void MainMenuState::play_quit()
-{
-    if (this->_stateManager) {
-        this->_stateManager->clear_states();
     }
 }
 

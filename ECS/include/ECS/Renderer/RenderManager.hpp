@@ -48,6 +48,11 @@ class RenderManager {
         bool should_close() const;
         int get_fps() const;
         void draw_text(const char *text, int posX, int posY, int fontSize, Color color) const;
+        void draw_text_ex(Font font, const char *text, Vector2 position, float fontSize, float spacing, Color tint) const;
+        void draw_circle(int centerX, int centerY, float radius, Color color);
+        void draw_rectangle(int posX, int posY, int width, int height, Color color);
+        void draw_rectangle_lines_ex(Rectangle rec, float lineThick, Color color);
+        void draw_sprite(Texture2D* texture, Rectangle source, Rectangle dest, Vector2 origin, float rotation, Color tint, int layer = 0);
         bool is_window_ready() const;
         bool window_should_close() const;
         bool load_font(const char *fontPath);

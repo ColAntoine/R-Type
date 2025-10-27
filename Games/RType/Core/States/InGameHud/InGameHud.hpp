@@ -7,6 +7,8 @@
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 
+#include "UI/Components/GlitchButton.hpp"
+
 #include "Constants.hpp"
 
 class InGameHudState : public AGameState {
@@ -26,7 +28,7 @@ class InGameHudState : public AGameState {
 
         void update(float delta_time) override;
 
-        std::string get_name() const override { return "InGame"; }
+        std::string get_name() const override { return "InGameHud"; }
 
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }

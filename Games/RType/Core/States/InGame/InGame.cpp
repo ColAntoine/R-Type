@@ -28,6 +28,7 @@ void InGameState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
 
     setup_ui();
     createPlayer();
@@ -55,6 +56,7 @@ void InGameState::update(float delta_time)
         return;
 
     _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
+    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
 }
 
 void InGameState::setup_ui()
@@ -76,14 +78,4 @@ void InGameState::createPlayer()
         componentFactory->create_component<Score>(_registry, _playerEntity);
         componentFactory->create_component<Health>(_registry, _playerEntity);
     }
-}
-
-void InGameState::createEnemySpawner()
-{
-    // auto componentFactory = _systemLoader.get_factory();
-
-    // auto enemySpawner = _registry.spawn_entity();
-    // if (componentFactory) {
-    //     componentFactory->create_component<>
-    // }
 }

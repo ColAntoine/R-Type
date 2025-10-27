@@ -16,6 +16,7 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 void LifetimeSystem::update(registry& r, float dt) {
     auto *lifetime_arr = r.get_if<lifetime>();
@@ -23,6 +24,9 @@ void LifetimeSystem::update(registry& r, float dt) {
     auto *spawner_arr = r.get_if<spawner>();
 
     if (!lifetime_arr || !pos_arr) return;
+
+    auto& renderManager = RenderManager::instance();
+    int window_width = renderManager.get_screen_infos().getWidth();
 
     std::vector<entity> entities_to_remove;
 

@@ -9,6 +9,7 @@
 
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <cmath>
 #include <raylib.h>
 

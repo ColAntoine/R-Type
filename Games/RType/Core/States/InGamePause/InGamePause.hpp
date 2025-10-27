@@ -5,13 +5,19 @@
 #include "ECS/Components.hpp"
 
 #include "ECS/UI/UIBuilder.hpp"
+#include "ECS/Zipper.hpp"
+
+#include "UI/Components/GlitchButton.hpp"
 
 #include "Constants.hpp"
 
-class Connection : public AGameState {
+class InGamePauseState : public AGameState {
+
+    struct FPSText {}; // Tag struct for quick access to FPS text
+
     public:
-        Connection() = default;
-        ~Connection() override = default;
+        InGamePauseState() = default;
+        ~InGamePauseState() override = default;
 
         void enter() override;
         void exit() override;
@@ -20,10 +26,8 @@ class Connection : public AGameState {
 
         void setup_ui() override;
 
-        std::string get_name() const override { return "Connection"; }
+        std::string get_name() const override { return "InGamePause"; }
 
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }
-
-    private:
 };
