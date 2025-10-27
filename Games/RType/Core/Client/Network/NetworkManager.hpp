@@ -32,6 +32,9 @@ class NetworkManager {
         // Process pending jobs (call from GameClient::update or run)
         void process_pending();
 
+        // Access to handlers for state-specific callbacks
+        PlayerHandler& get_player_handler() { return player_handler_; }
+
     private:
         std::shared_ptr<UdpClient> client_;
         NetworkDispatcher dispatcher_;

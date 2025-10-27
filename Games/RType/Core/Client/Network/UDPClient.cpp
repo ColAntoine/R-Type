@@ -143,6 +143,18 @@ void UdpClient::send_disconnect(uint32_t player_id) {
     }
 }
 
+void UdpClient::send_packet(const char* data, size_t length) {
+    try {
+        if (!socket_.is_open()) {
+            std::cerr << "[UdpClient] Cannot send: socket is not open" << std::endl;
+            return;
+        }
+        socket_.send_to(asio::buffer(data, length), server_endpoint_);
+    } catch (const std::exception &e) {
+        std::cerr << "[UdpClient] send_packet error: " << e.what() << std::endl;
+    }
+}
+
 void UdpClient::start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler) {
     if (recv_running_.load()) return;
     recv_running_.store(true);

@@ -51,6 +51,9 @@ bool GameServer::init()
         server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     });
 
+    // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
+    server_ecs_->set_udp_server(server.get());
+
     server_ecs_->init("lib/libECS.so");
 
     // Start network with worker threads

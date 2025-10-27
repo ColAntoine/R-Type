@@ -1,6 +1,7 @@
 #include "PlayerHandler.hpp"
 #include <iostream>
 #include <cstring>
+#include <algorithm>
 #include "Core/Server/Protocol/Protocol.hpp"
 
 PlayerHandler::PlayerHandler(registry& registry, DLLoader& loader)
@@ -18,24 +19,6 @@ void PlayerHandler::on_player_join(const char* payload, size_t size) {
     const PlayerInfo* pi = reinterpret_cast<const PlayerInfo*>(payload);
     std::string name(pi->name, strnlen(pi->name, 32));
     std::cout << "[PlayerMsg] Player joined: id=" << pi->player_id << " name=" << name << std::endl;
-
-    // Create a local representation: spawn an entity with position only.
-    auto ent = registry_.spawn_entity();
-    // remember mapping from remote player id -> local entity
-    remote_player_map_[pi->player_id] = ent;
-    std::cout << "player_id" << pi->player_id << std::endl;
-    float spawn_x = 100.0f;
-    float spawn_y = 100.0f;
-
-    auto factory = loader_.get_factory();
-    if (factory) {
-        // Try to use position component factory if available
-        factory->create_component<position>(registry_, ent, spawn_x, spawn_y);
-        factory->create_component<animation>(registry_, ent, "Games/RType/Assets/dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-        return;
-    }
-
-    registry_.emplace_component<position>(ent, spawn_x, spawn_y);
 }
 
 void PlayerHandler::on_entity_create(const char* payload, size_t size) {
@@ -143,11 +126,70 @@ void PlayerHandler::on_player_quit(const char* payload, size_t size) {
     auto it = remote_player_map_.find(pid);
     if (it == remote_player_map_.end()) {
         std::cout << "[PlayerMsg] PLAYER_LEAVE for unknown player id=" << pid << std::endl;
+    } else {
+        entity ent = it->second;
+        registry_.kill_entity(ent);
+        remote_player_map_.erase(it);
+    }
+
+    // Remove player from cached player list
+    auto player_it = std::find_if(last_player_list_.begin(), last_player_list_.end(),
+        [pid](const RType::Protocol::PlayerInfo& p) { return p.player_id == pid; });
+
+    if (player_it != last_player_list_.end()) {
+        last_player_list_.erase(player_it);
+        if (client_list_callback_)
+            client_list_callback_(last_player_list_);
+    }
+}
+
+void PlayerHandler::on_client_list(const char* payload, size_t size) {
+    using RType::Protocol::ClientListUpdate;
+    using RType::Protocol::PlayerInfo;
+
+    if (!payload || size < sizeof(ClientListUpdate)) {
+        std::cerr << "[PlayerMsg] Invalid CLIENT_LIST payload" << std::endl;
         return;
     }
 
-    entity ent = it->second;
-    std::cout << "[PlayerMsg] Removing remote player entity for player_id=" << pid << " ent=" << static_cast<size_t>(ent) << std::endl;
-    registry_.kill_entity(ent);
-    remote_player_map_.erase(it);
+    ClientListUpdate clu;
+    memcpy(&clu, payload, sizeof(ClientListUpdate));
+
+    std::vector<PlayerInfo> players;
+    for (uint8_t i = 0; i < clu.player_count && i < 8; ++i) {
+        const PlayerInfo &pi = clu.players[i];
+        players.push_back(pi);
+    }
+
+    // Cache the player list
+    last_player_list_ = players;
+
+    // Invoke callback if registered
+    if (client_list_callback_) {
+        client_list_callback_(players);
+    }
+}
+
+void PlayerHandler::set_client_list_callback(ClientListCallback callback) {
+    client_list_callback_ = callback;
+
+    // Immediately invoke with cached data if available
+    if (callback && !last_player_list_.empty()) {
+        callback(last_player_list_);
+    }
+}
+
+void PlayerHandler::set_game_start_callback(GameStartCallback callback) {
+    game_start_callback_ = callback;
+}
+
+void PlayerHandler::on_game_start(const char* payload, size_t size) {
+    (void)payload; // unused
+    (void)size;    // unused
+
+    // Invoke callback if registered
+    if (game_start_callback_) {
+        std::cout << "[PlayerHandler] Invoking game start callback" << std::endl;
+        game_start_callback_();
+    }
 }

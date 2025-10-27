@@ -58,6 +58,14 @@ namespace RType::Network {
         void set_message_queue(class RType::Network::MessageQueue* queue) { message_queue_ = queue; }
 
         /**
+         * @brief Set callback to be invoked when game starts
+         * @param callback Function to call when all players are ready and game starts
+         */
+        void set_game_start_callback(std::function<void()> callback) {
+            game_start_callback_ = std::move(callback);
+        }
+
+        /**
          * @brief Send data to specific client
          * @param connection_id Client connection ID
          * @param data Data to send
@@ -158,6 +166,8 @@ namespace RType::Network {
         message_handler_type message_handler_;
         // Optional pointer to external message queue (not owned)
         RType::Network::MessageQueue* message_queue_ = nullptr;
+        // Callback invoked when game starts (all players ready)
+        std::function<void()> game_start_callback_;
         bool running_;
         uint16_t port_;
     };

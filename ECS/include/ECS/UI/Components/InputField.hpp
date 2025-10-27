@@ -75,6 +75,8 @@ namespace UI {
             _size = {width, height};
         }
 
+        std::string getText() { return _text; }
+
         // IUIComponent implementation
         void update(float delta_time) override;
         void render() override;
