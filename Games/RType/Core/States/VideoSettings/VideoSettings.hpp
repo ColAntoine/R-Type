@@ -3,7 +3,9 @@
 #include "Core/States/AGameState.hpp"
 #include "ECS/Entity.hpp"
 #include "ECS/Components.hpp"
+#include "UI/ColorPalette.hpp"
 #include <string>
+#include <tuple>
 
 class VideoSettingsState : public AGameState {
     public:
@@ -33,6 +35,7 @@ class VideoSettingsState : public AGameState {
     private:
         std::string resToString(const Resolution& res) const;
         void applyResChange(MoveDirection);
+        void applyColorChange(MoveDirection);
         void filter_available_resolutions(int monitorWidth, int monitorHeight);
         void set_current_resolution_index(int currentWidth, int currentHeight);
 
@@ -43,9 +46,8 @@ class VideoSettingsState : public AGameState {
         };
 
         size_t _colorModeIndex;
-        const std::vector<std::string> _availableColorModes = {
-            "Default",
+        const std::vector<std::tuple<std::string, ColorPalette>> _availableColorModes = {
+            {"Default", DefaultPalette},
+            {"BlackText", BlackText}
         };
-
-        // void apply_color_mode_change(MoveDirection direction);
 };

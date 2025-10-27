@@ -74,7 +74,6 @@ void VideoSettingsState::applyResChange(MoveDirection direction)
 {
     auto &renderManager = RenderManager::instance();
 
-    // std::cout << "Before: " << _resolutionIndex << std::endl;
     if (direction == MoveDirection::Left) {
         if (_resolutionIndex == 0) {
             _resolutionIndex = _availableResolution.size() - 1;
@@ -91,6 +90,30 @@ void VideoSettingsState::applyResChange(MoveDirection direction)
         _availableResolution[_resolutionIndex].width,
         _availableResolution[_resolutionIndex].height
     );
+
+    auto& eventBus = MessagingManager::instance().get_event_bus();
+    Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
+    eventBus.emit(themeEvent);
+}
+
+void VideoSettingsState::applyColorChange(MoveDirection direction)
+{
+    auto &theme = ThemeManager::instance();
+
+    if (direction == MoveDirection::Left) {
+        if (_colorModeIndex == 0) {
+            _colorModeIndex = _availableColorModes.size() - 1;
+        } else {
+            _colorModeIndex -= 1;
+        }
+    } else {
+        if (_colorModeIndex >= _availableColorModes.size() - 1)
+            _colorModeIndex = 0;
+        else
+            _colorModeIndex += 1;
+    }
+
+    theme.setTheme(std::get<1>(_availableColorModes[_colorModeIndex]));
 
     auto& eventBus = MessagingManager::instance().get_event_bus();
     Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
@@ -137,15 +160,15 @@ void VideoSettingsState::setup_ui()
     auto resolutionEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(resolutionEntity, UI::UIComponent(resolution));
 
-    // auto currentResolution = TextBuilder()
-    //     .centered(renderManager.scalePosY(-16))
-    //     .text(resToString(_availableResolutions[_currentResIndex]))
-    //     .fontSize(renderManager.scaleSizeW(3))
-    //     .textColor(theme.secondaryTextColor)
-    //     .build(winInfos.getWidth(), winInfos.getHeight());
+    auto currentResolution = TextBuilder()
+        .centered(renderManager.scalePosY(-16))
+        .text(resToString(_availableResolution[_resolutionIndex]))
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.secondaryTextColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
-    // auto currentResolutionEntity = this->_registry.spawn_entity();
-    // this->_registry.add_component<UI::UIComponent>(currentResolutionEntity, UI::UIComponent(currentResolution));
+    auto currentResolutionEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(currentResolutionEntity, UI::UIComponent(currentResolution));
 
     auto resLeftButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(28))
@@ -184,65 +207,61 @@ void VideoSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(resRightButtonEntity, UI::UIComponent(resRightButton));
 
     // COLOR SETTINGS
-    // auto colorMode = TextBuilder()
-    //     .centered(renderManager.scalePosY(-15))
-    //     .text("Color Mode")
-    //     .fontSize(renderManager.scaleSizeW(3))
-    //     .textColor(theme.textColor)
-    //     .build(winInfos.getWidth(), winInfos.getHeight());
+    auto colorMode = TextBuilder()
+        .centered(renderManager.scalePosY(-5))
+        .text("Color Mode")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
-    // auto currentColorMode = TextBuilder()
-    //     .centered(renderManager.scalePosY(0))
-    //     .text(_availableColorModes[_currentColorModeIndex])
-    //     .fontSize(renderManager.scaleSizeW(3))
-    //     .textColor(theme.secondaryTextColor)
-    //     .build(winInfos.getWidth(), winInfos.getHeight());
+    auto currentColorMode = TextBuilder()
+        .centered(renderManager.scalePosY(6))
+        .text(std::get<0>(_availableColorModes[_colorModeIndex]))
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.secondaryTextColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
-    // auto currentColorModeEntity = this->_registry.spawn_entity();
-    // this->_registry.add_component<UI::UIComponent>(currentColorModeEntity, UI::UIComponent(currentColorMode));
+    auto currentColorModeEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(currentColorModeEntity, UI::UIComponent(currentColorMode));
 
-    // auto colorModeEntity = this->_registry.spawn_entity();
-    // this->_registry.add_component<UI::UIComponent>(colorModeEntity, UI::UIComponent(colorMode));
+    auto colorModeEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeEntity, UI::UIComponent(colorMode));
 
-    // auto colorModeLeftButton = GlitchButtonBuilder()
-    //     .at(renderManager.scalePosX(30), renderManager.scalePosY(44))
-    //     .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
-    //     .text("<")
-    //     .color(theme.buttonColors.normal)
-    //     .textColor(theme.textColor)
-    //     .fontSize(renderManager.scaleSizeW(2))
-    //     .border(2, theme.buttonColors.border)
-    //     .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
-    //     .glitchParams(2.0f, 8.0f, true)
-    //     .onClick([this]() {
-    //         std::cout << "Changed color mode" << std::endl;
-    //         this->_stateManager->pop_state();
-    //         this->_stateManager->push_state("VideoSettings");
-    //     })
-    //     .build(winInfos.getWidth(), winInfos.getHeight());
+    auto colorModeLeftButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(30), renderManager.scalePosY(50))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text("<")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            this->applyColorChange(MoveDirection::Left);
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
-    // auto colorModeLeftButtonEntity = this->_registry.spawn_entity();
-    // this->_registry.add_component<UI::UIComponent>(colorModeLeftButtonEntity, UI::UIComponent(colorModeLeftButton));
+    auto colorModeLeftButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeLeftButtonEntity, UI::UIComponent(colorModeLeftButton));
 
-    // auto colorModeRightButton = GlitchButtonBuilder()
-    //     .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(44))
-    //     .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
-    //     .text(">")
-    //     .color(theme.buttonColors.normal)
-    //     .textColor(theme.textColor)
-    //     .fontSize(renderManager.scaleSizeW(2))
-    //     .border(2, theme.buttonColors.border)
-    //     .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
-    //     .glitchParams(2.0f, 8.0f, true)
-    //     .onClick([this]() {
-    //         std::cout << "Changed color mode" << std::endl;
-    //         this->_stateManager->pop_state();
-    //         this->_stateManager->push_state("VideoSettings");
-    //     })
-    //     .build(winInfos.getWidth(), winInfos.getHeight());
+    auto colorModeRightButton = GlitchButtonBuilder()
+        .at(renderManager.scalePosX(70) - renderManager.scaleSizeW(6), renderManager.scalePosY(50))
+        .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
+        .text(">")
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
+        .onClick([this]() {
+            this->applyColorChange(MoveDirection::Right);
+        })
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
-    // auto colorModeRightButtonEntity = this->_registry.spawn_entity();
-    // this->_registry.add_component<UI::UIComponent>(colorModeRightButtonEntity, UI::UIComponent(colorModeRightButton));
+    auto colorModeRightButtonEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(colorModeRightButtonEntity, UI::UIComponent(colorModeRightButton));
 }
 
 std::string VideoSettingsState::resToString(const Resolution& res) const
