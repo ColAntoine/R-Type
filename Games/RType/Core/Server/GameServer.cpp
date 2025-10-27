@@ -3,13 +3,18 @@
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include "ECS/Utils/Console.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <raylib.h>
 
-GameServer::GameServer()
+GameServer::GameServer(bool display, bool windowed, float scale)
     : port_(8080)
     , running_(false)
+    , display_(display)
+    , windowed_(windowed)
+    , scale_(scale)
 {
 }
 
@@ -56,6 +61,25 @@ bool GameServer::init()
 
     server_ecs_->init("lib/libECS.so");
 
+    // Load logic systems
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
+    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+
+    if (display_) {
+        RenderManager::instance().init("R-Type Server", scale_, !windowed_);
+        // Load render systems for display
+        server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
+        server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+    }
+
     // Start network with worker threads
     if (!network_manager_->start(2)) {
         std::cerr << Console::red("[GameServer] ") << "Failed to start NetworkManager" << std::endl;
@@ -87,6 +111,16 @@ void GameServer::run_tick_loop()
         // Run ECS systems (loader-managed)
         server_ecs_->tick(0.033f);
 
+        if (display_) {
+            RenderManager::instance().begin_frame();
+            // Update render systems
+            server_ecs_->GetDLLoader().update_all_systems(server_ecs_->GetRegistry(), 0.033f, DLLoader::RenderSystem);
+            RenderManager::instance().end_frame();
+            if (WindowShouldClose()) {
+                running_ = false;
+            }
+        }
+
         // Sleep until next tick
         auto elapsed = std::chrono::steady_clock::now() - tick_start;
         if (elapsed < tick_duration) {
@@ -116,6 +150,10 @@ void GameServer::shutdown()
     message_queue_.reset();
     network_manager_.reset();
     io_context_.reset();
+
+    if (display_) {
+        RenderManager::instance().shutdown();
+    }
 
     std::cout << Console::green("[GameServer] ") << "Shutdown complete" << std::endl;
 }

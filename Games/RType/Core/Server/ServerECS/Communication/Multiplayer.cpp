@@ -5,6 +5,8 @@
 #include "ECS/Components/InputBuffer.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Animation.hpp"
+#include "../../Constants.hpp"
 
 #include "Network/UDPServer.hpp"
 #include "Network/Session.hpp"
@@ -141,6 +143,7 @@ entity Multiplayer::spawn_player_entity(float x, float y) {
         ecs_.get_factory()->create_component<position>(registry, ent, x, y);
         ecs_.get_factory()->create_component<velocity>(registry, ent, 0.0f, 0.0f);
         ecs_.get_factory()->create_component<InputBuffer>(registry, ent);
+        ecs_.get_factory()->create_component<animation>(registry, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
     } else {
         std::cout << Console::yellow("[Multiplayer] ") << "Component factory not available; created entity without components" << std::endl;
     }

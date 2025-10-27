@@ -13,7 +13,7 @@ namespace RType::Network {
 
 class GameServer : public AGameCore {
 public:
-    GameServer();
+    GameServer(bool display = false, bool windowed = false, float scale = 1.0f);
     ~GameServer();
 
     bool init() override;
@@ -31,4 +31,7 @@ private:
 
     uint16_t port_;
     bool running_;
+    bool display_;
+    bool windowed_;
+    float scale_;
 };

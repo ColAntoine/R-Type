@@ -40,6 +40,7 @@ class ServerECS {
 
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
+        DLLoader& GetDLLoader() { return loader_; }
 
     private:
         DLLoader loader_;
