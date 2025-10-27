@@ -41,10 +41,10 @@ void AudioManager::update() {
 }
 
 void AudioManager::set_master_volume(float volume) {
-    master_volume_ = volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume);
+    master_volume_ = std::clamp(volume, 0.0f, 1.0f);
 
-    music_player_.set_volume(master_volume_);
-    sfx_player_.set_master_volume(master_volume_);
+    music_player_.setMasterVolume(music_player_.getMasterVolume() * master_volume_);
+    sfx_player_.setMasterVolume(sfx_player_.getMasterVolume() * master_volume_);
 }
 
 void AudioManager::mute() {

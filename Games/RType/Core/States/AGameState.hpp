@@ -13,6 +13,11 @@
 #include "Core/States/GameStateManager.hpp"
 class AGameState : public IGameState {
     public:
+        enum MoveDirection {
+            Left,
+            Right
+        };
+
         AGameState();
         virtual ~AGameState() override;
 

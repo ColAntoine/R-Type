@@ -3,6 +3,7 @@
 #include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -28,6 +29,7 @@
 
 auto &renderManager = RenderManager::instance();
 auto &messageManager = MessagingManager::instance();
+auto &audioManager = AudioManager::instance();
 
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
@@ -48,10 +50,6 @@ void GameClient::register_states() {
     _stateManager.register_state<AudioSettingsState>("AudioSettings");
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
-
-    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
-    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
-    // });
 }
 
 bool GameClient::init()
@@ -72,6 +70,7 @@ bool GameClient::init()
     }
 
     messageManager.init();
+    audioManager.init();
 
     // Register states
     register_states();

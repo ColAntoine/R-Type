@@ -7,38 +7,29 @@
 
 #pragma once
 
-#include <raylib.h>
-#include <string>
-#include <unordered_map>
+#include "ECS/Audio/ISoundPlayer.hpp"
 
-class MusicPlayer {
+
+class MusicPlayer : public ISoundPlayer {
     public:
         MusicPlayer();
         ~MusicPlayer();
 
-        void load(const std::string& name, const std::string& path);
-        void unload(const std::string& name);
-        void clear();
+        void load(const std::string& name, const std::string& path) override;
+        void unload(const std::string& name) override;
+        void clear() override;
 
-        void play(const std::string& name, bool loop = true);
-        void stop();
-        void pause();
-        void resume();
+        void play(const std::string& name, float volume = 1.0f) override;
+        void stopAll() override;
+
+        void setMasterVolume(float volume) override;
+        float getMasterVolume() const override { return _masterVolume; }
+
         void update();
 
-        void set_volume(float volume);
-        void fade_in(float duration);
-        void fade_out(float duration);
-
-        bool is_playing() const;
-        float get_volume() const { return volume_; }
-        std::string get_current() const { return current_music_; }
-
+        std::unordered_map<std::string, Music>& getMusicCache() { return _musicCache; }
+        void setMusicCache(const std::unordered_map<std::string, Music>& cache) { _musicCache = cache; }
     private:
-        std::unordered_map<std::string, Music> music_cache_;
-        std::string current_music_;
-        float volume_;
-        bool is_fading_;
-        float fade_target_;
-        float fade_speed_;
+        std::unordered_map<std::string, Music> _musicCache;
+        float _masterVolume;
 };

@@ -9,10 +9,6 @@
 
 class VideoSettingsState : public AGameState {
     public:
-        enum MoveDirection {
-            Left,
-            Right
-        };
         struct Resolution {
             int width;
             int height;

@@ -9,6 +9,7 @@
 
 #include "Music/MusicPlayer.hpp"
 #include "SFX/SFXPlayer.hpp"
+#include <algorithm>
 
 class AudioManager {
     public:

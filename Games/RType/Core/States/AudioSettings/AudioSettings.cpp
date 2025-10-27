@@ -5,6 +5,7 @@
 #include "UI/Components/GlitchButton.hpp"
 #include "UI/ThemeManager.hpp"
 #include <iostream>
+#include "ECS/Audio/AudioManager.hpp"
 
 void AudioSettingsState::enter()
 {
@@ -12,6 +13,16 @@ void AudioSettingsState::enter()
 
     _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+
+    auto &audioManager = AudioManager::instance();
+
+    _generalVolume = static_cast<int>(audioManager.get_master_volume() * 100);
+    _musicVolume = static_cast<int>(audioManager.get_music().getMasterVolume() * 100);
+    _sfxVolume = static_cast<int>(audioManager.get_sfx().getMasterVolume() * 100);
+
+    std::cout << "Initial General Volume: " << _generalVolume << std::endl;
+    std::cout << "Initial Music Volume: " << _musicVolume << std::endl;
+    std::cout << "Initial SFX Volume: " << _sfxVolume << std::endl;
 
     setup_ui();
     subscribe_to_ui_event();
@@ -34,6 +45,48 @@ void AudioSettingsState::pause()
 void AudioSettingsState::resume()
 {
     std::cout << "[AudioSettingsState] Resuming state" << std::endl;
+}
+
+void AudioSettingsState::applyGeneralVolumeChange(MoveDirection direction)
+{
+    auto &audioManager = AudioManager::instance();
+    float currentVolume = audioManager.get_master_volume();
+    float volumeStep = 0.05f;
+
+    if (direction == MoveDirection::Left) {
+        currentVolume -= volumeStep;
+    } else {
+        currentVolume += volumeStep;
+    }
+    audioManager.set_master_volume(currentVolume);
+}
+
+void AudioSettingsState::applyMusicVolumeChange(MoveDirection direction)
+{
+    auto &audioManager = AudioManager::instance();
+    float currentVolume = audioManager.get_music().getMasterVolume();
+    float volumeStep = 0.05f;
+
+    if (direction == MoveDirection::Left) {
+        currentVolume -= volumeStep;
+    } else {
+        currentVolume += volumeStep;
+    }
+    audioManager.get_music().setMasterVolume(currentVolume);
+}
+
+void AudioSettingsState::applySFXVolumeChange(MoveDirection direction)
+{
+    auto &audioManager = AudioManager::instance();
+    float currentVolume = audioManager.get_sfx().getMasterVolume();
+    float volumeStep = 0.05f;
+
+    if (direction == MoveDirection::Left) {
+        currentVolume -= volumeStep;
+    } else {
+        currentVolume += volumeStep;
+    }
+    audioManager.get_sfx().setMasterVolume(currentVolume);
 }
 
 void AudioSettingsState::setup_ui()
@@ -88,7 +141,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Decrease general volume button clicked" << std::endl;
+            this->applyGeneralVolumeChange(MoveDirection::Left);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -106,7 +159,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Increase general volume button clicked" << std::endl;
+            this->applyGeneralVolumeChange(MoveDirection::Right);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -135,7 +188,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Decrease music button clicked" << std::endl;
+            this->applyMusicVolumeChange(MoveDirection::Left);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -153,7 +206,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Increase music button clicked" << std::endl;
+            this->applyMusicVolumeChange(MoveDirection::Right);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -182,7 +235,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Decrease sfx button clicked" << std::endl;
+            this->applySFXVolumeChange(MoveDirection::Left);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -200,7 +253,7 @@ void AudioSettingsState::setup_ui()
         .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            std::cout << "Increase sfx button clicked" << std::endl;
+            this->applySFXVolumeChange(MoveDirection::Right);
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 

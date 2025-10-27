@@ -21,5 +21,11 @@ class AudioSettingsState : public AGameState {
         bool blocks_update() const override { return false; }
         bool blocks_render() const override { return false; }
     private:
-        // AudioSettingsState specific members
+        int _generalVolume = 0;
+        int _musicVolume = 0;
+        int _sfxVolume = 0;
+
+        void applyGeneralVolumeChange(MoveDirection direction);
+        void applyMusicVolumeChange(MoveDirection direction);
+        void applySFXVolumeChange(MoveDirection direction);
 };

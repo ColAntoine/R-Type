@@ -7,41 +7,26 @@
 
 #pragma once
 
-#include <raylib.h>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "ECS/Audio/ISoundPlayer.hpp"
 
-struct SoundInstance {
-    Sound* sound;
-    float volume;
-    bool is_3d;
-    Vector2 position;
-};
-
-class SFXPlayer {
+class SFXPlayer : public ISoundPlayer {
     public:
         SFXPlayer();
         ~SFXPlayer();
 
-        void load(const std::string& name, const std::string& path);
-        void unload(const std::string& name);
-        void clear();
+        void load(const std::string& name, const std::string& path) override;
+        void unload(const std::string& name) override;
+        void clear() override;
 
-        void play(const std::string& name, float volume = 1.0f);
-        void play_at(const std::string& name, Vector2 position, float max_distance = 100.0f);
-        void stop_all();
+        void play(const std::string& name, float volume = 1.0f) override;
+        void stopAll() override;
 
-        void set_master_volume(float volume);
-        void set_listener_position(Vector2 position);
+        void setMasterVolume(float volume) override;
+        float getMasterVolume() const override { return _masterVolume; }
 
-        float get_master_volume() const { return master_volume_; }
-        size_t get_sound_count() const { return sound_cache_.size(); }
-
+        std::unordered_map<std::string, Sound>& getSoundCache() { return _soundCache; }
+        void setSoundCache(const std::unordered_map<std::string, Sound>& cache) { _soundCache = cache; }
     private:
-        float calculate_3d_volume(Vector2 sound_pos, float max_distance);
-
-        std::unordered_map<std::string, Sound> sound_cache_;
-        float master_volume_;
-        Vector2 listener_position_;
+        std::unordered_map<std::string, Sound> _soundCache;
+        float _masterVolume;
 };
