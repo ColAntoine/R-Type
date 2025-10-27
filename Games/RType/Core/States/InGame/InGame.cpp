@@ -28,6 +28,7 @@ void InGameState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
 
     setup_ui();
     createPlayer();

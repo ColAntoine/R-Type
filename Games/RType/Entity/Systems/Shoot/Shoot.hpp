@@ -15,6 +15,7 @@
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Gravity/Gravity.hpp"
+#include "Entity/Components/Parabol/Parabol.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 
@@ -53,6 +54,7 @@ private:
     void shootBaseBullets(const ProjectileContext& ctx);
     void shootHardBullets(const ProjectileContext& ctx);
     void shootBigBullets(const ProjectileContext& ctx);
+    void shootParabolBullets(const ProjectileContext& ctx);
 
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
 };
