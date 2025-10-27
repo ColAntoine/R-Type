@@ -1,6 +1,7 @@
 #include "InGame.hpp"
 #include "ECS/Systems/Position.hpp"
 #include "Entity/Systems/Draw/Draw.hpp"
+#include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
 
 #include "ECS/Components/Position.hpp"
@@ -29,6 +30,7 @@ void InGameState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
 
     setup_ui();
     createPlayer();
@@ -77,5 +79,6 @@ void InGameState::createPlayer()
         componentFactory->create_component<collider>(_registry, _playerEntity);
         componentFactory->create_component<Score>(_registry, _playerEntity);
         componentFactory->create_component<Health>(_registry, _playerEntity);
+        componentFactory->create_component<Player>(_registry, _playerEntity);
     }
 }

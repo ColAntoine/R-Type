@@ -13,8 +13,8 @@
 
 struct Weapon : public IComponent {
     int _ownerId{-1};                        // entity id that owns the weapon (optional)
-    std::vector<std::string> _projectileType{"parabol", "hardBullet"};   // identifier for which projectile to spawn
-    float _fireRate{30.f};                   // shots per second
+    std::vector<std::string> _projectileType{"parabol", "bigBullet"};   // identifier for which projectile to spawn
+    float _fireRate{10.f};                   // shots per second
     float _cooldown{0.0f};                   // seconds until next shot (runtime)
     int _damage{10};                          // base damage applied to projectile
     float _projectileSpeed{400.0f};          // default projectile speed

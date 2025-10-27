@@ -79,7 +79,6 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
-    _stateManager.push_state("InGamePause");
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
