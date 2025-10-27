@@ -12,6 +12,7 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
 
 class EnemyAISystem : public ISystem {
 private:
@@ -23,7 +24,7 @@ public:
 
     void set_world_height(float height) { world_height_ = height; }
     // Handle turret enemy behavior: move to 3/4 of the screen width then stop
-    void turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, float dt);
+    void turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, float dt, entity ent, registry &r);
 };
 
 extern "C" {

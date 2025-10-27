@@ -24,6 +24,7 @@ Shoot::Shoot()
     _shootType["hardBullet"] = [this](const ProjectileContext& ctx) { shootHardBullets(ctx); };
     _shootType["bigBullet"] = [this](const ProjectileContext& ctx) { shootBigBullets(ctx); };
     _shootType["parabol"] = [this](const ProjectileContext& ctx) { shootParabolBullets(ctx); };
+    _shootType["enemy"] = [this](const ProjectileContext& ctx) { shootEnemyBullets(ctx); };
 }
 
 void Shoot::checkShootIntention(registry & r)
@@ -55,6 +56,9 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         }
 
         if (!weapon._wantsToFire || weapon._cooldown != 0.0f || weapon._ammo == 0) {
+            if (std::find(weapon._projectileType.begin(), weapon._projectileType.end(), "enemy") != weapon._projectileType.end()) {
+                continue;
+            }
             weapon._wantsToFire = false;
             continue;
         }
@@ -77,6 +81,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
             auto it = _shootType.find(projType);
             if (it != _shootType.end()) {
+                std::cout << "ouais" << std::endl;
                 it->second(ctx);
             }
         }
@@ -108,7 +113,7 @@ void Shoot::checkEnnemyHits(registry &r)
         // If we have collider data for targets, iterate only entities that have Health+Position+Collider.
         // Use direct AABB extents (no half-width computation).
         for (auto [hlt, hpos, c, enemyEnt, targetEntity] : zipper(*healthArr, *posArr, *colArr, *enemyArr)) {
-            if (projEntity == targetEntity) continue;
+            if (projEntity == targetEntity || !proj._friendly) continue;
 
             // Treat collider using its offset relative to the entity position
             float left   = hpos.x + c.offset_x;
@@ -201,6 +206,17 @@ void Shoot::shootParabolBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<Parabol>(projectile2, ctx.spawn_x, ctx.spawn_y, 200.0f, true);
 }
 
+void Shoot::shootEnemyBullets(const ProjectileContext& ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 4.0f, false));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
+    ctx.r.emplace_component<lifetime>(projectile);
+}
+
 void Shoot::renderHitboxes(registry &r)
 {
     auto *projArr = r.get_if<Projectile>();
@@ -222,9 +238,13 @@ void Shoot::renderHitboxes(registry &r)
 }
 
 void Shoot::update(registry& r, float dt) {
+    /* Player Shooting*/
     checkShootIntention(r);
     spawnProjectiles(r, dt);
     checkEnnemyHits(r);
+
+    /* Enemy Shooting*/
+
     // renderHitboxes(r);
 }
 
