@@ -135,7 +135,6 @@ namespace UI {
         Color text_color = getCurrentTextColor();
 
         // Show placeholder if empty
-        std::cout << "display text: " << display_text << std::endl;
         if (display_text.empty() && !_placeholder.empty()) {
             display_text = _placeholder;
             text_color = _style.getPlaceholderColor();
@@ -186,7 +185,6 @@ namespace UI {
     }
 
     std::string UIInputField::getDisplayText() const {
-        std::cout << _text << std::endl;
         if (_is_password && !_text.empty()) {
             return std::string(_text.length(), '*');
         }
