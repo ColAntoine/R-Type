@@ -20,7 +20,7 @@
 PowerUpSys::PowerUpSys()
     : rng_(std::random_device{}()),
       x_dist_(0.0f, 800.0f),
-      powerup_type_dist_(0, 2)
+      powerup_type_dist_(0, 3)
 {
 
 }
@@ -129,8 +129,19 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp)
             std::cout << "Applied WAEPON_COOLDOWN powerup\n";
             break;
         case WEAPON_NEW:
-            weapon._projectileType.push_back("bigBullet");
-            std::cout << "Applied WEAPON_NEW powerup\n";
+            {
+                std::array<std::string, 4> bulletTypes = {"hardBullet", "bullet", "bigBullet", "parabol"};
+                std::uniform_int_distribution<> bullet_dist(0, bulletTypes.size());
+                std::string selectedBullet = bulletTypes[bullet_dist(rng_)];
+
+                auto it = std::find(weapon._projectileType.begin(), weapon._projectileType.end(), selectedBullet);
+                if (it == weapon._projectileType.end()) {
+                    weapon._projectileType.push_back(selectedBullet);
+                    std::cout << "Applied WEAPON_NEW powerup: " << selectedBullet << "\n";
+                } else {
+                    std::cout << "WEAPON_NEW powerup already has: " << selectedBullet << "\n";
+                }
+            }
             break;
     }
 }
