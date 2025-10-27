@@ -7,6 +7,7 @@
 #include "Core/States/InGame/InGame.hpp"
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/InGameBackground/InGameBackground.hpp"
+#include "Core/States/InGamePause/InGamePause.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
 #include "Core/States/Connection/Connection.hpp"
 #include "Core/States/Settings/Settings.hpp"
@@ -48,6 +49,7 @@ void GameClient::register_states() {
     _stateManager.register_state<AudioSettingsState>("AudioSettings");
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
+    _stateManager.register_state<InGamePauseState>("InGamePause");
 
     // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
     //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
@@ -77,6 +79,7 @@ bool GameClient::init()
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
+    _stateManager.push_state("InGamePause");
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();

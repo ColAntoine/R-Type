@@ -7,6 +7,8 @@
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 
+#include "UI/Components/GlitchButton.hpp"
+
 #include "Constants.hpp"
 
 class InGameHudState : public AGameState {

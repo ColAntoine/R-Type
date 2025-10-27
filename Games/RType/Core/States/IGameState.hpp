@@ -25,6 +25,7 @@ public:
         Settings,
         InGameHud,
         InGameBackground,
+        InGamePause,
         Connection,
         SettingsPanel,
         Credits,
