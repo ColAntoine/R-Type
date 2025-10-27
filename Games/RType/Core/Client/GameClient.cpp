@@ -2,6 +2,7 @@
 #include "Network/UDPClient.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -26,6 +27,7 @@
 #include <string>
 
 auto &renderManager = RenderManager::instance();
+auto &messageManager = MessagingManager::instance();
 
 GameClient::GameClient() {}
 GameClient::~GameClient() {}
@@ -69,6 +71,8 @@ bool GameClient::init()
         return false;
     }
 
+    messageManager.init();
+
     // Register states
     register_states();
 
@@ -106,6 +110,8 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
+        messageManager.update();
+
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();
         render_mgr.begin_frame();
@@ -142,6 +148,8 @@ void GameClient::shutdown()
     if (renderManager.is_window_ready()) {
         renderManager.shutdown();
     }
+
+    messageManager.shutdown();
 
     _running = false;
 }

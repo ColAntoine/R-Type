@@ -25,7 +25,6 @@ class VideoSettingsState : public AGameState {
         void resume() override;
 
         void setup_ui() override;
-        // void update(float delta_time) override;
 
         std::string get_name() const override { return "VideoSettings"; }
 
@@ -33,20 +32,20 @@ class VideoSettingsState : public AGameState {
         bool blocks_render() const override { return false; }
     private:
         std::string resToString(const Resolution& res) const;
-        int _currentResIndex;
-        int _nextResIndex;
-        const std::vector<Resolution> _availableResolutions = {
+        void applyResChange(MoveDirection);
+        void filter_available_resolutions(int monitorWidth, int monitorHeight);
+        void set_current_resolution_index(int currentWidth, int currentHeight);
+
+        size_t _resolutionIndex;
+        std::vector<Resolution> _availableResolution = {
             {1280, 720},
-            {1920, 1080},
-            {2560, 1440},
+            {1920, 1080}
         };
 
-        int _currentColorModeIndex;
-        int _nextColorModeIndex;
+        size_t _colorModeIndex;
         const std::vector<std::string> _availableColorModes = {
             "Default",
         };
 
-        void apply_resolution_change(MoveDirection direction);
         // void apply_color_mode_change(MoveDirection direction);
 };

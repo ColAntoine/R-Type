@@ -34,7 +34,6 @@ namespace UI {
             _on_release();
         }
 
-        if ()
         _was_hovered_last_frame = is_hovered;
         _was_pressed_last_frame = is_pressed;
     }

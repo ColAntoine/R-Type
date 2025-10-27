@@ -18,12 +18,15 @@ void MenusBackgroundState::enter()
     this->_registry.register_component<UI::UIText>();
 
     setup_ui();
+    subscribe_to_ui_event();
     this->_initialized = true;
 }
 
 void MenusBackgroundState::exit()
 {
     std::cout << "[Menus Background] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     this->_initialized = false;
 }
 

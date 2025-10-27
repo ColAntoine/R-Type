@@ -52,6 +52,8 @@ class RenderManager {
         bool load_font(const char *fontPath);
         void unload_font();
         void set_window_size(int width, int height);
+        int get_monitor_width() const { return _monitorWidth; }
+        int get_monitor_height() const { return _monitorHeight; }
 
         int scalePosX(int x) const;
         int scalePosY(int y) const;
@@ -73,4 +75,6 @@ class RenderManager {
         SpriteBatch batch_;
         ScreenInfos _winInfos;
         Font _font;
+        int _monitorWidth = 0;
+        int _monitorHeight = 0;
 };

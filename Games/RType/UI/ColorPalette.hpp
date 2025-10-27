@@ -2,6 +2,7 @@
 
 #include "ECS/Renderer/RenderManager.hpp"
 #include <string>
+#include <tuple>
 
 struct ButtonColors {
     Color normal;
@@ -44,3 +45,9 @@ static const ColorPalette DefaultPalette = {
         .neonGlowColor = Color{255, 50, 50, 100}
     }
 };
+
+static const std::tuple<std::string, ColorPalette> AvailablePalettes[] = {
+    {"Default", DefaultPalette}
+};
+        // Placeholder for palette change logic
+        // This function can be expanded to adjust colors based on a global palette change

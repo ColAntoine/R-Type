@@ -37,7 +37,7 @@ int RenderManager::scaleSizeH(int percent) const
 void RenderManager::init(const char *title)
 {
     int monitor = 0;
-    float scale = 0.8f; // Useful for testing on smaller screens, in production set to 1.0f
+    float scale = 1.0f; // Useful for testing on smaller screens, in production set to 1.0f
 
     if (!IsWindowReady()) {
         // Detect display environment and set appropriate flags
@@ -71,6 +71,9 @@ void RenderManager::init(const char *title)
         _winInfos.setFps(GetMonitorRefreshRate(monitor));
         _winInfos.setHeight(GetMonitorHeight(monitor));
         _winInfos.setWidth(GetMonitorWidth(monitor));
+
+        _monitorHeight = _winInfos.getHeight();
+        _monitorWidth = _winInfos.getWidth();
 
         if (_winInfos.getWidth() > 0 && _winInfos.getHeight() > 0) {
             this->_winInfos.setHeight(_winInfos.getHeight() * scale);

@@ -13,12 +13,15 @@ void SettingsPanelState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     setup_ui();
+    subscribe_to_ui_event();
     _initialized = true;
 }
 
 void SettingsPanelState::exit()
 {
     std::cout << "[SettingsPanelState] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     _initialized = false;
 }
 

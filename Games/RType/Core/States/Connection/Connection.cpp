@@ -14,11 +14,14 @@ void Connection::enter()
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     setup_ui();
+    subscribe_to_ui_event();
     _initialized = true;
 }
 
 void Connection::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     _initialized = false;
 }
 

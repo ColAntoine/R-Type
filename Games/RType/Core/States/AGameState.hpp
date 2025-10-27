@@ -33,7 +33,10 @@ class AGameState : public IGameState {
 
         bool _initialized{false};
 
+        EventBus::CallbackId _uiEventCallbackId; // Used to unsubscribe
+
         void set_state_manager(GameStateManager* manager) override { _stateManager = manager; }
+        void subscribe_to_ui_event();
 };
 
 inline std::string state_type_to_string(IGameState::GameStateType type) {
