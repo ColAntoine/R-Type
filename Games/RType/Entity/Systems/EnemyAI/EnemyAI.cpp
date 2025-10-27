@@ -7,6 +7,7 @@
 
 #include "EnemyAI.hpp"
 #include <cmath>
+#include "ECS/Renderer/RenderManager.hpp"
 
 void EnemyAISystem::update(registry& r, float dt) {
     auto* enemies = r.get_if<Enemy>();
@@ -34,6 +35,9 @@ void EnemyAISystem::update(registry& r, float dt) {
                     if (vel.vy > 0) vel.vy = -vel.vy;
                 }
                 break;
+            case Enemy::EnemyAIType::TURRET:
+            turretEnnemyAi(enm, vel, pos, dt);
+            break;
         }
         if (pos.y < 50.0f && vel.vy < 0) {
             vel.vy = -vel.vy;
@@ -41,6 +45,22 @@ void EnemyAISystem::update(registry& r, float dt) {
         if (pos.y > world_height_ - 50.0f && vel.vy > 0) {
             vel.vy = -vel.vy;
         }
+    }
+}
+
+void EnemyAISystem::turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, float dt)
+{
+    auto &rm = RenderManager::instance();
+    float screen_width = rm.get_screen_infos().getWidth();
+    float target_x = screen_width * 0.75f;
+
+    if (pos.x > target_x) {
+        if (vel.vx > 0) vel.vx = -std::abs(vel.vx);
+    } else {
+        vel.vx = 0.0f;
+        pos.x = target_x;
+        vel.vy = 0.0f;
+        enm.timer = 0.0f;
     }
 }
 

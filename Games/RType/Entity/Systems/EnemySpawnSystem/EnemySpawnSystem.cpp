@@ -11,7 +11,7 @@
 
 EnemySpawnSystem::EnemySpawnSystem()
     : rng_(std::random_device{}()),
-      type_dist_(1, 4),
+      type_dist_(1, 5),
       y_dist_(50.0f, 700.0f)
 {
 }
@@ -68,6 +68,10 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
         case Enemy::EnemyAIType::ZIGZAG:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -70.0f, 50.0f);
+            break;
+        case Enemy::EnemyAIType::TURRET:
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<velocity>(e, -80.0f, 0.0f);
             break;
     }
 
