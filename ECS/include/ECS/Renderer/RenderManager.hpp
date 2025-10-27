@@ -31,6 +31,7 @@ class RenderManager {
         static RenderManager& instance();
 
         void init(const char *title);
+        void init(const char *title, float scale);
         void shutdown();
 
         void begin_frame();

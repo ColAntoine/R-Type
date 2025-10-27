@@ -9,7 +9,7 @@
 
 class GameClient : public AGameCore {
     public:
-        GameClient();
+        GameClient(float scale = 1.0f);
         ~GameClient();
 
         bool init() override;
@@ -26,5 +26,6 @@ class GameClient : public AGameCore {
         std::unique_ptr<NetworkManager> network_manager_;
 
         GameStateManager _stateManager;
+        float _scale;
         void register_states();
 };

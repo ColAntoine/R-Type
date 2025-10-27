@@ -27,7 +27,7 @@
 
 auto &renderManager = RenderManager::instance();
 
-GameClient::GameClient() {}
+GameClient::GameClient(float scale) : _scale(scale) {}
 GameClient::~GameClient() {}
 
 void GameClient::register_states() {
@@ -56,7 +56,7 @@ bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init("R-Type");
+    renderManager.init("R-Type", _scale);
 
     std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
     if (!renderManager.load_font(fontPath.c_str())) {
