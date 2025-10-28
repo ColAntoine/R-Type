@@ -36,6 +36,17 @@ namespace RType::Protocol {
         FRAGMENT = 0x02,    ///< Part of fragmented message
     };
 
+    /**
+     * @brief Input state flags (bitfield for PlayerInput)
+     */
+    enum class InputFlags : uint8_t {
+        NONE  = 0x00,
+        UP    = 0x01,  // Bit 0
+        DOWN  = 0x02,  // Bit 1
+        LEFT  = 0x04,  // Bit 2
+        RIGHT = 0x08,  // Bit 3
+    };
+
     // ============================================================================
     // Message Types
     // ============================================================================
@@ -74,6 +85,7 @@ namespace RType::Protocol {
         // Player actions
         PLAYER_JOIN       = 0xC5,
         PLAYER_LEAVE      = 0xC6,
+    PLAYER_INPUT      = 0xC9,        // Client input (arrow keys)
         POSITION_UPDATE   = 0xC7,
         PLAYER_SHOOT      = 0xC8,
 
@@ -179,6 +191,15 @@ namespace RType::Protocol {
         uint32_t entity_id;      ///< Entity ID
         float x, y;              ///< Position coordinates
         float vx, vy;            ///< Velocity (optional)
+        uint32_t timestamp;      ///< Client timestamp
+    } __attribute__((packed));
+
+    /**
+     * @brief Player input message (client -> server)
+     */
+    struct PlayerInput {
+        uint32_t player_token;   ///< Player session token
+        uint8_t input_state;     ///< Bitfield: bit 0=up, 1=down, 2=left, 3=right
         uint32_t timestamp;      ///< Client timestamp
     } __attribute__((packed));
 

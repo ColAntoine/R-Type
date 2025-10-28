@@ -206,3 +206,40 @@ void PlayerHandler::on_game_start(const char* payload, size_t size) {
         game_start_callback_();
     }
 }
+
+void PlayerHandler::on_position_update(const char* payload, size_t size) {
+    using RType::Protocol::PositionUpdate;
+
+    if (!payload || size < sizeof(PositionUpdate)) {
+        std::cerr << "[PlayerMsg] Invalid POSITION_UPDATE payload" << std::endl;
+        return;
+    }
+
+    PositionUpdate pu;
+    memcpy(&pu, payload, sizeof(pu));
+
+    // Find the entity by player_token (entity_id is actually player_token)
+    auto it = remote_player_map_.find(pu.entity_id);
+    if (it == remote_player_map_.end()) {
+        // This might be our own entity or an unknown player
+        return;
+    }
+
+    entity ent = it->second;
+
+    // Update position
+    auto* pos_arr = registry_.get_if<position>();
+    if (pos_arr && pos_arr->has(ent)) {
+        position& pos = (*pos_arr)[ent];
+        pos.x = pu.x;
+        pos.y = pu.y;
+    }
+
+    // Update velocity
+    auto* vel_arr = registry_.get_if<velocity>();
+    if (vel_arr && vel_arr->has(ent)) {
+        velocity& vel = (*vel_arr)[ent];
+        vel.vx = pu.vx;
+        vel.vy = pu.vy;
+    }
+}

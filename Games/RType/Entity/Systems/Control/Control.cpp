@@ -13,10 +13,16 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
 
 void ControlSystem::update(registry& r, float dt) {
     auto *ctrl_arr = r.get_if<controllable>();
     if (!ctrl_arr) return;
+    // If in multiplayer mode, input is sent to server instead of applied locally
+    auto* network_manager = RType::Network::get_network_manager();
+    if (network_manager) {
+        return;
+    }
 
     // Iterate all controllable entities and set/create their velocity component
     for (std::size_t i = 0; i < ctrl_arr->size(); ++i) {

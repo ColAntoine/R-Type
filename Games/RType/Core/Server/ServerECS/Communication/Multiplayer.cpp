@@ -6,6 +6,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Animation.hpp"
+#include <chrono>
 #include "../../Constants.hpp"
 
 #include "Network/UDPServer.hpp"
@@ -368,6 +369,59 @@ void Multiplayer::spawn_all_players() {
     }
 
     std::cout << Console::green("[Multiplayer] ") << "All players spawned!" << std::endl;
+}
+
+void Multiplayer::broadcast_positions() {
+    using RType::Protocol::PositionUpdate;
+    using RType::Protocol::GameMessage;
+
+    if (!udp_server_) return;
+
+    auto& registry = ecs_.GetRegistry();
+    auto* pos_arr = registry.get_if<position>();
+    auto* vel_arr = registry.get_if<velocity>();
+
+    if (!pos_arr || !vel_arr) return;
+
+    // Iterate through all session entities (players)
+    for (const auto& [session_id, player_ent] : ecs_.session_entity_map_) {
+        // Get the player token for this session
+        auto token_it = ecs_.session_token_map_.find(session_id);
+        if (token_it == ecs_.session_token_map_.end()) continue;
+
+        uint32_t player_token = token_it->second;
+
+        // Check if entity has position and velocity components
+        if (!pos_arr->has(player_ent)) continue;
+
+        auto& pos = (*pos_arr)[player_ent];
+
+        float vx = 0.0f, vy = 0.0f;
+        if (vel_arr->has(player_ent)) {
+            auto& vel = (*vel_arr)[player_ent];
+            vx = vel.vx;
+            vy = vel.vy;
+        }
+
+        // Create position update message
+        PositionUpdate pos_update;
+        pos_update.entity_id = player_token;
+        pos_update.x = pos.x;
+        pos_update.y = pos.y;
+        pos_update.vx = vx;
+        pos_update.vy = vy;
+        pos_update.timestamp = static_cast<uint32_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now().time_since_epoch()).count());
+
+        // Create properly formatted packet
+        auto packet = RType::Protocol::create_packet(
+            static_cast<uint8_t>(GameMessage::POSITION_UPDATE),
+            pos_update
+        );
+
+        // Broadcast to all clients
+        udp_server_->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+    }
 }
 
 void Multiplayer::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y) {
