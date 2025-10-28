@@ -1,6 +1,7 @@
 #include "InGame.hpp"
 #include "ECS/Systems/Position.hpp"
 #include "Entity/Systems/Draw/Draw.hpp"
+#include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
 
 #include "ECS/Components/Position.hpp"
@@ -8,13 +9,29 @@
 #include <string>
 #include <random>
 
-// INFOS:
-// It's a very basic implementation, must be upgraded.
-
 void InGameState::enter()
 {
     std::cout << "[InGame] Entering state" << std::endl;
 
+    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
+    _systemLoader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+
+    _systemLoader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
     // Use shared registry if available (for multiplayer), otherwise use local registry
     registry& reg = _shared_registry ? *_shared_registry : _registry;
     DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
@@ -116,17 +133,12 @@ void InGameState::createPlayer()
         componentFactory->create_component<position>(_registry, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
         std::cout << "[InGame] - position created at (" << PLAYER_SPAWN_X << ", " << PLAYER_SPAWN_Y << ")" << std::endl;
         componentFactory->create_component<animation>(_registry, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
-        std::cout << "[InGame] - animation created" << std::endl;
-        componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);      // ! SPEED TO BE REDUCED
-        std::cout << "[InGame] - controllable created" << std::endl;
+        componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);
         componentFactory->create_component<Weapon>(_registry, _playerEntity);
-        std::cout << "[InGame] - weapon created" << std::endl;
-        componentFactory->create_component<collider>(_registry, _playerEntity);
-        std::cout << "[InGame] - collider created" << std::endl;
+        componentFactory->create_component<collider>(_registry, _playerEntity, 100.f, 100.f, -50.f, -50.f);
         componentFactory->create_component<Score>(_registry, _playerEntity);
         std::cout << "[InGame] - score created" << std::endl;
         componentFactory->create_component<Health>(_registry, _playerEntity);
-        std::cout << "[InGame] - health created" << std::endl;
-        std::cout << "[InGame] Player creation completed!" << std::endl;
+        componentFactory->create_component<Player>(_registry, _playerEntity);
     }
 }
