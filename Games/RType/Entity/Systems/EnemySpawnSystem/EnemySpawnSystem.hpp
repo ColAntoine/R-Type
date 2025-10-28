@@ -18,6 +18,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
+#include "ECS/Components/Animation.hpp"
 
 #include "Entity/Components/Health/Health.hpp"
 
@@ -34,9 +35,6 @@ private:
     float spawn_timer_{0.0f};
     float spawn_interval_{3.0f};
     size_t max_enemies_{10};
-
-    float world_width_{SCREEN_WIDTH};
-    float world_height_{SCREEN_HEIGHT};
 
     std::mt19937 rng_;
     std::uniform_int_distribution<> type_dist_;

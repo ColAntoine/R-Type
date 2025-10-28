@@ -3,6 +3,8 @@
 #include <iostream>
 #include "ECS/Utils/Console.hpp"
 
+#include "Network/UDPServer.hpp"
+
 namespace RType::Network {
 
     ServerECS::ServerECS() {
@@ -25,6 +27,12 @@ namespace RType::Network {
 
     void ServerECS::set_message_queue(MessageQueue* q) {
         msgq_ = q;
+    }
+
+    void ServerECS::set_udp_server(UdpServer* server) {
+        if (multiplayer_) {
+            multiplayer_->set_udp_server(server);
+        }
     }
 
     void ServerECS::process_packets() {

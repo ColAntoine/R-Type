@@ -5,6 +5,8 @@
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/Components/InputField.hpp"
+#include "Core/Client/Network/ClientService.hpp"
+#include "ECS/Zipper.hpp"
 
 void Connection::enter()
 {
@@ -33,14 +35,6 @@ void Connection::pause()
 void Connection::resume()
 {
     std::cout << "[Connection] Resuming state" << std::endl;
-}
-
-void Connection::update(float delta_time)
-{
-    if  (!_initialized)
-        return;
-
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::RenderSystem);
 }
 
 void Connection::setup_ui()
@@ -78,6 +72,7 @@ void Connection::setup_ui()
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter IP address")
         .backgroundColor(Color{50, 50, 50, 255})
+        .text("127.0.0.1")
         .textColor(WHITE)
         .placeholderColor(Color{150, 150, 150, 255})
         .border(2, Color{200, 200, 200, 255})
@@ -86,6 +81,9 @@ void Connection::setup_ui()
 
     auto ipInputEntity = _registry.spawn_entity();
     _registry.add_component(ipInputEntity, UI::UIComponent(ipInput));
+    // register and tag this entity for quick access
+    _registry.register_component<Connection::IpFieldTag>();
+    _registry.add_component<Connection::IpFieldTag>(ipInputEntity, Connection::IpFieldTag());
 
     // Port Label
     auto portLabel = TextBuilder()
@@ -103,6 +101,7 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(10), renderManager.scalePosY(33))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter port")
+        .text("8080")
         .backgroundColor(Color{50, 50, 50, 255})
         .textColor(WHITE)
         .placeholderColor(Color{150, 150, 150, 255})
@@ -112,6 +111,8 @@ void Connection::setup_ui()
 
     auto portInputEntity = _registry.spawn_entity();
     _registry.add_component(portInputEntity, UI::UIComponent(portInput));
+    _registry.register_component<Connection::PortFieldTag>();
+    _registry.add_component<Connection::PortFieldTag>(portInputEntity, Connection::PortFieldTag());
 
     // Back Button (Red)
     auto backButton = ButtonBuilder()
@@ -146,11 +147,7 @@ void Connection::setup_ui()
         .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
         .onClick([this]() {
-            if (_stateManager) {
-                _stateManager->pop_state();
-                _stateManager->push_state("Lobby");
-            }
-            // Connection logic will be implemented here
+            this->connection_callback();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -183,5 +180,83 @@ void Connection::setup_ui()
 
     auto nameInputEntity = _registry.spawn_entity();
     _registry.add_component(nameInputEntity, UI::UIComponent(nameInput));
+    _registry.register_component<Connection::NameFieldTag>();
+    _registry.add_component<Connection::NameFieldTag>(nameInputEntity, Connection::NameFieldTag());
+}
 
+std::shared_ptr<UI::UIInputField> Connection::GetIpInput() {
+            auto* ui_comps = _registry.get_if<UI::UIComponent>();
+            auto* tag = _registry.get_if<IpFieldTag>();
+            if (!ui_comps || !tag) return nullptr;
+            for (auto [ui_comp, t, ent] : zipper(*ui_comps, *tag)) {
+                return std::dynamic_pointer_cast<UI::UIInputField>(ui_comp._ui_element);
+            }
+            return nullptr;
+        }
+
+std::shared_ptr<UI::UIInputField> Connection::GetPortInput() {
+    auto* ui_comps = _registry.get_if<UI::UIComponent>();
+    auto* tag = _registry.get_if<PortFieldTag>();
+    if (!ui_comps || !tag) return nullptr;
+    for (auto [ui_comp, t, ent] : zipper(*ui_comps, *tag)) {
+        return std::dynamic_pointer_cast<UI::UIInputField>(ui_comp._ui_element);
+    }
+    return nullptr;
+}
+
+std::shared_ptr<UI::UIInputField> Connection::GetNameInput() {
+    auto* ui_comps = _registry.get_if<UI::UIComponent>();
+    auto* tag = _registry.get_if<NameFieldTag>();
+    if (!ui_comps || !tag) return nullptr;
+    for (auto [ui_comp, t, ent] : zipper(*ui_comps, *tag)) {
+        return std::dynamic_pointer_cast<UI::UIInputField>(ui_comp._ui_element);
+    }
+    return nullptr;
+}
+
+void Connection::connection_callback()
+{
+    std::cout << "[Connection] Connect button clicked" << std::endl;
+    if (connecting_) {
+        std::cout << "[Connection] Connection already in progress, ignoring duplicate click." << std::endl;
+        return;
+    }
+    connecting_ = true;
+    auto client = RType::Network::get_client();
+    if (!client) {
+        std::cout << "[Lobby] No network client available" << std::endl;
+        connecting_ = false;
+        return;
+    }
+    auto ip_input = GetIpInput();
+    auto port_input = GetPortInput();
+    auto name_input = GetNameInput();
+
+    if (ip_input) { ServerIp_ = ip_input->getText(); }
+    if (port_input) { ServerPort_ = port_input->getText(); }
+    if (name_input) { PlayerName_ = name_input->getText(); }
+
+    uint16_t port = 0;
+    try {
+        int p = std::stoi(ServerPort_);
+        if (p <= 0 || p > 65535) throw std::out_of_range("port");
+        port = static_cast<uint16_t>(p);
+    } catch (...) {
+        std::cout << "[Connection] Invalid port: " << ServerPort_ << std::endl;
+        connecting_ = false;
+        return;
+    }
+
+    auto accept = client->connect(ServerIp_, port, PlayerName_, 1, 2000);
+    if (accept) {
+        std::cout << "[Lobby] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << std::endl;
+        if (_stateManager) {
+        _stateManager->pop_state();
+        _stateManager->push_state("Lobby");
+        }
+    } else {
+        std::cout << "[Lobby] Failed to connect to server." << std::endl;
+        // allow retry on failure
+        connecting_ = false;
+    }
 }

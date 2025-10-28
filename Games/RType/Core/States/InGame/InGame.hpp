@@ -14,6 +14,8 @@
 class InGameState : public AGameState {
     public:
         InGameState() = default;
+        InGameState(registry* shared_registry, DLLoader* shared_loader)
+            : AGameState(shared_registry, shared_loader) {}
         ~InGameState() override = default;
 
         void enter() override;
@@ -29,7 +31,6 @@ class InGameState : public AGameState {
     private:
         // InGame specific members
         void createPlayer();
-        void createEnemySpawner();
 
         entity _playerEntity;
 };

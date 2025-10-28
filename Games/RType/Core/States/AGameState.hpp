@@ -19,6 +19,7 @@ class AGameState : public IGameState {
         };
 
         AGameState();
+        AGameState(registry* shared_registry, DLLoader* shared_loader);
         virtual ~AGameState() override;
 
         void render() override;
@@ -35,6 +36,10 @@ class AGameState : public IGameState {
         GameStateManager* _stateManager;
         registry _registry;
         DLLoader _systemLoader;
+        
+        // Optional pointers to shared registry/loader (for states that need to share ECS)
+        registry* _shared_registry{nullptr};
+        DLLoader* _shared_loader{nullptr};
 
         bool _initialized{false};
 
@@ -52,6 +57,9 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::SettingsPanel: return "SettingsPanel";
         case IGameState::GameStateType::InGame: return "InGame";
         case IGameState::GameStateType::InGameHud: return "InGameHud";
+        case IGameState::GameStateType::InGameBackground: return "InGameBackground";
+        case IGameState::GameStateType::InGamePause: return "InGamePause";
+
         case IGameState::GameStateType::Connection: return "Connection";
         case IGameState::GameStateType::Credits: return "Credits";
         case IGameState::GameStateType::Lobby: return "Lobby";
