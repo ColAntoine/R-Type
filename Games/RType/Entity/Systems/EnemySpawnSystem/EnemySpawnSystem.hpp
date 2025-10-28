@@ -26,6 +26,10 @@
 
 #include <random>
 #include <memory>
+#include <functional>
+
+// Callback type for broadcasting entity spawns to clients
+using EnemySpawnCallback = std::function<void(entity, uint8_t, float, float)>;
 
 class EnemySpawnSystem : public ISystem {
 private:
@@ -41,6 +45,9 @@ private:
     std::uniform_real_distribution<> y_dist_;
 
     bool initialized_{false};
+    
+    // Callback to notify when an enemy is spawned (for server to broadcast)
+    EnemySpawnCallback spawn_callback_;
 
 public:
     EnemySpawnSystem();
@@ -57,12 +64,18 @@ public:
     
     // Seed the RNG with the registry's seed (for deterministic gameplay)
     void seed_from_registry(registry& r);
+    
+    // Set callback to be invoked when enemy spawns (for server broadcasting)
+    void set_spawn_callback(EnemySpawnCallback callback) { spawn_callback_ = std::move(callback); }
 
     size_t get_max_enemies() const { return max_enemies_; }
     float get_spawn_interval() const { return spawn_interval_; }
 private:
     void initialize_if_needed(registry& r);
 };
+
+// Global function to set enemy spawn callback (for server broadcasting)
+void set_global_enemy_spawn_callback(EnemySpawnCallback callback);
 
 extern "C" {
     std::unique_ptr<ISystem> create_system();

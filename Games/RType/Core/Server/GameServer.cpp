@@ -2,6 +2,7 @@
 #include "Network/NetworkManager.hpp"
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
+#include "ServerECS/Communication/Multiplayer.hpp"
 #include "ECS/Utils/Console.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "Core/Server/States/ServerLobby.hpp"
@@ -62,7 +63,8 @@ bool GameServer::init()
     // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
     server_ecs_->set_udp_server(server.get());
 
-    // Register game start callback with server
+    // Register game start callback with server (this will override the one in Multiplayer)
+    // We need to call both start_game() and ensure players are spawned
     server->set_game_start_callback([this]() {
         this->start_game();
     });
@@ -220,6 +222,11 @@ void GameServer::start_game()
         
         server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
         std::cout << Console::cyan("[GameServer] ") << "Game seed broadcasted to all clients" << std::endl;
+    }
+    
+    // Spawn all players (was previously done in Multiplayer callback that got overwritten)
+    if (server_ecs_->GetMultiplayer()) {
+        server_ecs_->GetMultiplayer()->spawn_all_players();
     }
     
     // Mark lobby as game started (for clients to know)

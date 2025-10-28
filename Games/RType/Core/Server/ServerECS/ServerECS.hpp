@@ -41,6 +41,9 @@ class ServerECS {
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
         DLLoader& GetDLLoader() { return loader_; }
+        
+        // Expose multiplayer for game start coordination
+        Multiplayer* GetMultiplayer() { return multiplayer_.get(); }
 
     private:
         DLLoader loader_;

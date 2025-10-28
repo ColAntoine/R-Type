@@ -368,4 +368,30 @@ void Multiplayer::spawn_all_players() {
     }
 
     std::cout << Console::green("[Multiplayer] ") << "All players spawned!" << std::endl;
-}} // namespace RType::Network
+}
+
+void Multiplayer::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y) {
+    if (!ecs_.send_callback_) return;
+    if (!udp_server_) return;
+    
+    RType::Protocol::EntityCreate ec{};
+    ec.entity_id = static_cast<uint32_t>(ent);
+    ec.entity_type = enemy_type;
+    ec.x = x;
+    ec.y = y;
+    ec.health = 15.0f;
+    
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_CREATE),
+        ec,
+        RType::Protocol::PacketFlags::RELIABLE
+    );
+    
+    // Broadcast to all connected clients
+    udp_server_->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+    
+    std::cout << Console::blue("[Multiplayer] ") << "Broadcasted enemy spawn: entity=" << ent 
+              << " type=" << (int)enemy_type << " pos=(" << x << ", " << y << ")" << std::endl;
+}
+
+} // namespace RType::Network
