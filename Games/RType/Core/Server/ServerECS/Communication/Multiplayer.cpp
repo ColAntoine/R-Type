@@ -55,6 +55,13 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
         return;
     }
 
+    // Check for PLAYER_INPUT game message
+    using RType::Protocol::GameMessage;
+    if (msg_type == static_cast<uint8_t>(GameMessage::PLAYER_INPUT)) {
+        handle_player_input(session_id, payload);
+        return;
+    }
+
     // Otherwise treat as game message / input
     handle_game_message(session_id, msg_type, payload);
 }
@@ -241,6 +248,44 @@ void Multiplayer::handle_client_disconnect(const std::string &session_id, const 
                 }
             }
         }
+    }
+}
+
+void Multiplayer::handle_player_input(const std::string &session_id, const std::vector<char> &payload) {
+    using RType::Protocol::PlayerInput;
+    using RType::Protocol::InputFlags;
+    using RType::Protocol::PositionUpdate;
+    using RType::Protocol::GameMessage;
+
+    if (payload.size() < sizeof(PlayerInput)) {
+        return;
+    }
+
+    PlayerInput input;
+    memcpy(&input, payload.data(), sizeof(PlayerInput));
+
+    // Find the player entity for this session
+    auto it = ecs_.session_entity_map_.find(session_id);
+    if (it == ecs_.session_entity_map_.end()) {
+        return;
+    }
+
+    entity player_ent = it->second;
+    auto& registry = ecs_.GetRegistry();
+
+    // Apply velocity based on input state
+    float speed = 300.0f; // Player movement speed
+    float vx = 0.0f, vy = 0.0f;
+
+    if (input.input_state & static_cast<uint8_t>(InputFlags::UP))    vy -= speed;
+    if (input.input_state & static_cast<uint8_t>(InputFlags::DOWN))  vy += speed;
+    if (input.input_state & static_cast<uint8_t>(InputFlags::LEFT))  vx -= speed;
+    if (input.input_state & static_cast<uint8_t>(InputFlags::RIGHT)) vx += speed;
+
+    // Update or create velocity component
+    auto* vel_arr = registry.get_if<velocity>();
+    if (vel_arr && vel_arr->has(player_ent)) {
+        (*vel_arr)[player_ent] = velocity(vx, vy);
     }
 }
 
