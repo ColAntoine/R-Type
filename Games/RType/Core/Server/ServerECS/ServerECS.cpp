@@ -98,7 +98,7 @@ namespace RType::Network {
                 }
             }
         } catch (...) {
-            // Silently catch exceptions during enemy broadcasting
+            std::cerr << Console::red("[ServerECS] ") << "Exception occurred during enemy broadcasting (details unavailable)" << std::endl;
         }
     }
 
