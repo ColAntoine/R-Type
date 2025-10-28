@@ -39,6 +39,9 @@ private:
     void updateAnimation(registry &r, float dt);
     bool pendingAnimation(registry &r);
 
+    void createArrow(registry &r);
+    void createText(registry &r);
+
     std::queue<PUpAnimation> _animationQueue;
     PUpAnimation _current;
     bool _isDone{true};
