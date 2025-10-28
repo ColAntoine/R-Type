@@ -81,6 +81,7 @@ namespace RType::Protocol {
         GAME_START        = 0xD0,
         GAME_END          = 0xD1,
         SCORE_UPDATE      = 0xD2,
+        GAME_SEED         = 0xD3,  ///< Random seed for deterministic gameplay
     };
 
     // ============================================================================
@@ -162,6 +163,13 @@ namespace RType::Protocol {
      */
     struct StartGame {
         uint32_t timestamp;      ///< Server timestamp when game starts
+    } __attribute__((packed));
+
+    /**
+     * @brief Game seed message for deterministic gameplay
+     */
+    struct GameSeed {
+        uint32_t seed;           ///< Random seed for game synchronization
     } __attribute__((packed));
 
     /**

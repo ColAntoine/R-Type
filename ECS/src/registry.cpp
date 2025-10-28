@@ -33,3 +33,16 @@ void registry::kill_entity(entity const& e) {
 void registry::run_systems() {
     for (auto &s : _systems) s(*this);
 }
+
+void registry::set_random_seed(unsigned int seed) {
+    _random_seed = seed;
+    _seed_set = true;
+}
+
+unsigned int registry::get_random_seed() const {
+    return _random_seed;
+}
+
+bool registry::has_random_seed() const {
+    return _seed_set;
+}

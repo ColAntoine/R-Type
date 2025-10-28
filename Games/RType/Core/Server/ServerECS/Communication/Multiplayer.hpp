@@ -34,6 +34,9 @@ class Multiplayer {
 
         // Spawn all connected players when game starts
         void spawn_all_players();
+        
+        // Broadcast enemy spawn to all clients
+        void broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y);
 
     private:
         ServerECS &ecs_;

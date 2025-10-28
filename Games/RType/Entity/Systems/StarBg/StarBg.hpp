@@ -10,6 +10,7 @@
 #include "ECS/Systems/ISystem.hpp"
 
 #include <vector>
+#include <random>
 
 struct Star {
     float x;
@@ -26,9 +27,12 @@ public:
     const char* get_name() const override { return "StarBg"; }
 private:
     std::vector<Star> _stars;
+    std::mt19937 rng_;
+    bool initialized_{false};
 
-    void generate_stars();
-    void update_stars(float delta_time);
+    void generate_stars(registry& r);
+    void seed_from_registry(registry& r);
+    void update_stars(float delta_time, registry& r);
     void render_stars() const;
 };
 
