@@ -16,6 +16,7 @@ void InGameState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
+    _systemLoader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
 
     _systemLoader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
     _systemLoader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);

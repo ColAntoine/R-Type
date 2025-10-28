@@ -130,6 +130,8 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
             if (overlap) {
                 applyPowerUps(playerWeapon, &playerVel, pUp);
                 entitiesToKill.push_back(static_cast<size_t>(pEntity));
+                auto animEnt = r.spawn_entity();
+                r.emplace_component<PUpAnimation>(animEnt, true, "test");
                 break;
             }
         }

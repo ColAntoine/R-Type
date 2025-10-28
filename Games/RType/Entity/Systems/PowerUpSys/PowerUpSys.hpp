@@ -19,6 +19,7 @@
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/PUpAnimation/PUpAnimation.hpp"
 
 #include "Constants.hpp"
 
