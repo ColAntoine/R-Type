@@ -16,6 +16,7 @@ void Lobby::enter()
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     setup_ui();
+    subscribe_to_ui_event();
 
     // Register callback to update player list when CLIENT_LIST is received
     auto* net_mgr = RType::Network::get_network_manager();
@@ -40,6 +41,8 @@ void Lobby::enter()
 
 void Lobby::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     // Clear the callbacks when leaving Lobby
     auto* net_mgr = RType::Network::get_network_manager();
     if (net_mgr) {
@@ -59,7 +62,7 @@ void Lobby::resume()
     std::cout << "[Lobby] Resuming state" << std::endl;
 }
 
-void Lobby::update(float delta_time)
+void Lobby::update(__attribute_maybe_unused__ float delta_time)
 {
     if (game_start_ && _stateManager) {
         _stateManager->pop_state();

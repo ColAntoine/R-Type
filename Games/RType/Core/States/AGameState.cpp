@@ -7,6 +7,8 @@
 
 #include "AGameState.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Messaging/Events/Event.hpp"
 #include <iostream>
 
 AGameState::AGameState() {}
@@ -69,3 +71,14 @@ void AGameState::handle_input() {
         return;
     // this->_uiSystems.process_input(this->_registry);
 }
+
+void AGameState::subscribe_to_ui_event()
+{
+    auto& eventBus = MessagingManager::instance().get_event_bus();
+    _uiEventCallbackId = eventBus.subscribe(EventTypes::SCREEN_PARAMETERS_CHANGED, [this](__attribute_maybe_unused__ const Event& event) {
+        std::cout << "Screen Parameter changed!!!" << std::endl;
+        this->cleanup_ui();
+        this->setup_ui();
+    });
+}
+

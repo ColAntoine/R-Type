@@ -1,6 +1,8 @@
 #include "Credits.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "UI/ThemeManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -29,12 +31,15 @@ void CreditsState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     setup_ui();
+    subscribe_to_ui_event();
     _initialized = true;
 }
 
 void CreditsState::exit()
 {
     std::cout << "[CreditsState] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     _initialized = false;
 }
 
@@ -61,11 +66,13 @@ void CreditsState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     auto title = TextBuilder()
         .at(renderManager.scalePosX(15), renderManager.scalePosY(10))
         .text(creditsText)
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     title->setCustomRender([](const UI::UIText& text) {
@@ -92,14 +99,16 @@ void CreditsState::setup_ui()
     auto titleEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(titleEntity, UI::UIComponent(title));
 
-    auto backButton = ButtonBuilder()
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(11), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK TO SETTINGS")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_back_settings();
         })

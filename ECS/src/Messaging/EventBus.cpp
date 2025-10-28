@@ -9,7 +9,7 @@
 #include <iostream>
 #include <algorithm>
 
-EventBus::CallbackId EventBus::subscribe(EventType type, EventCallback callback) {
+EventBus::CallbackId EventBus::subscribe(const std::string& type, EventCallback callback) {
     CallbackId id = next_id_++;
     subscribers_[type].push_back({id, type, callback});
     return id;
@@ -58,7 +58,7 @@ void EventBus::clear_all() {
     }
 }
 
-size_t EventBus::get_subscriber_count(EventType type) const {
+size_t EventBus::get_subscriber_count(const std::string& type) const {
     auto it = subscribers_.find(type);
     return it != subscribers_.end() ? it->second.size() : 0;
 }

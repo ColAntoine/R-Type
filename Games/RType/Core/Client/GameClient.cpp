@@ -3,6 +3,8 @@
 #include "Core/Client/Network/ClientService.hpp"
 #include "Core/Client/Network/NetworkService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -29,6 +31,8 @@
 #include <string>
 
 auto &renderManager = RenderManager::instance();
+auto &messageManager = MessagingManager::instance();
+auto &audioManager = AudioManager::instance();
 
 GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
@@ -56,10 +60,6 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
-
-    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
-    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
-    // });
 }
 
 bool GameClient::init()
@@ -78,6 +78,9 @@ bool GameClient::init()
         std::cerr << "[GameClient] Failed to initialize Raylib window" << std::endl;
         return false;
     }
+
+    messageManager.init();
+    audioManager.init();
 
     // Register states
     register_states();
@@ -124,6 +127,8 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
+        messageManager.update();
+
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();
         render_mgr.begin_frame();
@@ -160,6 +165,8 @@ void GameClient::shutdown()
     if (renderManager.is_window_ready()) {
         renderManager.shutdown();
     }
+
+    messageManager.shutdown();
 
     _running = false;
 }

@@ -76,6 +76,9 @@ void RenderManager::init(const char *title, float scale, bool fullscreen)
         _winInfos.setHeight(GetMonitorHeight(monitor));
         _winInfos.setWidth(GetMonitorWidth(monitor));
 
+        _monitorHeight = _winInfos.getHeight();
+        _monitorWidth = _winInfos.getWidth();
+
         if (_winInfos.getWidth() > 0 && _winInfos.getHeight() > 0) {
             this->_winInfos.setHeight(_winInfos.getHeight() * scale);
             this->_winInfos.setWidth(_winInfos.getWidth() * scale);
@@ -211,4 +214,11 @@ void RenderManager::unload_font()
         std::cout << "RenderManager: Unloaded font" << std::endl;
         _font = Font{};
     }
+}
+
+void RenderManager::set_window_size(int width, int height)
+{
+    SetWindowSize(width, height);
+    _winInfos.setWidth(width);
+    _winInfos.setHeight(height);
 }

@@ -10,7 +10,12 @@
 #include <string>
 #include <memory>
 #include <ECS/Registry.hpp>
+#include "ECS/Messaging/MessagingManager.hpp"
 #include <iostream>
+
+namespace EventTypes {
+    const std::string SCREEN_PARAMETERS_CHANGED = "SCREEN_PARAMETERS_CHANGED";
+}
 
 // Forward declarations
 class GameStateManager;

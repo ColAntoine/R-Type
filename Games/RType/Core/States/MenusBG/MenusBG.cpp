@@ -2,6 +2,8 @@
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "UI/ThemeManager.hpp"
+
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -16,12 +18,15 @@ void MenusBackgroundState::enter()
     this->_registry.register_component<UI::UIText>();
 
     setup_ui();
+    subscribe_to_ui_event();
     this->_initialized = true;
 }
 
 void MenusBackgroundState::exit()
 {
     std::cout << "[Menus Background] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     this->_initialized = false;
 }
 
@@ -64,6 +69,9 @@ void MenusBackgroundState::setup_ui()
 {
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
+
+    auto &theme = ThemeManager::instance().getTheme();
+
     int sw = winInfos.getWidth();
     int sh = winInfos.getHeight();
     int font_w = std::max(1, this->_asciiFontSize / 2);
@@ -88,7 +96,7 @@ void MenusBackgroundState::setup_ui()
         .at(0, 0)
         .text(" ")
         .fontSize(this->_asciiFontSize)
-        .textColor({100, 150, 200, 150})
+        .textColor(theme.textBackgroundColor)
         .alignment(UI::TextAlignment::Left)
     .build(sw, sh);
 

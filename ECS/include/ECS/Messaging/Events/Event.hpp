@@ -13,22 +13,18 @@
 #include <memory>
 #include <stdexcept>
 
-enum class EventType {
-    ENTITY_CREATED,
-    ENTITY_DESTROYED,
-    COLLISION_ENTER,
-    COLLISION_EXIT,
-    TRIGGER_ENTER,
-    TRIGGER_EXIT,
-    CUSTOM
-};
-
+namespace EventTypes {
+    const std::string ENTITY_CREATED = "ENTITY_CREATED";
+    const std::string ENTITY_DESTROYED = "ENTITY_DESTROYED";
+    const std::string COLLISION_ENTER = "COLLISION_ENTER";
+    const std::string COLLISION_EXIT = "COLLISION_EXIT";
+}
 struct Event {
-    EventType type;
+    std::string type;
     size_t entity_id;
     std::unordered_map<std::string, std::any> data;
 
-    Event(EventType t, size_t id = 0)
+    Event(const std::string& t, size_t id = 0)
         : type(t), entity_id(id) {}
 
     template<typename T>

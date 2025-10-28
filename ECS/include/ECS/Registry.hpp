@@ -63,6 +63,28 @@ class registry {
             return std::any_cast<sparse_set<Component> const&>(it->second);
         }
 
+        template<typename Component>
+        Component& get_component(entity const& e) {
+            auto& arr = get_components<Component>();
+            using idx_t = typename sparse_set<Component>::size_type;
+            idx_t idx = static_cast<idx_t>(static_cast<size_t>(e));
+            if (!arr.has(idx)) {
+                throw std::out_of_range("registry::get_component: entity does not have component");
+            }
+            return arr[idx];
+        }
+
+        template<typename Component>
+        Component const& get_component(entity const& e) const {
+            auto const& arr = get_components<Component>();
+            using idx_t = typename sparse_set<Component>::size_type;
+            idx_t idx = static_cast<idx_t>(static_cast<size_t>(e));
+            if (!arr.has(idx)) {
+                throw std::out_of_range("registry::get_component const: entity does not have component");
+            }
+            return arr[idx];
+        }
+
         // add_component accepts both lvalue and rvalue (universal reference)
         template<typename Component>
         typename sparse_set<Component>::reference_type

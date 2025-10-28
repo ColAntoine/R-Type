@@ -40,11 +40,31 @@ void AudioManager::update() {
     music_player_.update();
 }
 
-void AudioManager::set_master_volume(float volume) {
-    master_volume_ = volume < 0.0f ? 0.0f : (volume > 1.0f ? 1.0f : volume);
+float AudioManager::get_effective_volume(float master, float specific) const
+{
+    return std::clamp(master * specific, 0.0f, 1.0f);
+}
 
-    music_player_.set_volume(master_volume_);
-    sfx_player_.set_master_volume(master_volume_);
+void AudioManager::set_master_volume(float volume)
+{
+    master_volume_ = std::clamp(volume, 0.0f, 1.0f);
+
+    set_music_volume(music_volume_);
+    set_sfx_volume(sfx_volume_);
+}
+
+void AudioManager::set_music_volume(float volume)
+{
+    music_volume_ = std::clamp(volume, 0.0f, 1.0f);
+    float effectiveVolume = get_effective_volume(master_volume_, music_volume_);
+    music_player_.setMasterVolume(effectiveVolume);
+}
+
+void AudioManager::set_sfx_volume(float volume)
+{
+    sfx_volume_ = std::clamp(volume, 0.0f, 1.0f);
+    float effectiveVolume = get_effective_volume(master_volume_, sfx_volume_);
+    sfx_player_.setMasterVolume(effectiveVolume);
 }
 
 void AudioManager::mute() {
