@@ -36,11 +36,11 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
     EntityCreate ec;
     memcpy(&ec, payload, sizeof(ec));
 
-    // Avoid creating duplicates: if we already have a mapping for this server entity id, update components instead
     uint32_t server_ent_id = ec.entity_id;
+
+    // If we already have a mapping for this server entity id, update components instead
     auto it = remote_player_map_.find(server_ent_id);
     if (it != remote_player_map_.end()) {
-        // Entity already exists locally; update components if necessary and return
         auto ent = it->second;
         float x = ec.x;
         float y = ec.y;
@@ -54,11 +54,34 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
             return;
         }
         if (!(pos_arr && pos_arr->has(ent))) {
-            float fx = ec.x;
-            float fy = ec.y;
-            registry_.emplace_component<position>(ent, fx, fy);
+            registry_.emplace_component<position>(ent, x, y);
         } else {
             (*pos_arr)[ent] = position{ec.x, ec.y};
+        }
+        return;
+    }
+
+    // Before spawning, check if a local Player entity already exists (created by InGame::createPlayer)
+    // If so, map this server entity id to that existing entity and update its position/velocity
+    auto *playerArr = registry_.get_if<Player>();
+    if (playerArr && playerArr->size() > 0) {
+        entity existing = entity(playerArr->entity_at(0));
+        remote_player_map_[server_ent_id] = existing;
+        float nx = ec.x;
+        float ny = ec.y;
+        auto* pos_arr = registry_.get_if<position>();
+        if (pos_arr) {
+            if (!pos_arr->has(existing)) registry_.emplace_component<position>(existing, nx, ny);
+            else (*pos_arr)[existing] = position{nx, ny};
+        } else {
+            registry_.emplace_component<position>(existing, nx, ny);
+        }
+        auto* vel_arr = registry_.get_if<velocity>();
+        if (vel_arr) {
+            if (!vel_arr->has(existing)) registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
+            else (*vel_arr)[existing] = velocity{0.0f, 0.0f};
+        } else {
+            registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
         }
         return;
     }
@@ -72,12 +95,10 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
     float y = ec.y;
     auto factory = loader_.get_factory();
     if (factory) {
+        // Only attach minimal components on generic ENTITY_CREATE. Full player components
+        // (controllable, Weapon, Score, Health, Player, animation, collider) should be created on PLAYER_SPAWN.
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
-        // Do NOT create controllable here for entity_create - controllable should only be
-        // added to the local player's entity when we receive PLAYER_SPAWN. Creating
-        // it here caused duplicate controllable entities in multiplayer.
-        factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         return;
     }
     registry_.emplace_component<position>(ent, x, y);
