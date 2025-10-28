@@ -36,10 +36,36 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
     EntityCreate ec;
     memcpy(&ec, payload, sizeof(ec));
 
+    // Avoid creating duplicates: if we already have a mapping for this server entity id, update components instead
+    uint32_t server_ent_id = ec.entity_id;
+    auto it = remote_player_map_.find(server_ent_id);
+    if (it != remote_player_map_.end()) {
+        // Entity already exists locally; update components if necessary and return
+        auto ent = it->second;
+        float x = ec.x;
+        float y = ec.y;
+        auto factory = loader_.get_factory();
+        auto* pos_arr = registry_.get_if<position>();
+        if (factory) {
+            if (!(pos_arr && pos_arr->has(ent))) factory->create_component<position>(registry_, ent, x, y);
+            else { (*pos_arr)[ent] = position{x, y}; }
+            auto* vel_arr = registry_.get_if<velocity>();
+            if (!(vel_arr && vel_arr->has(ent))) factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+            return;
+        }
+        if (!(pos_arr && pos_arr->has(ent))) {
+            float fx = ec.x;
+            float fy = ec.y;
+            registry_.emplace_component<position>(ent, fx, fy);
+        } else {
+            (*pos_arr)[ent] = position{ec.x, ec.y};
+        }
+        return;
+    }
+
     // spawn a local entity and attach components according to server description
     auto ent = registry_.spawn_entity();
-    // If the entity corresponds to a remote player token, map it
-    uint32_t server_ent_id = ec.entity_id;
+    // Map by server entity id so future updates can find it
     remote_player_map_[server_ent_id] = ent;
 
     float x = ec.x;
@@ -66,9 +92,27 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
 
     std::cout << "[PlayerMsg] Received PLAYER_SPAWN token=" << ps.player_token << " server_ent=" << ps.server_entity << std::endl;
 
+    // Avoid duplicate spawn: if mapping already exists for this player token or server entity, reuse it
+    auto it_token = remote_player_map_.find(ps.player_token);
+    if (it_token != remote_player_map_.end()) {
+        local_player_ent_ = it_token->second;
+        std::cout << "[PlayerMsg] PLAYER_SPAWN: entity already exists locally, reusing" << std::endl;
+        return;
+    }
+    auto it_server = remote_player_map_.find(ps.server_entity);
+    if (it_server != remote_player_map_.end()) {
+        local_player_ent_ = it_server->second;
+        // ensure token mapping exists
+        remote_player_map_[ps.player_token] = local_player_ent_.value();
+        std::cout << "[PlayerMsg] PLAYER_SPAWN: found by server_entity, reusing and mapping token" << std::endl;
+        return;
+    }
+
     // spawn a local entity and attach components according to server description
     auto ent = registry_.spawn_entity();
+    // map by both token and server entity id for consistency
     remote_player_map_[ps.player_token] = ent;
+    remote_player_map_[ps.server_entity] = ent;
     local_player_ent_ = ent;
 
     float x = ps.x;
@@ -102,9 +146,21 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
 
     std::cout << "[PlayerMsg] Received PLAYER_SPAWN_REMOTE token=" << ps.player_token << " server_ent=" << ps.server_entity << std::endl;
 
+    // Avoid duplicate spawn: check existing mapping by token or server entity id
+    if (remote_player_map_.find(ps.player_token) != remote_player_map_.end() || remote_player_map_.find(ps.server_entity) != remote_player_map_.end()) {
+        std::cout << "[PlayerMsg] PLAYER_SPAWN_REMOTE: already have entity for this player, skipping spawn" << std::endl;
+        // ensure both keys are mapped to the same entity
+        if (remote_player_map_.find(ps.player_token) == remote_player_map_.end() && remote_player_map_.find(ps.server_entity) != remote_player_map_.end()) {
+            remote_player_map_[ps.player_token] = remote_player_map_[ps.server_entity];
+        }
+        return;
+    }
+
     // Spawn a local representation for a remote player
     auto ent = registry_.spawn_entity();
+    // map by both token and server entity id
     remote_player_map_[ps.player_token] = ent;
+    remote_player_map_[ps.server_entity] = ent;
 
     float x = ps.x;
     float y = ps.y;
@@ -142,7 +198,12 @@ void PlayerHandler::on_player_quit(const char* payload, size_t size) {
     } else {
         entity ent = it->second;
         registry_.kill_entity(ent);
-        remote_player_map_.erase(it);
+        // remove any other mappings that point to the same entity (server_entity key etc.)
+        std::vector<uint32_t> to_remove;
+        for (const auto &kv : remote_player_map_) {
+            if (kv.second == ent) to_remove.push_back(kv.first);
+        }
+        for (auto k : to_remove) remote_player_map_.erase(k);
     }
 
     // Remove player from cached player list

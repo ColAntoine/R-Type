@@ -122,18 +122,22 @@ void InGameState::handle_input()
             auto client = RType::Network::get_client();
             if (client) {
                 uint32_t player_token = client->get_session_token();
+                // Only send input to server when we have an assigned session token (i.e. actually connected)
+                if (player_token == 0) {
+                    // not connected - do not send input in solo mode
+                } else {
+                    RType::Protocol::PlayerInput input_msg;
+                    input_msg.player_token = player_token;
+                    input_msg.input_state = input_state;
+                    input_msg.timestamp = static_cast<uint32_t>(GetTime() * 1000); // Convert to milliseconds
 
-                RType::Protocol::PlayerInput input_msg;
-                input_msg.player_token = player_token;
-                input_msg.input_state = input_state;
-                input_msg.timestamp = static_cast<uint32_t>(GetTime() * 1000); // Convert to milliseconds
+                    auto packet = RType::Protocol::create_packet(
+                        static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_INPUT),
+                        input_msg
+                    );
 
-                auto packet = RType::Protocol::create_packet(
-                    static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_INPUT),
-                    input_msg
-                );
-
-                client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                }
             }
             last_input_state = input_state;
         }
