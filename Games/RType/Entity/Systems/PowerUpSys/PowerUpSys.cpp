@@ -54,7 +54,48 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
         r.emplace_component<position>(ent, spawn_x, spawn_y);
         r.emplace_component<collider>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f), -renderManager.scaleSizeW(2.5f), -renderManager.scaleSizeH(2.5f));
         r.emplace_component<velocity>(ent, 0.0f, fall_speed);
-        r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
+        // r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
+
+        // Compute target sprite size as 3% of the screen (preserve aspect via per-sprite original size)
+        float screen_w = screen_width;
+        float screen_h = screen_height;
+        float target_w = screen_w * 0.03f; // 3% of screen width
+        float target_h = screen_h * 0.03f; // 3% of screen height
+
+        switch (type)
+        {
+        case WAEPON_COOLDOWN: {
+            float orig_w = 360.f, orig_h = 360.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/cooldown.png", orig_w, orig_h, sx, sy);
+            break;
+        }
+        case WEAPON_FIRERATE: {
+            float orig_w = 512.f, orig_h = 512.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/firerate.png", orig_w, orig_h, sx, sy);
+            break;
+        }
+        case WEAPON_NEW: {
+            float orig_w = 315.f, orig_h = 250.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/gun.png", orig_w, orig_h, sx, sy);
+            break;
+        }
+        case PLAYER_SPEED: {
+            float orig_w = 512.f, orig_h = 512.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/speed.png", orig_w, orig_h, sx, sy);
+            break;
+        }
+        default:
+            r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
+            break;
+        }
 
         spawn_timer_ = 0.0f;
     }

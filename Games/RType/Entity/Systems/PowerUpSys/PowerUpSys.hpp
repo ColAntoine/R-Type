@@ -13,11 +13,14 @@
 #include "ECS/Components/Collider.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Sprite.hpp"
 
 #include "Entity/Components/PowerUp/PowerUp.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Player/Player.hpp"
+
+#include "Constants.hpp"
 
 #include <map>
 #include <functional>
