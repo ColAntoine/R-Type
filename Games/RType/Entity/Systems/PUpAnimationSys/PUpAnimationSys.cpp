@@ -47,15 +47,24 @@ void PUpAnimationSys::updateAnimation(registry &r, float dt)
         for (auto [anim, pos, ent] : zipper(*animArr, *posArr)) {
             if (entity(ent) != _arrowEnt) continue;
             float amp = renderManager.scaleSizeH(2.0f);
-            float freq = 2.0f; // oscillations per second
+            float freq = 2.0f;
             pos.y = _arrowBaseY + amp * std::sin(_current._elapsed * freq * 2.0f * 3.14159265f);
         }
     }
+
+
 
     if (_current._duration > 0.0f && _current._elapsed >= _current._duration) {
         if (_arrowEnt.value() != 0) r.kill_entity(_arrowEnt);
         _arrowEnt = entity(0);
         _isDone = true;
+
+        auto textArr = r.get_if<animationText>();
+        if (!textArr) return;
+
+        for (auto [text, ent] : zipper(*textArr)) {
+            r.kill_entity(entity(ent));
+        }
     }
 }
 
@@ -84,10 +93,33 @@ bool PUpAnimationSys::pendingAnimation(registry &r)
             sp.rotation = _current._up ? 180.f : 0.f;
             r.emplace_component<animationArrow>(_arrowEnt);
 
-            float startX = renderManager.scalePosX(40);
+            float startX = renderManager.scalePosX(45);
             float startY = renderManager.scalePosY(75);
             r.emplace_component<position>(_arrowEnt, startX, startY);
             _arrowBaseY = startY;
+
+            float textX = renderManager.scalePosX(44);
+            float textY = renderManager.scalePosY(65);
+
+            auto uiText = TextBuilder()
+                .at(textX, textY)
+                .text(_current._text)
+                .fontSize(static_cast<int>(renderManager.scaleSizeW(2.0f)))
+                .textColor(WHITE)
+            .build(screen_w, screen_h);
+
+            uiText->setCustomRender([](const UI::UIText& text) {
+                auto &renderer = RenderManager::instance();
+                Vector2 pos = text.getPosition();
+                int font_size = text.getStyle().getFontSize();
+                double t = GetTime();
+                Color color = (fmod(t, 0.5) < 0.25) ? RED : WHITE;
+                renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), font_size, color);
+            });
+
+            auto textEnt = r.spawn_entity();
+            r.emplace_component<UI::UIComponent>(textEnt, UI::UIComponent(uiText));
+            r.emplace_component<animationText>(textEnt);
             return true;
         }
         return false;

@@ -16,6 +16,10 @@
 #include "ECS/Components/Sprite.hpp"
 #include "ECS/Components/Position.hpp"
 
+#include "ECS/UI/UIBuilder.hpp"
+#include "ECS/UI/Components/Text.hpp"
+#include "ECS/Components/UIComponent.hpp"
+
 #include "Entity/Components/PUpAnimation/PUpAnimation.hpp"
 
 #include "Constants.hpp"
@@ -24,6 +28,7 @@
 #include <vector>
 
 struct animationArrow : IComponent {};
+struct animationText : IComponent {};
 
 class PUpAnimationSys : public ISystem {
 public:
@@ -39,6 +44,7 @@ private:
     bool _isDone{true};
     entity _arrowEnt{0};
     float _arrowBaseY{0.0f};
+    entity _textEnt{0};
 };
 
 extern "C" {

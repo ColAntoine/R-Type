@@ -40,6 +40,7 @@ private:
     void applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp);
 
     std::map<powerUpType, std::function<void(registry &)>> _pFunc;
+    std::map<powerUpType, std::string> _pUpText;
 
     std::mt19937 _rng;
     std::uniform_real_distribution<> _x_dist;

@@ -18,11 +18,14 @@
 #include "ECS/Components/Velocity.hpp"
 
 PowerUpSys::PowerUpSys()
-    : _rng(std::random_device{}()),
-      _x_dist(0.0f, 800.0f),
-      _powerup_type_dist(0, 3)
+: _rng(std::random_device{}()),
+    _x_dist(0.0f, 800.0f),
+    _powerup_type_dist(0, 3)
 {
-
+    _pUpText[WEAPON_FIRERATE] = "Firerate increased!";
+    _pUpText[WAEPON_COOLDOWN] = "Cooldown decreased!";
+    _pUpText[PLAYER_SPEED] = "Player speed increased!";
+    _pUpText[WEAPON_NEW] = "New weapon unlocked";
 }
 
 void PowerUpSys::update(registry& r, float dt)
@@ -131,7 +134,7 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
                 applyPowerUps(playerWeapon, &playerVel, pUp);
                 entitiesToKill.push_back(static_cast<size_t>(pEntity));
                 auto animEnt = r.spawn_entity();
-                r.emplace_component<PUpAnimation>(animEnt, true, "test");
+                r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
                 break;
             }
         }
