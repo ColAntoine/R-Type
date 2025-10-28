@@ -74,7 +74,9 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
     if (factory) {
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
-        factory->create_component<controllable>(registry_, ent, 100.0f);
+        // Do NOT create controllable here for entity_create - controllable should only be
+        // added to the local player's entity when we receive PLAYER_SPAWN. Creating
+        // it here caused duplicate controllable entities in multiplayer.
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         return;
     }
@@ -109,6 +111,39 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
     }
 
     // spawn a local entity and attach components according to server description
+    // Before creating a new entity, check if the registry already has a Player component
+    // (created locally by InGame::createPlayer()). If so, reuse that entity to avoid
+    // creating a duplicate when the client had pre-spawned its own player.
+    auto *playerArr = registry_.get_if<Player>();
+    if (playerArr && playerArr->size() > 0) {
+        // reuse the first existing Player entity
+        entity existing = entity(playerArr->entity_at(0));
+        remote_player_map_[ps.player_token] = existing;
+        remote_player_map_[ps.server_entity] = existing;
+        local_player_ent_ = existing;
+        std::cout << "[PlayerMsg] PLAYER_SPAWN: reusing existing local Player entity=" << static_cast<size_t>(existing) << std::endl;
+
+        // Update position/velocity components if present or create them
+        float nx = ps.x;
+        float ny = ps.y;
+        auto* pos_arr = registry_.get_if<position>();
+        if (pos_arr) {
+            if (!pos_arr->has(existing)) registry_.emplace_component<position>(existing, nx, ny);
+            else (*pos_arr)[existing] = position{nx, ny};
+        } else {
+            registry_.emplace_component<position>(existing, nx, ny);
+        }
+        auto* vel_arr = registry_.get_if<velocity>();
+        if (vel_arr) {
+            if (!vel_arr->has(existing)) registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
+            else (*vel_arr)[existing] = velocity{0.0f, 0.0f};
+        } else {
+            registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
+        }
+
+        return;
+    }
+
     auto ent = registry_.spawn_entity();
     // map by both token and server entity id for consistency
     remote_player_map_[ps.player_token] = ent;
