@@ -43,9 +43,7 @@ void MainMenuState::update(__attribute_maybe_unused__ float delta_time)
 
 void MainMenuState::play_solo()
 {
-
     if (this->_stateManager) {
-
         this->_stateManager->pop_state();
         this->_stateManager->push_state("InGame");
         this->_stateManager->push_state("InGameHud");
