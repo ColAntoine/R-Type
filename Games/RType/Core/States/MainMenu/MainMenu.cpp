@@ -4,6 +4,7 @@
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "UI/Components/GlitchButton.hpp"
+#include "UI/ThemeManager.hpp"
 
 void MainMenuState::enter()
 {
@@ -13,17 +14,16 @@ void MainMenuState::enter()
     this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();
-    // _registry.register_component<RType::UIMainPanel>();
-    // _registry.register_component<RType::UITitleText>();
-    // _registry.register_component<RType::UISettingsButton>();
-    // _registry.register_component<RType::UIQuitButton>();
 
     this->setup_ui();
+    subscribe_to_ui_event();
     this->_initialized = true;
 }
 
 void MainMenuState::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     this->_initialized = false;
 }
 
@@ -85,11 +85,13 @@ void MainMenuState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     auto menuPanel = PanelBuilder()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(60), renderManager.scaleSizeH(80))
-        .backgroundColor(Color{75, 174, 204, 200})
-        .border(5, Color{230, 230, 230, 255})
+        .backgroundColor(theme.panelColor)
+        .border(5, theme.panelBorderColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto menuPanelEntity = this->_registry.spawn_entity();
@@ -97,9 +99,9 @@ void MainMenuState::setup_ui()
 
     auto title = TextBuilder()
         .centered(renderManager.scalePosY(-20))
-        .text("R-TYPE")
+        .text("R - TYPE")
         .fontSize(renderManager.scaleSizeW(12))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto titleEntity = this->_registry.spawn_entity();
@@ -109,11 +111,11 @@ void MainMenuState::setup_ui()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("SOLO MODE")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
-        .neonColors(Color{0, 229, 255, 255}, Color{0, 229, 255, 100})
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
         .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_solo();
@@ -123,14 +125,16 @@ void MainMenuState::setup_ui()
     auto soloButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(soloButtonEntity, UI::UIComponent(soloButton));
 
-    auto coopButton = ButtonBuilder()
+    auto coopButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(10))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("COOP MODE")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_coop();
         })
@@ -139,14 +143,16 @@ void MainMenuState::setup_ui()
     auto coopButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(coopButtonEntity, UI::UIComponent(coopButton));
 
-    auto settingsButton = ButtonBuilder()
+    auto settingsButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(20))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("SETTINGS")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_settings();
         })
@@ -155,18 +161,21 @@ void MainMenuState::setup_ui()
     auto settingsButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(settingsButtonEntity, UI::UIComponent(settingsButton));
 
-    auto quitButton = ButtonBuilder()
+    auto quitButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(30))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("QUIT GAME")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_quit();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
+
 
     auto quitButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(quitButtonEntity, UI::UIComponent(quitButton));

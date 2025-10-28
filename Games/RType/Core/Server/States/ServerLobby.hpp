@@ -3,22 +3,21 @@
 #include "Core/States/AGameState.hpp"
 #include "ECS/Entity.hpp"
 #include "ECS/Components.hpp"
-
 #include "ECS/UI/UIBuilder.hpp"
-
 #include "Constants.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
+#include "Core/Server/Network/UDPServer.hpp"
 #include <vector>
+#include <memory>
 
-class Lobby : public AGameState {
+class ServerLobby : public AGameState {
 
-    struct ReadyButton: UI::UIButton {};
     struct PlayerListContainerTag {};  // Tag for the container holding player entries
     struct PlayerEntryTag { uint32_t player_id; };  // Tag for individual player entry UI elements
 
     public:
-        Lobby() = default;
-        ~Lobby() override = default;
+        ServerLobby(RType::Network::UdpServer* udp_server);
+        ~ServerLobby() override = default;
 
         void enter() override;
         void exit() override;
@@ -28,22 +27,22 @@ class Lobby : public AGameState {
 
         void setup_ui() override;
 
-        std::string get_name() const override { return "Lobby"; }
+        std::string get_name() const override { return "ServerLobby"; }
 
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }
 
         // Update the player list display with new data
-        void update_player_list(const std::vector<RType::Protocol::PlayerInfo>& players);
+        void update_player_list();
+
+        // Flag to track if game has started
+        bool has_game_started() const { return game_started_; }
+        void set_game_started(bool started) { game_started_ = started; }
 
     private:
-        void rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& players);
-        void toggle_ready_state();
-        void update_ready_button();
-        void on_back_clicked();
+        void rebuild_player_ui();
 
+        RType::Network::UdpServer* udp_server_;
         std::vector<RType::Protocol::PlayerInfo> current_players_;
-        bool is_ready_ = false;
-        bool game_start_ = false;
-        entity ready_button_entity_;
+        bool game_started_ = false;
 };

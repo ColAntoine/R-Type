@@ -1,7 +1,10 @@
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "Core/Client/Network/ClientService.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -28,8 +31,10 @@
 #include <string>
 
 auto &renderManager = RenderManager::instance();
+auto &messageManager = MessagingManager::instance();
+auto &audioManager = AudioManager::instance();
 
-GameClient::GameClient() {}
+GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
 
 void GameClient::register_states() {
@@ -38,7 +43,17 @@ void GameClient::register_states() {
     // Register all available states
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
-    _stateManager.register_state<InGameState>("InGame");
+
+    // Register InGame for SOLO mode (no shared registry - uses local registry)
+    _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<InGameState>(nullptr, nullptr);
+    });
+    
+    // Register InGame for MULTIPLAYER mode (with shared registry)
+    _stateManager.register_state_with_factory("InGameMultiplayer", [this]() -> std::shared_ptr<IGameState> {
+        return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);
+    });
+
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<InGameBackground>("InGameBackground");
     _stateManager.register_state<SettingsState>("Settings");
@@ -50,17 +65,13 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
-
-    // _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
-    //     return std::make_shared<InGameState>(this->ecs_registry_, &this->ecs_loader_);
-    // });
 }
 
 bool GameClient::init()
 {
     std::cout << "GameClient::init" << std::endl;
 
-    renderManager.init("R-Type");
+    renderManager.init("R-Type", _scale, !_windowed);
 
     std::string fontPath = std::string(RTYPE_PATH_ASSETS) + "HACKED.ttf";
     if (!renderManager.load_font(fontPath.c_str())) {
@@ -73,12 +84,20 @@ bool GameClient::init()
         return false;
     }
 
+    messageManager.init();
+    audioManager.init();
+
     // Register states
     register_states();
 
     // Start with loading screen
     _stateManager.push_state("MenusBackground");
     _stateManager.push_state("MainMenu");
+
+    // Load components into shared registry BEFORE starting network manager
+    // This ensures components are registered when PLAYER_SPAWN messages arrive
+    std::cout << "[GameClient] Loading components into shared registry..." << std::endl;
+    ecs_loader_.load_components_from_so("build/lib/libECS.so", ecs_registry_);
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
@@ -88,6 +107,9 @@ bool GameClient::init()
     network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
     network_manager_->register_default_handlers();
     network_manager_->start();
+
+    // Set network manager in service for states to access
+    RType::Network::set_network_manager(network_manager_.get());
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
@@ -109,6 +131,8 @@ void GameClient::run()
 
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
+
+        messageManager.update();
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();
@@ -146,6 +170,8 @@ void GameClient::shutdown()
     if (renderManager.is_window_ready()) {
         renderManager.shutdown();
     }
+
+    messageManager.shutdown();
 
     _running = false;
 }

@@ -9,11 +9,25 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include <iostream>
 
+// Global callback for broadcasting enemy spawns (set by server)
+static EnemySpawnCallback g_enemy_spawn_callback = nullptr;
+
+void set_global_enemy_spawn_callback(EnemySpawnCallback callback) {
+    g_enemy_spawn_callback = std::move(callback);
+}
+
 EnemySpawnSystem::EnemySpawnSystem()
-    : rng_(std::random_device{}()),
+    : rng_(std::random_device{}()),  // Default initialization, will be re-seeded from registry
       type_dist_(1, 5),
       y_dist_(50.0f, 700.0f)
 {
+}
+
+void EnemySpawnSystem::seed_from_registry(registry& r) {
+    if (r.has_random_seed()) {
+        rng_.seed(r.get_random_seed());
+        std::cout << "[EnemySpawnSystem] Seeded RNG with: " << r.get_random_seed() << std::endl;
+    }
 }
 
 void EnemySpawnSystem::initialize_if_needed(registry& r) {
@@ -23,6 +37,9 @@ void EnemySpawnSystem::initialize_if_needed(registry& r) {
     auto& renderManager = RenderManager::instance();
     float screen_height = renderManager.get_screen_infos().getHeight();
     y_dist_ = std::uniform_real_distribution<>(50.0f, screen_height - 50.0f);
+
+    // Seed from registry if available
+    seed_from_registry(r);
 
     initialized_ = true;
 }
@@ -73,6 +90,13 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
             r.emplace_component<velocity>(e, -80.0f, 0.0f);
             break;
+    }
+
+    // Notify callback if set (for server to broadcast enemy spawn)
+    if (spawn_callback_) {
+        spawn_callback_(e, enemy_type, x, y);
+    } else if (g_enemy_spawn_callback) {
+        g_enemy_spawn_callback(e, enemy_type, x, y);
     }
 
     return e;

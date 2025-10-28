@@ -2,6 +2,8 @@
 #include "ECS/UI/Components/Text.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "UI/Components/GlitchButton.hpp"
+#include "UI/ThemeManager.hpp"
 #include <iostream>
 #include <random>
 #include <cmath>
@@ -17,12 +19,15 @@ void SettingsState::enter()
     this->_registry.register_component<UI::UIText>();
 
     setup_ui();
+    subscribe_to_ui_event();
     this->_initialized = true;
 }
 
 void SettingsState::exit()
 {
     std::cout << "[Menus Background] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     this->_initialized = false;
 }
 
@@ -82,11 +87,13 @@ void SettingsState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     auto title = TextBuilder()
         .centered(renderManager.scalePosY(-28))
         .text("R - TYPE")
         .fontSize(renderManager.scaleSizeW(12))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto titleEntity = this->_registry.spawn_entity();
@@ -96,20 +103,22 @@ void SettingsState::setup_ui()
         .centered(renderManager.scalePosY(-15))
         .text("SETTINGS")
         .fontSize(renderManager.scaleSizeW(5))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto subTitleEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(subTitleEntity, UI::UIComponent(subTitle));
 
-    auto backButton = ButtonBuilder()
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(11), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK TO THE MENU")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_back_menu();
         })
@@ -118,14 +127,16 @@ void SettingsState::setup_ui()
     auto backButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(backButtonEntity, UI::UIComponent(backButton));
 
-    auto creditsButton = ButtonBuilder()
+    auto creditsButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(89) - renderManager.scaleSizeW(20), renderManager.scalePosY(80))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("CREDITS")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_credit_menu();
         })
@@ -134,14 +145,16 @@ void SettingsState::setup_ui()
     auto creditsButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(creditsButtonEntity, UI::UIComponent(creditsButton));
 
-    auto audioButton = ButtonBuilder()
+    auto audioButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("AUDIO SETTINGS")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_audio_menu();
         })
@@ -150,14 +163,16 @@ void SettingsState::setup_ui()
     auto audioButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(audioButtonEntity, UI::UIComponent(audioButton));
 
-    auto videoButton = ButtonBuilder()
+    auto videoButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(10))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("VIDEO SETTINGS")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_video_menu();
         })
@@ -166,14 +181,16 @@ void SettingsState::setup_ui()
     auto videoButtonEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(videoButtonEntity, UI::UIComponent(videoButton));
 
-    auto bindsButton = ButtonBuilder()
+    auto bindsButton = GlitchButtonBuilder()
         .centered(renderManager.scalePosY(20))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BINDINGS")
-        .color(Color{75, 174, 204, 255})
-        .textColor(WHITE)
+        .color(theme.buttonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.buttonColors.border)
+        .neonColors(theme.buttonColors.neonColor, theme.buttonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->play_bind_menu();
         })

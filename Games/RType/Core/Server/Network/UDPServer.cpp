@@ -190,6 +190,7 @@ namespace RType::Network {
     }
 
     void UdpServer::send_player_list_to_client(const std::string& session_id) {
+        std::cout << Console::blue("[UdpServer] ") << "Sending CLIENT_LIST to " << session_id << std::endl;
         auto session = get_session(session_id);
         if (!session || !session->is_connected() || !session->is_authenticated()) {
             return;
@@ -221,8 +222,11 @@ namespace RType::Network {
             }
         }
 
-        // Need at least 1 player and all connected players must be ready
-        if (connected_players > 0 && ready_players == connected_players) {
+        // Need at least 2 players and all connected players must be ready
+        if (connected_players > 1 && ready_players == connected_players) {
+            std::cout << Console::green("[UdpServer] ") << "All " << connected_players
+                      << " players are ready! Starting game..." << std::endl;
+
             // Create START_GAME message
             Protocol::StartGame start_game;
             start_game.timestamp = static_cast<uint32_t>(std::time(nullptr));
@@ -234,6 +238,14 @@ namespace RType::Network {
 
             // Broadcast to all connected clients
             broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+
+            std::cout << Console::green("[UdpServer] ") << "START_GAME broadcasted to all clients" << std::endl;
+
+            // Invoke game start callback to spawn all players
+            if (game_start_callback_) {
+                std::cout << Console::green("[UdpServer] ") << "Invoking game start callback..." << std::endl;
+                game_start_callback_();
+            }
         }
     }
 

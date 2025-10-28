@@ -12,11 +12,14 @@ void InGameHudState::enter()
     this->_registry.register_component<FPSText>();
 
     setup_ui();
+    subscribe_to_ui_event();
     _initialized = true;
 }
 
 void InGameHudState::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     _initialized = false;
 }
 

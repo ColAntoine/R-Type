@@ -5,11 +5,27 @@
 #include "ECS/Components/InputBuffer.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Animation.hpp"
+#include "../../Constants.hpp"
+
+#include "Network/UDPServer.hpp"
+#include "Network/Session.hpp"
 
 namespace RType::Network {
 
 Multiplayer::Multiplayer(ServerECS &ecs) : ecs_(ecs) {}
 Multiplayer::~Multiplayer() = default;
+
+void Multiplayer::set_udp_server(UdpServer* server) {
+    udp_server_ = server;
+    
+    // Register game start callback to spawn all players when game starts
+    if (udp_server_) {
+        udp_server_->set_game_start_callback([this]() {
+            this->spawn_all_players();
+        });
+    }
+}
 
 void Multiplayer::handle_packet(const std::string &session_id, const std::vector<char> &data) {
     if (data.empty()) return;
@@ -29,6 +45,14 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
         handle_client_disconnect(session_id, payload);
         return;
     }
+    if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_READY)) {
+        handle_client_ready(session_id, payload);
+        return;
+    }
+    if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_UNREADY)) {
+        handle_client_unready(session_id, payload);
+        return;
+    }
 
     // Otherwise treat as game message / input
     handle_game_message(session_id, msg_type, payload);
@@ -40,19 +64,50 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
         cc = reinterpret_cast<const RType::Protocol::ClientConnect*>(payload.data());
     }
 
-    // pick spawn position
-    auto [spawn_x, spawn_y] = choose_spawn_position();
+    // If this session already has a token, it's a duplicate/resent CONNECT - reply with existing token and return
+    auto existing_tok_it = ecs_.session_token_map_.find(session_id);
+    if (existing_tok_it != ecs_.session_token_map_.end()) {
+        uint32_t existing_token = existing_tok_it->second;
+        std::cout << Console::yellow("[Multiplayer] ") << "Duplicate CLIENT_CONNECT from " << session_id << ". Replying with existing token " << existing_token << std::endl;
+        
+        // Pick spawn position (for sending in accept)
+        auto [spawn_x, spawn_y] = choose_spawn_position();
+        
+        // send accept again to ensure client receives it
+        send_server_accept(session_id, existing_token, spawn_x, spawn_y);
+        // update all clients with the current player list
+        if (udp_server_) udp_server_->broadcast_player_list();
+        return;
+    }
 
-    // spawn entity server-side and register mappings
-    entity player_ent = spawn_player_entity(spawn_x, spawn_y);
-    ecs_.session_entity_map_[session_id] = player_ent;
+    // Assign token but DON'T spawn entity yet (we're in lobby)
     uint32_t token = ecs_.next_session_token_++;
     ecs_.session_token_map_[session_id] = token;
 
-    // reply and broadcast
+    // Authenticate session and set player info
+    if (udp_server_) {
+        auto session = udp_server_->get_session(session_id);
+        if (session) {
+            session->set_authenticated(true);
+            session->set_player_id(static_cast<int>(token));
+            if (cc && cc->player_name[0] != '\0') {
+                session->set_player_name(std::string(cc->player_name));
+            }
+        }
+    }
+
+    // Pick spawn position for later use
+    auto [spawn_x, spawn_y] = choose_spawn_position();
+
+    // reply and broadcast: send SERVER_ACCEPT then broadcast the CLIENT_LIST to all clients
     send_server_accept(session_id, token, spawn_x, spawn_y);
-    broadcast_new_player_spawn(session_id, token, player_ent, spawn_x, spawn_y);
-    send_existing_players_to_newcomer(session_id);
+    // Do NOT spawn player entities on clients yet (we're in lobby) - instead broadcast the client list
+    if (udp_server_) {
+        udp_server_->send_player_list_to_client(session_id);
+        udp_server_->broadcast_player_list();
+    }
+    
+    std::cout << Console::green("[Multiplayer] ") << "Client " << session_id << " connected and authenticated with token " << token << " (entity will spawn on game start)" << std::endl;
 }
 
 std::pair<float,float> Multiplayer::choose_spawn_position() {
@@ -92,6 +147,7 @@ entity Multiplayer::spawn_player_entity(float x, float y) {
         ecs_.get_factory()->create_component<position>(registry, ent, x, y);
         ecs_.get_factory()->create_component<velocity>(registry, ent, 0.0f, 0.0f);
         ecs_.get_factory()->create_component<InputBuffer>(registry, ent);
+        ecs_.get_factory()->create_component<animation>(registry, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
     } else {
         std::cout << Console::yellow("[Multiplayer] ") << "Component factory not available; created entity without components" << std::endl;
     }
@@ -131,31 +187,6 @@ void Multiplayer::broadcast_new_player_spawn(const std::string &session_id, uint
 
     // send player spawn to the owner
     ecs_.send_callback_(session_id, player_packet);
-}
-
-void Multiplayer::send_existing_players_to_newcomer(const std::string &session_id) {
-    if (!ecs_.send_callback_) return;
-    for (const auto &kv : ecs_.session_entity_map_) {
-        const auto &existing_session = kv.first;
-        const auto &existing_ent = kv.second;
-        if (existing_session == session_id) continue;
-
-        RType::Protocol::PlayerRemoteSpawn existing_es{};
-        auto tok_it = ecs_.session_token_map_.find(existing_session);
-        if (tok_it != ecs_.session_token_map_.end()) existing_es.player_token = tok_it->second;
-        else existing_es.player_token = static_cast<uint32_t>(existing_ent);
-        auto &reg = ecs_.GetRegistry();
-        auto *positions = reg.get_if<position>();
-        if (positions && positions->has(existing_ent)) {
-            auto &p = (*positions)[existing_ent];
-            existing_es.x = p.x; existing_es.y = p.y;
-        } else { existing_es.x = 100.0f; existing_es.y = 100.0f; }
-        existing_es.server_entity = static_cast<uint32_t>(existing_ent);
-        existing_es.health = 1.0f;
-
-        auto existing_packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SPAWN_REMOTE), existing_es, RType::Protocol::PacketFlags::NONE);
-        ecs_.send_callback_(session_id, existing_packet);
-    }
 }
 
 void Multiplayer::handle_client_disconnect(const std::string &session_id, const std::vector<char> &payload) {
@@ -199,6 +230,15 @@ void Multiplayer::handle_client_disconnect(const std::string &session_id, const 
                 ecs_.session_entity_map_.erase(it);
             }
             ecs_.session_token_map_.erase(leaving_session);
+
+            // Disconnect the session in the UdpServer so it's properly removed
+            if (udp_server_) {
+                auto session = udp_server_->get_session(leaving_session);
+                if (session) {
+                    std::cout << Console::yellow("[Multiplayer] ") << "Disconnecting session from UdpServer" << std::endl;
+                    session->disconnect();
+                }
+            }
         }
     }
 }
@@ -229,6 +269,129 @@ void Multiplayer::handle_game_message(const std::string &session_id, uint8_t msg
     } else {
         std::cout << Console::yellow("[Multiplayer] ") << "No mapped entity for session " << session_id << ". Packet ignored or handled elsewhere." << std::endl;
     }
+}
+
+void Multiplayer::handle_client_ready(const std::string &session_id, const std::vector<char> &payload) {
+    using RType::Protocol::ClientReady;
+
+    if (payload.size() < sizeof(ClientReady)) {
+        std::cerr << Console::yellow("[Multiplayer] ") << "Invalid CLIENT_READY payload size" << std::endl;
+        return;
+    }
+
+    ClientReady cr;
+    memcpy(&cr, payload.data(), sizeof(ClientReady));
+
+    // Update session ready state
+    if (udp_server_) {
+        auto session = udp_server_->get_session(session_id);
+        if (session) {
+            session->set_ready(cr.ready_state != 0);
+            // Broadcast updated player list to all clients
+            udp_server_->broadcast_player_list();
+            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+
+            // Check if all players are ready and start game if conditions met
+            udp_server_->check_all_players_ready();
+        } else {
+            std::cerr << Console::yellow("[Multiplayer] ") << "Session " << session_id << " not found" << std::endl;
+        }
+    }
+}
+
+void Multiplayer::handle_client_unready(const std::string &session_id, const std::vector<char> &payload) {
+    using RType::Protocol::ClientReady;
+
+    if (payload.size() < sizeof(ClientReady)) {
+        std::cerr << Console::yellow("[Multiplayer] ") << "Invalid CLIENT_UNREADY payload size" << std::endl;
+        return;
+    }
+
+    ClientReady cr;
+    memcpy(&cr, payload.data(), sizeof(ClientReady));
+    // Update session ready state to false
+    if (udp_server_) {
+        auto session = udp_server_->get_session(session_id);
+        if (session) {
+            session->set_ready(false);
+            // Broadcast updated player list to all clients
+            udp_server_->broadcast_player_list();
+            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+        } else {
+            std::cerr << Console::yellow("[Multiplayer] ") << "Session " << session_id << " not found" << std::endl;
+        }
+    }
+}
+
+void Multiplayer::spawn_all_players() {
+    std::cout << Console::green("[Multiplayer] ") << "Spawning all connected players for game start..." << std::endl;
+
+    // Iterate through all connected sessions and spawn their entities + broadcast
+    for (const auto &kv : ecs_.session_token_map_) {
+        const std::string& session_id = kv.first;
+        uint32_t token = kv.second;
+
+        // Check if entity already exists (it shouldn't in the new flow)
+        auto entity_it = ecs_.session_entity_map_.find(session_id);
+        if (entity_it != ecs_.session_entity_map_.end()) {
+            std::cout << Console::yellow("[Multiplayer] ") << "WARNING: Player entity already exists for session " 
+                      << session_id << " (token " << token << "). Using existing entity." << std::endl;
+            
+            entity player_ent = entity_it->second;
+            
+            // Get position from entity
+            float x = 100.0f;
+            float y = 100.0f;
+            try {
+                auto& positions = ecs_.registry_.get_components<position>();
+                const auto& pos = positions[player_ent];
+                x = pos.x;
+                y = pos.y;
+            } catch (...) {
+                // If position doesn't exist, use default
+            }
+            
+            std::cout << Console::green("[Multiplayer] ") << "Broadcasting spawn for player " 
+                      << token << " at (" << x << ", " << y << ")" << std::endl;
+            broadcast_new_player_spawn(session_id, token, player_ent, x, y);
+            continue;
+        }
+
+        // Spawn new entity for this player
+        auto [spawn_x, spawn_y] = choose_spawn_position();
+        entity player_ent = spawn_player_entity(spawn_x, spawn_y);
+        ecs_.session_entity_map_[session_id] = player_ent;
+
+        std::cout << Console::green("[Multiplayer] ") << "Spawned and broadcasting player " 
+                  << token << " (entity " << player_ent << ") at (" << spawn_x << ", " << spawn_y << ")" << std::endl;
+        broadcast_new_player_spawn(session_id, token, player_ent, spawn_x, spawn_y);
+    }
+
+    std::cout << Console::green("[Multiplayer] ") << "All players spawned!" << std::endl;
+}
+
+void Multiplayer::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y) {
+    if (!ecs_.send_callback_) return;
+    if (!udp_server_) return;
+    
+    RType::Protocol::EntityCreate ec{};
+    ec.entity_id = static_cast<uint32_t>(ent);
+    ec.entity_type = enemy_type;
+    ec.x = x;
+    ec.y = y;
+    ec.health = 15.0f;
+    
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_CREATE),
+        ec,
+        RType::Protocol::PacketFlags::RELIABLE
+    );
+    
+    // Broadcast to all connected clients
+    udp_server_->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+    
+    std::cout << Console::blue("[Multiplayer] ") << "Broadcasted enemy spawn: entity=" << ent 
+              << " type=" << (int)enemy_type << " pos=(" << x << ", " << y << ")" << std::endl;
 }
 
 } // namespace RType::Network

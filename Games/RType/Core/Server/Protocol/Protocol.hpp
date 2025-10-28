@@ -50,6 +50,7 @@ namespace RType::Protocol {
         CLIENT_DISCONNECT = 0x03,
         SERVER_DISCONNECT = 0x04,
         CLIENT_READY      = 0x07,
+        CLIENT_UNREADY    = 0x08,
         PING              = 0x05,
         PONG              = 0x06,
 
@@ -65,8 +66,8 @@ namespace RType::Protocol {
     enum class GameMessage : uint8_t {
         // Entity management
         ENTITY_CREATE     = 0xC0,
-    PLAYER_SPAWN      = 0xC3,
-    PLAYER_SPAWN_REMOTE = 0xC4,
+        PLAYER_SPAWN      = 0xC3,
+        PLAYER_SPAWN_REMOTE = 0xC4,
         ENTITY_UPDATE     = 0xC1,
         ENTITY_DESTROY    = 0xC2,
 
@@ -80,6 +81,7 @@ namespace RType::Protocol {
         GAME_START        = 0xD0,
         GAME_END          = 0xD1,
         SCORE_UPDATE      = 0xD2,
+        GAME_SEED         = 0xD3,  ///< Random seed for deterministic gameplay
     };
 
     // ============================================================================
@@ -161,6 +163,13 @@ namespace RType::Protocol {
      */
     struct StartGame {
         uint32_t timestamp;      ///< Server timestamp when game starts
+    } __attribute__((packed));
+
+    /**
+     * @brief Game seed message for deterministic gameplay
+     */
+    struct GameSeed {
+        uint32_t seed;           ///< Random seed for game synchronization
     } __attribute__((packed));
 
     /**

@@ -2,6 +2,7 @@
 #include "SettingsPanel.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "UI/ThemeManager.hpp"
 #include <iostream>
 
 void SettingsPanelState::enter()
@@ -12,12 +13,15 @@ void SettingsPanelState::enter()
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     setup_ui();
+    subscribe_to_ui_event();
     _initialized = true;
 }
 
 void SettingsPanelState::exit()
 {
     std::cout << "[SettingsPanelState] Exiting state" << std::endl;
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_uiEventCallbackId);
     _initialized = false;
 }
 
@@ -36,11 +40,13 @@ void SettingsPanelState::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     auto menuPanel = PanelBuilder()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(90), renderManager.scaleSizeH(90))
-        .backgroundColor(Color{75, 174, 204, 200})
-        .border(5, Color{230, 230, 230, 255})
+        .backgroundColor(theme.panelColor)
+        .border(5, theme.panelBorderColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto menuPanelEntity = this->_registry.spawn_entity();

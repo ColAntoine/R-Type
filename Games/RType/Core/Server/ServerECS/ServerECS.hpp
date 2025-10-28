@@ -15,6 +15,8 @@ namespace RType::Network {
 
 class Multiplayer;
 
+class UdpServer;
+
 class ServerECS {
     public:
         ServerECS();
@@ -33,9 +35,15 @@ class ServerECS {
         void tick(float dt);
 
         void set_send_callback(std::function<void(const std::string&, const std::vector<uint8_t>&)> cb) { send_callback_ = std::move(cb); }
+        // Install the server UDP instance into multiplayer so it can trigger broadcasts directly
+        void set_udp_server(UdpServer* server);
 
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
+        DLLoader& GetDLLoader() { return loader_; }
+        
+        // Expose multiplayer for game start coordination
+        Multiplayer* GetMultiplayer() { return multiplayer_.get(); }
 
     private:
         DLLoader loader_;
@@ -51,6 +59,8 @@ class ServerECS {
         std::function<void(const std::string&, const std::vector<uint8_t>&)> send_callback_;
         // Multiplayer handler
         std::unique_ptr<Multiplayer> multiplayer_;
+
+    // No std::function broadcast here; multicast requests are performed directly by Multiplayer
 
         // Allow Multiplayer implementation to access internals for now
         friend class Multiplayer;

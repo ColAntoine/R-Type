@@ -63,6 +63,28 @@ class registry {
             return std::any_cast<sparse_set<Component> const&>(it->second);
         }
 
+        template<typename Component>
+        Component& get_component(entity const& e) {
+            auto& arr = get_components<Component>();
+            using idx_t = typename sparse_set<Component>::size_type;
+            idx_t idx = static_cast<idx_t>(static_cast<size_t>(e));
+            if (!arr.has(idx)) {
+                throw std::out_of_range("registry::get_component: entity does not have component");
+            }
+            return arr[idx];
+        }
+
+        template<typename Component>
+        Component const& get_component(entity const& e) const {
+            auto const& arr = get_components<Component>();
+            using idx_t = typename sparse_set<Component>::size_type;
+            idx_t idx = static_cast<idx_t>(static_cast<size_t>(e));
+            if (!arr.has(idx)) {
+                throw std::out_of_range("registry::get_component const: entity does not have component");
+            }
+            return arr[idx];
+        }
+
         // add_component accepts both lvalue and rvalue (universal reference)
         template<typename Component>
         typename sparse_set<Component>::reference_type
@@ -120,10 +142,19 @@ class registry {
         entity entity_from_index(std::size_t idx) const;
         void kill_entity(entity const& e);
 
+        // Random seed management for deterministic gameplay
+        void set_random_seed(unsigned int seed);
+        unsigned int get_random_seed() const;
+        bool has_random_seed() const;
+
     private:
         std::unordered_map<std::type_index, std::any> _components_arrays;
         std::vector<std::function<void(entity const&)>> _erasers;
         std::vector<std::function<void(registry&)>> _systems;
         std::vector<std::size_t> _free_ids;
         std::size_t _next_id{0};
+        
+        // Random seed for deterministic gameplay (server-controlled in multiplayer)
+        unsigned int _random_seed{0};
+        bool _seed_set{false};
 };

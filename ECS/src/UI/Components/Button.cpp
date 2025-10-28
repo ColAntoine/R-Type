@@ -7,6 +7,7 @@
 
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include <iostream>
 
 namespace UI {
     void UIButton::update(float delta_time) {

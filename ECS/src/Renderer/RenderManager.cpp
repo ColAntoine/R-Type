@@ -36,8 +36,12 @@ int RenderManager::scaleSizeH(int percent) const
 
 void RenderManager::init(const char *title)
 {
+    init(title, 1.0f, true);
+}
+
+void RenderManager::init(const char *title, float scale, bool fullscreen)
+{
     int monitor = 0;
-    float scale = 1.0f; // Useful for testing on smaller screens, in production set to 1.0f
 
     if (!IsWindowReady()) {
         // Detect display environment and set appropriate flags
@@ -72,6 +76,9 @@ void RenderManager::init(const char *title)
         _winInfos.setHeight(GetMonitorHeight(monitor));
         _winInfos.setWidth(GetMonitorWidth(monitor));
 
+        _monitorHeight = _winInfos.getHeight();
+        _monitorWidth = _winInfos.getWidth();
+
         if (_winInfos.getWidth() > 0 && _winInfos.getHeight() > 0) {
             this->_winInfos.setHeight(_winInfos.getHeight() * scale);
             this->_winInfos.setWidth(_winInfos.getWidth() * scale);
@@ -84,7 +91,7 @@ void RenderManager::init(const char *title)
             SetWindowPosition(windowX, windowY);
 
             SetWindowMinSize(_winInfos.getWidth() / 2, _winInfos.getHeight() / 2);
-            SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_FULLSCREEN_MODE);
+            SetWindowState(FLAG_WINDOW_RESIZABLE | (fullscreen ? FLAG_FULLSCREEN_MODE : 0));
         }
 
         if (_winInfos.getFps() > 0) {
@@ -102,6 +109,16 @@ void RenderManager::init(const char *title)
     // We don't use camera transform - just set offset=target=0 or disable camera
     camera_.set_position(0.0f, 0.0f);
     std::cout << "RenderManager initialized (camera disabled for 1:1 screen mapping)" << std::endl;
+}
+
+void RenderManager::init(const char *title, float scale)
+{
+    init(title, scale, true);
+}
+
+void RenderManager::init(const char *title, bool windowed)
+{
+    init(title, 1.0f, !windowed);
 }
 
 void RenderManager::shutdown() {
@@ -197,4 +214,11 @@ void RenderManager::unload_font()
         std::cout << "RenderManager: Unloaded font" << std::endl;
         _font = Font{};
     }
+}
+
+void RenderManager::set_window_size(int width, int height)
+{
+    SetWindowSize(width, height);
+    _winInfos.setWidth(width);
+    _winInfos.setHeight(height);
 }
