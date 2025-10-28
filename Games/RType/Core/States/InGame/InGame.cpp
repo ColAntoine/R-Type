@@ -1,6 +1,7 @@
 #include "InGame.hpp"
 #include "ECS/Systems/Position.hpp"
 #include "Entity/Systems/Draw/Draw.hpp"
+#include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
@@ -86,24 +87,42 @@ void InGameState::update(float delta_time)
     active_loader_->update_all_systems(*active_registry_, delta_time, DLLoader::LogicSystem);
     active_loader_->update_all_systems(*active_registry_, delta_time, DLLoader::RenderSystem);
 
-}void InGameState::setup_ui()
+}
+
+void InGameState::setup_ui()
 {
     std::cout << "[InGame] Setting up UI" << std::endl;
 }
 
 void InGameState::createPlayer()
 {
-    auto componentFactory = _systemLoader.get_factory();
+    std::cout << "[InGame] createPlayer() called" << std::endl;
+    
+    // Use shared registry/loader if available (for multiplayer), otherwise use local
+    registry& reg = _shared_registry ? *_shared_registry : _registry;
+    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    auto componentFactory = loader.get_factory();
 
-    _playerEntity = _registry.spawn_entity();
+    if (!componentFactory) {
+        std::cerr << "[InGame] ERROR: Component factory is NULL!" << std::endl;
+        return;
+    }
+
+    _playerEntity = reg.spawn_entity();
+    std::cout << "[InGame] Spawned player entity: " << static_cast<size_t>(_playerEntity) << std::endl;
+    
     if (componentFactory) {
-        componentFactory->create_component<position>(_registry, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
-        componentFactory->create_component<animation>(_registry, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
-        componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);      // ! SPEED TO BE REDUCED
-        componentFactory->create_component<Weapon>(_registry, _playerEntity);
-        componentFactory->create_component<collider>(_registry, _playerEntity);
-        componentFactory->create_component<Score>(_registry, _playerEntity);
-        componentFactory->create_component<Health>(_registry, _playerEntity);
+        std::cout << "[InGame] Creating player components..." << std::endl;
+        componentFactory->create_component<position>(reg, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
+        std::cout << "[InGame] - position created at (" << PLAYER_SPAWN_X << ", " << PLAYER_SPAWN_Y << ")" << std::endl;
+        componentFactory->create_component<animation>(reg, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
+        componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
+        componentFactory->create_component<Weapon>(reg, _playerEntity);
+        componentFactory->create_component<collider>(reg, _playerEntity, 100.f, 100.f, -50.f, -50.f);
+        componentFactory->create_component<Score>(reg, _playerEntity);
+        std::cout << "[InGame] - score created" << std::endl;
+        componentFactory->create_component<Health>(reg, _playerEntity);
+        componentFactory->create_component<Player>(reg, _playerEntity);
     }
 }
 

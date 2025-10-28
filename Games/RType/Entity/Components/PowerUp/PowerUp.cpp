@@ -8,6 +8,6 @@
 #include "PowerUp.hpp"
 
 PowerUp::PowerUp() {}
-PowerUp::PowerUp(powerUpType pwType)
-: _pwType(pwType)
+PowerUp::PowerUp(powerUpType pwType, float w, float h, float ox, float oy)
+: _pwType(pwType), _w(w), _h(h), _offset_x(ox), _offset_y(oy)
 {}

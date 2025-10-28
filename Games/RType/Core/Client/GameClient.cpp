@@ -44,8 +44,9 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame with shared registry for multiplayer
     _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<InGameState>("InGameMultiplayer");
+
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<InGameBackground>("InGameBackground");
     _stateManager.register_state<SettingsState>("Settings");

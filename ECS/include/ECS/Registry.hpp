@@ -142,10 +142,19 @@ class registry {
         entity entity_from_index(std::size_t idx) const;
         void kill_entity(entity const& e);
 
+        // Random seed management for deterministic gameplay
+        void set_random_seed(unsigned int seed);
+        unsigned int get_random_seed() const;
+        bool has_random_seed() const;
+
     private:
         std::unordered_map<std::type_index, std::any> _components_arrays;
         std::vector<std::function<void(entity const&)>> _erasers;
         std::vector<std::function<void(registry&)>> _systems;
         std::vector<std::size_t> _free_ids;
         std::size_t _next_id{0};
+        
+        // Random seed for deterministic gameplay (server-controlled in multiplayer)
+        unsigned int _random_seed{0};
+        bool _seed_set{false};
 };
