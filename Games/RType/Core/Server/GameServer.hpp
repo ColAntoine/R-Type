@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/AGameCore.hpp"
+#include "Core/States/GameStateManager.hpp"
 #include <memory>
 #include <asio.hpp>
 
@@ -10,6 +11,8 @@ namespace RType::Network {
     class MessageQueue;
     class ServerECS;
 }
+
+class ServerLobby;
 
 class GameServer : public AGameCore {
 public:
@@ -23,15 +26,21 @@ public:
 
 private:
     void run_tick_loop();
+    void register_states();
+    void start_game(); // Transition from lobby to game
 
     std::unique_ptr<asio::io_context> io_context_;
     std::unique_ptr<RType::Network::NetworkManager> network_manager_;
     std::unique_ptr<RType::Network::MessageQueue> message_queue_;
     std::unique_ptr<RType::Network::ServerECS> server_ecs_;
 
+    GameStateManager state_manager_;
+    std::shared_ptr<ServerLobby> lobby_state_;
+
     uint16_t port_;
     bool running_;
     bool display_;
     bool windowed_;
     float scale_;
+    bool game_started_;
 };
