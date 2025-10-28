@@ -35,6 +35,13 @@ class NetworkManager {
         // Access to handlers for state-specific callbacks
         PlayerHandler& get_player_handler() { return player_handler_; }
 
+        // Access to shared registry/loader for multiplayer states
+        registry& get_registry() { return registry_; }
+        DLLoader& get_loader() { return loader_; }
+        
+        // Access to client for sending messages
+        std::shared_ptr<UdpClient> get_client() { return client_; }
+
     private:
         std::shared_ptr<UdpClient> client_;
         NetworkDispatcher dispatcher_;

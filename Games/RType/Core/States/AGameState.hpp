@@ -19,7 +19,6 @@ class AGameState : public IGameState {
         };
 
         AGameState();
-        AGameState(registry* shared_registry, DLLoader* shared_loader);
         virtual ~AGameState() override;
 
         void render() override;
@@ -36,10 +35,6 @@ class AGameState : public IGameState {
         GameStateManager* _stateManager;
         registry _registry;
         DLLoader _systemLoader;
-        
-        // Optional pointers to shared registry/loader (for states that need to share ECS)
-        registry* _shared_registry{nullptr};
-        DLLoader* _shared_loader{nullptr};
 
         bool _initialized{false};
 

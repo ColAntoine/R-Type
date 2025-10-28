@@ -35,6 +35,9 @@ class Multiplayer {
         // Spawn all connected players when game starts
         void spawn_all_players();
 
+        // Broadcast position updates for all player entities (called after position system runs)
+        void broadcast_positions();
+
     private:
         ServerECS &ecs_;
         UdpServer* udp_server_{nullptr};
@@ -45,6 +48,7 @@ class Multiplayer {
         void handle_client_ready(const std::string &session_id, const std::vector<char> &payload);
         void handle_client_unready(const std::string &session_id, const std::vector<char> &payload);
         void handle_game_message(const std::string &session_id, uint8_t msg_type, const std::vector<char> &payload);
+        void handle_player_input(const std::string &session_id, const std::vector<char> &payload);
         // Smaller helper functions to simplify connect handling
         std::pair<float,float> choose_spawn_position();
         entity spawn_player_entity(float x, float y);

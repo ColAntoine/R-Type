@@ -13,12 +13,23 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
+#include "Core/Client/Network/ClientService.hpp"
+#include "Core/Server/Protocol/Protocol.hpp"
 
 void ControlSystem::update(registry& r, float dt) {
     auto *ctrl_arr = r.get_if<controllable>();
     if (!ctrl_arr) return;
 
-    // Iterate all controllable entities and set/create their velocity component
+    // Check if we're in multiplayer mode
+    auto* network_manager = RType::Network::get_network_manager();
+    bool is_multiplayer = (network_manager != nullptr);
+
+    // In multiplayer mode, input is handled by InGameState, not here
+    if (is_multiplayer) {
+        return;
+    }
+
     for (std::size_t i = 0; i < ctrl_arr->size(); ++i) {
         auto ent_idx = ctrl_arr->entity_at(i);
         entity ent(ent_idx);

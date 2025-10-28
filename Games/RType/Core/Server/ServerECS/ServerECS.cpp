@@ -17,11 +17,15 @@ namespace RType::Network {
             std::cerr << "Warning: failed to load ECS components from " << components_so << std::endl;
         }
         factory_ = loader_.get_factory();
-        if (factory_) {
-            std::cout << Console::green("[ServerECS] ") << "Component factory available" << std::endl;
-        } else {
+        if (!factory_) {
             std::cerr << Console::red("[ServerECS] ") << "Component factory not available after load" << std::endl;
         }
+
+        // Load the position system so entities can move on the server
+        if (!loader_.load_system_from_so("lib/systems/libposition_system.so", DLLoader::LogicSystem)) {
+            std::cerr << Console::red("[ServerECS] ") << "Failed to load position system!" << std::endl;
+        }
+
         return true;
     }
 
@@ -42,7 +46,6 @@ namespace RType::Network {
         for (auto &pkt : packets) {
             if (pkt.data.empty()) continue;
             if (multiplayer_) {
-                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " size=" << pkt.data.size() << std::endl;
                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
             }
         }
@@ -51,6 +54,11 @@ namespace RType::Network {
     void ServerECS::tick(float dt) {
         // run all registered systems (systems may consume net_input components)
         loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
+
+        // After position system has run, broadcast updated positions to all clients
+        if (multiplayer_) {
+            multiplayer_->broadcast_positions();
+        }
     }
 
     registry& ServerECS::GetRegistry() {
