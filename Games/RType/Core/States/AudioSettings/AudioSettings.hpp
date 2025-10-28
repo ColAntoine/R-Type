@@ -21,11 +21,13 @@ class AudioSettingsState : public AGameState {
         bool blocks_update() const override { return false; }
         bool blocks_render() const override { return false; }
     private:
-        int _generalVolume = 0;
-        int _musicVolume = 0;
-        int _sfxVolume = 0;
-
         void applyGeneralVolumeChange(MoveDirection direction);
         void applyMusicVolumeChange(MoveDirection direction);
         void applySFXVolumeChange(MoveDirection direction);
+
+        void updateVolumeText(entity entity, const std::string& label, float volume);
+
+        entity _generalVolumeTextEntity;
+        entity _musicVolumeTextEntity;
+        entity _sfxVolumeTextEntity;
 };

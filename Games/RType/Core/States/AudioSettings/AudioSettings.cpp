@@ -6,6 +6,7 @@
 #include "UI/ThemeManager.hpp"
 #include <iostream>
 #include "ECS/Audio/AudioManager.hpp"
+#include "ECS/Registry.hpp"
 
 void AudioSettingsState::enter()
 {
@@ -13,16 +14,6 @@ void AudioSettingsState::enter()
 
     _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
     _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
-
-    auto &audioManager = AudioManager::instance();
-
-    _generalVolume = static_cast<int>(audioManager.get_master_volume() * 100);
-    _musicVolume = static_cast<int>(audioManager.get_music().getMasterVolume() * 100);
-    _sfxVolume = static_cast<int>(audioManager.get_sfx().getMasterVolume() * 100);
-
-    std::cout << "Initial General Volume: " << _generalVolume << std::endl;
-    std::cout << "Initial Music Volume: " << _musicVolume << std::endl;
-    std::cout << "Initial SFX Volume: " << _sfxVolume << std::endl;
 
     setup_ui();
     subscribe_to_ui_event();
@@ -59,12 +50,13 @@ void AudioSettingsState::applyGeneralVolumeChange(MoveDirection direction)
         currentVolume += volumeStep;
     }
     audioManager.set_master_volume(currentVolume);
+    updateVolumeText(_generalVolumeTextEntity, "", audioManager.get_master_volume());
 }
 
 void AudioSettingsState::applyMusicVolumeChange(MoveDirection direction)
 {
     auto &audioManager = AudioManager::instance();
-    float currentVolume = audioManager.get_music().getMasterVolume();
+    float currentVolume = audioManager.get_music_volume();
     float volumeStep = 0.05f;
 
     if (direction == MoveDirection::Left) {
@@ -72,13 +64,14 @@ void AudioSettingsState::applyMusicVolumeChange(MoveDirection direction)
     } else {
         currentVolume += volumeStep;
     }
-    audioManager.get_music().setMasterVolume(currentVolume);
+    audioManager.set_music_volume(currentVolume);
+    updateVolumeText(_musicVolumeTextEntity, "", audioManager.get_music_volume());
 }
 
 void AudioSettingsState::applySFXVolumeChange(MoveDirection direction)
 {
     auto &audioManager = AudioManager::instance();
-    float currentVolume = audioManager.get_sfx().getMasterVolume();
+    float currentVolume = audioManager.get_sfx_volume();
     float volumeStep = 0.05f;
 
     if (direction == MoveDirection::Left) {
@@ -86,7 +79,20 @@ void AudioSettingsState::applySFXVolumeChange(MoveDirection direction)
     } else {
         currentVolume += volumeStep;
     }
-    audioManager.get_sfx().setMasterVolume(currentVolume);
+    audioManager.set_sfx_volume(currentVolume);
+    updateVolumeText(_sfxVolumeTextEntity, "", audioManager.get_sfx_volume());
+}
+
+void AudioSettingsState::updateVolumeText(entity entity, const std::string& label, float volume)
+{
+    auto& uiComponent = _registry.get_component<UI::UIComponent>(entity);
+    if (auto* textComponent = dynamic_cast<UI::UIText*>(uiComponent._ui_element.get())) {
+        int percent = std::round(volume * 100.0f);
+        if (label.empty())
+            textComponent->setText(std::to_string(percent) + "%");
+        else
+            textComponent->setText(label + ": " + std::to_string(percent) + "%");
+    }
 }
 
 void AudioSettingsState::setup_ui()
@@ -129,6 +135,16 @@ void AudioSettingsState::setup_ui()
 
     auto generalEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(generalEntity, UI::UIComponent(general));
+
+    auto generalVolume = TextBuilder()
+        .centered(renderManager.scalePosY(-26))
+        .text("100%")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.secondaryTextColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    _generalVolumeTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(_generalVolumeTextEntity, UI::UIComponent(generalVolume));
 
     auto downGeneralButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(18))
@@ -177,6 +193,16 @@ void AudioSettingsState::setup_ui()
     auto musicEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(musicEntity, UI::UIComponent(music));
 
+    auto musicVolume = TextBuilder()
+        .centered(renderManager.scalePosY(-4))
+        .text("100%")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.secondaryTextColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    _musicVolumeTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(_musicVolumeTextEntity, UI::UIComponent(musicVolume));
+
     auto downMusicButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(40))
         .size(renderManager.scaleSizeW(6), renderManager.scaleSizeH(11))
@@ -223,6 +249,16 @@ void AudioSettingsState::setup_ui()
 
     auto sfxEntity = this->_registry.spawn_entity();
     this->_registry.add_component<UI::UIComponent>(sfxEntity, UI::UIComponent(sfx));
+
+    auto sfxVolume = TextBuilder()
+        .centered(renderManager.scalePosY(18))
+        .text("100%")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.secondaryTextColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    _sfxVolumeTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(_sfxVolumeTextEntity, UI::UIComponent(sfxVolume));
 
     auto downSfxButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(30), renderManager.scalePosY(62))

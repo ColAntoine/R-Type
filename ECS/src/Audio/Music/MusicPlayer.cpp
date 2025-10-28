@@ -54,6 +54,8 @@ void MusicPlayer::setMasterVolume(float volume) {
     for (auto& [name, music] : _musicCache) {
         SetMusicVolume(music, _masterVolume);
     }
+
+    std::cout << "Set Music effective volume to: " << _masterVolume << std::endl;
 }
 
 void MusicPlayer::update() {
