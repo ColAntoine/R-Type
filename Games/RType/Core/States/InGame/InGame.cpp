@@ -76,7 +76,7 @@ void InGameState::createPlayer()
         componentFactory->create_component<animation>(_registry, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
         componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);      // ! SPEED TO BE REDUCED
         componentFactory->create_component<Weapon>(_registry, _playerEntity);
-        componentFactory->create_component<collider>(_registry, _playerEntity);
+        componentFactory->create_component<collider>(_registry, _playerEntity, 100.f, 100.f, -50.f, -50.f);
         componentFactory->create_component<Score>(_registry, _playerEntity);
         componentFactory->create_component<Health>(_registry, _playerEntity);
         componentFactory->create_component<Player>(_registry, _playerEntity);

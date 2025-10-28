@@ -48,6 +48,7 @@ private:
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);
+    void checkPlayerHits(registry & r);
     void renderHitboxes(registry &r);
 
     /* SHOOT FUNCTIONS */
