@@ -3,69 +3,60 @@
 #include "Entity/Systems/Draw/Draw.hpp"
 #include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
-
 #include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "ECS/AssetManager/AssetManager.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
+#include "Core/Client/Network/ClientService.hpp"
+#include "Core/Server/Protocol/Protocol.hpp"
 
 #include <string>
-#include <random>
+#include <raylib.h>
+
+// INFOS:
+// It's a very basic implementation, must be upgraded.
+
+InGameState::InGameState() {
+}
 
 void InGameState::enter()
 {
     std::cout << "[InGame] Entering state" << std::endl;
 
-    // Use shared registry if available (for multiplayer), otherwise use local registry
-    registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    auto* network_manager = RType::Network::get_network_manager();
 
-    if (_shared_registry) {
+    if (network_manager) {
+        // Multiplayer mode - use shared registry/loader from NetworkManager
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
+        active_registry_ = &network_manager->get_registry();
+        active_loader_ = &network_manager->get_loader();
     } else {
+        // Solo mode - use local registry/loader
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
-        
-        // Generate random seed for solo play (deterministic for potential replay features)
-        std::random_device rd;
-        unsigned int solo_seed = rd();
-        _registry.set_random_seed(solo_seed);
-        std::cout << "[InGame] Generated solo game seed: " << solo_seed << std::endl;
-    }
+        active_registry_ = &_registry;
+        active_loader_ = &_systemLoader;
 
-    // Load components first (needed for both solo and multiplayer)
-    loader.load_components_from_so("build/lib/libECS.so", reg);
-    
-    // Load render systems
-    loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
-
-    // Load logic systems
-    loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
-
-    // Debug: Check how many entities exist in the registry
-    std::cout << "[InGame] Registry has entities at startup" << std::endl;
-
-    // Create player
-    // In solo mode: create immediately
-    // In multiplayer mode: DON'T create here - let the network create it via on_player_spawn()
-    if (!_shared_registry) {
-        std::cout << "[InGame] Solo mode - Creating player..." << std::endl;
+        active_loader_->load_components_from_so("build/lib/libECS.so", *active_registry_);
+        active_loader_->load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
         createPlayer();
-    } else {
-        std::cout << "[InGame] Multiplayer mode - Player will be created by network (PLAYER_SPAWN message)" << std::endl;
     }
-    
+
+    active_loader_->load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+
+    active_loader_->load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
+    active_loader_->load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
+
+    std::cout << "[InGame] Systems loaded" << std::endl;
+
     setup_ui();
     _initialized = true;
 }
@@ -90,13 +81,12 @@ void InGameState::update(float delta_time)
     if  (!_initialized)
         return;
 
-    // Use shared loader and registry if available (for multiplayer)
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
-    registry& reg = _shared_registry ? *_shared_registry : _registry;
+    handle_input();
 
-    // Update both logic and render systems with the correct registry
-    loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
-    loader.update_all_systems(reg, delta_time, DLLoader::RenderSystem);
+    // Use the resolved references from enter()
+    active_loader_->update_all_systems(*active_registry_, delta_time, DLLoader::LogicSystem);
+    active_loader_->update_all_systems(*active_registry_, delta_time, DLLoader::RenderSystem);
+
 }
 
 void InGameState::setup_ui()
@@ -108,9 +98,9 @@ void InGameState::createPlayer()
 {
     std::cout << "[InGame] createPlayer() called" << std::endl;
     
-    // Use shared registry/loader if available (for multiplayer), otherwise use local
-    registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    // Use active registry/loader (already resolved in enter())
+    registry& reg = *active_registry_;
+    DLLoader& loader = *active_loader_;
     auto componentFactory = loader.get_factory();
 
     if (!componentFactory) {
@@ -136,3 +126,37 @@ void InGameState::createPlayer()
     }
 }
 
+void InGameState::handle_input()
+{
+    auto* network_manager = RType::Network::get_network_manager();
+    if (network_manager) {
+        // Check for arrow key input
+        uint8_t input_state = 0;
+        if (IsKeyDown(KEY_UP))    input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
+        if (IsKeyDown(KEY_DOWN))  input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
+        if (IsKeyDown(KEY_LEFT))  input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
+        if (IsKeyDown(KEY_RIGHT)) input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
+
+        // Only send if input state changed
+        static uint8_t last_input_state = 0;
+        if (input_state != last_input_state) {
+            auto client = RType::Network::get_client();
+            if (client) {
+                uint32_t player_token = client->get_session_token();
+
+                RType::Protocol::PlayerInput input_msg;
+                input_msg.player_token = player_token;
+                input_msg.input_state = input_state;
+                input_msg.timestamp = GetTime() * 1000; // Convert to milliseconds
+
+                auto packet = RType::Protocol::create_packet(
+                    static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_INPUT),
+                    input_msg
+                );
+
+                client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+            }
+            last_input_state = input_state;
+        }
+    }
+}

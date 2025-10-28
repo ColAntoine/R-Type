@@ -13,9 +13,7 @@
 
 class InGameState : public AGameState {
     public:
-        InGameState() = default;
-        InGameState(registry* shared_registry, DLLoader* shared_loader)
-            : AGameState(shared_registry, shared_loader) {}
+        InGameState();
         ~InGameState() override = default;
 
         void enter() override;
@@ -31,6 +29,11 @@ class InGameState : public AGameState {
     private:
         // InGame specific members
         void createPlayer();
+        void handle_input();
 
         entity _playerEntity;
+
+        // Active references (resolved once in enter())
+        registry* active_registry_{nullptr};
+        DLLoader* active_loader_{nullptr};
 };

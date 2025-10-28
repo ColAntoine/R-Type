@@ -11,5 +11,4 @@ namespace RType::Network {
     NetworkManager* get_network_manager() {
         return g_network_manager;
     }
-
 } // namespace RType::Network

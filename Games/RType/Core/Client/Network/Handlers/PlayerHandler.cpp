@@ -78,6 +78,7 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
         // Create full player with all components (matching InGameState::createPlayer)
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+        factory->create_component<collider>(registry_, ent);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<controllable>(registry_, ent, 300.0f);
         factory->create_component<Weapon>(registry_, ent);
@@ -112,6 +113,7 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
     if (factory) {
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
+        factory->create_component<collider>(registry_, ent);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         return;
     }
@@ -204,5 +206,42 @@ void PlayerHandler::on_game_start(const char* payload, size_t size) {
     if (game_start_callback_) {
         std::cout << "[PlayerHandler] Invoking game start callback" << std::endl;
         game_start_callback_();
+    }
+}
+
+void PlayerHandler::on_position_update(const char* payload, size_t size) {
+    using RType::Protocol::PositionUpdate;
+
+    if (!payload || size < sizeof(PositionUpdate)) {
+        std::cerr << "[PlayerMsg] Invalid POSITION_UPDATE payload" << std::endl;
+        return;
+    }
+
+    PositionUpdate pu;
+    memcpy(&pu, payload, sizeof(pu));
+
+    // Find the entity by player_token (entity_id is actually player_token)
+    auto it = remote_player_map_.find(pu.entity_id);
+    if (it == remote_player_map_.end()) {
+        // This might be our own entity or an unknown player
+        return;
+    }
+
+    entity ent = it->second;
+
+    // Update position
+    auto* pos_arr = registry_.get_if<position>();
+    if (pos_arr && pos_arr->has(ent)) {
+        position& pos = (*pos_arr)[ent];
+        pos.x = pu.x;
+        pos.y = pu.y;
+    }
+
+    // Update velocity
+    auto* vel_arr = registry_.get_if<velocity>();
+    if (vel_arr && vel_arr->has(ent)) {
+        velocity& vel = (*vel_arr)[ent];
+        vel.vx = pu.vx;
+        vel.vy = pu.vy;
     }
 }

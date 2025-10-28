@@ -9,6 +9,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Animation.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Collider.hpp"
 #include "Entity/Components/Controllable/Controllable.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
 
@@ -25,6 +26,7 @@ class PlayerHandler {
         void on_player_spawn(const char* payload, size_t size);
         void on_player_remote_spawn(const char* payload, size_t size);
         void on_game_start(const char* payload, size_t size);
+        void on_position_update(const char* payload, size_t size);
 
         // Register a callback for when CLIENT_LIST is received
         void set_client_list_callback(ClientListCallback callback);

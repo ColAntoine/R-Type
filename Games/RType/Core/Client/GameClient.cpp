@@ -44,15 +44,8 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame for SOLO mode (no shared registry - uses local registry)
-    _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
-        return std::make_shared<InGameState>(nullptr, nullptr);
-    });
-    
-    // Register InGame for MULTIPLAYER mode (with shared registry)
-    _stateManager.register_state_with_factory("InGameMultiplayer", [this]() -> std::shared_ptr<IGameState> {
-        return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);
-    });
+    _stateManager.register_state<InGameState>("InGame");
+    _stateManager.register_state<InGameState>("InGameMultiplayer");
 
     _stateManager.register_state<InGameHudState>("InGameHud");
     _stateManager.register_state<InGameBackground>("InGameBackground");
@@ -108,7 +101,7 @@ bool GameClient::init()
     network_manager_->register_default_handlers();
     network_manager_->start();
 
-    // Set network manager in service for states to access
+    // Set network manager in service for states to access (provides registry/loader access)
     RType::Network::set_network_manager(network_manager_.get());
 
     _running = true;
