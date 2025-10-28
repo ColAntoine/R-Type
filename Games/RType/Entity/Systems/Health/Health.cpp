@@ -40,9 +40,9 @@ void HealthSys::checkAndKillEnemy(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            // Check if entity still exists before killing
             if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
                 addScore(r);
+                // add a death animation component here
                 r.kill_entity(ent);
             }
         }
