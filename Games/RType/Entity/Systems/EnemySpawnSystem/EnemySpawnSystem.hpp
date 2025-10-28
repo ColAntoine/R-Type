@@ -54,6 +54,9 @@ public:
     void set_spawn_interval(float interval) { spawn_interval_ = interval; }
     void set_max_enemies(size_t max) { max_enemies_ = max; }
     void set_world_bounds(float width, float height);
+    
+    // Seed the RNG with the registry's seed (for deterministic gameplay)
+    void seed_from_registry(registry& r);
 
     size_t get_max_enemies() const { return max_enemies_; }
     float get_spawn_interval() const { return spawn_interval_; }

@@ -6,6 +6,7 @@
 #include "ECS/Components/Position.hpp"
 
 #include <string>
+#include <random>
 
 // INFOS:
 // It's a very basic implementation, must be upgraded.
@@ -22,6 +23,13 @@ void InGameState::enter()
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
+        
+        // Generate random seed for solo play (deterministic for potential replay features)
+        std::random_device rd;
+        unsigned int solo_seed = rd();
+        _registry.set_random_seed(solo_seed);
+        std::cout << "[InGame] Generated solo game seed: " << solo_seed << std::endl;
+        
         loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
         createPlayer();
     }

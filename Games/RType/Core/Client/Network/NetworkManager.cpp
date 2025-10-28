@@ -110,6 +110,22 @@ void NetworkManager::register_default_handlers() {
             });
         }
     );
+
+    // game seed (for deterministic gameplay)
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::GAME_SEED),
+        [this](const char* payload, size_t size) {
+            if (!payload || size < sizeof(RType::Protocol::GameSeed)) return;
+            
+            RType::Protocol::GameSeed seed_msg;
+            memcpy(&seed_msg, payload, sizeof(seed_msg));
+            
+            // Set the seed in the registry on the main thread
+            this->post_to_main([this, seed = seed_msg.seed]() {
+                registry_.set_random_seed(seed);
+                std::cout << "[Client] Received game seed from server: " << seed << std::endl;
+            });
+        }
+    );
 }
 
 void NetworkManager::post_to_main(std::function<void()> job) {

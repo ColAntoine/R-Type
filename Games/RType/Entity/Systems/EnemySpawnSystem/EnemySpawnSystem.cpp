@@ -10,10 +10,17 @@
 #include <iostream>
 
 EnemySpawnSystem::EnemySpawnSystem()
-    : rng_(std::random_device{}()),
+    : rng_(std::random_device{}()),  // Default initialization, will be re-seeded from registry
       type_dist_(1, 4),
       y_dist_(50.0f, 700.0f)
 {
+}
+
+void EnemySpawnSystem::seed_from_registry(registry& r) {
+    if (r.has_random_seed()) {
+        rng_.seed(r.get_random_seed());
+        std::cout << "[EnemySpawnSystem] Seeded RNG with: " << r.get_random_seed() << std::endl;
+    }
 }
 
 void EnemySpawnSystem::initialize_if_needed(registry& r) {
@@ -23,6 +30,9 @@ void EnemySpawnSystem::initialize_if_needed(registry& r) {
     auto& renderManager = RenderManager::instance();
     float screen_height = renderManager.get_screen_infos().getHeight();
     y_dist_ = std::uniform_real_distribution<>(50.0f, screen_height - 50.0f);
+
+    // Seed from registry if available
+    seed_from_registry(r);
 
     initialized_ = true;
 }

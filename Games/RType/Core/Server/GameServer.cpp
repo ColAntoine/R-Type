@@ -9,6 +9,7 @@
 #include <thread>
 #include <chrono>
 #include <raylib.h>
+#include <random>
 
 GameServer::GameServer(bool display, bool windowed, float scale)
     : port_(8080)
@@ -198,6 +199,28 @@ void GameServer::start_game()
     std::cout << Console::green("[GameServer] ") << "Starting game! Transitioning from lobby..." << std::endl;
     
     game_started_ = true;
+    
+    // Generate and set random seed for deterministic gameplay
+    std::random_device rd;
+    unsigned int game_seed = rd();
+    server_ecs_->GetRegistry().set_random_seed(game_seed);
+    
+    std::cout << Console::cyan("[GameServer] ") << "Generated game seed: " << game_seed << std::endl;
+    
+    // Broadcast the seed to all clients
+    auto server = network_manager_->get_server();
+    if (server) {
+        RType::Protocol::GameSeed seed_msg;
+        seed_msg.seed = game_seed;
+        
+        auto packet = RType::Protocol::create_packet(
+            static_cast<uint8_t>(RType::Protocol::GameMessage::GAME_SEED),
+            seed_msg
+        );
+        
+        server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+        std::cout << Console::cyan("[GameServer] ") << "Game seed broadcasted to all clients" << std::endl;
+    }
     
     // Mark lobby as game started (for clients to know)
     if (lobby_state_) {
