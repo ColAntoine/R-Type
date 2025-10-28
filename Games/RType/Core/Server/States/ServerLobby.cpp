@@ -70,10 +70,10 @@ void ServerLobby::setup_ui()
     auto titleEntity = _registry.spawn_entity();
     _registry.add_component(titleEntity, UI::UIComponent(titleText));
 
-    // Create bar to split the panel
+    // Create bar to split the panel (starts below the title)
     auto bar = PanelBuilder()
-        .at(renderManager.scalePosX(40), renderManager.scalePosY(5))
-        .size(20, renderManager.scaleSizeH(90))
+        .at(renderManager.scalePosX(40), renderManager.scalePosY(15))
+        .size(20, renderManager.scaleSizeH(70))
         .border(20, WHITE)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
