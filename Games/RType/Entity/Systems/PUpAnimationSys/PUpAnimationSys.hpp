@@ -31,11 +31,14 @@ public:
     const char* get_name() const override { return "PUpAnimationSys"; }
 private:
     void getAnimations(registry &r);
-    void updateAnimation(registry &r);
+    void updateAnimation(registry &r, float dt);
+    bool pendingAnimation(registry &r);
 
     std::queue<PUpAnimation> _animationQueue;
     PUpAnimation _current;
     bool _isDone{true};
+    entity _arrowEnt{0};
+    float _arrowBaseY{0.0f};
 };
 
 extern "C" {
