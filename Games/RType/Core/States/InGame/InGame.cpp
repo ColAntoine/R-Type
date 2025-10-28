@@ -8,9 +8,6 @@
 
 #include <string>
 
-// INFOS:
-// It's a very basic implementation, must be upgraded.
-
 void InGameState::enter()
 {
     std::cout << "[InGame] Entering state" << std::endl;
@@ -75,7 +72,7 @@ void InGameState::createPlayer()
     if (componentFactory) {
         componentFactory->create_component<position>(_registry, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
         componentFactory->create_component<animation>(_registry, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
-        componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);      // ! SPEED TO BE REDUCED
+        componentFactory->create_component<controllable>(_registry, _playerEntity, 300.f);
         componentFactory->create_component<Weapon>(_registry, _playerEntity);
         componentFactory->create_component<collider>(_registry, _playerEntity, 100.f, 100.f, -50.f, -50.f);
         componentFactory->create_component<Score>(_registry, _playerEntity);

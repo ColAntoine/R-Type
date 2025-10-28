@@ -18,9 +18,9 @@
 #include "ECS/Components/Velocity.hpp"
 
 PowerUpSys::PowerUpSys()
-    : rng_(std::random_device{}()),
-      x_dist_(0.0f, 800.0f),
-      powerup_type_dist_(0, 3)
+    : _rng(std::random_device{}()),
+      _x_dist(0.0f, 800.0f),
+      _powerup_type_dist(0, 3)
 {
 
 }
@@ -33,34 +33,31 @@ void PowerUpSys::update(registry& r, float dt)
 
 void PowerUpSys::spawnPowerUps(registry &r, float dt)
 {
-    spawn_timer_ += dt;
+    _spawn_timer += dt;
 
-    if (spawn_timer_ >= spawn_interval_) {
+    if (_spawn_timer >= _spawn_interval) {
         auto& renderManager = RenderManager::instance();
         float screen_width = renderManager.get_screen_infos().getWidth();
         float screen_height = renderManager.get_screen_infos().getHeight();
 
-        // Update distributions based on screen size
-        x_dist_ = std::uniform_real_distribution<>(0.0f, screen_width);
-        y_dist_ = std::uniform_real_distribution<>(-50.0f, 0.0f);
+        _x_dist = std::uniform_real_distribution<>(0.0f, screen_width);
+        _y_dist = std::uniform_real_distribution<>(-50.0f, 0.0f);
 
-        float spawn_x = x_dist_(rng_);
-        float spawn_y = y_dist_(rng_);
-        float fall_speed = 50.0f + (rng_() % 100);
-        powerUpType type = static_cast<powerUpType>(powerup_type_dist_(rng_));
+        float spawn_x = _x_dist(_rng);
+        float spawn_y = _y_dist(_rng);
+        float fall_speed = 50.0f + (_rng() % 100);
+        powerUpType type = static_cast<powerUpType>(_powerup_type_dist(_rng));
 
         auto ent = r.spawn_entity();
         r.emplace_component<PowerUp>(ent, type, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f), -renderManager.scaleSizeW(2.5f), -renderManager.scaleSizeH(2.5f));
         r.emplace_component<position>(ent, spawn_x, spawn_y);
         r.emplace_component<collider>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f), -renderManager.scaleSizeW(2.5f), -renderManager.scaleSizeH(2.5f));
         r.emplace_component<velocity>(ent, 0.0f, fall_speed);
-        // r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
 
-        // Compute target sprite size as 3% of the screen (preserve aspect via per-sprite original size)
         float screen_w = screen_width;
         float screen_h = screen_height;
-        float target_w = screen_w * 0.03f; // 3% of screen width
-        float target_h = screen_h * 0.03f; // 3% of screen height
+        float target_w = screen_w * 0.03f;
+        float target_h = screen_h * 0.03f;
 
         switch (type)
         {
@@ -97,7 +94,7 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
             break;
         }
 
-        spawn_timer_ = 0.0f;
+        _spawn_timer = 0.0f;
     }
 }
 
@@ -115,7 +112,6 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     std::vector<size_t> entitiesToKill;
 
     for (auto [pUp, pPos, pCol, pEntity] : zipper(*pUpArr, *posArr, *colArr)) {
-        // Get powerup AABB
         float p_left = pPos.x + pCol.offset_x;
         float p_right = pPos.x + pCol.offset_x + pCol.w;
         float p_top = pPos.y + pCol.offset_y;
@@ -173,7 +169,7 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp)
             {
                 std::array<std::string, 4> bulletTypes = {"hardBullet", "bullet", "bigBullet", "parabol"};
                 std::uniform_int_distribution<> bullet_dist(0, bulletTypes.size() - 1);
-                std::string selectedBullet = bulletTypes[bullet_dist(rng_)];
+                std::string selectedBullet = bulletTypes[bullet_dist(_rng)];
 
                 auto it = std::find(weapon._projectileType.begin(), weapon._projectileType.end(), selectedBullet);
                 if (it == weapon._projectileType.end()) {

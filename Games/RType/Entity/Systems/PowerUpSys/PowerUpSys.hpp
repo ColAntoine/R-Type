@@ -40,12 +40,12 @@ private:
 
     std::map<powerUpType, std::function<void(registry &)>> _pFunc;
 
-    std::mt19937 rng_;
-    std::uniform_real_distribution<> x_dist_;
-    std::uniform_real_distribution<> y_dist_;
-    std::uniform_int_distribution<> powerup_type_dist_;
-    float spawn_timer_{0.0f};
-    float spawn_interval_{10.0f};
+    std::mt19937 _rng;
+    std::uniform_real_distribution<> _x_dist;
+    std::uniform_real_distribution<> _y_dist;
+    std::uniform_int_distribution<> _powerup_type_dist;
+    float _spawn_timer{0.0f};
+    float _spawn_interval{10.0f};
 };
 
 extern "C" {
