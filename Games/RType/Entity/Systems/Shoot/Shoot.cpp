@@ -25,6 +25,7 @@ Shoot::Shoot()
     _shootType["bigBullet"] = [this](const ProjectileContext& ctx) { shootBigBullets(ctx); };
     _shootType["parabol"] = [this](const ProjectileContext& ctx) { shootParabolBullets(ctx); };
     _shootType["enemy"] = [this](const ProjectileContext& ctx) { shootEnemyBullets(ctx); };
+    _shootType["bossDrop"] = [this](const ProjectileContext& ctx) { shootDropBullets(ctx); };
 }
 
 static void killEntity(std::vector<entity> ents, registry &r)
@@ -61,6 +62,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
     auto *weaponArr = r.get_if<Weapon>();
     auto *posArr = r.get_if<position>();
     auto *colArr = r.get_if<collider>();
+    auto *enemyArr = r.get_if<Enemy>();
 
     if (!weaponArr || !posArr) return;
 
@@ -85,11 +87,14 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
         if (colArr && colArr->has(static_cast<size_t>(entityId))) {
             auto &col = colArr->get(static_cast<size_t>(entityId));
-            spawnX = pos.x + col.offset_x + col.w;
+            if (enemyArr && enemyArr->has(static_cast<size_t>(entityId))) {
+                spawnX = pos.x + col.offset_x - RenderManager::instance().scaleSizeW(1);
+            } else {
+                spawnX = pos.x + col.offset_x + col.w;
+            }
             spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
 
-        // Shoot all weapon types in the vector
         for (const auto& projType : weapon._projectileType) {
             ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY};
 
@@ -161,7 +166,6 @@ void Shoot::checkPlayerHits(registry &r)
         float pr = proj._radius;
         int pdmg = proj._damage;
 
-        // Iterate over player-like entities (have Health+Position+Collider+Controllable)
         for (auto [hlt, hpos, c, ctrl, targetEntity] : zipper(*healthArr, *posArr, *colArr, *ctrlArr)) {
             if (projEntity == targetEntity || proj._friendly) continue; // only enemy projectiles
 
@@ -253,8 +257,26 @@ void Shoot::shootEnemyBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
     ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
-    ctx.r.emplace_component<lifetime>(projectile);
+    ctx.r.emplace_component<lifetime>(projectile, 30.f);
 }
+
+void Shoot::shootDropBullets(const ProjectileContext& ctx)
+{
+    RenderManager &renderManager = RenderManager::instance();
+    float spawnY = renderManager.scalePosY(-100.f);
+    float velY = (ctx.dir_x * ctx.weapon._projectileSpeed);
+    float velX = 0.f;
+
+    for (int i = 0; i < 5; ++i) {
+        auto proj = ctx.r.spawn_entity();
+        ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 10.0f, false));
+        ctx.r.emplace_component<position>(proj, ctx.spawn_x - (i * renderManager.scaleSizeW(5)), -200.f - (i * renderManager.scaleSizeW(3)));
+        ctx.r.emplace_component<velocity>(proj, velX, velY);
+        ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
+        ctx.r.emplace_component<lifetime>(proj, 30.f);
+    }
+}
+
 
 void Shoot::renderHitboxes(registry &r)
 {

@@ -12,7 +12,7 @@
 BossSys::BossSys()
 : _renderManager(RenderManager::instance())
 {
-    _bossWeapons[-1] = std::vector<std::string>({"enemy"});
+    _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop"});
     _bossWeapons[1] = std::vector<std::string>({"enemy"});
     _bossWeapons[2] = std::vector<std::string>({"enemy"});
     _bossWeapons[3] = std::vector<std::string>({"enemy"});
@@ -51,17 +51,18 @@ void BossSys::spawn(registry &r)
     r.emplace_component<collider>(bossEnt, bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
 
     // ! the 1 or 1.f is corresponding to the wave used as scale factor for the boss
-    r.emplace_component<Weapon>(
+    Weapon w(
         bossEnt,
-        bossEnt,
-        _bossWeapons[1],
+        _bossWeapons[-1],
         BOSS_BASE_FIRERATE * 1.f,
         BOSS_BASE_DAMAGE * 1.f,
         BOSS_BASE_PROJ_SPEED * 1.f,
         -1,
         true
     );
-
+    w._wantsToFire = false;
+    w._automatic = false;
+    r.emplace_component<Weapon>(bossEnt, w);
     // * Spawn the body the arm is not set yet
     r.emplace_component<drawable>(bossEnt, bossW, bossH, 255, 0, 0);
 
@@ -75,12 +76,16 @@ void BossSys::move(registry &r)
     auto *posArr = r.get_if<position>();
     auto *velArr = r.get_if<velocity>();
     auto *bossArr = r.get_if<Boss>();
+    auto *weaponArr = r.get_if<Weapon>();
+    static bool doneMoving = false;
 
-    if (!posArr || !velArr || !bossArr) return;
+    if (!posArr || !velArr || !bossArr || !weaponArr || doneMoving) return;
 
-    for (auto [pos, vel, boss, ent] : zipper(*posArr, *velArr, *bossArr)) {
+    for (auto [pos, vel, boss, weap, ent] : zipper(*posArr, *velArr, *bossArr, *weaponArr)) {
         if (pos.x <= _renderManager.scalePosX(75)) {
             vel.vx = 0.f;
+            weap._wantsToFire = true;
+            weap._automatic = true;
             return;
         }
         vel.vx = -300.f;

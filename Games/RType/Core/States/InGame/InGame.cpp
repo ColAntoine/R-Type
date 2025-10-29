@@ -44,8 +44,8 @@ void InGameState::enter()
     loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
 
     // ! unload the enemy for boss testing
-    // loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    // loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
     // loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
 
     loader.load_system_from_so("build/lib/systems/libgame_BossSys.so", DLLoader::LogicSystem);

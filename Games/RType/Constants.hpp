@@ -48,9 +48,9 @@
 // =============================================================================
 
 // ====================================Assets===================================
-#define BOSS_BASE_FIRERATE      3.f
+#define BOSS_BASE_FIRERATE      1.f
 #define BOSS_BASE_DAMAGE        5.f
-#define BOSS_BASE_PROJ_SPEED    100.f
+#define BOSS_BASE_PROJ_SPEED    300.f
 // =============================================================================
 
 #endif

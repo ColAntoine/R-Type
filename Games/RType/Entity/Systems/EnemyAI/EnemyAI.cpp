@@ -36,8 +36,11 @@ void EnemyAISystem::update(registry& r, float dt) {
                 }
                 break;
             case Enemy::EnemyAIType::TURRET:
-            turretEnnemyAi(enm, vel, pos, dt, entity(ent), r);
-            break;
+                turretEnnemyAi(enm, vel, pos, dt, entity(ent), r);
+                break;
+            case Enemy::EnemyAIType::BOSS:
+
+                break;
         }
         if (pos.y < 50.0f && vel.vy < 0) {
             vel.vy = -vel.vy;

@@ -58,6 +58,8 @@ private:
     void shootParabolBullets(const ProjectileContext& ctx);
     void shootEnemyBullets(const ProjectileContext& ctx);
 
+    /* Boss shoots */
+    void shootDropBullets(const ProjectileContext& ctx);
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
 };
 
