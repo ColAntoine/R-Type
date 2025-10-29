@@ -19,7 +19,7 @@ class UdpServer;
 
 class ServerECS {
     public:
-        ServerECS();
+        ServerECS(int maxLobbies = 0);
         ~ServerECS();
 
         // Initialize components/systems from shared object (optional)
@@ -59,6 +59,8 @@ class ServerECS {
         std::function<void(const std::string&, const std::vector<uint8_t>&)> send_callback_;
         // Multiplayer handler
         std::unique_ptr<Multiplayer> multiplayer_;
+        // Max lobbies for multi-instance
+        int max_lobbies_;
 
     // No std::function broadcast here; multicast requests are performed directly by Multiplayer
 

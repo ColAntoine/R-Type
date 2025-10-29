@@ -23,7 +23,7 @@ class ServerECS; // forward
  */
 class Multiplayer {
     public:
-        Multiplayer(ServerECS &ecs);
+        Multiplayer(ServerECS &ecs, int maxLobbies = 0);
         ~Multiplayer();
 
         // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts
@@ -43,6 +43,7 @@ class Multiplayer {
     private:
         ServerECS &ecs_;
         UdpServer* udp_server_{nullptr};
+        int max_lobbies_{0};
 
         // Internal helpers, extracted from previous monolithic implementation
         void handle_client_connect(const std::string &session_id, const std::vector<char> &payload);

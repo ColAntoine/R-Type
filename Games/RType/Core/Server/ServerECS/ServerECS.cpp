@@ -10,8 +10,8 @@
 
 namespace RType::Network {
 
-    ServerECS::ServerECS() {
-        multiplayer_ = std::make_unique<Multiplayer>(*this);
+    ServerECS::ServerECS(int maxLobbies) : max_lobbies_(maxLobbies) {
+        multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies);
     }
     ServerECS::~ServerECS() = default;
 

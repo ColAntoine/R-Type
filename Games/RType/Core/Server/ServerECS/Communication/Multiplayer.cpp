@@ -14,7 +14,7 @@
 
 namespace RType::Network {
 
-Multiplayer::Multiplayer(ServerECS &ecs) : ecs_(ecs) {}
+Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies) : ecs_(ecs), max_lobbies_(maxLobbies) {}
 Multiplayer::~Multiplayer() = default;
 
 void Multiplayer::set_udp_server(UdpServer* server) {
@@ -169,6 +169,7 @@ void Multiplayer::send_server_accept(const std::string &session_id, uint32_t tok
     sa.session_id = token;
     sa.spawn_x = x;
     sa.spawn_y = y;
+    sa.multi_instance = (max_lobbies_ > 0) ? 1 : 0;
     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT), sa, RType::Protocol::PacketFlags::RELIABLE);
     ecs_.send_callback_(session_id, packet);
 }

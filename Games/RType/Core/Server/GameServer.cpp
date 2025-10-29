@@ -12,13 +12,14 @@
 #include <raylib.h>
 #include <random>
 
-GameServer::GameServer(bool display, bool windowed, float scale)
+GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies)
     : port_(8080)
     , running_(false)
     , display_(display)
     , windowed_(windowed)
     , scale_(scale)
     , game_started_(false)
+    , max_lobbies_(maxLobbies)
 {
 }
 
@@ -52,7 +53,7 @@ bool GameServer::init()
     server->set_message_queue(msg_ptr);
 
     // Create ServerECS (game logic)
-    server_ecs_ = std::make_unique<RType::Network::ServerECS>();
+    server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_);
     server_ecs_->set_message_queue(msg_ptr);
     // Provide a callback so ServerECS can send packets back to specific sessions
     server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {

@@ -289,10 +289,24 @@ void Lobby::on_back_clicked() {
         }
         client->disconnect();
     }
-    // Then transition back to Browser state (or Connection if not multi-instance)
+    // Go back to MainMenu, popping all states until we reach a menu state
     if (_stateManager) {
+        // Pop current state (Lobby)
         _stateManager->pop_state();
-        // For now, assume we always came from Browser
-        _stateManager->push_state("Browser");
+        
+        // Keep popping until we reach a main menu state or empty
+        while (!_stateManager->is_empty()) {
+            std::string current = _stateManager->get_current_state_name();
+            if (current == "MainMenu" || current == "Settings" || current == "Credits") {
+                // We're back at a main menu, stop here
+                break;
+            }
+            _stateManager->pop_state();
+        }
+        
+        // If we popped everything, push MainMenu
+        if (_stateManager->is_empty()) {
+            _stateManager->push_state("MainMenu");
+        }
     }
 }
