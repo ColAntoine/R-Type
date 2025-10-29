@@ -289,9 +289,10 @@ void Lobby::on_back_clicked() {
         }
         client->disconnect();
     }
-    // Then transition back to Connection state
+    // Then transition back to Browser state (or Connection if not multi-instance)
     if (_stateManager) {
         _stateManager->pop_state();
-        _stateManager->push_state("Connection");
+        // For now, assume we always came from Browser
+        _stateManager->push_state("Browser");
     }
 }

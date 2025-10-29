@@ -20,6 +20,7 @@
 #include "Core/States/AudioSettings/AudioSettings.hpp"
 #include "Core/States/VideoSettings/VideoSettings.hpp"
 #include "Core/States/BindsSettings/BindsSettings.hpp"
+#include "Core/States/Browser/Browser.hpp"
 
 #include "Constants.hpp"
 
@@ -65,6 +66,7 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
+    _stateManager.register_state<Browser>("Browser");
 }
 
 bool GameClient::init()
