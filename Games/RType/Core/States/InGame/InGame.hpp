@@ -27,6 +27,9 @@ class InGameState : public AGameState {
 
         void update(float delta_time) override;
 
+    // Handle player input when connected to a server (sends PlayerInput packets)
+    void handle_input();
+
         std::string get_name() const override { return "InGame"; }
     private:
         // InGame specific members

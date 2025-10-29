@@ -71,6 +71,11 @@ namespace RType::Network {
         
         // run all registered systems (systems may consume net_input components)
         loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
+
+        // After position system has run, broadcast updated positions to all clients
+        if (multiplayer_) {
+            multiplayer_->broadcast_positions();
+        }
         
         // Check for new enemies and broadcast them
         try {
