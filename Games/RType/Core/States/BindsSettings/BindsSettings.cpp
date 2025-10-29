@@ -7,6 +7,7 @@
 #include "UI/ThemeManager.hpp"
 
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
+#include "Core/Config/Config.hpp"
 
 void BindsSettingsState::enter()
 {
@@ -85,6 +86,8 @@ void BindsSettingsState::applyBinding(entity buttonEntity, const std::string &ac
         auto &keyBinds = KeyBindingManager::instance();
         int keyCode = keyBinds.stringToKeyCode(keyStr);
         keyBinds.setKeyBinding(action, keyCode);
+
+        Config::instance().setValueOf("controls", action, keyStr);
     });
 }
 

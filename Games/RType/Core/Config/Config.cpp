@@ -3,13 +3,21 @@
 bool Config::openConfigFile(const std::string& filepath)
 {
     _configFile.SetUnicode();
+    _filepath = filepath;
     SI_Error rc = _configFile.LoadFile(filepath.c_str());
     return rc == SI_OK;
 }
 
 bool Config::closeCurrentConfigFile()
 {
+    _filepath = "";
     return true;
+}
+
+bool Config::saveConfigFile()
+{
+    SI_Error rc = _configFile.SaveFile(_filepath.c_str());
+    return rc == SI_OK;
 }
 
 std::vector<std::pair<std::string, std::string>> Config::getSection(const std::string& section)
@@ -34,5 +42,10 @@ std::string Config::getValueOf(const std::string& section, const std::string& ke
 
 bool Config::setValueOf(const std::string& section, const std::string& key, const std::string& value)
 {
-    return _configFile.SetValue(section.c_str(), key.c_str(), value.c_str()) == SI_OK;
+    auto result = _configFile.SetValue(section.c_str(), key.c_str(), value.c_str());
+    if (result >= 0) {
+        saveConfigFile();
+        return true;
+    }
+    return false;
 }

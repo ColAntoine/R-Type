@@ -16,6 +16,7 @@ class Config {
 
         bool openConfigFile(const std::string& filepath);
         bool closeCurrentConfigFile();
+        bool saveConfigFile();
 
         std::vector<std::pair<std::string, std::string>> getSection(const std::string& section);
 
@@ -25,5 +26,6 @@ class Config {
         Config() = default;
         ~Config() = default;
 
+        std::string _filepath = "";
         CSimpleIniA _configFile;
 };
