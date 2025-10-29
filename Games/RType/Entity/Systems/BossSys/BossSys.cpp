@@ -15,7 +15,7 @@ BossSys::BossSys()
     _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop"});
     _bossWeapons[1] = std::vector<std::string>({"enemy"});
     _bossWeapons[2] = std::vector<std::string>({"enemy"});
-    _bossWeapons[3] = std::vector<std::string>({"enemy"});
+    _bossWeapons[3] = std::vector<std::string>({"enemy", "bossDrop"});
 }
 
 void BossSys::update(registry& r, float dt)
@@ -24,9 +24,24 @@ void BossSys::update(registry& r, float dt)
         spawn(r);
     }
     move(r);
+
+    bool spe = isPlayerClose(r);
+    auto weaponArr = r.get_if<Weapon>();
+    auto bossArr = r.get_if<Boss>();
+
+    if (weaponArr && bossArr) {
+        for (auto [w, b, ent]: zipper(*weaponArr, *bossArr)) {
+            w._shouldShootSpecial = spe;
+        }
+    }
+
+    // auto &eventBus = MessagingManager::instance().get_event_bus();
+    // Event playerClose(EventTypes::PLAYER_CLOSE);
+    // playerClose.set()
+    // eventBus.emit(playerClose);
 }
 
-// TODO: this func should be fied depending on the decision of when it should spawn
+// TODO: this func should be field depending on the decision of when it should spawn
 // * spawn once for testing
 bool BossSys::shouldSpawn(registry &r, float dt)
 {
@@ -94,7 +109,30 @@ void BossSys::move(registry &r)
 
 bool BossSys::isPlayerClose(registry &r)
 {
+    auto posArr = r.get_if<position>();
+    auto playerArr = r.get_if<Player>();
+    auto bossArr = r.get_if<Boss>();
 
+    position posPlayer;
+    position posBoss;
+
+    if (!posArr || !playerArr || !bossArr) return false;
+
+    for (auto [player, pos, ent] : zipper(*playerArr, *posArr)) {
+        posPlayer = pos;
+        break;
+    }
+    for (auto [boss, pos, ent] : zipper(*bossArr, *posArr)) {
+        posBoss = pos;
+        break;
+    }
+
+    float wRange = _renderManager.scaleSizeW(20);
+
+    if (std::abs(posPlayer.x - posBoss.x) <= wRange) {
+        return true;
+    }
+    return false;
 }
 
 void BossSys::smashPlayers(registry &r)

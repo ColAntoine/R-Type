@@ -22,6 +22,7 @@ struct Weapon : public IComponent {
     bool _automatic{false};                  // hold to fire
     bool _wantsToFire{false};                // request to fire set by input/system
     bool _justFired{false};                  // transient flag set when projectile actually spawned
+    bool _shouldShootSpecial{false};         // special weapons trigger
 
     Weapon() = default;
     Weapon(int owner, const std::string &projType, float rate, int dmg,

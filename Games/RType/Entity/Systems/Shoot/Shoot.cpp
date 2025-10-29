@@ -18,7 +18,7 @@
 #include "ECS/Renderer/RenderManager.hpp"
 
 Shoot::Shoot()
-    : _shootType()
+: _shootType()
 {
     _shootType["bullet"] = [this](const ProjectileContext& ctx) { shootBaseBullets(ctx); };
     _shootType["hardBullet"] = [this](const ProjectileContext& ctx) { shootHardBullets(ctx); };
@@ -26,6 +26,9 @@ Shoot::Shoot()
     _shootType["parabol"] = [this](const ProjectileContext& ctx) { shootParabolBullets(ctx); };
     _shootType["enemy"] = [this](const ProjectileContext& ctx) { shootEnemyBullets(ctx); };
     _shootType["bossDrop"] = [this](const ProjectileContext& ctx) { shootDropBullets(ctx); };
+
+    // auto &eventBus = MessagingManager::instance().get_event_bus();
+    // _playerCloseCallBackId = eventBus.subscribe(EventTypes::PLAYER_CLOSE, )
 }
 
 static void killEntity(std::vector<entity> ents, registry &r)
@@ -96,7 +99,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         }
 
         for (const auto& projType : weapon._projectileType) {
-            ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY};
+            ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY, weapon._shouldShootSpecial};
 
             auto it = _shootType.find(projType);
             if (it != _shootType.end()) {
@@ -262,6 +265,8 @@ void Shoot::shootEnemyBullets(const ProjectileContext& ctx)
 
 void Shoot::shootDropBullets(const ProjectileContext& ctx)
 {
+    if (!ctx._shouldShootSpecial) return;
+
     RenderManager &renderManager = RenderManager::instance();
     float spawnY = renderManager.scalePosY(-100.f);
     float velY = (ctx.dir_x * ctx.weapon._projectileSpeed);
@@ -269,7 +274,7 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
 
     for (int i = 0; i < 5; ++i) {
         auto proj = ctx.r.spawn_entity();
-        ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 10.0f, false));
+        ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * 2.0f, -1.0f, 0.0f, 5.0f, 10.0f, false));
         ctx.r.emplace_component<position>(proj, ctx.spawn_x - (i * renderManager.scaleSizeW(5)), -200.f - (i * renderManager.scaleSizeW(3)));
         ctx.r.emplace_component<velocity>(proj, velX, velY);
         ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);

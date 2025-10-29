@@ -18,6 +18,7 @@
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Boss/Boss.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/Player/Player.hpp"
 
 // TODO: the draw is temporary until we find some sprites
 #include "Entity/Components/Drawable/Drawable.hpp"
@@ -25,6 +26,8 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+
 
 #include "Constants.hpp"
 
@@ -42,6 +45,10 @@
  *      - collider
  * ?    - animation
 */
+
+namespace EventTypes {
+    const std::string PLAYER_CLOSE = "PLAYER_CLOSE";
+}
 
 class BossSys : public ISystem {
 public:

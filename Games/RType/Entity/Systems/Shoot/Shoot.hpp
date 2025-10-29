@@ -22,10 +22,15 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 #include "Constants.hpp"
 #include <map>
 #include <functional>
+
+namespace EventTypes {
+    const std::string PLAYER_CLOSE = "PLAYER_CLOSE";
+}
 
 struct ProjectileContext {
     registry& r;
@@ -35,6 +40,7 @@ struct ProjectileContext {
     float spawn_y;
     float dir_x;
     float dir_y;
+    bool _shouldShootSpecial{false};
 };
 
 class Shoot : public ISystem {
@@ -60,7 +66,9 @@ private:
 
     /* Boss shoots */
     void shootDropBullets(const ProjectileContext& ctx);
+
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
+    EventBus::CallbackId _playerCloseCallBackId;
 };
 
 extern "C" {
