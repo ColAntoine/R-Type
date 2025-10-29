@@ -1,6 +1,6 @@
 #include "KeyInput.hpp"
 #include "ECS/Components.hpp"
-#include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Input/Input.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include <raylib.h>
 #include <iostream>
@@ -21,10 +21,10 @@ void KeyInputSystem::onSetKeyBindings(const Event& event) {
 }
 
 void KeyInputSystem::update(registry& r, float dt) {
-    auto* controllableArr = r.get_if<controllable>();
-    if (!controllableArr) return;
+    auto* inputArr = r.get_if<Input>();
+    if (!inputArr) return;
 
-    for (auto& ctrl : *controllableArr) {
+    for (auto& ctrl : *inputArr) {
         auto it_up = _keyBinds.find("move_up");
         ctrl.move_up = (it_up != _keyBinds.end()) && IsKeyDown(it_up->second);
 
