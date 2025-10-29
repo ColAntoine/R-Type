@@ -122,6 +122,16 @@ void BindsSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(backButtonEntity, UI::UIComponent(backButton));
 
     // UP BUTTON
+    auto upText = TextBuilder()
+        .at(renderManager.scalePosX(62), renderManager.scalePosY(15))
+        .text("UP")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto upTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(upTextEntity, UI::UIComponent(upText));
+
     _up = this->_registry.spawn_entity();
     auto upBindButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(60), renderManager.scalePosY(22))
@@ -141,6 +151,16 @@ void BindsSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(_up, UI::UIComponent(upBindButton));
 
     // DOWN BUTTON
+    auto downText = TextBuilder()
+        .at(renderManager.scalePosX(60), renderManager.scalePosY(50))
+        .text("DOWN")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto downTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(downTextEntity, UI::UIComponent(downText));
+
     _down = this->_registry.spawn_entity();
     auto downBindButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(60), renderManager.scalePosY(36))
@@ -160,6 +180,16 @@ void BindsSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(_down, UI::UIComponent(downBindButton));
 
     // LEFT BUTTON
+    auto leftText = TextBuilder()
+        .at(renderManager.scalePosX(53), renderManager.scalePosY(29))
+        .text("LEFT")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto leftTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(leftTextEntity, UI::UIComponent(leftText));
+
     _left = this->_registry.spawn_entity();
     auto leftBindButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(52), renderManager.scalePosY(36))
@@ -179,6 +209,16 @@ void BindsSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(_left, UI::UIComponent(leftBindButton));
 
     // RIGHT BUTTON
+    auto rightText = TextBuilder()
+        .at(renderManager.scalePosX(69), renderManager.scalePosY(29))
+        .text("RIGHT")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto rightTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(rightTextEntity, UI::UIComponent(rightText));
+
     _right = this->_registry.spawn_entity();
     auto rightBindButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(68), renderManager.scalePosY(36))
@@ -198,9 +238,19 @@ void BindsSettingsState::setup_ui()
     this->_registry.add_component<UI::UIComponent>(_right, UI::UIComponent(rightBindButton));
 
     // SHOOT BUTTON
+    auto shootText = TextBuilder()
+        .at(renderManager.scalePosX(60), renderManager.scalePosY(70))
+        .text("SHOOT")
+        .fontSize(renderManager.scaleSizeW(3))
+        .textColor(theme.textColor)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto shootTextEntity = this->_registry.spawn_entity();
+    this->_registry.add_component<UI::UIComponent>(shootTextEntity, UI::UIComponent(shootText));
+
     _shoot = this->_registry.spawn_entity();
     auto shootBindButton = GlitchButtonBuilder()
-        .at(renderManager.scalePosX(52), renderManager.scalePosY(70))
+        .at(renderManager.scalePosX(52), renderManager.scalePosY(77))
         .size(renderManager.scaleSizeW(23), renderManager.scaleSizeH(11))
         .text(keyBindsManager.getValueAssociatedToKeyCode(keyBindsManager.getKeyBinding("shoot")))
         .color(theme.buttonColors.normal)
