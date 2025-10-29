@@ -277,11 +277,10 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
         ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * 2.0f, -1.0f, 0.0f, 5.0f, 10.0f, false));
         ctx.r.emplace_component<position>(proj, ctx.spawn_x - (i * renderManager.scaleSizeW(5)), -200.f - (i * renderManager.scaleSizeW(3)));
         ctx.r.emplace_component<velocity>(proj, velX, velY);
-        ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
+        ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
         ctx.r.emplace_component<lifetime>(proj, 30.f);
     }
 }
-
 
 void Shoot::renderHitboxes(registry &r)
 {
