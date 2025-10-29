@@ -35,7 +35,7 @@ void HealthSys::checkAndKillEnemy(registry &r)
     for (auto [healthEnt, enemyComp, pos, ent] : zipper(*healthArr, *enemyArr, *posArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
-            std::cout << "oui" << std::endl;
+
             entity anim = r.spawn_entity();
             float frame_w = 105.0f;
             float frame_h = 107.0f;

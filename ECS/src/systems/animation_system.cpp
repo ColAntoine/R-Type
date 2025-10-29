@@ -7,11 +7,11 @@
 
 #include <raylib.h>
 #include <iostream>
-#include "ECS/Systems/Animation.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/Systems/Animation.hpp"
 
 static void killEnt(registry &r, std::vector<entity> ents)
 {
@@ -55,62 +55,76 @@ void AnimationSystem::update(registry& r, float dt) {
             }
         }
 
-        bool should_advance = true;
-        if (anim.play_on_movement) {
-            auto *vel_arr = r.get_if<velocity>();
-            if (!vel_arr || !vel_arr->has(static_cast<size_t>(ent))) {
-                should_advance = false;
-            } else {
-                auto &vel = vel_arr->get(static_cast<size_t>(ent));
-                should_advance = (vel.vx != 0.0f || vel.vy != 0.0f);
-            }
-        }
+        bool should_advance = shouldAdvance(anim, entity(ent), r);
+
         if (should_advance) {
-            anim.frame_timer += dt;
-
-            if (anim.frame_timer >= anim.frame_time) {
-                anim.frame_timer = 0.0f;
-
-                anim.current_frame++;
-
-                if (anim.current_frame >= anim.frame_count) {
-                    if (anim.loop) {
-                        anim.current_frame = 0;
-                    } else {
-                        if (anim._stopAtTheEnd) {
-                            entsToKill.push_back(entity(ent));
-                            continue;
-                        }
-                        anim.current_frame = std::max(0, anim.frame_count - 1);
-                    }
-                }
-            }
+            updateAnim(anim, dt, entsToKill, entity(ent));
         }
-
-        Texture2D texture = load_texture(anim.texture_path);
-        if (texture.id != 0) {
-            Rectangle source = {
-                (float)(anim.current_frame * anim.frame_width),
-                0.0f,
-                anim.frame_width,
-                anim.frame_height
-            };
-
-            float scaled_width = anim.frame_width * anim.scale_x;
-            float scaled_height = anim.frame_height * anim.scale_y;
-
-            Rectangle dest = {
-                pos.x - scaled_width / 2.0f,
-                pos.y - scaled_height / 2.0f,
-                scaled_width, scaled_height
-            };
-
-            Vector2 origin = {0.0f, 0.0f};
-
-            RenderManager::instance().draw_sprite(&texture, source, dest, origin, 0.0f, WHITE, 0);
-        }
+        renderAnim(anim, pos);
     }
     killEnt(r, entsToKill);
+}
+
+bool AnimationSystem::shouldAdvance(animation &anim, entity ent, registry &r)
+{
+    if (anim.play_on_movement) {
+        auto *vel_arr = r.get_if<velocity>();
+        if (!vel_arr || !vel_arr->has(static_cast<size_t>(ent))) {
+            return false;
+        } else {
+            auto &vel = vel_arr->get(static_cast<size_t>(ent));
+            return (vel.vx != 0.0f || vel.vy != 0.0f);
+        }
+    }
+    return true;
+}
+
+void AnimationSystem::updateAnim(animation &anim, float dt, std::vector<entity> &entsToKill, entity ent)
+{
+    anim.frame_timer += dt;
+
+    if (anim.frame_timer >= anim.frame_time) {
+        anim.frame_timer = 0.0f;
+
+        anim.current_frame++;
+
+        if (anim.current_frame >= anim.frame_count) {
+            if (anim.loop) {
+                anim.current_frame = 0;
+            } else {
+                if (anim._stopAtTheEnd) {
+                    entsToKill.push_back(ent);
+                }
+                anim.current_frame = std::max(0, anim.frame_count - 1);
+            }
+        }
+    }
+}
+
+void AnimationSystem::renderAnim(animation &anim, position &pos)
+{
+    Texture2D texture = load_texture(anim.texture_path);
+    if (texture.id != 0) {
+        Rectangle source = {
+            (float)(anim.current_frame * anim.frame_width),
+            0.0f,
+            anim.frame_width,
+            anim.frame_height
+        };
+
+        float scaled_width = anim.frame_width * anim.scale_x;
+        float scaled_height = anim.frame_height * anim.scale_y;
+
+        Rectangle dest = {
+            pos.x - scaled_width / 2.0f,
+            pos.y - scaled_height / 2.0f,
+            scaled_width, scaled_height
+        };
+
+        Vector2 origin = {0.0f, 0.0f};
+
+        RenderManager::instance().draw_sprite(&texture, source, dest, origin, 0.0f, WHITE, 0);
+    }
 }
 
 AnimationSystem::~AnimationSystem() {

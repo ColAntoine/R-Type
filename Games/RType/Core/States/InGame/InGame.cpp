@@ -30,14 +30,13 @@ void InGameState::enter()
         std::cout << "[InGame] Generated solo game seed: " << solo_seed << std::endl;
     }
 
-    // Load components first (needed for both solo and multiplayer)
-    loader.load_components_from_so("build/lib/libECS.so", reg);
-
-    // Load render systems
+    loader.load_components_from_so("build/lib/libECS.so", _registry);
     loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
+    loader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
+    loader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
-    // Load logic systems
     loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
@@ -45,10 +44,11 @@ void InGameState::enter()
     loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-
+    loader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
