@@ -21,7 +21,9 @@ enum powerUpType {
 
 struct PowerUp : public IComponent {
     powerUpType _pwType;
+    float _w{10.f}, _h{10.f};
+    float _offset_x{0.f}, _offset_y{0.f};
 
     PowerUp();
-    PowerUp(powerUpType pwType);
+    PowerUp(powerUpType pwType, float w, float h, float ox, float oy);
 };

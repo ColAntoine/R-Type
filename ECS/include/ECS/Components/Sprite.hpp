@@ -20,5 +20,6 @@ struct sprite : public IComponent {
 
     sprite();
     sprite(const std::string& path, float w, float h);
+    sprite(const std::string& path, float w, float h, float rot);
     sprite(const std::string& path, float w, float h, float sx, float sy);
 };

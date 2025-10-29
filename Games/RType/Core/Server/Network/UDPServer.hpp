@@ -147,12 +147,16 @@ namespace RType::Network {
          */
         void cleanup_disconnected_clients();
 
+        /**
+         * @brief Generate current player list for display
+         */
+        RType::Protocol::ClientListUpdate generate_player_list();
+
     private:
         void start_receive();
         void handle_receive(const std::error_code& ec, size_t bytes_received);
         std::shared_ptr<Session> get_or_create_session(const endpoint_type& endpoint);
         void setup_cleanup_timer();
-        RType::Protocol::ClientListUpdate generate_player_list();
 
         asio::io_context& io_context_;
         asio::ip::udp::socket socket_;

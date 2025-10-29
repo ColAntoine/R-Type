@@ -24,6 +24,21 @@ Shoot::Shoot()
     _shootType["hardBullet"] = [this](const ProjectileContext& ctx) { shootHardBullets(ctx); };
     _shootType["bigBullet"] = [this](const ProjectileContext& ctx) { shootBigBullets(ctx); };
     _shootType["parabol"] = [this](const ProjectileContext& ctx) { shootParabolBullets(ctx); };
+    _shootType["enemy"] = [this](const ProjectileContext& ctx) { shootEnemyBullets(ctx); };
+}
+
+static void killEntity(std::vector<entity> ents, registry &r)
+{
+    if (ents.empty()) return;
+
+    std::sort(ents.begin(), ents.end());
+    ents.erase(std::unique(ents.begin(), ents.end()), ents.end());
+
+    for (auto ent : ents) {
+        if (r.get_if<position>() && r.get_if<position>()->has(static_cast<size_t>(ent))) {
+            r.kill_entity(ent);
+        }
+    }
 }
 
 void Shoot::checkShootIntention(registry & r)
@@ -55,6 +70,9 @@ void Shoot::spawnProjectiles(registry &r, float dt)
         }
 
         if (!weapon._wantsToFire || weapon._cooldown != 0.0f || weapon._ammo == 0) {
+            if (std::find(weapon._projectileType.begin(), weapon._projectileType.end(), "enemy") != weapon._projectileType.end()) {
+                continue;
+            }
             weapon._wantsToFire = false;
             continue;
         }
@@ -99,18 +117,14 @@ void Shoot::checkEnnemyHits(registry &r)
 
     if (!projArr || !posArr || !healthArr || !enemyArr || !colArr) return;
 
-    // Iterate projectiles that have a position
     for (auto [proj, ppos, projEntity] : zipper(*projArr, *posArr)) {
-        float pr = proj._radius;        // projectile collision radius
-        int pdmg = proj._damage;        // projectile damage
-        std::size_t owner = proj._ownerId;  // projectile owner id (skip friendly fire)
+        float pr = proj._radius;
+        int pdmg = proj._damage;
+        std::size_t owner = proj._ownerId;
 
-        // If we have collider data for targets, iterate only entities that have Health+Position+Collider.
-        // Use direct AABB extents (no half-width computation).
         for (auto [hlt, hpos, c, enemyEnt, targetEntity] : zipper(*healthArr, *posArr, *colArr, *enemyArr)) {
-            if (projEntity == targetEntity) continue;
+            if (projEntity == targetEntity || !proj._friendly) continue;
 
-            // Treat collider using its offset relative to the entity position
             float left   = hpos.x + c.offset_x;
             float right  = hpos.x + c.offset_x + c.w;
             float top    = hpos.y + c.offset_y;
@@ -129,19 +143,49 @@ void Shoot::checkEnnemyHits(registry &r)
             }
         }
     }
+    killEntity(entityToKill, r);
+}
 
-    // remove duplicates and kill entities after finishing iteration (avoid corrupting iterators)
-    if (!entityToKill.empty()) {
-        std::sort(entityToKill.begin(), entityToKill.end());
-        entityToKill.erase(std::unique(entityToKill.begin(), entityToKill.end()), entityToKill.end());
+void Shoot::checkPlayerHits(registry &r)
+{
+    auto *projArr = r.get_if<Projectile>();
+    auto *posArr = r.get_if<position>();
+    auto *healthArr = r.get_if<Health>();
+    auto *colArr = r.get_if<collider>();
+    auto *ctrlArr = r.get_if<controllable>();
+    std::vector<entity> entityToKill;
 
-        for (auto ent : entityToKill) {
-            // Only kill if the entity still exists
-            if (r.get_if<position>() && r.get_if<position>()->has(static_cast<size_t>(ent))) {
-                r.kill_entity(ent);
+    if (!projArr || !posArr || !healthArr || !colArr || !ctrlArr) return;
+
+    for (auto [proj, ppos, projEntity] : zipper(*projArr, *posArr)) {
+        float pr = proj._radius;
+        int pdmg = proj._damage;
+
+        // Iterate over player-like entities (have Health+Position+Collider+Controllable)
+        for (auto [hlt, hpos, c, ctrl, targetEntity] : zipper(*healthArr, *posArr, *colArr, *ctrlArr)) {
+            if (projEntity == targetEntity || proj._friendly) continue; // only enemy projectiles
+
+            float left   = hpos.x + c.offset_x;
+            float right  = hpos.x + c.offset_x + c.w;
+            float top    = hpos.y + c.offset_y;
+            float bottom = hpos.y + c.offset_y + c.h;
+
+            float closestX = std::max(left, std::min(ppos.x, right));
+            float closestY = std::max(top, std::min(ppos.y, bottom));
+            float dx = ppos.x - closestX;
+            float dy = ppos.y - closestY;
+            float dist2 = dx * dx + dy * dy;
+
+            if (dist2 <= pr * pr) {
+                hlt._health -= pdmg;
+                entityToKill.push_back(entity(projEntity));
+                std::cout << "player hit current health: " << hlt._health << std::endl;
+                break;
             }
         }
     }
+
+    killEntity(entityToKill, r);
 }
 
 void Shoot::shootBaseBullets(const ProjectileContext& ctx)
@@ -201,6 +245,17 @@ void Shoot::shootParabolBullets(const ProjectileContext& ctx)
     ctx.r.emplace_component<Parabol>(projectile2, ctx.spawn_x, ctx.spawn_y, 200.0f, true);
 }
 
+void Shoot::shootEnemyBullets(const ProjectileContext& ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 4.0f, false));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
+    ctx.r.emplace_component<lifetime>(projectile);
+}
+
 void Shoot::renderHitboxes(registry &r)
 {
     auto *projArr = r.get_if<Projectile>();
@@ -222,9 +277,13 @@ void Shoot::renderHitboxes(registry &r)
 }
 
 void Shoot::update(registry& r, float dt) {
+    /* Player Shooting*/
     checkShootIntention(r);
     spawnProjectiles(r, dt);
     checkEnnemyHits(r);
+
+    /* Enemy Shooting*/
+    checkPlayerHits(r);
     // renderHitboxes(r);
 }
 

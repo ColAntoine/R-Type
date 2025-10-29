@@ -2,7 +2,7 @@
 #include <iostream>
 
 NetworkManager::NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, DLLoader& loader)
-    : client_(client), registry_(registry), loader_(loader), player_handler_(registry, loader), enemy_handler_()
+    : client_(client), registry_(registry), loader_(loader), player_handler_(registry, loader), enemy_handler_(registry, loader)
 {
 }
 
@@ -71,6 +71,16 @@ void NetworkManager::register_default_handlers() {
         }
     );
 
+    // position update (server broadcasting player positions)
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::POSITION_UPDATE),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_position_update(data.data(), data.size());
+            });
+        }
+    );
+
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::ENTITY_CREATE),
         [this](const char* payload, size_t size) {
             if (!payload || size < sizeof(RType::Protocol::EntityCreate)) return;
@@ -107,6 +117,22 @@ void NetworkManager::register_default_handlers() {
             std::vector<char> data(payload, payload + size);
             this->post_to_main([this, data = std::move(data)]() mutable {
                 player_handler_.on_game_start(data.data(), data.size());
+            });
+        }
+    );
+
+    // game seed (for deterministic gameplay)
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::GAME_SEED),
+        [this](const char* payload, size_t size) {
+            if (!payload || size < sizeof(RType::Protocol::GameSeed)) return;
+            
+            RType::Protocol::GameSeed seed_msg;
+            memcpy(&seed_msg, payload, sizeof(seed_msg));
+            
+            // Set the seed in the registry on the main thread
+            this->post_to_main([this, seed = seed_msg.seed]() {
+                registry_.set_random_seed(seed);
+                std::cout << "[Client] Received game seed from server: " << seed << std::endl;
             });
         }
     );
