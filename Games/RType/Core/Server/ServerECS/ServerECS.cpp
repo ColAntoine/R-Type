@@ -24,9 +24,14 @@ namespace RType::Network {
             std::cerr << Console::red("[ServerECS] ") << "Component factory not available after load" << std::endl;
         }
 
-        // Load the position system so entities can move on the server
+        // Load the position system first (applies velocity to move entities)
         if (!loader_.load_system_from_so("lib/systems/libposition_system.so", DLLoader::LogicSystem)) {
             std::cerr << Console::red("[ServerECS] ") << "Failed to load position system!" << std::endl;
+        }
+
+        // Load the collision system second (fixes positions after movement to prevent overlap)
+        if (!loader_.load_system_from_so("lib/systems/libcollision_system.so", DLLoader::LogicSystem)) {
+            std::cerr << Console::red("[ServerECS] ") << "Failed to load collision system!" << std::endl;
         }
 
         return true;

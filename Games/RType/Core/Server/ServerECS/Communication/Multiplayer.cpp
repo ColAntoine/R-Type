@@ -154,7 +154,7 @@ entity Multiplayer::spawn_player_entity(float x, float y) {
     if (ecs_.get_factory()) {
         ecs_.get_factory()->create_component<position>(registry, ent, x, y);
         ecs_.get_factory()->create_component<velocity>(registry, ent, 0.0f, 0.0f);
-        ecs_.get_factory()->create_component<collider>(registry, ent);
+        ecs_.get_factory()->create_component<collider>(registry, ent, 33.0f, 33.0f, 0.0f, 0.0f, false);
         ecs_.get_factory()->create_component<InputBuffer>(registry, ent);
         ecs_.get_factory()->create_component<animation>(registry, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
     } else {

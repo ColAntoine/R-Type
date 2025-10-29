@@ -32,15 +32,33 @@ static inline bool rect_overlap(const Rect &a, const Rect &b)
     return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
 }
 
-static inline void resolve_penetration(position &pi, const Rect &a, position & /*pj*/, const Rect &b)
+static inline void resolve_penetration(position &pi, const Rect &a, position &pj, const Rect &b)
 {
     float overlap_x = std::min(a[2], b[2]) - std::max(a[0], b[0]);
     float overlap_y = std::min(a[3], b[3]) - std::max(a[1], b[1]);
 
+    // Push both entities equally (half the overlap each) to prevent one-sided pushing
+    float half_overlap_x = overlap_x * 0.5f;
+    float half_overlap_y = overlap_y * 0.5f;
+
     if (overlap_x < overlap_y) {
-        if (a[0] < b[0]) pi.x -= overlap_x; else pi.x += overlap_x;
+        // Horizontal separation
+        if (a[0] < b[0]) {
+            pi.x -= half_overlap_x;
+            pj.x += half_overlap_x;
+        } else {
+            pi.x += half_overlap_x;
+            pj.x -= half_overlap_x;
+        }
     } else {
-        if (a[1] < b[1]) pi.y -= overlap_y; else pi.y += overlap_y;
+        // Vertical separation
+        if (a[1] < b[1]) {
+            pi.y -= half_overlap_y;
+            pj.y += half_overlap_y;
+        } else {
+            pi.y += half_overlap_y;
+            pj.y -= half_overlap_y;
+        }
     }
 }
 
