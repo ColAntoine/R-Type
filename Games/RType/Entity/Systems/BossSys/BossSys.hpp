@@ -1,0 +1,80 @@
+/*
+** EPITECH PROJECT, 2025
+** R-Type
+** File description:
+** BossSys system
+*/
+
+#pragma once
+
+#include "ECS/Systems/ISystem.hpp"
+
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Animation.hpp"
+#include "ECS/Components/Collider.hpp"
+
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Boss/Boss.hpp"
+#include "Entity/Components/Enemy/Enemy.hpp"
+
+// TODO: the draw is temporary until we find some sprites
+#include "Entity/Components/Drawable/Drawable.hpp"
+
+#include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/Zipper.hpp"
+#include "ECS/Registry.hpp"
+
+#include "Constants.hpp"
+
+#include <map>
+#include <vector>
+
+/**
+ *  To make the boss work you will need those components:
+ *      - pos
+ *      - Health
+ *      - velocity
+ *      - Boss
+ *      - Weapon
+ *      - Enemy
+ *      - collider
+ * ?    - animation
+*/
+
+class BossSys : public ISystem {
+public:
+    BossSys();
+    void update(registry& r, float dt = 0.0f) override;
+    const char* get_name() const override { return "BossSys"; }
+
+private:
+    /* Spawn detection function (will be implemented based on the score or the dt) */
+    bool shouldSpawn(registry &r, float dt);
+    void spawn(registry &r);
+
+    /* spawn until position 3/4 of the screen */
+    void move(registry &r);
+
+    /* Boss Pattern functions */
+    // ? punch funcs
+    bool isPlayerClose(registry &r);
+    void smashPlayers(registry &r);
+
+    // ? Shoot patterns
+    // ? need to create new weapons type and apply them based on the current wave
+    bool isPlayerFar(registry &r);
+    bool shouldShoot(registry &r);
+
+    // * weapons depending on wave for now
+    // * the map use the wave as index and a vector of string to set the weapons
+    std::map<int, std::vector<std::string>> _bossWeapons;
+
+    // * RenderManager for quick access
+    RenderManager &_renderManager;
+};
+
+extern "C" {
+    std::unique_ptr<ISystem> create_system();
+}

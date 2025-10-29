@@ -24,5 +24,8 @@ struct Weapon : public IComponent {
     bool _justFired{false};                  // transient flag set when projectile actually spawned
 
     Weapon() = default;
-    Weapon(int owner, const std::string &projType, float rate, int dmg, float projSpeed, int am = -1, bool autoFire = false);
+    Weapon(int owner, const std::string &projType, float rate, int dmg,
+        float projSpeed, int am = -1, bool autoFire = false);
+    Weapon(int owner, std::vector<std::string> &projType, float rate, int dmg,
+        float projSpeed, int am = -1, bool autoFire = false);
 };
