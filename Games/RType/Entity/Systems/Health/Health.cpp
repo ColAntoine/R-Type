@@ -60,13 +60,20 @@ void HealthSys::checkAndKillEnemy(registry &r)
 void HealthSys::checkAndKillPlayer(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
+    auto *playerArr = r.get_if<Player>();
+    auto *posArr = r.get_if<position>();
     std::vector<entity> entToKill;
 
-    if (!healthArr) return;
+    if (!healthArr || !playerArr || !posArr) return;
 
-    for (auto [healthEnt, ent] : zipper(*healthArr)) {
+    for (auto [healthEnt, player, pos, ent] : zipper(*healthArr, *playerArr, *posArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
+            entity anim = r.spawn_entity();
+            float frame_w = 105.0f;
+            float frame_h = 107.0f;
+            r.emplace_component<animation>(anim, std::string(RTYPE_PATH_ASSETS) + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
 
