@@ -32,10 +32,10 @@ void ControlSystem::update(registry& r, float dt) {
 
         float speed = ctrl.speed;
         float vx = 0.f, vy = 0.f;
-        if (IsKeyDown(KEY_RIGHT)) vx += speed;
-        if (IsKeyDown(KEY_LEFT))  vx -= speed;
-        if (IsKeyDown(KEY_DOWN))  vy += speed;
-        if (IsKeyDown(KEY_UP))    vy -= speed;
+        if (ctrl.move_right) vx += speed;
+        if (ctrl.move_left)  vx -= speed;
+        if (ctrl.move_down)  vy += speed;
+        if (ctrl.move_up)    vy -= speed;
 
         auto *vel_arr = r.get_if<velocity>();
         if (vel_arr && vel_arr->has(ent)) {

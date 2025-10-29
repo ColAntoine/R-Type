@@ -49,10 +49,6 @@ void GameClient::set_bindings()
         int keyCode = keyBindingManager.stringToKeyCode(keyStr);
         keyBindingManager.setKeyBinding(action, keyCode);
     }
-
-    for (auto& [key, value] : keyBindingManager.getKeyBindings()) {
-        std::cout << "Key: " << key << " Action: " << value << std::endl;
-    }
 }
 
 void GameClient::register_states() {
@@ -66,7 +62,7 @@ void GameClient::register_states() {
     _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(nullptr, nullptr);
     });
-    
+
     // Register InGame for MULTIPLAYER mode (with shared registry)
     _stateManager.register_state_with_factory("InGameMultiplayer", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);

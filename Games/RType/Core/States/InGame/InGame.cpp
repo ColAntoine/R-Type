@@ -1,23 +1,16 @@
 #include "InGame.hpp"
-#include "ECS/Systems/Position.hpp"
-#include "Entity/Systems/Draw/Draw.hpp"
 #include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
-
 #include "ECS/Components/Position.hpp"
-<<<<<<< Updated upstream
-#include <string>
-#include <random>
 #include "Core/Client/Network/ClientService.hpp"
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
-#include <raylib.h>
-=======
-
 #include "Core/Config/Config.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "Core/KeyBindingManager/KeyBindingManager.hpp"
 
 #include <string>
->>>>>>> Stashed changes
+#include <random>
 
 void InGameState::enter()
 {
@@ -31,7 +24,7 @@ void InGameState::enter()
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
-        
+
         // Generate random seed for solo play (deterministic for potential replay features)
         std::random_device rd;
         unsigned int solo_seed = rd();
@@ -41,7 +34,7 @@ void InGameState::enter()
 
     // Load components first (needed for both solo and multiplayer)
     loader.load_components_from_so("build/lib/libECS.so", reg);
-    
+
     // Load render systems
     loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
@@ -52,6 +45,7 @@ void InGameState::enter()
     // Load logic systems
     loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_KeyInput.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
@@ -66,7 +60,6 @@ void InGameState::enter()
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
-<<<<<<< Updated upstream
     // Create player
     // In solo mode: create immediately
     // In multiplayer mode: DON'T create here - let the network create it via on_player_spawn()
@@ -76,13 +69,15 @@ void InGameState::enter()
     } else {
         std::cout << "[InGame] Multiplayer mode - Player will be created by network (PLAYER_SPAWN message)" << std::endl;
     }
-    
-=======
-    // TODO: Create a condition that only work in solo
-    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
 
-    createPlayer();
->>>>>>> Stashed changes
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    Event event(EventTypes::SET_KEY_BINDINGS);
+
+    const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
+
+    event.set("keyBindings", keyBinds);
+    eventBus.emit(event);
+
     setup_ui();
     _initialized = true;
 }

@@ -14,11 +14,7 @@ class ControlSystem : public ISystem {
         void update(registry& r, float dt = 0.0f) override;
         const char* get_name() const override { return "ControlSystem"; }
 
-        void setKeyBindings(const std::map<std::string, int>& bindings) {
-            _keyBindings = bindings;
-        }
     private:
-        std::map<std::string, int> _keyBindings;
 };
 
 extern "C" {
