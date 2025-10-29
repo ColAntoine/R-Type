@@ -4,6 +4,7 @@
     "dependencies": [
         "raylib",
         "asio",
-        "doctest"
+        "doctest",
+        "simpleini"
     ]
 }

@@ -5,12 +5,19 @@
 #include "ECS/Components/Animation.hpp"
 
 #include "ECS/Components/Position.hpp"
+<<<<<<< Updated upstream
 #include <string>
 #include <random>
 #include "Core/Client/Network/ClientService.hpp"
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
 #include <raylib.h>
+=======
+
+#include "Core/Config/Config.hpp"
+
+#include <string>
+>>>>>>> Stashed changes
 
 void InGameState::enter()
 {
@@ -59,6 +66,7 @@ void InGameState::enter()
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
+<<<<<<< Updated upstream
     // Create player
     // In solo mode: create immediately
     // In multiplayer mode: DON'T create here - let the network create it via on_player_spawn()
@@ -69,6 +77,12 @@ void InGameState::enter()
         std::cout << "[InGame] Multiplayer mode - Player will be created by network (PLAYER_SPAWN message)" << std::endl;
     }
     
+=======
+    // TODO: Create a condition that only work in solo
+    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
+
+    createPlayer();
+>>>>>>> Stashed changes
     setup_ui();
     _initialized = true;
 }
