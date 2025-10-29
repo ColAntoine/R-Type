@@ -13,6 +13,13 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 
+static void killEnt(registry &r, std::vector<entity> ents)
+{
+    for (auto &ent: ents) {
+        r.kill_entity(ent);
+    }
+}
+
 Texture2D AnimationSystem::load_texture(const std::string& path) {
     auto it = texture_cache_.find(path);
     if (it != texture_cache_.end()) {
@@ -22,7 +29,6 @@ Texture2D AnimationSystem::load_texture(const std::string& path) {
     Texture2D texture = LoadTexture(path.c_str());
     if (texture.id == 0) {
         std::cerr << "Failed to load texture: " << path << std::endl;
-        // Create a default 1x1 white texture for missing textures
         Image img = GenImageColor(1, 1, WHITE);
         texture = LoadTextureFromImage(img);
         UnloadImage(img);
@@ -35,67 +41,61 @@ Texture2D AnimationSystem::load_texture(const std::string& path) {
 void AnimationSystem::update(registry& r, float dt) {
     auto *anim_arr = r.get_if<animation>();
     auto *pos_arr = r.get_if<position>();
-    // Animation system centers on collider if present, otherwise centers on pos
+    std::vector<entity> entsToKill;
 
     if (!anim_arr || !pos_arr) return;
 
-    for (auto [anim, pos, entity] : zipper(*anim_arr, *pos_arr)) {
-        // Load texture to get dimensions if frame_count is not set
+    for (auto [anim, pos, ent] : zipper(*anim_arr, *pos_arr)) {
         if (anim.frame_count <= 0) {
             Texture2D texture = load_texture(anim.texture_path);
             if (texture.id != 0) {
-                // Calculate frame count based on texture width and frame width
                 anim.frame_count = static_cast<int>(texture.width / anim.frame_width);
             } else {
-                continue; // Skip if texture failed to load
+                continue;
             }
         }
 
-        // Update animation timer only if allowed by play_on_movement flag
         bool should_advance = true;
         if (anim.play_on_movement) {
-            // If play_on_movement is enabled, check velocity component
             auto *vel_arr = r.get_if<velocity>();
-            if (!vel_arr || !vel_arr->has(static_cast<size_t>(entity))) {
+            if (!vel_arr || !vel_arr->has(static_cast<size_t>(ent))) {
                 should_advance = false;
             } else {
-                auto &vel = vel_arr->get(static_cast<size_t>(entity));
+                auto &vel = vel_arr->get(static_cast<size_t>(ent));
                 should_advance = (vel.vx != 0.0f || vel.vy != 0.0f);
             }
         }
         if (should_advance) {
             anim.frame_timer += dt;
 
-            // Check if it's time to advance to the next frame
             if (anim.frame_timer >= anim.frame_time) {
-                anim.frame_timer = 0.0f; // Reset timer
+                anim.frame_timer = 0.0f;
 
-                // Advance to next frame
                 anim.current_frame++;
 
-                // Handle looping
                 if (anim.current_frame >= anim.frame_count) {
                     if (anim.loop) {
-                        anim.current_frame = 0; // Loop back to first frame
+                        anim.current_frame = 0;
                     } else {
-                        anim.current_frame = anim.frame_count - 1; // Stay on last frame
+                        if (anim._stopAtTheEnd) {
+                            entsToKill.push_back(entity(ent));
+                            continue;
+                        }
+                        anim.current_frame = std::max(0, anim.frame_count - 1);
                     }
                 }
             }
         }
 
-        // Render the current frame
         Texture2D texture = load_texture(anim.texture_path);
         if (texture.id != 0) {
-            // Calculate source rectangle for current frame
             Rectangle source = {
-                (float)(anim.current_frame * anim.frame_width), // x position in sprite sheet
-                0.0f, // y position (assuming horizontal sprite sheets)
+                (float)(anim.current_frame * anim.frame_width),
+                0.0f,
                 anim.frame_width,
                 anim.frame_height
             };
 
-            // Calculate scaled dimensions and always center animation at pos
             float scaled_width = anim.frame_width * anim.scale_x;
             float scaled_height = anim.frame_height * anim.scale_y;
 
@@ -107,15 +107,13 @@ void AnimationSystem::update(registry& r, float dt) {
 
             Vector2 origin = {0.0f, 0.0f};
 
-            // Use RenderManager wrapper to draw sprite
             RenderManager::instance().draw_sprite(&texture, source, dest, origin, 0.0f, WHITE, 0);
         }
     }
+    killEnt(r, entsToKill);
 }
 
 AnimationSystem::~AnimationSystem() {
-    // Clear the texture cache without unloading textures
-    // Raylib will handle texture cleanup when the graphics context is destroyed
     texture_cache_.clear();
 }
 
