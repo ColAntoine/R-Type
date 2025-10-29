@@ -153,6 +153,8 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
+        keyBindingManager.checkAndEmitKeyEvents();
+        keyBindingManager.checkAndEmitMouseEvents();
         messageManager.update();
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)

@@ -15,16 +15,67 @@ int KeyBindingManager::getKeyBinding(const std::string& action) const
     return -1;
 }
 
-int KeyBindingManager::stringToKeyCode(const std::string& keyStr) const {
+int KeyBindingManager::stringToKeyCode(const std::string& keyStr) const
+{
     auto it = _stringToKeyMap.find(keyStr);
     return (it != _stringToKeyMap.end()) ? it->second : KEY_NULL;
 }
 
-std::map<std::string, int> KeyBindingManager::getKeyBindings() const {
+std::string KeyBindingManager::getValueAssociatedToKeyCode(int keyCode) const
+{
+    // Assume that the first found is the one we search because there is no duplicata in the map
+    for (const auto &[key, val] : _stringToKeyMap) {
+        if (val == keyCode)
+            return key;
+    }
+    return "NULL";
+}
+
+std::map<std::string, int> KeyBindingManager::getKeyBindings() const
+{
     return _keyBindings;
 }
 
-// Définition de la map statique
+void KeyBindingManager::checkAndEmitKeyEvents()
+{
+    auto& eventBus = MessagingManager::instance().get_event_bus();
+    for (const auto& [key, value] : _stringToKeyMap) {
+        bool isDown = IsKeyDown(value);
+        bool wasDown = _previousKeyStates[value];
+
+        if (isDown && !wasDown) {
+            Event keyPressed(EventTypes::KEY_PRESSED);
+            keyPressed.set("key", key);
+            eventBus.emit(keyPressed);
+        } else if (!isDown && wasDown) {
+            Event keyReleased(EventTypes::KEY_RELEASED);
+            keyReleased.set("key", key);
+            eventBus.emit(keyReleased);
+        }
+        _previousKeyStates[value] = isDown;
+    }
+}
+
+void KeyBindingManager::checkAndEmitMouseEvents()
+{
+    auto& eventBus = MessagingManager::instance().get_event_bus();
+    for (const auto& [name, button] : _mouseButtonMap) {
+        bool isDown = IsMouseButtonDown(button);
+        bool wasDown = _previousMouseStates[button];
+
+        if (isDown && !wasDown) {
+            Event mousePressed(EventTypes::MOUSE_PRESSED);
+            mousePressed.set("button", name);
+            eventBus.emit(mousePressed);
+        } else if (!isDown && wasDown) {
+            Event mouseReleased(EventTypes::MOUSE_RELEASED);
+            mouseReleased.set("button", name);
+            eventBus.emit(mouseReleased);
+        }
+        _previousMouseStates[button] = isDown;
+    }
+}
+
 const std::map<std::string, int> KeyBindingManager::_stringToKeyMap = {
     {"A", KEY_A}, {"B", KEY_B}, {"C", KEY_C}, {"D", KEY_D}, {"E", KEY_E},
     {"F", KEY_F}, {"G", KEY_G}, {"H", KEY_H}, {"I", KEY_I}, {"J", KEY_J},
@@ -58,4 +109,10 @@ const std::map<std::string, int> KeyBindingManager::_stringToKeyMap = {
     {"KP_8", KEY_KP_8}, {"KP_9", KEY_KP_9}, {"KP_DECIMAL", KEY_KP_DECIMAL},
     {"KP_DIVIDE", KEY_KP_DIVIDE}, {"KP_MULTIPLY", KEY_KP_MULTIPLY}, {"KP_SUBTRACT", KEY_KP_SUBTRACT},
     {"KP_ADD", KEY_KP_ADD}, {"KP_ENTER", KEY_KP_ENTER}, {"KP_EQUAL", KEY_KP_EQUAL}
+};
+
+const std::map<std::string, int> KeyBindingManager::_mouseButtonMap = {
+    {"LEFT", MOUSE_LEFT_BUTTON},
+    {"RIGHT", MOUSE_RIGHT_BUTTON},
+    {"MIDDLE", MOUSE_MIDDLE_BUTTON},
 };
