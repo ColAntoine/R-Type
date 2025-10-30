@@ -84,8 +84,6 @@ set(LIB_ECS_SOURCES
     src/Messaging/EventBus.cpp
     src/Messaging/CommandDispatcher.cpp
     src/Messaging/MessageQueue.cpp
-    src/Plugin/PluginManager.cpp
-    src/Plugin/Plugin.cpp
 )
 
 # UI Component sources (to be included in main ECS library)

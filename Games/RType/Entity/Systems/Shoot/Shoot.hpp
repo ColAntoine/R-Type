@@ -10,6 +10,7 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/LifeTime/LifeTime.hpp"
 #include "Entity/Components/Controllable/Controllable.hpp"
+#include "Entity/Components/Input/Input.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Health/Health.hpp"
