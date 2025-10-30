@@ -17,6 +17,7 @@
 #include "Entity/Components/Gravity/Gravity.hpp"
 #include "Entity/Components/Parabol/Parabol.hpp"
 #include "Entity/Components/Following/Following.hpp"
+#include "Entity/Components/Wave/Wave.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 
@@ -36,7 +37,7 @@ namespace EventTypes {
 struct ProjectileContext {
     registry& r;
     entity owner_entity;
-    const Weapon& weapon;
+    Weapon& weapon;
     float spawn_x;
     float spawn_y;
     float dir_x;
@@ -68,6 +69,7 @@ private:
     /* Boss shoots */
     void shootDropBullets(const ProjectileContext& ctx);
     void shootFollowingBullets(const ProjectileContext& ctx);
+    void shootWaveBullets(const ProjectileContext& ctx);
 
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
     EventBus::CallbackId _playerCloseCallBackId;

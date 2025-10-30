@@ -54,6 +54,7 @@ void InGameState::enter()
     loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_FollowingSys.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_WaveSys.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;

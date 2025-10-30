@@ -29,9 +29,7 @@ Shoot::Shoot()
     /* boss shoots */
     _shootType["bossDrop"] = [this](const ProjectileContext& ctx) { shootDropBullets(ctx); };
     _shootType["following"] = [this](const ProjectileContext& ctx) { shootFollowingBullets(ctx); };
-
-    // auto &eventBus = MessagingManager::instance().get_event_bus();
-    // _playerCloseCallBackId = eventBus.subscribe(EventTypes::PLAYER_CLOSE, )
+    _shootType["wave"] = [this](const ProjectileContext& ctx) { shootWaveBullets(ctx); };
 }
 
 static void killEntity(std::vector<entity> ents, registry &r)
@@ -294,6 +292,18 @@ void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
     ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/followingShoot.gif", 17.08f, 18, 5.0f, 5.0f, 12, false);
     ctx.r.emplace_component<lifetime>(projectile, 10.f);
     ctx.r.emplace_component<Following>(projectile);
+}
+
+void Shoot::shootWaveBullets(const ProjectileContext &ctx)
+{
+    std::cout << "SHOOTED" << std::endl;
+    auto projectile = ctx.r.spawn_entity();
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.gif", 400, 400, 0.50f, 0.50f, 0, false);
+    ctx.r.emplace_component<Following>(projectile);
+    ctx.r.emplace_component<WaveShoot>(projectile);
 }
 
 void Shoot::renderHitboxes(registry &r)

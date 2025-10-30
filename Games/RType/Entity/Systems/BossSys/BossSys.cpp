@@ -12,7 +12,7 @@
 BossSys::BossSys()
 : _renderManager(RenderManager::instance())
 {
-    _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop", "following"});
+    _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop", "following", "wave"});
     _bossWeapons[1] = std::vector<std::string>({"enemy"});
     _bossWeapons[2] = std::vector<std::string>({"enemy"});
     _bossWeapons[3] = std::vector<std::string>({"enemy", "bossDrop"});
