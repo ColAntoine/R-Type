@@ -33,7 +33,7 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     std::vector<char> payload;
     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
 
-    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id;
+    std::cout << "[Multiplayer] Pkt type=" << int(msg_type) << " from " << session_id;
     if (udp_server_) {
         std::cout << " (recv on port=" << udp_server_->get_port() << ")";
     }
@@ -59,11 +59,11 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
 
     if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
         // Client asks the front server to create a new instance (lobby+game)
-        std::cout << Console::cyan("[Multiplayer] ") << "REQUEST_INSTANCE from " << session_id << std::endl;
+        std::cout << "[Multiplayer] REQUEST_INSTANCE from " << session_id << std::endl;
         if (ecs_.instance_request_cb_) {
             ecs_.instance_request_cb_(session_id);
         } else {
-            std::cout << Console::yellow("[Multiplayer] ") << "Instance requests not supported on this server" << std::endl;
+            std::cout << "[Multiplayer] Instance requests not supported on this server" << std::endl;
         }
         return;
     }
@@ -103,7 +103,7 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
 
     // Check if we've reached the max players limit (only for instances, not front server)
     if (max_lobbies_ == 0 && ecs_.session_token_map_.size() >= static_cast<size_t>(max_players_)) {
-        std::cout << Console::yellow("[Multiplayer] ") << "Rejecting client connection: max players (" << max_players_ << ") reached" << std::endl;
+        std::cout << "[Multiplayer] Rejecting client connection: max players (" << max_players_ << ") reached" << std::endl;
         // Optionally send a rejection message, but for now just ignore
         return;
     }
@@ -132,7 +132,7 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
     // Do NOT spawn player entities on clients yet (we're in lobby) - instead broadcast the client list
     if (udp_server_) {
             udp_server_->send_player_list_to_client(session_id);
-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted CLIENT_LIST on port=" << udp_server_->get_port() << std::endl;
+            std::cout << "[Multiplayer] Broadcasted CLIENT_LIST on port=" << udp_server_->get_port() << std::endl;
         // Ensure the newly connected client also receives the current instance list (front server may supply it)
         try {
             if (ecs_.instance_list_request_cb_) ecs_.instance_list_request_cb_(session_id);
@@ -363,7 +363,7 @@ void Multiplayer::handle_client_ready(const std::string &session_id, const std::
             session->set_ready(cr.ready_state != 0);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
+                std::cout << "[Multiplayer] Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
 
             // Check if all players are ready and start game if conditions met
             udp_server_->check_all_players_ready();
@@ -390,7 +390,7 @@ void Multiplayer::handle_client_unready(const std::string &session_id, const std
             session->set_ready(false);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
+                std::cout << "[Multiplayer] Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
         } else {
             std::cerr << "Session " << session_id << " not found" << std::endl;
         }

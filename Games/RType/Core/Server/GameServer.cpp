@@ -192,11 +192,11 @@ void GameServer::run_tick_loop()
                     if (!zero_clients_timer_active_) {
                         zero_clients_timer_active_ = true;
                         zero_clients_since_ = std::chrono::steady_clock::now();
-                        std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " has 0 clients; starting shutdown grace timer (" << zero_clients_grace_.count() << "ms)" << std::endl;
+                        std::cout << "[GameServer] Instance on port " << port_ << " has 0 clients; starting shutdown grace timer (" << zero_clients_grace_.count() << "ms)" << std::endl;
                     } else {
                         auto since = std::chrono::steady_clock::now() - zero_clients_since_;
                         if (since >= zero_clients_grace_) {
-                            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " no clients after grace period; shutting down instance" << std::endl;
+                            std::cout << "[GameServer] Instance on port " << port_ << " no clients after grace period; shutting down instance" << std::endl;
                             running_ = false; // will break the run loop and cause instance to exit
                             // allow a final tick to flush any state
                         }
@@ -205,7 +205,7 @@ void GameServer::run_tick_loop()
                     // clients present again -> reset timer
                     if (zero_clients_timer_active_) {
                         zero_clients_timer_active_ = false;
-                        std::cout << Console::cyan("[GameServer] ") << "Instance on port " << port_ << " clients reconnected; cancelling shutdown timer" << std::endl;
+                        std::cout << "[GameServer] Instance on port " << port_ << " clients reconnected; cancelling shutdown timer" << std::endl;
                     }
                 }
             }
@@ -308,7 +308,7 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         return;
     }
     if (active_instances_ >= max_lobbies_) {
-        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: max instances reached (" << active_instances_ << "/" << max_lobbies_ << ")" << std::endl;
+        std::cout << "[GameServer] Instance creation denied: max instances reached (" << active_instances_ << "/" << max_lobbies_ << ")" << std::endl;
         send_instance_created(session_id, 0);
         return;
     }
@@ -372,14 +372,14 @@ void GameServer::handle_instance_request(const std::string &session_id) {
     }
 
     if (new_port == 0) {
-        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: no available ports found" << std::endl;
+        std::cout << "[GameServer] Instance creation denied: no available ports found" << std::endl;
         send_instance_created(session_id, 0);
         return;
     }
 
     ++active_instances_;
 
-    std::cout << Console::green("[GameServer] ") << "Spawning new instance on port " << new_port << std::endl;
+    std::cout << "[GameServer] Spawning new instance on port " << new_port << std::endl;
 
     // Spawn instance in background thread
     std::thread t([this, new_port]() {
@@ -388,7 +388,7 @@ void GameServer::handle_instance_request(const std::string &session_id) {
             auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_, true);
             srv->set_port(new_port);
             if (!srv->init()) {
-                std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;
+                std::cout << "[GameServer] Failed to initialize instance on port " << new_port << std::endl;
                 // Decrement active instances
                 std::lock_guard<std::mutex> lk(instances_mtx_);
                 --active_instances_;
@@ -399,9 +399,9 @@ void GameServer::handle_instance_request(const std::string &session_id) {
             srv->run();
 
             // When instance run returns, consider it terminated
-            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << new_port << " exited" << std::endl;
+            std::cout << "[GameServer] Instance on port " << new_port << " exited" << std::endl;
         } catch (...) {
-            std::cout << Console::red("[GameServer] ") << "Exception while running instance on port " << new_port << std::endl;
+            std::cout << "[GameServer] Exception while running instance on port " << new_port << std::endl;
         }
 
         std::lock_guard<std::mutex> lk(instances_mtx_);
@@ -448,7 +448,7 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         if (server_ptr) {
             auto sess = server_ptr->get_session(session_id);
             if (sess) {
-                std::cout << Console::yellow("[GameServer] ") << "Disconnecting requesting session " << session_id << " from front server after instance creation" << std::endl;
+                std::cout << "[GameServer] Disconnecting requesting session " << session_id << " from front server after instance creation" << std::endl;
                 sess->disconnect();
             }
         }

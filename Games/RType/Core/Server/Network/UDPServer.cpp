@@ -77,11 +77,11 @@ namespace RType::Network {
             if (size >= sizeof(RType::Protocol::PacketHeader)) {
                 RType::Protocol::PacketHeader hdr;
                 memcpy(&hdr, data, sizeof(hdr));
-                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                std::cout << "[UdpServer send] port=" << port_ << " -> " << connection_id
                           << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
                           << " len=" << size << std::endl;
             } else {
-                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                std::cout << "[UdpServer send] port=" << port_ << " -> " << connection_id
                           << " raw_len=" << size << std::endl;
             }
             it->second->send(data, size);
@@ -95,11 +95,11 @@ namespace RType::Network {
                 if (size >= sizeof(RType::Protocol::PacketHeader)) {
                     RType::Protocol::PacketHeader hdr;
                     memcpy(&hdr, data, sizeof(hdr));
-                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
                               << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
                               << " len=" << size << std::endl;
                 } else {
-                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
                               << " raw_len=" << size << std::endl;
                 }
                 connection->send(data, size);
