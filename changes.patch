@@ -1,0 +1,1711 @@
+diff --git a/Games/RType/Core/Client/GameClient.cpp b/Games/RType/Core/Client/GameClient.cpp
+index 791674f..b883dc7 100644
+--- a/Games/RType/Core/Client/GameClient.cpp
++++ b/Games/RType/Core/Client/GameClient.cpp
+@@ -20,6 +20,7 @@
+ #include "Core/States/AudioSettings/AudioSettings.hpp"
+ #include "Core/States/VideoSettings/VideoSettings.hpp"
+ #include "Core/States/BindsSettings/BindsSettings.hpp"
++#include "Core/States/Browser/Browser.hpp"
+ 
+ #include "Constants.hpp"
+ 
+@@ -65,6 +66,7 @@ void GameClient::register_states() {
+     _stateManager.register_state<VideoSettingsState>("VideoSettings");
+     _stateManager.register_state<BindsSettingsState>("BindsSettings");
+     _stateManager.register_state<InGamePauseState>("InGamePause");
++    _stateManager.register_state<Browser>("Browser");
+ }
+ 
+ bool GameClient::init()
+diff --git a/Games/RType/Core/Client/Network/Handlers/PlayerHandler.cpp b/Games/RType/Core/Client/Network/Handlers/PlayerHandler.cpp
+index 0b82107..7435e26 100644
+--- a/Games/RType/Core/Client/Network/Handlers/PlayerHandler.cpp
++++ b/Games/RType/Core/Client/Network/Handlers/PlayerHandler.cpp
+@@ -313,6 +313,36 @@ void PlayerHandler::set_game_start_callback(GameStartCallback callback) {
+     game_start_callback_ = callback;
+ }
+ 
++void PlayerHandler::set_instance_created_callback(std::function<void(uint16_t)> cb) {
++    instance_created_callback_ = std::move(cb);
++}
++
++void PlayerHandler::on_instance_created(const char* payload, size_t size) {
++    if (!payload || size < sizeof(RType::Protocol::InstanceCreated)) return;
++    RType::Protocol::InstanceCreated ic;
++    memcpy(&ic, payload, sizeof(ic));
++    uint16_t port = ic.port;
++    if (instance_created_callback_) instance_created_callback_(port);
++}
++
++void PlayerHandler::set_instance_list_callback(InstanceListCallback cb) {
++    instance_list_callback_ = std::move(cb);
++    // If we already have a last known list, invoke immediately
++    if (instance_list_callback_ && !last_instance_list_.empty()) instance_list_callback_(last_instance_list_);
++}
++
++void PlayerHandler::on_instance_list(const char* payload, size_t size) {
++    if (!payload || size < sizeof(RType::Protocol::InstanceList)) return;
++    RType::Protocol::InstanceList il;
++    memcpy(&il, payload, sizeof(RType::Protocol::InstanceList));
++    std::vector<RType::Protocol::InstanceInfo> list;
++    for (uint8_t i = 0; i < il.instance_count && i < 8; ++i) {
++        list.push_back(il.instances[i]);
++    }
++    last_instance_list_ = list;
++    if (instance_list_callback_) instance_list_callback_(list);
++}
++
+ void PlayerHandler::on_game_start(const char* payload, size_t size) {
+     (void)payload; // unused
+     (void)size;    // unused
+diff --git a/Games/RType/Core/Client/Network/Handlers/PlayerHandler.hpp b/Games/RType/Core/Client/Network/Handlers/PlayerHandler.hpp
+index 2ac0943..2460cb1 100644
+--- a/Games/RType/Core/Client/Network/Handlers/PlayerHandler.hpp
++++ b/Games/RType/Core/Client/Network/Handlers/PlayerHandler.hpp
+@@ -33,6 +33,16 @@ class PlayerHandler {
+         // Register a callback for when START_GAME is received
+         void set_game_start_callback(GameStartCallback callback);
+ 
++    // Register a callback for when the server informs about an instance created (port)
++    void set_instance_created_callback(std::function<void(uint16_t)> cb);
++
++    // Called by network dispatcher when INSTANCE_CREATED arrives
++    void on_instance_created(const char* payload, size_t size);
++    // Instance list handling
++    using InstanceListCallback = std::function<void(const std::vector<RType::Protocol::InstanceInfo>&)>;
++    void set_instance_list_callback(InstanceListCallback cb);
++    void on_instance_list(const char* payload, size_t size);
++
+     private:
+         registry& registry_;
+         DLLoader& loader_;
+@@ -46,4 +56,10 @@ class PlayerHandler {
+         GameStartCallback game_start_callback_;
+         // Cache of the last received player list
+         std::vector<RType::Protocol::PlayerInfo> last_player_list_;
++    // Callback when an instance (lobby+game) is created by the server
++    std::function<void(uint16_t)> instance_created_callback_;
++    // Last known instance list
++    std::vector<RType::Protocol::InstanceInfo> last_instance_list_;
++    // Instance list callback
++    InstanceListCallback instance_list_callback_;
+ };
+diff --git a/Games/RType/Core/Client/Network/NetworkManager.cpp b/Games/RType/Core/Client/Network/NetworkManager.cpp
+index 900ca21..3f39e32 100644
+--- a/Games/RType/Core/Client/Network/NetworkManager.cpp
++++ b/Games/RType/Core/Client/Network/NetworkManager.cpp
+@@ -121,6 +121,26 @@ void NetworkManager::register_default_handlers() {
+         }
+     );
+ 
++    // Instance created (server informs client about instance port to reconnect to)
++    dispatcher_.register_handler(static_cast<uint8_t>(SystemMessage::INSTANCE_CREATED),
++        [this](const char* payload, size_t size) {
++            std::vector<char> data(payload, payload + size);
++            this->post_to_main([this, data = std::move(data)]() mutable {
++                player_handler_.on_instance_created(data.data(), data.size());
++            });
++        }
++    );
++
++    // Instance list (server broadcasts available instances)
++    dispatcher_.register_handler(static_cast<uint8_t>(SystemMessage::INSTANCE_LIST),
++        [this](const char* payload, size_t size) {
++            std::vector<char> data(payload, payload + size);
++            this->post_to_main([this, data = std::move(data)]() mutable {
++                player_handler_.on_instance_list(data.data(), data.size());
++            });
++        }
++    );
++
+     // game seed (for deterministic gameplay)
+     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::GAME_SEED),
+         [this](const char* payload, size_t size) {
+diff --git a/Games/RType/Core/Client/Network/UDPClient.cpp b/Games/RType/Core/Client/Network/UDPClient.cpp
+index d85389f..3edd199 100644
+--- a/Games/RType/Core/Client/Network/UDPClient.cpp
++++ b/Games/RType/Core/Client/Network/UDPClient.cpp
+@@ -47,7 +47,9 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
+         RType::Protocol::PacketBuilder builder;
+         builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_CONNECT));
+         RType::Protocol::ClientConnect cc{};
+-        strncpy(cc.player_name, player_name.c_str(), sizeof(cc.player_name)-1);
++    strncpy(cc.player_name, player_name.c_str(), sizeof(cc.player_name)-1);
++    // remember player name for potential reconnects
++    last_player_name_ = player_name;
+         cc.client_version = client_version;
+         builder.add_struct(cc);
+         auto buf = builder.finalize();
+@@ -88,12 +90,13 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
+                     std::cerr << "[UDPClient] recv msg_type=" << int(hdr.message_type)
+                               << " from " << from.address().to_string() << ":" << from.port()
+                               << " payload=" << hdr.payload_size << " len=" << len << std::endl;
+-                    if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
++                        if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
+                         if (hdr.payload_size >= sizeof(RType::Protocol::ServerAccept)) {
+                             RType::Protocol::ServerAccept sa;
+                             memcpy(&sa, recvbuf.data() + RType::Protocol::HEADER_SIZE, sizeof(sa));
+                             set_session_token(sa.session_id);
+-                            if (was_running) start_receive_loop(recv_handler_);
++                            // If a receive handler is registered, ensure the async receive loop is running
++                            if (recv_handler_) start_receive_loop(recv_handler_);
+                             return sa;
+                         } else {
+                             std::cerr << "[UDPClient] received SERVER_ACCEPT with unexpected size" << std::endl;
+@@ -122,9 +125,17 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
+     return std::nullopt;
+ }
+ 
++std::string UdpClient::get_server_ip() const {
++    try {
++        return server_endpoint_.address().to_string();
++    } catch (...) {
++        return std::string();
++    }
++}
++
+ void UdpClient::disconnect() {
+-    asio::error_code ec;
+-    if (socket_.is_open()) socket_.close(ec);
++    // Stop receive loop and close socket safely to avoid races with the recv thread
++    stop_receive_loop(true);
+ }
+ 
+ void UdpClient::send_disconnect(uint32_t player_id) {
+@@ -160,8 +171,22 @@ void UdpClient::start_receive_loop(std::function<void(uint8_t,const char*,size_t
+     recv_running_.store(true);
+     recv_handler_ = handler;
+ 
+-    // Use non-blocking receive so the thread can exit quickly when stop_receive_loop(false) is called
++    // Ensure socket is open before configuring non-blocking mode. If it's not open, attempt to open and bind
+     asio::error_code ec;
++    if (!socket_.is_open()) {
++        // Try to open and bind an ephemeral port so the receive loop can operate
++        socket_.open(asio::ip::udp::v4(), ec);
++        if (ec) {
++            std::cerr << "[UDPClient] could not open socket for recv loop: " << ec.message() << std::endl;
++        } else {
++            socket_.set_option(asio::socket_base::broadcast(false));
++            socket_.set_option(asio::socket_base::reuse_address(true));
++            asio::ip::udp::endpoint local_ep(asio::ip::udp::v4(), 0);
++            socket_.bind(local_ep, ec);
++            if (ec) std::cerr << "[UDPClient] failed to bind socket for recv loop: " << ec.message() << std::endl;
++        }
++    }
++
+     socket_.non_blocking(true, ec);
+     if (ec) std::cerr << "[UDPClient] failed to set non-blocking mode for recv loop: " << ec.message() << std::endl;
+ 
+diff --git a/Games/RType/Core/Client/Network/UDPClient.hpp b/Games/RType/Core/Client/Network/UDPClient.hpp
+index a7aff49..0e18eb0 100644
+--- a/Games/RType/Core/Client/Network/UDPClient.hpp
++++ b/Games/RType/Core/Client/Network/UDPClient.hpp
+@@ -30,6 +30,11 @@ class UdpClient {
+         // Generic send method for sending raw packet data
+         void send_packet(const char* data, size_t length);
+ 
++    // Retrieve the last used player name (from last connect)
++    std::string get_player_name() const { return last_player_name_; }
++    // Return the currently configured server IP (as string) for reconnects
++    std::string get_server_ip() const;
++
+         // Start/stop background receive loop. Handler invoked on each received message: (message_type, payload, size)
+         void start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler);
+         void stop_receive_loop(bool close_socket = true);
+@@ -43,4 +48,5 @@ class UdpClient {
+         std::atomic<bool> recv_running_{false};
+         std::thread recv_thread_;
+         std::function<void(uint8_t,const char*,size_t)> recv_handler_;
++    std::string last_player_name_;
+ };
+\ No newline at end of file
+diff --git a/Games/RType/Core/Server/GameServer.cpp b/Games/RType/Core/Server/GameServer.cpp
+index bbdf7ab..9264540 100644
+--- a/Games/RType/Core/Server/GameServer.cpp
++++ b/Games/RType/Core/Server/GameServer.cpp
+@@ -1,24 +1,31 @@
+ #include "GameServer.hpp"
+ #include "Network/NetworkManager.hpp"
++#include "Network/Session.hpp"
+ #include "Protocol/MessageQueue.hpp"
+ #include "ServerECS/ServerECS.hpp"
+ #include "ServerECS/Communication/Multiplayer.hpp"
+ #include "ECS/Utils/Console.hpp"
+ #include "ECS/Renderer/RenderManager.hpp"
+ #include "Core/Server/States/ServerLobby.hpp"
++#include <asio.hpp>
+ #include <iostream>
+ #include <thread>
+ #include <chrono>
+ #include <raylib.h>
+ #include <random>
+ 
+-GameServer::GameServer(bool display, bool windowed, float scale)
++GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers)
+     : port_(8080)
+     , running_(false)
+     , display_(display)
+     , windowed_(windowed)
+     , scale_(scale)
+     , game_started_(false)
++    , max_lobbies_(maxLobbies)
++    , max_players_(maxPlayers)
++    , zero_clients_timer_active_(false)
++    , zero_clients_since_{}
++    , zero_clients_grace_(std::chrono::milliseconds(5000))  // 5 seconds grace
+ {
+ }
+ 
+@@ -52,7 +59,7 @@ bool GameServer::init()
+     server->set_message_queue(msg_ptr);
+ 
+     // Create ServerECS (game logic)
+-    server_ecs_ = std::make_unique<RType::Network::ServerECS>();
++    server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_, max_players_);
+     server_ecs_->set_message_queue(msg_ptr);
+     // Provide a callback so ServerECS can send packets back to specific sessions
+     server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {
+@@ -63,6 +70,26 @@ bool GameServer::init()
+     // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
+     server_ecs_->set_udp_server(server.get());
+ 
++    // Register instance-request callback so we can spawn instances on demand
++    server_ecs_->set_instance_request_callback([this](const std::string &session_id){
++        this->handle_instance_request(session_id);
++    });
++
++    // Register instance-list request callback so ServerECS can ask the front server
++    // to send the current instance list to a newly connected session.
++    server_ecs_->set_instance_list_request_callback([this](const std::string &session_id){
++        auto server = network_manager_->get_server();
++        if (!server) return;
++        // Build InstanceList and send to specific client
++        RType::Protocol::InstanceList il{};
++        il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
++        for (size_t i = 0; i < il.instance_count; ++i) {
++            il.instances[i] = instances_[i];
++        }
++        auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
++        server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
++    });
++
+     // Register game start callback with server (this will override the one in Multiplayer)
+     // We need to call both start_game() and ensure players are spawned
+     server->set_game_start_callback([this]() {
+@@ -152,6 +179,37 @@ void GameServer::run_tick_loop()
+         if (elapsed < tick_duration) {
+             std::this_thread::sleep_for(tick_duration - elapsed);
+         }
++
++        // If this server is an instance (max_lobbies_ == 0), auto-shutdown when all clients
++        // have disconnected and stayed disconnected for the grace period. This ensures
++        // instances don't linger when nobody is connected (applies both in lobby and
++        // during/after a running game).
++        if (max_lobbies_ == 0 && running_) {
++            auto server = network_manager_->get_server();
++            if (server) {
++                size_t client_count = server->get_client_count();
++                if (client_count == 0) {
++                    if (!zero_clients_timer_active_) {
++                        zero_clients_timer_active_ = true;
++                        zero_clients_since_ = std::chrono::steady_clock::now();
++                        std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " has 0 clients; starting shutdown grace timer (" << zero_clients_grace_.count() << "ms)" << std::endl;
++                    } else {
++                        auto since = std::chrono::steady_clock::now() - zero_clients_since_;
++                        if (since >= zero_clients_grace_) {
++                            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " no clients after grace period; shutting down instance" << std::endl;
++                            running_ = false; // will break the run loop and cause instance to exit
++                            // allow a final tick to flush any state
++                        }
++                    }
++                } else {
++                    // clients present again -> reset timer
++                    if (zero_clients_timer_active_) {
++                        zero_clients_timer_active_ = false;
++                        std::cout << Console::cyan("[GameServer] ") << "Instance on port " << port_ << " clients reconnected; cancelling shutdown timer" << std::endl;
++                    }
++                }
++            }
++        }
+     }
+ 
+     std::cout << Console::yellow("[GameServer] ") << "Tick loop ended" << std::endl;
+@@ -242,3 +300,182 @@ void GameServer::start_game()
+     std::cout << Console::green("[GameServer] ") << "Game started! ECS systems now active." << std::endl;
+ }
+ 
++void GameServer::handle_instance_request(const std::string &session_id) {
++    std::lock_guard<std::mutex> lk(instances_mtx_);
++    if (max_lobbies_ <= 0) {
++        // Not supported
++        send_instance_created(session_id, 0);
++        return;
++    }
++    if (active_instances_ >= max_lobbies_) {
++        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: max instances reached (" << active_instances_ << "/" << max_lobbies_ << ")" << std::endl;
++        send_instance_created(session_id, 0);
++        return;
++    }
++
++    // Find next available UDP port starting from base port + 1.
++    // We'll probe ports until we find one that can be bound (and is not already in our instances_ list).
++    const uint16_t start_port = static_cast<uint16_t>(port_ + 1);
++    const uint16_t max_probe = 65535;
++    uint16_t new_port = 0;
++    for (uint32_t candidate = start_port; candidate <= max_probe; ++candidate) {
++        uint16_t cand = static_cast<uint16_t>(candidate);
++        // skip ports we already know about in instances_
++        bool used = false;
++        for (const auto &it : instances_) {
++            if (it.port == cand) { used = true; break; }
++        }
++        if (used) continue;
++
++        // Probe both UDP and TCP to avoid selecting a port already in use by either protocol.
++        // We attempt to bind a UDP socket and a TCP acceptor on the candidate port. If both succeed,
++        // consider the port free. Use error_code version to avoid exceptions and close handles on success.
++        try {
++            asio::io_context probe_ctx;
++            asio::error_code ec_udp;
++            asio::ip::udp::socket udp_sock(probe_ctx);
++            udp_sock.open(asio::ip::udp::v4(), ec_udp);
++            if (ec_udp) continue;
++            asio::ip::udp::endpoint udp_ep(asio::ip::udp::v4(), cand);
++            udp_sock.bind(udp_ep, ec_udp);
++            if (ec_udp) {
++                // UDP bind failed -> port in use for UDP
++                udp_sock.close();
++                continue;
++            }
++
++            asio::error_code ec_tcp;
++            asio::ip::tcp::acceptor tcp_acc(probe_ctx);
++            tcp_acc.open(asio::ip::tcp::v4(), ec_tcp);
++            if (ec_tcp) {
++                udp_sock.close();
++                continue;
++            }
++            // Allow address reuse false to ensure exclusivity
++            asio::ip::tcp::endpoint tcp_ep(asio::ip::tcp::v4(), cand);
++            tcp_acc.bind(tcp_ep, ec_tcp);
++            if (ec_tcp) {
++                // TCP bind failed -> port in use for TCP
++                tcp_acc.close();
++                udp_sock.close();
++                continue;
++            }
++            // If we reached here both binds succeeded: close and pick the port
++            tcp_acc.close();
++            udp_sock.close();
++            new_port = cand;
++            break;
++        } catch (...) {
++            // Any error -> skip candidate
++            continue;
++        }
++    }
++
++    if (new_port == 0) {
++        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: no available ports found" << std::endl;
++        send_instance_created(session_id, 0);
++        return;
++    }
++
++    ++active_instances_;
++
++    std::cout << Console::green("[GameServer] ") << "Spawning new instance on port " << new_port << std::endl;
++
++    // Spawn instance in background thread
++    std::thread t([this, new_port]() {
++        try {
++            // Create a headless GameServer instance (no display)
++            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_);
++            srv->set_port(new_port);
++            if (!srv->init()) {
++                std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;
++                // Decrement active instances
++                std::lock_guard<std::mutex> lk(instances_mtx_);
++                --active_instances_;
++                return;
++            }
++
++            // Run until the instance ends (init() -> run() blocks)
++            srv->run();
++
++            // When instance run returns, consider it terminated
++            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << new_port << " exited" << std::endl;
++        } catch (...) {
++            std::cout << Console::red("[GameServer] ") << "Exception while running instance on port " << new_port << std::endl;
++        }
++
++        std::lock_guard<std::mutex> lk(instances_mtx_);
++        --active_instances_;
++        // Remove instance info from list (if present)
++        for (auto it = instances_.begin(); it != instances_.end(); ++it) {
++            if (it->port == new_port) {
++                instances_.erase(it);
++                break;
++            }
++        }
++        // Erase thread entry from map (we're running inside that thread)
++        auto tit = instance_threads_.find(new_port);
++        if (tit != instance_threads_.end()) {
++            instance_threads_.erase(tit);
++        }
++        // Broadcast updated instance list to front clients
++        try {
++            broadcast_instance_list();
++        } catch (...) {
++            // best-effort
++        }
++    });
++
++    // Store thread and detach (we only need active_instances_ count)
++    instance_threads_.emplace(new_port, std::move(t));
++    instance_threads_[new_port].detach();
++
++    // Add to instances list and broadcast available instances to all connected clients
++    RType::Protocol::InstanceInfo info{};
++    info.port = new_port;
++    info.status = 0; // waiting
++    strncpy(info.name, "", sizeof(info.name)-1);
++    instances_.push_back(info);
++    broadcast_instance_list();
++
++    // Reply to the requesting client with instance port
++    send_instance_created(session_id, new_port);
++    // Proactively disconnect the requesting session from the front server so it stops
++    // receiving broadcasts from the front lobby. This avoids relying on the client's
++    // unreliable UDP CLIENT_DISCONNECT reaching the front server in time.
++    try {
++        auto server_ptr = network_manager_->get_server();
++        if (server_ptr) {
++            auto sess = server_ptr->get_session(session_id);
++            if (sess) {
++                std::cout << Console::yellow("[GameServer] ") << "Disconnecting requesting session " << session_id << " from front server after instance creation" << std::endl;
++                sess->disconnect();
++            }
++        }
++    } catch (...) {
++        // best-effort: don't crash the instance creation flow if this fails
++    }
++}
++
++void GameServer::send_instance_created(const std::string &session_id, uint16_t port) {
++    auto server = network_manager_->get_server();
++    if (!server) return;
++
++    RType::Protocol::InstanceCreated ic{};
++    ic.port = port;
++    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_CREATED), ic, RType::Protocol::PacketFlags::RELIABLE);
++    server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
++}
++
++void GameServer::broadcast_instance_list() {
++    auto server = network_manager_->get_server();
++    if (!server) return;
++    RType::Protocol::InstanceList il{};
++    il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
++    for (size_t i = 0; i < il.instance_count; ++i) {
++        il.instances[i] = instances_[i];
++    }
++    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
++    server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
++}
++
+diff --git a/Games/RType/Core/Server/GameServer.hpp b/Games/RType/Core/Server/GameServer.hpp
+index d8296a4..15cedf4 100644
+--- a/Games/RType/Core/Server/GameServer.hpp
++++ b/Games/RType/Core/Server/GameServer.hpp
+@@ -4,6 +4,11 @@
+ #include "Core/States/GameStateManager.hpp"
+ #include <memory>
+ #include <asio.hpp>
++#include <vector>
++#include "Core/Server/Protocol/Protocol.hpp"
++#include <thread>
++#include <mutex>
++#include <map>
+ 
+ // Forward declarations
+ namespace RType::Network {
+@@ -16,7 +21,7 @@ class ServerLobby;
+ 
+ class GameServer : public AGameCore {
+ public:
+-    GameServer(bool display = false, bool windowed = false, float scale = 1.0f);
++    GameServer(bool display = false, bool windowed = false, float scale = 1.0f, int maxLobbies = 0, int maxPlayers = 2);
+     ~GameServer();
+ 
+     bool init() override;
+@@ -43,4 +48,25 @@ private:
+     bool windowed_;
+     float scale_;
+     bool game_started_;
++    int max_lobbies_;
++    int max_players_;
++    // Instance management
++    std::mutex instances_mtx_;
++    int active_instances_{0};
++    uint16_t next_instance_offset_{0}; // offsets from base port_
++    std::map<uint16_t, std::thread> instance_threads_; // port -> thread
++    std::vector<RType::Protocol::InstanceInfo> instances_;
++    // Auto-shutdown for instance servers (spawned with max_lobbies_ == 0)
++    // When the connected client count reaches zero, we wait a small grace period
++    // before terminating the instance to avoid flapping.
++    bool zero_clients_timer_active_{false};
++    std::chrono::steady_clock::time_point zero_clients_since_{};
++    std::chrono::milliseconds zero_clients_grace_{5000}; // 5s grace period
++
++    // Allow caller to override the bind port before init()
++    void set_port(uint16_t p) { port_ = p; }
++    // Handle client request to spawn instance
++    void handle_instance_request(const std::string &session_id);
++    void send_instance_created(const std::string &session_id, uint16_t port);
++    void broadcast_instance_list();
+ };
+diff --git a/Games/RType/Core/Server/Network/UDPServer.cpp b/Games/RType/Core/Server/Network/UDPServer.cpp
+index 95ec7cc..591eb03 100644
+--- a/Games/RType/Core/Server/Network/UDPServer.cpp
++++ b/Games/RType/Core/Server/Network/UDPServer.cpp
+@@ -74,6 +74,17 @@ namespace RType::Network {
+     void UdpServer::send_to_client(const std::string& connection_id, const char* data, size_t size) {
+         auto it = connections_.find(connection_id);
+         if (it != connections_.end() && it->second->is_active()) {
++            // Log send with local port and remote connection id and parsed message type if available
++            if (size >= sizeof(RType::Protocol::PacketHeader)) {
++                RType::Protocol::PacketHeader hdr;
++                memcpy(&hdr, data, sizeof(hdr));
++                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
++                          << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
++                          << " len=" << size << std::endl;
++            } else {
++                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
++                          << " raw_len=" << size << std::endl;
++            }
+             it->second->send(data, size);
+         }
+     }
+@@ -81,6 +92,17 @@ namespace RType::Network {
+     void UdpServer::broadcast(const char* data, size_t size) {
+         for (const auto& [id, connection] : connections_) {
+             if (connection->is_active()) {
++                // Log broadcast per-connection with server port
++                if (size >= sizeof(RType::Protocol::PacketHeader)) {
++                    RType::Protocol::PacketHeader hdr;
++                    memcpy(&hdr, data, sizeof(hdr));
++                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
++                              << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
++                              << " len=" << size << std::endl;
++                } else {
++                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
++                              << " raw_len=" << size << std::endl;
++                }
+                 connection->send(data, size);
+             }
+         }
+@@ -190,7 +212,6 @@ namespace RType::Network {
+     }
+ 
+     void UdpServer::send_player_list_to_client(const std::string& session_id) {
+-        std::cout << Console::blue("[UdpServer] ") << "Sending CLIENT_LIST to " << session_id << std::endl;
+         auto session = get_session(session_id);
+         if (!session || !session->is_connected() || !session->is_authenticated()) {
+             return;
+@@ -204,8 +225,8 @@ namespace RType::Network {
+             client_list
+         );
+ 
+-        // Send to specific client
+-        session->send(reinterpret_cast<const char*>(packet.data()), packet.size());
++        // Use send_to_client to keep logging consistent (includes server port and msg type)
++        send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
+     }
+ 
+     void UdpServer::check_all_players_ready() {
+@@ -345,6 +366,7 @@ namespace RType::Network {
+                         if (message_queue_) {
+                             ReceivedPacket pkt;
+                             pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
++                            pkt.server_port = port_;
+                             pkt.data = std::move(dispatcher_data);
+                             message_queue_->push(std::move(pkt));
+                         } else if (message_handler_) {
+@@ -363,6 +385,7 @@ namespace RType::Network {
+                             if (message_queue_) {
+                                 ReceivedPacket pkt;
+                                 pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
++                                pkt.server_port = port_;
+                                 pkt.data.push_back(static_cast<char>(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT)));
+                                 message_queue_->push(std::move(pkt));
+                             }
+diff --git a/Games/RType/Core/Server/Network/UDPServer.hpp b/Games/RType/Core/Server/Network/UDPServer.hpp
+index 36e3e8b..94312de 100644
+--- a/Games/RType/Core/Server/Network/UDPServer.hpp
++++ b/Games/RType/Core/Server/Network/UDPServer.hpp
+@@ -128,6 +128,11 @@ namespace RType::Network {
+          */
+         std::shared_ptr<Session> get_session(const std::string& connection_id);
+ 
++    /**
++     * @brief Get the server listening port
++     */
++    uint16_t get_port() const { return port_; }
++
+         /**
+          * @brief Find a session by player name (if any)
+          * @param name Player display name
+diff --git a/Games/RType/Core/Server/Protocol/MessageQueue.hpp b/Games/RType/Core/Server/Protocol/MessageQueue.hpp
+index d5a766d..8001b31 100644
+--- a/Games/RType/Core/Server/Protocol/MessageQueue.hpp
++++ b/Games/RType/Core/Server/Protocol/MessageQueue.hpp
+@@ -11,6 +11,7 @@ namespace RType::Network {
+     // Simple container for received packets pushed by UdpServer
+     struct ReceivedPacket {
+         std::string session_id; // connection id (address:port)
++        uint16_t server_port = 0; // local server port that received this packet
+         std::vector<char> data; // raw dispatcher data (message_type + payload)
+     };
+ 
+diff --git a/Games/RType/Core/Server/Protocol/Protocol.hpp b/Games/RType/Core/Server/Protocol/Protocol.hpp
+index 318baad..15c21cc 100644
+--- a/Games/RType/Core/Server/Protocol/Protocol.hpp
++++ b/Games/RType/Core/Server/Protocol/Protocol.hpp
+@@ -69,6 +69,9 @@ namespace RType::Protocol {
+         SERVER_INFO       = 0x10,
+         CLIENT_LIST       = 0x11,
+         START_GAME        = 0x12,
++        REQUEST_INSTANCE  = 0x13, // Client requests a new instance (lobby+game)
++        INSTANCE_CREATED  = 0x14, // Server informs client that instance was created (port)
++        INSTANCE_LIST     = 0x15, // Server sends list of instances
+     };
+ 
+     /**
+@@ -135,6 +138,7 @@ namespace RType::Protocol {
+         uint32_t player_id;      ///< Assigned player ID
+         uint32_t session_id;     ///< Session identifier
+         float spawn_x, spawn_y;  ///< Initial spawn position
++        uint8_t multi_instance;  ///< 1 if server supports multi-instance, 0 otherwise
+     } __attribute__((packed));
+ 
+     /**
+@@ -170,6 +174,24 @@ namespace RType::Protocol {
+         PlayerInfo players[8];   ///< Array of player info (max 8 players)
+     } __attribute__((packed));
+ 
++    /**
++     * @brief Information about a running instance
++     */
++    struct InstanceInfo {
++        uint16_t port;          ///< UDP port where instance is running
++        uint8_t status;         ///< 0=waiting,1=running
++        char name[24];          ///< Optional name (null-terminated)
++    } __attribute__((packed));
++
++    struct InstanceList {
++        uint8_t instance_count; ///< Number of instances
++        InstanceInfo instances[8];
++    } __attribute__((packed));
++
++    struct InstanceCreated {
++        uint16_t port;          ///< Port for the newly created instance
++    } __attribute__((packed));
++
+     /**
+      * @brief Start game signal message
+      */
+diff --git a/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.cpp b/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.cpp
+index d7dece4..50b96f0 100644
+--- a/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.cpp
++++ b/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.cpp
+@@ -14,7 +14,7 @@
+ 
+ namespace RType::Network {
+ 
+-Multiplayer::Multiplayer(ServerECS &ecs) : ecs_(ecs) {}
++Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies, int maxPlayers) : ecs_(ecs), max_lobbies_(maxLobbies), max_players_(maxPlayers) {}
+ Multiplayer::~Multiplayer() = default;
+ 
+ void Multiplayer::set_udp_server(UdpServer* server) {
+@@ -34,8 +34,11 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
+     std::vector<char> payload;
+     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
+ 
+-    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id
+-              << " payload=" << payload.size() << std::endl;
++    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id;
++    if (udp_server_) {
++        std::cout << " (recv on port=" << udp_server_->get_port() << ")";
++    }
++    std::cout << " payload=" << payload.size() << std::endl;
+ 
+     using RType::Protocol::SystemMessage;
+     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_CONNECT)) {
+@@ -55,6 +58,17 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
+         return;
+     }
+ 
++    if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
++        // Client asks the front server to create a new instance (lobby+game)
++        std::cout << Console::cyan("[Multiplayer] ") << "REQUEST_INSTANCE from " << session_id << std::endl;
++        if (ecs_.instance_request_cb_) {
++            ecs_.instance_request_cb_(session_id);
++        } else {
++            std::cout << Console::yellow("[Multiplayer] ") << "Instance requests not supported on this server" << std::endl;
++        }
++        return;
++    }
++
+     // Check for PLAYER_INPUT game message
+     using RType::Protocol::GameMessage;
+     if (msg_type == static_cast<uint8_t>(GameMessage::PLAYER_INPUT)) {
+@@ -88,6 +102,13 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
+         return;
+     }
+ 
++    // Check if we've reached the max players limit (only for instances, not front server)
++    if (max_lobbies_ == 0 && ecs_.session_token_map_.size() >= static_cast<size_t>(max_players_)) {
++        std::cout << Console::yellow("[Multiplayer] ") << "Rejecting client connection: max players (" << max_players_ << ") reached" << std::endl;
++        // Optionally send a rejection message, but for now just ignore
++        return;
++    }
++
+     // Assign token but DON'T spawn entity yet (we're in lobby)
+     uint32_t token = ecs_.next_session_token_++;
+     ecs_.session_token_map_[session_id] = token;
+@@ -111,7 +132,14 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
+     send_server_accept(session_id, token, spawn_x, spawn_y);
+     // Do NOT spawn player entities on clients yet (we're in lobby) - instead broadcast the client list
+     if (udp_server_) {
+-        udp_server_->send_player_list_to_client(session_id);
++            udp_server_->send_player_list_to_client(session_id);
++            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted CLIENT_LIST on port=" << udp_server_->get_port() << std::endl;
++        // Ensure the newly connected client also receives the current instance list (front server may supply it)
++        try {
++            if (ecs_.instance_list_request_cb_) ecs_.instance_list_request_cb_(session_id);
++        } catch (...) {
++            // best-effort
++        }
+         udp_server_->broadcast_player_list();
+     }
+     
+@@ -169,6 +197,7 @@ void Multiplayer::send_server_accept(const std::string &session_id, uint32_t tok
+     sa.session_id = token;
+     sa.spawn_x = x;
+     sa.spawn_y = y;
++    sa.multi_instance = (max_lobbies_ > 0) ? 1 : 0;
+     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT), sa, RType::Protocol::PacketFlags::RELIABLE);
+     ecs_.send_callback_(session_id, packet);
+ }
+@@ -335,7 +364,7 @@ void Multiplayer::handle_client_ready(const std::string &session_id, const std::
+             session->set_ready(cr.ready_state != 0);
+             // Broadcast updated player list to all clients
+             udp_server_->broadcast_player_list();
+-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
++                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
+ 
+             // Check if all players are ready and start game if conditions met
+             udp_server_->check_all_players_ready();
+@@ -362,7 +391,7 @@ void Multiplayer::handle_client_unready(const std::string &session_id, const std
+             session->set_ready(false);
+             // Broadcast updated player list to all clients
+             udp_server_->broadcast_player_list();
+-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
++                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
+         } else {
+             std::cerr << Console::yellow("[Multiplayer] ") << "Session " << session_id << " not found" << std::endl;
+         }
+diff --git a/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.hpp b/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.hpp
+index 3fd8771..bee0d28 100644
+--- a/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.hpp
++++ b/Games/RType/Core/Server/ServerECS/Communication/Multiplayer.hpp
+@@ -23,7 +23,7 @@ class ServerECS; // forward
+  */
+ class Multiplayer {
+     public:
+-        Multiplayer(ServerECS &ecs);
++        Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 2);
+         ~Multiplayer();
+ 
+         // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts
+@@ -43,6 +43,8 @@ class Multiplayer {
+     private:
+         ServerECS &ecs_;
+         UdpServer* udp_server_{nullptr};
++        int max_lobbies_{0};
++        int max_players_{2};
+ 
+         // Internal helpers, extracted from previous monolithic implementation
+         void handle_client_connect(const std::string &session_id, const std::vector<char> &payload);
+diff --git a/Games/RType/Core/Server/ServerECS/ServerECS.cpp b/Games/RType/Core/Server/ServerECS/ServerECS.cpp
+index 255e00e..f6605f7 100644
+--- a/Games/RType/Core/Server/ServerECS/ServerECS.cpp
++++ b/Games/RType/Core/Server/ServerECS/ServerECS.cpp
+@@ -10,8 +10,8 @@
+ 
+ namespace RType::Network {
+ 
+-    ServerECS::ServerECS() {
+-        multiplayer_ = std::make_unique<Multiplayer>(*this);
++    ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
++        multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
+     }
+     ServerECS::~ServerECS() = default;
+ 
+@@ -45,7 +45,7 @@ namespace RType::Network {
+         for (auto &pkt : packets) {
+             if (pkt.data.empty()) continue;
+             if (multiplayer_) {
+-                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " size=" << pkt.data.size() << std::endl;
++                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " on port=" << pkt.server_port << " size=" << pkt.data.size() << std::endl;
+                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
+             }
+         }
+diff --git a/Games/RType/Core/Server/ServerECS/ServerECS.hpp b/Games/RType/Core/Server/ServerECS/ServerECS.hpp
+index 4b0677a..1df1181 100644
+--- a/Games/RType/Core/Server/ServerECS/ServerECS.hpp
++++ b/Games/RType/Core/Server/ServerECS/ServerECS.hpp
+@@ -19,7 +19,7 @@ class UdpServer;
+ 
+ class ServerECS {
+     public:
+-        ServerECS();
++        ServerECS(int maxLobbies = 0, int maxPlayers = 2);
+         ~ServerECS();
+ 
+         // Initialize components/systems from shared object (optional)
+@@ -38,6 +38,11 @@ class ServerECS {
+         // Install the server UDP instance into multiplayer so it can trigger broadcasts directly
+         void set_udp_server(UdpServer* server);
+ 
++    // Register a callback invoked when a client requests a new instance (session_id)
++    void set_instance_request_callback(std::function<void(const std::string&)> cb) { instance_request_cb_ = std::move(cb); }
++    // Register a callback invoked when the server wants to send the current instance list to a specific session
++    void set_instance_list_request_callback(std::function<void(const std::string&)> cb) { instance_list_request_cb_ = std::move(cb); }
++
+         IComponentFactory* get_factory() const { return factory_; }
+         registry& GetRegistry();
+         DLLoader& GetDLLoader() { return loader_; }
+@@ -59,6 +64,13 @@ class ServerECS {
+         std::function<void(const std::string&, const std::vector<uint8_t>&)> send_callback_;
+         // Multiplayer handler
+         std::unique_ptr<Multiplayer> multiplayer_;
++        // Max lobbies for multi-instance
++        int max_lobbies_;
++        int max_players_;
++    // Callback to request instance creation (front server supplies implementation)
++    std::function<void(const std::string&)> instance_request_cb_;
++    // Callback to request sending the current instance list to a specific session (front server supplies implementation)
++    std::function<void(const std::string&)> instance_list_request_cb_;
+ 
+     // No std::function broadcast here; multicast requests are performed directly by Multiplayer
+ 
+diff --git a/Games/RType/Core/States/Browser/Browser.cpp b/Games/RType/Core/States/Browser/Browser.cpp
+new file mode 100644
+index 0000000..ceb6acf
+--- /dev/null
++++ b/Games/RType/Core/States/Browser/Browser.cpp
+@@ -0,0 +1,303 @@
++#include "Browser.hpp"
++
++#include <string>
++#include "Constants.hpp"
++#include "ECS/UI/UIBuilder.hpp"
++#include "ECS/Renderer/RenderManager.hpp"
++#include "ECS/UI/Components/InputField.hpp"
++#include "Core/Client/Network/ClientService.hpp"
++#include "Core/Client/Network/NetworkService.hpp"
++#include "ECS/Zipper.hpp"
++#include "Core/Server/Protocol/Protocol.hpp"
++#include "ECS/Messaging/MessagingManager.hpp"
++#include "ECS/Messaging/Events/Event.hpp"
++
++void Browser::enter()
++{
++    std::cout << "[Browser] Entering state" << std::endl;
++
++    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
++    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
++
++    setup_ui();
++    subscribe_to_ui_event();
++    // Register for instance-created notifications (sent by front server when an instance is spawned)
++    auto* net_mgr = RType::Network::get_network_manager();
++    if (net_mgr) {
++        // INSTANCE_CREATED -> reconnect and enter lobby (creation flow)
++        // Capture the state manager pointer instead of `this` to avoid invoking a dangling Browser pointer
++        auto *stateMgr = this->_stateManager;
++        net_mgr->get_player_handler().set_instance_created_callback([stateMgr](uint16_t port) {
++            if (port == 0) {
++                std::cout << "[Browser] Instance creation failed or denied by server" << std::endl;
++                return;
++            }
++            std::cout << "[Browser] Received instance port " << port << ", reconnecting..." << std::endl;
++            auto client = RType::Network::get_client();
++            if (!client) return;
++            std::string server_ip = client->get_server_ip();
++            std::string player_name = client->get_player_name();
++
++            // If we have an active session on the front server, notify it we are leaving
++            uint32_t session_token = client->get_session_token();
++            if (session_token != 0) {
++                try {
++                    std::cout << "[Browser] Sending disconnect to front server (session=" << session_token << ") before reconnecting to instance" << std::endl;
++                    client->send_disconnect(session_token);
++                } catch (...) {
++                    // best-effort: ignore send failures
++                }
++            }
++
++            // Fully close the current connection so we stop receiving front-server broadcasts
++            client->disconnect();
++
++            // Now connect to the instance server (this will open a fresh socket)
++            auto accept = client->connect(server_ip, port, player_name);
++            if (accept) {
++                // Defer UI state changes to the main thread via the event bus
++                auto& bus = MessagingManager::instance().get_event_bus();
++                Event ev("INSTANCE_CONNECTED_UI");
++                ev.set<uint16_t>("port", port);
++                ev.set<uint8_t>("multi", static_cast<uint8_t>(accept->multi_instance));
++                bus.emit_deferred(ev);
++            } else {
++                std::cerr << "[Browser] Failed to connect to instance on port " << port << std::endl;
++            }
++        });
++
++        // INSTANCE_LIST -> update UI list
++        net_mgr->get_player_handler().set_instance_list_callback([this](const std::vector<RType::Protocol::InstanceInfo>& list) {
++            this->rebuild_instance_ui(list);
++        });
++    }
++    _initialized = true;
++
++    // Subscribe to deferred instance-connected event to perform UI transitions on main thread
++    auto& bus = MessagingManager::instance().get_event_bus();
++    _instanceConnectedCallbackId = bus.subscribe("INSTANCE_CONNECTED_UI", [this](const Event& ev) {
++        if (!this->_stateManager) return;
++
++        // If the connected server is a game instance (multi==0), enter its Lobby.
++        // Otherwise (multi!=0) return to MainMenu.
++        bool is_instance_server = true;
++        try {
++            uint8_t multi = ev.get<uint8_t>("multi");
++            is_instance_server = (multi == 0);
++        } catch (...) {
++            // missing data; fallback to MainMenu
++            is_instance_server = false;
++        }
++
++        this->_stateManager->pop_state();
++        if (is_instance_server) {
++            this->_stateManager->push_state("Lobby");
++        } else {
++            this->_stateManager->push_state("MainMenu");
++        }
++    });
++}
++
++void Browser::exit()
++{
++    auto &eventBus = MessagingManager::instance().get_event_bus();
++    eventBus.unsubscribe(_uiEventCallbackId);
++    // Unregister instance-created callback
++    auto* net_mgr = RType::Network::get_network_manager();
++    if (net_mgr) {
++        net_mgr->get_player_handler().set_instance_created_callback(nullptr);
++        net_mgr->get_player_handler().set_instance_list_callback(nullptr);
++    }
++    _initialized = false;
++    // Unsubscribe deferred UI event
++    auto& bus = MessagingManager::instance().get_event_bus();
++    bus.unsubscribe(_instanceConnectedCallbackId);
++}
++
++void Browser::pause()
++{
++    std::cout << "[Browser] Pausing state" << std::endl;
++}
++
++void Browser::resume()
++{
++    std::cout << "[Browser] Resuming state" << std::endl;
++}
++
++void Browser::setup_ui()
++{
++    std::cout << "[Browser] Setting up UI" << std::endl;
++
++    auto &renderManager = RenderManager::instance();
++    auto winInfos = renderManager.get_screen_infos();
++
++    // Title
++    auto title = TextBuilder()
++        .at(renderManager.scalePosX(40), renderManager.scalePosY(10))
++        .text("SERVER BROWSER")
++        .fontSize(renderManager.scaleSizeW(4))
++        .textColor(WHITE)
++        .build(winInfos.getWidth(), winInfos.getHeight());
++
++    auto titleEntity = _registry.spawn_entity();
++    _registry.add_component(titleEntity, UI::UIComponent(title));
++
++    // Create instance button
++    auto createButton = ButtonBuilder()
++        .at(renderManager.scalePosX(20), renderManager.scalePosY(25))
++        .size(renderManager.scaleSizeW(25), renderManager.scaleSizeH(10))
++        .text("CREATE INSTANCE")
++        .green()
++        .textColor(WHITE)
++        .fontSize(renderManager.scaleSizeW(2))
++        .border(2, WHITE)
++        .onClick([this]() {
++            // Reuse join_room_callback to send REQUEST_INSTANCE (create-on-demand)
++            this->join_room_callback();
++        })
++        .build(winInfos.getWidth(), winInfos.getHeight());
++
++    auto createButtonEntity = _registry.spawn_entity();
++    _registry.add_component(createButtonEntity, UI::UIComponent(createButton));
++
++    // Instruction text when there are no instances
++    auto infoLabel = TextBuilder()
++        .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
++        .text("No open instances. Create one or wait for others to create.")
++        .fontSize(renderManager.scaleSizeW(2))
++        .textColor(WHITE)
++        .build(winInfos.getWidth(), winInfos.getHeight());
++
++    auto infoEntity = _registry.spawn_entity();
++    _registry.add_component(infoEntity, UI::UIComponent(infoLabel));
++    _instanceEntities.push_back(infoEntity);
++
++    // Back Button
++    auto backButton = ButtonBuilder()
++        .at(renderManager.scalePosX(40), renderManager.scalePosY(85))
++        .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
++        .text("BACK")
++        .red()
++        .textColor(WHITE)
++        .fontSize(renderManager.scaleSizeW(2))
++        .border(2, WHITE)
++        .onClick([this]() {
++            // Disconnect before going back
++            auto client = RType::Network::get_client();
++            if (client) {
++                uint32_t player_id = client->get_session_token();
++                if (player_id != 0) {
++                    std::cout << "[Browser] Sending disconnect for player " << player_id << std::endl;
++                    client->send_disconnect(player_id);
++                }
++                client->disconnect();
++            }
++            if (this->_stateManager) {
++                this->_stateManager->pop_state(); // pop Browser
++                this->_stateManager->push_state("Connection"); // go back to Connection tab
++            }
++        })
++        .build(winInfos.getWidth(), winInfos.getHeight());
++
++    auto backButtonEntity = _registry.spawn_entity();
++    _registry.add_component(backButtonEntity, UI::UIComponent(backButton));
++}
++
++void Browser::join_room_callback()
++{
++    std::cout << "[Browser] Join room clicked" << std::endl;
++    // Request the server to create a new instance (front server will reply with INSTANCE_CREATED)
++    auto client = RType::Network::get_client();
++    if (!client) {
++        std::cerr << "[Browser] No client available to send instance request" << std::endl;
++        return;
++    }
++    RType::Protocol::PacketBuilder builder;
++    builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::REQUEST_INSTANCE));
++    auto buf = builder.finalize();
++    client->send_packet(reinterpret_cast<const char*>(buf.data()), buf.size());
++}
++
++void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInfo>& list) {
++    // Clear previous instance UI entities
++    for (auto e : _instanceEntities) {
++        _registry.kill_entity(e);
++    }
++    _instanceEntities.clear();
++
++    auto &renderManager = RenderManager::instance();
++    auto winInfos = renderManager.get_screen_infos();
++
++    if (list.empty()) {
++        auto infoLabel = TextBuilder()
++            .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
++            .text("No open instances. Create one or wait for others to create.")
++            .fontSize(renderManager.scaleSizeW(2))
++            .textColor(WHITE)
++            .build(winInfos.getWidth(), winInfos.getHeight());
++        auto infoEntity = _registry.spawn_entity();
++        _registry.add_component(infoEntity, UI::UIComponent(infoLabel));
++        _instanceEntities.push_back(infoEntity);
++        return;
++    }
++
++    // Create a UI entry per instance with Join button
++    for (size_t i = 0; i < list.size(); ++i) {
++        const auto &inst = list[i];
++        std::string labelText = "Instance " + std::to_string(i+1) + " - Port: " + std::to_string(inst.port);
++        auto label = TextBuilder()
++            .at(renderManager.scalePosX(20), renderManager.scalePosY(40 + i*10))
++            .text(labelText.c_str())
++            .fontSize(renderManager.scaleSizeW(2))
++            .textColor(WHITE)
++            .build(winInfos.getWidth(), winInfos.getHeight());
++        auto labelEntity = _registry.spawn_entity();
++        _registry.add_component(labelEntity, UI::UIComponent(label));
++        _instanceEntities.push_back(labelEntity);
++
++        // Join button
++            // Capture state manager pointer, avoid capturing `this` to prevent dangling access in callback
++            auto *stateMgrJoin = this->_stateManager;
++            auto joinButton = ButtonBuilder()
++            .at(renderManager.scalePosX(60), renderManager.scalePosY(40 + i*10))
++            .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(6))
++            .text("JOIN")
++            .green()
++            .textColor(WHITE)
++            .fontSize(renderManager.scaleSizeW(2))
++            .border(2, WHITE)
++            .onClick([port = inst.port, stateMgrJoin]() {
++                // Connect directly to instance. First, gracefully leave the front server so
++                // we do not receive front-server broadcasts while connected to the instance.
++                auto client = RType::Network::get_client();
++                if (!client) return;
++                std::string server_ip = client->get_server_ip();
++                std::string player_name = client->get_player_name();
++
++                uint32_t session_token = client->get_session_token();
++                if (session_token != 0) {
++                    try {
++                        std::cout << "[Browser] Sending disconnect to front server (session=" << session_token << ") before joining instance" << std::endl;
++                        client->send_disconnect(session_token);
++                    } catch (...) {
++                        // ignore
++                    }
++                }
++                client->disconnect();
++
++                auto accept = client->connect(server_ip, port, player_name);
++                if (accept) {
++                    // Defer UI state changes to main thread
++                    auto& bus = MessagingManager::instance().get_event_bus();
++                    Event ev("INSTANCE_CONNECTED_UI");
++                    ev.set<uint16_t>("port", port);
++                    ev.set<uint8_t>("multi", static_cast<uint8_t>(accept->multi_instance));
++                    bus.emit_deferred(ev);
++                }
++            })
++            .build(winInfos.getWidth(), winInfos.getHeight());
++        auto btnEntity = _registry.spawn_entity();
++        _registry.add_component(btnEntity, UI::UIComponent(joinButton));
++        _instanceEntities.push_back(btnEntity);
++    }
++}
+\ No newline at end of file
+diff --git a/Games/RType/Core/States/Browser/Browser.hpp b/Games/RType/Core/States/Browser/Browser.hpp
+new file mode 100644
+index 0000000..3e7467c
+--- /dev/null
++++ b/Games/RType/Core/States/Browser/Browser.hpp
+@@ -0,0 +1,37 @@
++#pragma once
++
++#include "Core/States/AGameState.hpp"
++#include "ECS/Entity.hpp"
++#include "ECS/Components.hpp"
++
++#include "ECS/UI/UIBuilder.hpp"
++
++#include "Constants.hpp"
++#include <vector>
++#include "Core/Server/Protocol/Protocol.hpp"
++
++class Browser : public AGameState {
++    public:
++        Browser() = default;
++        ~Browser() override = default;
++
++        void enter() override;
++        void exit() override;
++        void pause() override;
++        void resume() override;
++
++        void setup_ui() override;
++
++        std::string get_name() const override { return "Browser"; }
++
++        virtual bool blocks_update() const override { return false; }
++        virtual bool blocks_render() const override { return false; }
++
++    private:
++        void join_room_callback();
++        // Keep spawned UI entities for instances so we can clear them when the list updates
++        std::vector<entity> _instanceEntities;
++        void rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInfo>& list);
++        // Event callback id for instance-connected UI action
++        EventBus::CallbackId _instanceConnectedCallbackId{0};
++};
+\ No newline at end of file
+diff --git a/Games/RType/Core/States/Connection/Connection.cpp b/Games/RType/Core/States/Connection/Connection.cpp
+index 73be0e6..29c6fd1 100644
+--- a/Games/RType/Core/States/Connection/Connection.cpp
++++ b/Games/RType/Core/States/Connection/Connection.cpp
+@@ -249,13 +249,18 @@ void Connection::connection_callback()
+ 
+     auto accept = client->connect(ServerIp_, port, PlayerName_, 1, 2000);
+     if (accept) {
+-        std::cout << "[Lobby] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << std::endl;
++        std::cout << "[Connection] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << " multi_instance=" << (accept->multi_instance ? "true" : "false") << std::endl;
+         if (_stateManager) {
+-        _stateManager->pop_state();
+-        _stateManager->push_state("Lobby");
++            _stateManager->pop_state();
++            bool is_multi_instance = (accept->multi_instance != 0);
++            if (is_multi_instance) {
++                _stateManager->push_state("Browser");
++            } else {
++                _stateManager->push_state("Lobby");
++            }
+         }
+     } else {
+-        std::cout << "[Lobby] Failed to connect to server." << std::endl;
++        std::cout << "[Connection] Failed to connect to server." << std::endl;
+         // allow retry on failure
+         connecting_ = false;
+     }
+diff --git a/Games/RType/Core/States/GameStateManager.cpp b/Games/RType/Core/States/GameStateManager.cpp
+index e125752..192dda1 100644
+--- a/Games/RType/Core/States/GameStateManager.cpp
++++ b/Games/RType/Core/States/GameStateManager.cpp
+@@ -10,7 +10,9 @@
+ #include <memory>
+ 
+ void GameStateManager::push_state(const std::string& state_name, bool pause_current) {
+-    if (processing_states_) {
++    // If states are currently being processed (update/render/input), enqueue operation
++    if (processing_states_.load()) {
++        std::lock_guard<std::mutex> lock(mutex_);
+         pending_operations_.push_back({PendingOperation::Push, state_name, pause_current});
+         return;
+     }
+@@ -21,75 +23,104 @@ void GameStateManager::push_state(const std::string& state_name, bool pause_curr
+         return;
+     }
+ 
+-    // Pause current state if requested
+-    if (!state_stack_.empty() && pause_current) {
+-        state_stack_.top()->pause();
++    // Modify stack under lock, but call lifecycle methods outside the lock to avoid deadlocks
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (!state_stack_.empty() && pause_current) {
++            state_stack_.top()->pause();
++        }
++        state_stack_.push(new_state);
+     }
+ 
+-    // Push and enter new state
+-    state_stack_.push(new_state);
+     new_state->enter();
+ }
+ 
+ void GameStateManager::pop_state() {
+-    if (processing_states_) {
++    if (processing_states_.load()) {
++        std::lock_guard<std::mutex> lock(mutex_);
+         pending_operations_.push_back({PendingOperation::Pop, "", false});
+         return;
+     }
+ 
+-    if (state_stack_.empty()) {
+-        std::cerr << "Cannot pop state: stack is empty" << std::endl;
+-        return;
++    std::shared_ptr<IGameState> to_exit;
++    std::shared_ptr<IGameState> to_resume;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (state_stack_.empty()) {
++            std::cerr << "Cannot pop state: stack is empty" << std::endl;
++            return;
++        }
++        to_exit = state_stack_.top();
++        state_stack_.pop();
++        if (!state_stack_.empty()) {
++            to_resume = state_stack_.top();
++        }
+     }
+ 
+-    auto current_state = state_stack_.top();
+-    current_state->exit();
+-    state_stack_.pop();
+-
+-    // Resume previous state if it exists
+-    if (!state_stack_.empty()) {
+-        state_stack_.top()->resume();
+-    }
++    // Call lifecycle methods outside lock
++    if (to_exit) to_exit->exit();
++    if (to_resume) to_resume->resume();
+ }
+ 
+ void GameStateManager::change_state(const std::string& state_name) {
+-    if (processing_states_) {
++    if (processing_states_.load()) {
++        std::lock_guard<std::mutex> lock(mutex_);
+         pending_operations_.push_back({PendingOperation::Change, state_name, false});
+         return;
+     }
+ 
+-    // Clear current stack
+-    while (!state_stack_.empty()) {
+-        state_stack_.top()->exit();
+-        state_stack_.pop();
++    // Pop all states under lock and collect them to call exit() outside the lock
++    std::vector<std::shared_ptr<IGameState>> to_exit;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        while (!state_stack_.empty()) {
++            to_exit.push_back(state_stack_.top());
++            state_stack_.pop();
++        }
+     }
+-    // Push new state
++    for (auto &s : to_exit) {
++        if (s) s->exit();
++    }
++
++    // Push new state (will handle locking)
+     push_state(state_name, false);
+ }
+ 
+ void GameStateManager::clear_states() {
+-    if (processing_states_) {
++    if (processing_states_.load()) {
++        std::lock_guard<std::mutex> lock(mutex_);
+         pending_operations_.push_back({PendingOperation::Clear, "", false});
+         return;
+     }
+ 
+-    while (!state_stack_.empty()) {
+-        state_stack_.top()->exit();
+-        state_stack_.pop();
++    std::vector<std::shared_ptr<IGameState>> to_exit;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        while (!state_stack_.empty()) {
++            to_exit.push_back(state_stack_.top());
++            state_stack_.pop();
++        }
++    }
++    for (auto &s : to_exit) {
++        if (s) s->exit();
+     }
+ }
+ 
+ void GameStateManager::update(float delta_time) {
+     process_pending_operations();
+ 
+-    if (state_stack_.empty()) return;
++    // Snapshot stack under lock to avoid races with other threads
++    std::stack<std::shared_ptr<IGameState>> temp_stack;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (state_stack_.empty()) return;
++        temp_stack = state_stack_;
++    }
+ 
+-    processing_states_ = true;
++    processing_states_.store(true);
+ 
+     // Update states from bottom to top, but respect blocking
+     std::vector<std::shared_ptr<IGameState>> states_to_update;
+-    auto temp_stack = state_stack_;
+-
+     while (!temp_stack.empty()) {
+         auto state = temp_stack.top();
+         states_to_update.push_back(state);
+@@ -107,16 +138,20 @@ void GameStateManager::update(float delta_time) {
+         state->update(delta_time);
+     }
+ 
+-    processing_states_ = false;
++    processing_states_.store(false);
+ }
+ 
+ void GameStateManager::render() {
+-    if (state_stack_.empty()) return;
++    // Snapshot stack under lock
++    std::stack<std::shared_ptr<IGameState>> temp_stack;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (state_stack_.empty()) return;
++        temp_stack = state_stack_;
++    }
+ 
+     // Collect states to render (respecting blocking)
+     std::vector<std::shared_ptr<IGameState>> states_to_render;
+-    auto temp_stack = state_stack_;
+-
+     while (!temp_stack.empty()) {
+         auto state = temp_stack.top();
+         states_to_render.push_back(state);
+@@ -136,15 +171,20 @@ void GameStateManager::render() {
+ }
+ 
+ void GameStateManager::handle_input() {
+-    if (state_stack_.empty()) return;
++    std::shared_ptr<IGameState> top;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        if (state_stack_.empty()) return;
++        top = state_stack_.top();
++    }
+ 
+-    processing_states_ = true;
+-    // Only the top state handles input
+-    state_stack_.top()->handle_input();
+-    processing_states_ = false;
++    processing_states_.store(true);
++    if (top) top->handle_input();
++    processing_states_.store(false);
+ }
+ 
+ std::shared_ptr<IGameState> GameStateManager::get_current_state() const {
++    std::lock_guard<std::mutex> lock(mutex_);
+     return state_stack_.empty() ? nullptr : state_stack_.top();
+ }
+ 
+@@ -160,7 +200,14 @@ bool GameStateManager::has_state(const std::string& state_name) const {
+ 
+ 
+ void GameStateManager::process_pending_operations() {
+-    for (const auto& operation : pending_operations_) {
++    // Snapshot pending operations under lock to avoid races with other threads
++    std::vector<StateOperation> ops;
++    {
++        std::lock_guard<std::mutex> lock(mutex_);
++        ops.swap(pending_operations_);
++    }
++
++    for (const auto& operation : ops) {
+         switch (operation.operation) {
+             case PendingOperation::Push:
+                 push_state(operation.state_name, operation.pause_current);
+@@ -176,7 +223,6 @@ void GameStateManager::process_pending_operations() {
+                 break;
+         }
+     }
+-    pending_operations_.clear();
+ }
+ 
+ std::shared_ptr<IGameState> GameStateManager::create_state(const std::string& state_name) {
+diff --git a/Games/RType/Core/States/GameStateManager.hpp b/Games/RType/Core/States/GameStateManager.hpp
+index 8f32966..2af5624 100644
+--- a/Games/RType/Core/States/GameStateManager.hpp
++++ b/Games/RType/Core/States/GameStateManager.hpp
+@@ -13,6 +13,9 @@
+ #include <unordered_map>
+ #include <functional>
+ #include <iostream>
++#include <vector>
++#include <mutex>
++#include <atomic>
+ 
+ class GameStateManager {
+     private:
+@@ -33,8 +36,11 @@ class GameStateManager {
+             bool pause_current;
+         };
+ 
+-        std::vector<StateOperation> pending_operations_;
+-        bool processing_states_{false};
++    std::vector<StateOperation> pending_operations_;
++    // Protects pending_operations_ and state_stack_ for calls coming from other threads
++    mutable std::mutex mutex_;
++    // When true, states are being processed (update/render/handle_input)
++    std::atomic_bool processing_states_{false};
+ 
+     public:
+         GameStateManager() = default;
+diff --git a/Games/RType/Core/States/Lobby/Lobby.cpp b/Games/RType/Core/States/Lobby/Lobby.cpp
+index 1ac4261..36392c7 100644
+--- a/Games/RType/Core/States/Lobby/Lobby.cpp
++++ b/Games/RType/Core/States/Lobby/Lobby.cpp
+@@ -219,14 +219,16 @@ void Lobby::toggle_ready_state() {
+         return;
+     }
+ 
++    // Identify our own player id using the session token stored in the UDP client
+     uint32_t player_id = 0;
+-    if (!current_players_.empty()) {
+-        // TODO: Better way to identify which player is "us"
+-        player_id = current_players_[0].player_id;
++    if (client) {
++        player_id = client->get_session_token();
++    }
++    if (player_id == 0) {
++        // Fallback: try first entry from server list (legacy behavior)
++        if (!current_players_.empty()) player_id = current_players_[0].player_id;
++        if (player_id == 0) std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+     }
+-
+-    if (player_id == 0)
+-        std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+ 
+     // Create ClientReady message
+     RType::Protocol::ClientReady ready_msg;
+@@ -289,9 +291,24 @@ void Lobby::on_back_clicked() {
+         }
+         client->disconnect();
+     }
+-    // Then transition back to Connection state
++    // Go back to MainMenu, popping all states until we reach a menu state
+     if (_stateManager) {
++        // Pop current state (Lobby)
+         _stateManager->pop_state();
+-        _stateManager->push_state("Connection");
++        
++        // Keep popping until we reach a main menu state or empty
++        while (!_stateManager->is_empty()) {
++            std::string current = _stateManager->get_current_state_name();
++            if (current == "MainMenu" || current == "Settings" || current == "Credits" || current == "MenusBackground") {
++                // We're back at a main menu, stop here
++                break;
++            }
++            _stateManager->pop_state();
++        }
++        
++        // If we popped everything, push MainMenu
++        if (_stateManager->is_empty()) {
++            _stateManager->push_state("MainMenu");
++        }
+     }
+ }
+\ No newline at end of file
+diff --git a/Games/RType/Entity/Components/Player/Player.cpp b/Games/RType/Entity/Components/Player/Player.cpp
+index 60e43a4..6703a38 100644
+--- a/Games/RType/Entity/Components/Player/Player.cpp
++++ b/Games/RType/Entity/Components/Player/Player.cpp
+@@ -7,5 +7,5 @@
+ 
+ #include "Player.hpp"
+ 
+-Player::Player() {}
++Player::Player() : _isDead(false) {}
+ 
+diff --git a/Games/RType/Entity/Components/Player/Player.hpp b/Games/RType/Entity/Components/Player/Player.hpp
+index ddabbfb..7bbd174 100644
+--- a/Games/RType/Entity/Components/Player/Player.hpp
++++ b/Games/RType/Entity/Components/Player/Player.hpp
+@@ -10,5 +10,6 @@
+ #include "ECS/Components/IComponent.hpp"
+ 
+ struct Player : public IComponent {
++    bool _isDead{false};
+     Player();
+ };
+diff --git a/Games/RType/Entity/Systems/Health/Health.cpp b/Games/RType/Entity/Systems/Health/Health.cpp
+index 238836a..c7fb169 100644
+--- a/Games/RType/Entity/Systems/Health/Health.cpp
++++ b/Games/RType/Entity/Systems/Health/Health.cpp
+@@ -52,25 +52,18 @@ void HealthSys::checkAndKillEnemy(registry &r)
+ void HealthSys::checkAndKillPlayer(registry &r)
+ {
+     auto *healthArr = r.get_if<Health>();
+-    std::vector<entity> entToKill;
++    auto *playerArr = r.get_if<Player>();
+ 
+-    if (!healthArr) return;
++    if (!healthArr || !playerArr) return;
+ 
+-    for (auto [healthEnt, ent] : zipper(*healthArr)) {
++    /* Ca met le player en mort et ennleve ses composant de display etc tu peux le gerer dans le serv avec le bool de player */
++    for (auto [healthEnt, playerComp, ent] : zipper(*healthArr, *playerArr)) {
+         if (healthEnt._health <= 0) {
+-            entToKill.push_back(entity(ent));
+-        }
+-    }
+-
+-    if (!entToKill.empty()) {
+-        std::sort(entToKill.begin(), entToKill.end());
+-        entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
+-
+-        for (auto ent : entToKill) {
+-            // Check if entity still exists before killing
+-            if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
+-                r.kill_entity(ent);
+-            }
++            playerComp._isDead = true;
++            r.remove_component<Health>(entity(ent)); // remove health to avoid repeated death*
++            r.remove_component<animation>(entity(ent)); // remove animation to stop rendering*
++            r.remove_component<controllable>(entity(ent)); // remove controllable to stop player input*
++            r.remove_component<collider>(entity(ent)); // remove collider to stop collisions*
+         }
+     }
+ }
+diff --git a/Games/RType/Entity/Systems/Health/Health.hpp b/Games/RType/Entity/Systems/Health/Health.hpp
+index 8eac531..c307978 100644
+--- a/Games/RType/Entity/Systems/Health/Health.hpp
++++ b/Games/RType/Entity/Systems/Health/Health.hpp
+@@ -11,6 +11,8 @@
+ 
+ #include "Components/Health/Health.hpp"
+ #include "Components/Score/Score.hpp"
++#include "Components/Controllable/Controllable.hpp"
++#include "Components/Player/Player.hpp"
+ 
+ #include "ECS/Registry.hpp"
+ #include "ECS/Zipper.hpp"
+diff --git a/Games/RType/main_server.cpp b/Games/RType/main_server.cpp
+index 3bf0c56..22e4e18 100644
+--- a/Games/RType/main_server.cpp
++++ b/Games/RType/main_server.cpp
+@@ -7,6 +7,7 @@ int main(int argc, char *argv[])
+     float scale = 1.0f;
+     bool windowed = false;
+     bool display = false;
++    int maxLobbies = 0;
+ 
+     for (int i = 1; i < argc; ++i) {
+         std::string arg = argv[i];
+@@ -21,13 +22,30 @@ int main(int argc, char *argv[])
+             windowed = true;
+         } else if (arg == "-d" || arg == "--display") {
+             display = true;
++        } else if ((arg == "-m" || arg == "--multiInstance") && i + 1 < argc) {
++            try {
++                maxLobbies = std::stoi(argv[++i]);
++                if (maxLobbies < 0) {
++                    std::cerr << "Max lobbies must be non-negative: " << maxLobbies << std::endl;
++                    return 1;
++                }
++            } catch (const std::exception&) {
++                std::cerr << "Invalid max lobbies value: " << argv[i] << std::endl;
++                return 1;
++            }
+         } else {
+             std::cerr << "Unknown argument: " << arg << std::endl;
++            std::cerr << "Usage: " << argv[0] << " [-s|--scale SCALE] [-w|--windowed] [-d|--display] [-m|--multiInstance MAX_LOBBIES]" << std::endl;
+             return 1;
+         }
+     }
+ 
+-    GameServer server(display, windowed, scale);
++    if (display && maxLobbies > 0) {
++        std::cerr << "Display mode (-d) is incompatible with multi-instance (-m). Use headless mode for multi-instance." << std::endl;
++        return 1;
++    }
++
++    GameServer server(display, windowed, scale, maxLobbies);
+     if (!server.init())
+         return 1;
+     server.run();
