@@ -15,6 +15,7 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
     checkAndKillEnemy(r);
@@ -68,29 +69,32 @@ void HealthSys::checkAndKillPlayer(registry &r)
     }
 }
 
-void HealthSys::addScore(registry &r)
+void HealthSys::addScore(registry &r, int amount)
 {
-    // // find existing Score entity or create one
-    // auto *scoreArr = r.get_if<Score>();
-    // entity scoreEnt = static_cast<entity>(-1);
+    // find existing Score entity or create one
+    auto *scoreArr = r.get_if<Score>();
+    entity scoreEnt = static_cast<entity>(-1);
 
-    // if (scoreArr) {
-    //     for (auto [s, ent] : zipper(*scoreArr)) {
-    //         scoreEnt = entity(ent);
-    //         break;
-    //     }
-    // }
+    if (scoreArr) {
+        for (auto [s, ent] : zipper(*scoreArr)) {
+            scoreEnt = entity(ent);
+            break;
+        }
+    }
 
-    // if (scoreEnt == static_cast<entity>(-1)) {
-    //     scoreEnt = r.spawn_entity();
-    //     r.emplace_component<Score>(scoreEnt, Score(0));
-    // }
+    if (scoreEnt == static_cast<entity>(-1)) {
+        scoreEnt = r.spawn_entity();
+        r.emplace_component<Score>(scoreEnt, Score(0));
+    }
 
-    // // increment the score by 1
-    // scoreArr = r.get_if<Score>();
-    // if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
-    //     scoreArr->get(static_cast<size_t>(scoreEnt))._score += 1;
-    // }
+    // increment the score by 1
+    scoreArr = r.get_if<Score>();
+    if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
+        scoreArr->get(static_cast<size_t>(scoreEnt))._score += amount;
+        Event scoreEvent("SCORE_INCREASED");
+        scoreEvent.set("amount", amount);
+        MessagingManager::instance().get_event_bus().emit(scoreEvent);
+    }
 }
 
 extern "C" {

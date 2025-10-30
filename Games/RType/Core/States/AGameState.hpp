@@ -11,6 +11,10 @@
 #include <memory>
 
 #include "Core/States/GameStateManager.hpp"
+
+namespace EventTypes {
+    const std::string SCORE_INCREASED = "SCORE_INCREASED";
+}
 class AGameState : public IGameState {
     public:
         enum MoveDirection {
