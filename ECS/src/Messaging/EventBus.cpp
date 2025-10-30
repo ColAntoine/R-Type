@@ -26,6 +26,10 @@ void EventBus::unsubscribe(CallbackId id) {
     }
 }
 
+void EventBus::unsubscribe_deferred(CallbackId id) {
+    pending_unsubscribes_.push_back(id);
+}
+
 void EventBus::emit(const Event& event) {
     auto it = subscribers_.find(event.type);
     if (it != subscribers_.end()) {
@@ -49,6 +53,12 @@ void EventBus::process_deferred() {
         deferred_events_.pop();
         emit(event);
     }
+    if (!pending_unsubscribes_.empty()) {
+        for (auto id : pending_unsubscribes_) {
+            unsubscribe(id);
+        }
+        pending_unsubscribes_.clear();
+    }
 }
 
 void EventBus::clear_all() {
@@ -56,6 +66,7 @@ void EventBus::clear_all() {
     while (!deferred_events_.empty()) {
         deferred_events_.pop();
     }
+    pending_unsubscribes_.clear();
 }
 
 size_t EventBus::get_subscriber_count(const std::string& type) const {

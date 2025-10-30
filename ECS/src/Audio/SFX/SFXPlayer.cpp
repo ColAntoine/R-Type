@@ -78,5 +78,4 @@ void SFXPlayer::setMasterVolume(float volume)
     for (auto& [name, sound] : _soundCache) {
         SetSoundVolume(sound, _masterVolume);
     }
-    std::cout << "Set SFX effective volume to: " << _masterVolume << std::endl;
 }
