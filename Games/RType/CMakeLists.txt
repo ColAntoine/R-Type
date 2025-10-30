@@ -1,4 +1,3 @@
-# R-Type Game CMakeLists.txt
 cmake_minimum_required(VERSION 3.21)
 
 # Setup vcpkg if not defined
@@ -62,6 +61,7 @@ file(GLOB_RECURSE RTYPE_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
 )
 list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/external/.*")  # Exclue external (vcpkg)
+list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Constants.cpp")  # Ajout Constants.cpp
 
 # Collect system source files separately
 file(GLOB_RECURSE GAME_SYSTEM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Entity/Systems/*.cpp")
@@ -110,6 +110,10 @@ set(RTYPE_INCLUDE_DIRS
 # Create RType library
 add_library(${RTYPE_PROJECT_NAME} STATIC ${RTYPE_SOURCES})
 set_target_properties(${RTYPE_PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+set(REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+add_definitions(-DREPO_ROOT="${REPO_ROOT}")
+target_compile_definitions(${RTYPE_PROJECT_NAME} PRIVATE REPO_ROOT="${REPO_ROOT}")
 
 # Set include directories for the library
 target_include_directories(${RTYPE_PROJECT_NAME} PUBLIC
@@ -168,7 +172,7 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     # Set C++ standard for systems
     target_compile_features(${GAME_SYSTEM_NAME} PUBLIC cxx_std_20)
 
-    # Set output directory for game system libraries
+    # Set output directory for game system libraries (dans Games/RType/lib/systems)
     set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems
     )
@@ -176,17 +180,6 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     message(STATUS "Building game system: ${GAME_SYSTEM_NAME} from ${SYSTEM_FILE}")
 endforeach()
 
-# Add custom target to copy game system libraries to binary directory
-add_custom_target(copy_game_systems ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/lib/systems
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/lib/systems ${CMAKE_BINARY_DIR}/bin/lib/systems
-    DEPENDS ${GAME_SYSTEM_SOURCES}
-    COMMENT "Copying game system libraries to binary directory"
-)
-
-# Create executables if this is built as standalone
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-    # Find required dependencies
     find_package(raylib QUIET)
     find_package(glfw3 QUIET)
     find_package(Threads REQUIRED)
@@ -207,7 +200,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
             ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
         )
         set_target_properties(r-type_client PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
         )
     endif()
 
@@ -216,7 +209,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         # Collect server sources
         file(GLOB_RECURSE SERVER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/*.cpp")
         list(FILTER SERVER_SOURCES EXCLUDE REGEX ".*/main_.*\\.cpp")
-        
+
         add_executable(r-type_server main_server.cpp ${SERVER_SOURCES})
         target_link_libraries(r-type_server PRIVATE
             ${RTYPE_PROJECT_NAME}
@@ -229,12 +222,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
             ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
         )
         set_target_properties(r-type_server PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
         )
     endif()
-endif()
 
-# Optional: minimal configuration info (avoid printing long lists)
 list(LENGTH RTYPE_SOURCES RTYPE_SOURCES_COUNT)
 list(LENGTH GAME_SYSTEM_SOURCES GAME_SYSTEM_SOURCES_COUNT)
 message(STATUS "RType Game Configuration: (sources=${RTYPE_SOURCES_COUNT}, systems=${GAME_SYSTEM_SOURCES_COUNT})")

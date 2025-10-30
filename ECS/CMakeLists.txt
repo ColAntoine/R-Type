@@ -171,6 +171,13 @@ endif()
 
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
+# Copie libECS.so dans build/lib
+add_custom_command(TARGET ECS POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ECS> ${CMAKE_BINARY_DIR}/lib/libECS.so
+    COMMENT "Copying libECS.so to build/lib"
+)
+
 # Add system libraries (only if raylib is available since they depend on it)
 if (BUILD_UI_COMPONENTS)
     add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
