@@ -3,7 +3,6 @@
 #include <dlfcn.h>
 #include <iostream>
 #include <filesystem>
-#include "ECS/Utils/Console.hpp"
 
 DLLoader::DLLoader() : library_handle_(nullptr), factory_(nullptr) {}
 
@@ -186,8 +185,7 @@ bool DLLoader::load_components_from_so(const std::string &so_path, registry &reg
         return false;
     }
 
-    std::cout << Console::color((std::string(Console::BOLD) + Console::YELLOW).c_str(), "[DLLoader]")
-              << " " << "Components loaded successfully from " << so_path << std::endl;
+    std::cout << "[DLLoader] Components loaded successfully from " << so_path << std::endl;
     return true;
 }
 

@@ -3,7 +3,6 @@
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include "ServerECS/Communication/Multiplayer.hpp"
-#include "ECS/Utils/Console.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "Core/Server/States/ServerLobby.hpp"
 #include <iostream>
@@ -31,13 +30,13 @@ GameServer::~GameServer()
 
 bool GameServer::init()
 {
-    std::cout << Console::green("[GameServer] ") << "Initializing..." << std::endl;
+    std::cout << "[GameServer] Initializing..." << std::endl;
 
     // Create io_context
     io_context_ = std::make_unique<asio::io_context>();
     network_manager_ = std::make_unique<RType::Network::NetworkManager>();
     if (!network_manager_->initialize(port_)) {
-        std::cerr << Console::red("[GameServer] ") << "Failed to initialize NetworkManager" << std::endl;
+        std::cerr << "[GameServer] Failed to initialize NetworkManager" << std::endl;
         return false;
     }
     message_queue_ = std::make_unique<RType::Network::MessageQueue>();
@@ -45,7 +44,7 @@ bool GameServer::init()
     // Attach message queue to server
     auto server = network_manager_->get_server();
     if (!server) {
-        std::cerr << Console::red("[GameServer] ") << "No UDP server available" << std::endl;
+        std::cerr << "[GameServer] No UDP server available" << std::endl;
         return false;
     }
     RType::Network::MessageQueue* msg_ptr = message_queue_.get();
@@ -96,24 +95,24 @@ bool GameServer::init()
 
     // Start network with worker threads
     if (!network_manager_->start(2)) {
-        std::cerr << Console::red("[GameServer] ") << "Failed to start NetworkManager" << std::endl;
+        std::cerr << "[GameServer] Failed to start NetworkManager" << std::endl;
         return false;
     }
 
     running_ = true;
-    std::cout << Console::green("[GameServer] ") << "Initialized successfully on port " << port_ << std::endl;
+    std::cout << "[GameServer] Initialized successfully on port " << port_ << std::endl;
     return true;
 }
 
 void GameServer::run()
 {
-    std::cout << Console::green("[GameServer] ") << "Starting game loop..." << std::endl;
+    std::cout << "[GameServer] Starting game loop..." << std::endl;
     run_tick_loop();
 }
 
 void GameServer::run_tick_loop()
 {
-    std::cout << Console::cyan("[GameServer] ") << "Entering authoritative tick loop (30Hz)" << std::endl;
+    std::cout << "[GameServer] Entering authoritative tick loop (30Hz)" << std::endl;
     const std::chrono::milliseconds tick_duration(33); // ~30Hz
 
     while (running_) {
@@ -154,7 +153,7 @@ void GameServer::run_tick_loop()
         }
     }
 
-    std::cout << Console::yellow("[GameServer] ") << "Tick loop ended" << std::endl;
+    std::cout << "[GameServer] Tick loop ended" << std::endl;
 }
 
 void GameServer::update(float delta)
@@ -165,7 +164,7 @@ void GameServer::update(float delta)
 
 void GameServer::shutdown()
 {
-    std::cout << Console::yellow("[GameServer] ") << "Shutting down..." << std::endl;
+    std::cout << "[GameServer] Shutting down..." << std::endl;
     running_ = false;
 
     if (network_manager_) {
@@ -181,12 +180,12 @@ void GameServer::shutdown()
         RenderManager::instance().shutdown();
     }
 
-    std::cout << Console::green("[GameServer] ") << "Shutdown complete" << std::endl;
+    std::cout << "[GameServer] Shutdown complete" << std::endl;
 }
 
 void GameServer::register_states()
 {
-    std::cout << Console::cyan("[GameServer] ") << "Registering states..." << std::endl;
+    std::cout << "[GameServer] Registering states..." << std::endl;
     
     // Create lobby state with UDP server reference
     auto server = network_manager_->get_server();
@@ -198,17 +197,17 @@ void GameServer::register_states()
 
 void GameServer::start_game()
 {
-    std::cout << Console::green("[GameServer] ") << "Starting game! Transitioning from lobby..." << std::endl;
-    
+    std::cout << "[GameServer] Starting game! Transitioning from lobby..." << std::endl;
+
     game_started_ = true;
     
     // Generate and set random seed for deterministic gameplay
     std::random_device rd;
     unsigned int game_seed = rd();
     server_ecs_->GetRegistry().set_random_seed(game_seed);
-    
-    std::cout << Console::cyan("[GameServer] ") << "Generated game seed: " << game_seed << std::endl;
-    
+
+    std::cout << "[GameServer] Generated game seed: " << game_seed << std::endl;
+
     // Broadcast the seed to all clients
     auto server = network_manager_->get_server();
     if (server) {
@@ -221,7 +220,7 @@ void GameServer::start_game()
         );
         
         server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
-        std::cout << Console::cyan("[GameServer] ") << "Game seed broadcasted to all clients" << std::endl;
+        std::cout << "[GameServer] Game seed broadcasted to all clients" << std::endl;
     }
     
     // Spawn all players (was previously done in Multiplayer callback that got overwritten)
@@ -238,7 +237,7 @@ void GameServer::start_game()
     if (display_) {
         state_manager_.clear_states();
     }
-    
-    std::cout << Console::green("[GameServer] ") << "Game started! ECS systems now active." << std::endl;
+
+    std::cout << "[GameServer] Game started! ECS systems now active." << std::endl;
 }
 
