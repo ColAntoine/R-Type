@@ -1,6 +1,6 @@
 #include "NetworkManager.hpp"
 #include <iostream>
-#include "ECS/Utils/Console.hpp"
+
 
 namespace RType::Network {
 
@@ -60,7 +60,7 @@ bool NetworkManager::start(size_t thread_count) {
             worker_threads_.emplace_back([this]() { run_worker_thread(); });
         }
 
-        std::cout << Console::green("[Network] ") << "NetworkManager started with " << thread_count << " worker threads on port " << port_ << std::endl;
+        std::cout << "NetworkManager started with " << thread_count << " worker threads on port " << port_ << std::endl;
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Failed to start NetworkManager: " << e.what() << std::endl;
@@ -74,7 +74,7 @@ void NetworkManager::stop() {
         return;
     }
 
-    std::cout << Console::yellow("[Network] ") << "Stopping NetworkManager..." << std::endl;
+    std::cout << "Stopping NetworkManager..." << std::endl;
 
     running_ = false;
 
@@ -97,7 +97,7 @@ void NetworkManager::stop() {
     }
     worker_threads_.clear();
 
-    std::cout << Console::green("[Network] ") << "NetworkManager stopped" << std::endl;
+    std::cout << "NetworkManager stopped" << std::endl;
 }
 
 bool NetworkManager::is_running() const {

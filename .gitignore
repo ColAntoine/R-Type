@@ -2,7 +2,7 @@ build/
 vcpkg_installed/
 .vscode
 
-external/vcpkg/
+external/
 
 lib/
 
