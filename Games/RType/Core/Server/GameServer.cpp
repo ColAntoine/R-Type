@@ -14,7 +14,7 @@
 #include <raylib.h>
 #include <random>
 
-GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies)
+GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers)
     : port_(8080)
     , running_(false)
     , display_(display)
@@ -22,6 +22,10 @@ GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies)
     , scale_(scale)
     , game_started_(false)
     , max_lobbies_(maxLobbies)
+    , max_players_(maxPlayers)
+    , zero_clients_timer_active_(false)
+    , zero_clients_since_{}
+    , zero_clients_grace_(std::chrono::milliseconds(5000))  // 5 seconds grace
 {
 }
 
@@ -55,7 +59,7 @@ bool GameServer::init()
     server->set_message_queue(msg_ptr);
 
     // Create ServerECS (game logic)
-    server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_);
+    server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_, max_players_);
     server_ecs_->set_message_queue(msg_ptr);
     // Provide a callback so ServerECS can send packets back to specific sessions
     server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {
@@ -381,7 +385,7 @@ void GameServer::handle_instance_request(const std::string &session_id) {
     std::thread t([this, new_port]() {
         try {
             // Create a headless GameServer instance (no display)
-            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0);
+            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_);
             srv->set_port(new_port);
             if (!srv->init()) {
                 std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;

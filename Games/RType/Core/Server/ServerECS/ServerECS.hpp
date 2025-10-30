@@ -19,7 +19,7 @@ class UdpServer;
 
 class ServerECS {
     public:
-        ServerECS(int maxLobbies = 0);
+        ServerECS(int maxLobbies = 0, int maxPlayers = 2);
         ~ServerECS();
 
         // Initialize components/systems from shared object (optional)
@@ -66,6 +66,7 @@ class ServerECS {
         std::unique_ptr<Multiplayer> multiplayer_;
         // Max lobbies for multi-instance
         int max_lobbies_;
+        int max_players_;
     // Callback to request instance creation (front server supplies implementation)
     std::function<void(const std::string&)> instance_request_cb_;
     // Callback to request sending the current instance list to a specific session (front server supplies implementation)

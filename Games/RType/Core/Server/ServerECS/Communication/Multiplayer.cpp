@@ -14,7 +14,7 @@
 
 namespace RType::Network {
 
-Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies) : ecs_(ecs), max_lobbies_(maxLobbies) {}
+Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies, int maxPlayers) : ecs_(ecs), max_lobbies_(maxLobbies), max_players_(maxPlayers) {}
 Multiplayer::~Multiplayer() = default;
 
 void Multiplayer::set_udp_server(UdpServer* server) {
@@ -99,6 +99,13 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
         send_server_accept(session_id, existing_token, spawn_x, spawn_y);
         // update all clients with the current player list
         if (udp_server_) udp_server_->broadcast_player_list();
+        return;
+    }
+
+    // Check if we've reached the max players limit (only for instances, not front server)
+    if (max_lobbies_ == 0 && ecs_.session_token_map_.size() >= static_cast<size_t>(max_players_)) {
+        std::cout << Console::yellow("[Multiplayer] ") << "Rejecting client connection: max players (" << max_players_ << ") reached" << std::endl;
+        // Optionally send a rejection message, but for now just ignore
         return;
     }
 
