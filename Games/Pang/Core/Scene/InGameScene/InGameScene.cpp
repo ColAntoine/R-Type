@@ -51,7 +51,8 @@ std::optional<GameState> InGameScene::update(float dt)
         }
     }
 
-    _systemLoader.update_all_systems(_reg, dt);
+    _systemLoader.update_all_systems(_reg, dt, DLLoader::LogicSystem);
+    _systemLoader.update_all_systems(_reg, dt, DLLoader::RenderSystem);
 
     auto *playerArr = _reg.get_if<Player>();
     if (playerArr) {

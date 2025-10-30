@@ -54,15 +54,15 @@ void Core::loadSystems()
     if (_systemsLoaded) return;
 
     std::cout << "Loading game systems dynamically..." << std::endl;
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner.so");
-    std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot.so", DLLoader::LogicSystem);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner.so", DLLoader::LogicSystem);
+    std::cout << "Loaded " << _systemLoader.get_system_count(DLLoader::LogicSystem) << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
     _systemsLoaded = true;

@@ -36,8 +36,8 @@ class EndScene : public IScene
         void destroy(float dt) override;
 
     private:
-        std::unique_ptr<UI::UIButton> _restartButton;
-        std::unique_ptr<UI::UIButton> _quitButton;
+        std::shared_ptr<UI::UIButton> _restartButton;
+        std::shared_ptr<UI::UIButton> _quitButton;
         bool _shouldRestart;
         bool _shouldQuit;
 };
