@@ -9,7 +9,7 @@
 
 #include "WaveSys.hpp"
 
-void WaveSys::update(registry& r, float dt)
+void WaveSys::update(registry &r, float dt)
 {
     updateTimer(r, dt);
     handleStop(r);
@@ -58,20 +58,22 @@ void WaveSys::handleExplosion(registry &r)
 
     for (auto [wave, ent]: zipper(*waveArr)) {
         if (wave._lifeTime >= wave._expTimeout) {
-            auto wEnt = r.spawn_entity();
-            Weapon w(
-                wEnt,
-                {"explode"},
-                1.f,
-                10.f,
-                600.f,
-                -1,
-                true
-            );
-            w._wantsToFire = true;
-            w._automatic = true;
-            r.emplace_component<Weapon>(wEnt, w);
-            r.emplace_component<position>(wEnt, wave._stopedPos);
+            // ! Creating an entity here cause segv at prog close somehow
+            // auto wEnt = r.spawn_entity();
+            // Weapon w(
+            //     wEnt,
+            //     {"explode"},
+            //     1.f,
+            //     10.f,
+            //     600.f,
+            //     -1,
+            //     true
+            // );
+            // w._wantsToFire = true;
+            // w._automatic = true;
+            // r.emplace_component<Weapon>(wEnt, w);
+            // r.emplace_component<position>(wEnt, wave._stopedPos);
+            // r.emplace_component<lifetime>(wEnt, 0.25f);
             entToKill.push_back(entity(ent));
         }
     }

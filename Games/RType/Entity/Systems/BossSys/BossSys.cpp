@@ -50,8 +50,8 @@ bool BossSys::shouldSpawn(registry &r, float dt)
 void BossSys::spawn(registry &r)
 {
     auto bossEnt = r.spawn_entity();
-    float bossW = _renderManager.scaleSizeW(20);
-    float bossH = _renderManager.scaleSizeH(80);
+    float bossW = static_cast<float>(_renderManager.scaleSizeW(25));
+    float bossH = static_cast<float>(_renderManager.scaleSizeH(30));
 
     r.emplace_component<position>(bossEnt, _renderManager.get_screen_infos().getWidth() + 300.f, _renderManager.get_screen_infos().getHeight() / 2.f);
     r.emplace_component<Health>(bossEnt, 1000.f * static_cast<float>(1)); // ! Need to find a way to retrieve the current wave maybe create a wave component
@@ -73,12 +73,12 @@ void BossSys::spawn(registry &r)
     w._wantsToFire = false;
     w._automatic = false;
     r.emplace_component<Weapon>(bossEnt, w);
-    // * Spawn the body the arm is not set yet
-    r.emplace_component<drawable>(bossEnt, bossW, bossH, 255, 0, 0);
 
-
-    // ! need sprites for animation
-    // r.emplace_component<animation>(bossEnt);
+    const float frame_w = 400.0f;
+    const float frame_h = 400.0f;
+    float scale_x = (frame_w > 0.0f) ? (bossW / frame_w) : 1.0f;
+    float scale_y = (frame_h > 0.0f) ? (bossH / frame_h) : 1.0f;
+    r.emplace_component<animation>(bossEnt, std::string(RTYPE_PATH_ASSETS) + "bossSheet.png", frame_w, frame_h, scale_x, scale_y, 0, false);
 }
 
 void BossSys::move(registry &r)
@@ -88,17 +88,40 @@ void BossSys::move(registry &r)
     auto *bossArr = r.get_if<Boss>();
     auto *weaponArr = r.get_if<Weapon>();
     static bool doneMoving = false;
+    static bool up = false;
 
-    if (!posArr || !velArr || !bossArr || !weaponArr || doneMoving) return;
+    if (!posArr || !velArr || !bossArr || !weaponArr) return;
+
+    if (doneMoving) {
+        int screenH = _renderManager.get_screen_infos().getHeight();
+        int margin = _renderManager.scaleSizeH(30);
+
+        for (auto [pos, vel, boss, ent] : zipper(*posArr, *velArr, *bossArr)) {
+            if (!up) {
+                vel.vy = -200.f;
+                if (pos.y <= static_cast<float>(margin)) {
+                    up = true;
+                }
+            } else {
+                vel.vy = 200.f;
+                if (pos.y >= static_cast<float>(screenH - margin)) {
+                    up = false;
+                }
+            }
+        }
+        return;
+    }
 
     for (auto [pos, vel, boss, weap, ent] : zipper(*posArr, *velArr, *bossArr, *weaponArr)) {
         if (pos.x <= _renderManager.scalePosX(75)) {
             vel.vx = 0.f;
             weap._wantsToFire = true;
             weap._automatic = true;
-            return;
+            doneMoving = true;
+            break;
         }
         vel.vx = -300.f;
+        return;
     }
 }
 

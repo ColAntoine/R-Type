@@ -15,13 +15,18 @@
 
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Animation.hpp"
 
 #include "Entity/Components/Wave/Wave.hpp"
 #include "Entity/Components/Projectile/Projectile.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/LifeTime/LifeTime.hpp"
+
+#include "Constants.hpp"
 
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 class WaveSys : public ISystem {
 public:
