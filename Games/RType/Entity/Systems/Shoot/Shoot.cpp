@@ -30,6 +30,7 @@ Shoot::Shoot()
     _shootType["bossDrop"] = [this](const ProjectileContext& ctx) { shootDropBullets(ctx); };
     _shootType["following"] = [this](const ProjectileContext& ctx) { shootFollowingBullets(ctx); };
     _shootType["wave"] = [this](const ProjectileContext& ctx) { shootWaveBullets(ctx); };
+    _shootType["explode"] = [this](const ProjectileContext& ctx) { shootExplosionBullets(ctx); };
 }
 
 static void killEntity(std::vector<entity> ents, registry &r)
@@ -296,14 +297,34 @@ void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
 
 void Shoot::shootWaveBullets(const ProjectileContext &ctx)
 {
-    std::cout << "SHOOTED" << std::endl;
     auto projectile = ctx.r.spawn_entity();
     ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.gif", 400, 400, 0.50f, 0.50f, 0, false);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
     ctx.r.emplace_component<Following>(projectile);
     ctx.r.emplace_component<WaveShoot>(projectile);
+}
+
+void Shoot::shootExplosionBullets(const ProjectileContext &ctx)
+{
+    const int count = 10;
+    const float TWO_PI = 6.283185307179586f;
+    float speed = ctx.weapon._projectileSpeed > 0 ? ctx.weapon._projectileSpeed : 300.f;
+
+    for (int i = 0; i < count; ++i) {
+        float angle = (TWO_PI * static_cast<float>(i)) / static_cast<float>(count);
+        float vx = std::cos(angle) * speed;
+        float vy = std::sin(angle) * speed;
+
+        auto projectile = ctx.r.spawn_entity();
+        ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, speed, vx, vy, 5.0f, 5.0f, false));
+        ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
+        ctx.r.emplace_component<velocity>(projectile, vx, vy);
+        ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
+        ctx.r.emplace_component<lifetime>(projectile, 5.f);
+    }
+    ctx.r.kill_entity(entity(ctx.weapon._ownerId));
 }
 
 void Shoot::renderHitboxes(registry &r)

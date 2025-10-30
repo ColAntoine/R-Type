@@ -61,7 +61,7 @@ void WaveSys::handleExplosion(registry &r)
             auto wEnt = r.spawn_entity();
             Weapon w(
                 wEnt,
-                {"wave"},
+                {"explode"},
                 1.f,
                 10.f,
                 600.f,

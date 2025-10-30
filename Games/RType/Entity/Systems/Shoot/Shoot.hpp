@@ -70,6 +70,7 @@ private:
     void shootDropBullets(const ProjectileContext& ctx);
     void shootFollowingBullets(const ProjectileContext& ctx);
     void shootWaveBullets(const ProjectileContext& ctx);
+    void shootExplosionBullets(const ProjectileContext& ctx);
 
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
     EventBus::CallbackId _playerCloseCallBackId;
