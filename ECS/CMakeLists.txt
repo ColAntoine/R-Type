@@ -58,7 +58,7 @@ endif()
 if(TARGET raylib)
     set(BUILD_UI_COMPONENTS ON)
     message(STATUS "raylib found. UI components will be built.")
-    
+
     if(TARGET glfw)
         message(STATUS "glfw3 found.")
     else()
@@ -82,7 +82,7 @@ endif()
 if(TARGET raylib)
     set(BUILD_UI_COMPONENTS ON)
     message(STATUS "raylib found. UI components will be built.")
-    
+
     if(TARGET glfw)
         message(STATUS "glfw3 found.")
     else()
