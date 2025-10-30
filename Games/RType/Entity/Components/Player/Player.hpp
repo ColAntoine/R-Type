@@ -10,5 +10,6 @@
 #include "ECS/Components/IComponent.hpp"
 
 struct Player : public IComponent {
+    bool _isDead{false};
     Player();
 };

@@ -22,6 +22,7 @@
 #include "Core/States/AudioSettings/AudioSettings.hpp"
 #include "Core/States/VideoSettings/VideoSettings.hpp"
 #include "Core/States/BindsSettings/BindsSettings.hpp"
+#include "Core/States/Browser/Browser.hpp"
 
 #include "Constants.hpp"
 
@@ -58,7 +59,7 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame for SOLO mode (no shared registry - uses local registry)
+    // Register InGame state with shared registry for multiplayer
     _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(nullptr, nullptr);
     });
@@ -79,6 +80,7 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
+    _stateManager.register_state<Browser>("Browser");
 }
 
 bool GameClient::init()

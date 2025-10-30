@@ -73,6 +73,17 @@ namespace RType::Network {
     void UdpServer::send_to_client(const std::string& connection_id, const char* data, size_t size) {
         auto it = connections_.find(connection_id);
         if (it != connections_.end() && it->second->is_active()) {
+            // Log send with local port and remote connection id and parsed message type if available
+            if (size >= sizeof(RType::Protocol::PacketHeader)) {
+                RType::Protocol::PacketHeader hdr;
+                memcpy(&hdr, data, sizeof(hdr));
+                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                          << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
+                          << " len=" << size << std::endl;
+            } else {
+                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                          << " raw_len=" << size << std::endl;
+            }
             it->second->send(data, size);
         }
     }
@@ -80,6 +91,17 @@ namespace RType::Network {
     void UdpServer::broadcast(const char* data, size_t size) {
         for (const auto& [id, connection] : connections_) {
             if (connection->is_active()) {
+                // Log broadcast per-connection with server port
+                if (size >= sizeof(RType::Protocol::PacketHeader)) {
+                    RType::Protocol::PacketHeader hdr;
+                    memcpy(&hdr, data, sizeof(hdr));
+                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                              << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
+                              << " len=" << size << std::endl;
+                } else {
+                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                              << " raw_len=" << size << std::endl;
+                }
                 connection->send(data, size);
             }
         }
@@ -189,7 +211,6 @@ namespace RType::Network {
     }
 
     void UdpServer::send_player_list_to_client(const std::string& session_id) {
-        std::cout << "[UdpServer] " << "Sending CLIENT_LIST to " << session_id << std::endl;
         auto session = get_session(session_id);
         if (!session || !session->is_connected() || !session->is_authenticated()) {
             return;
@@ -203,8 +224,8 @@ namespace RType::Network {
             client_list
         );
 
-        // Send to specific client
-        session->send(reinterpret_cast<const char*>(packet.data()), packet.size());
+        // Use send_to_client to keep logging consistent (includes server port and msg type)
+        send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     }
 
     void UdpServer::check_all_players_ready() {
@@ -344,6 +365,7 @@ namespace RType::Network {
                         if (message_queue_) {
                             ReceivedPacket pkt;
                             pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
+                            pkt.server_port = port_;
                             pkt.data = std::move(dispatcher_data);
                             message_queue_->push(std::move(pkt));
                         } else if (message_handler_) {
@@ -362,6 +384,7 @@ namespace RType::Network {
                             if (message_queue_) {
                                 ReceivedPacket pkt;
                                 pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
+                                pkt.server_port = port_;
                                 pkt.data.push_back(static_cast<char>(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_DISCONNECT)));
                                 message_queue_->push(std::move(pkt));
                             }

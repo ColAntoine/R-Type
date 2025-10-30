@@ -47,7 +47,9 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
         RType::Protocol::PacketBuilder builder;
         builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_CONNECT));
         RType::Protocol::ClientConnect cc{};
-        strncpy(cc.player_name, player_name.c_str(), sizeof(cc.player_name)-1);
+    strncpy(cc.player_name, player_name.c_str(), sizeof(cc.player_name)-1);
+    // remember player name for potential reconnects
+    last_player_name_ = player_name;
         cc.client_version = client_version;
         builder.add_struct(cc);
         auto buf = builder.finalize();
@@ -88,12 +90,13 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
                     std::cerr << "[UDPClient] recv msg_type=" << int(hdr.message_type)
                               << " from " << from.address().to_string() << ":" << from.port()
                               << " payload=" << hdr.payload_size << " len=" << len << std::endl;
-                    if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
+                        if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
                         if (hdr.payload_size >= sizeof(RType::Protocol::ServerAccept)) {
                             RType::Protocol::ServerAccept sa;
                             memcpy(&sa, recvbuf.data() + RType::Protocol::HEADER_SIZE, sizeof(sa));
                             set_session_token(sa.session_id);
-                            if (was_running) start_receive_loop(recv_handler_);
+                            // If a receive handler is registered, ensure the async receive loop is running
+                            if (recv_handler_) start_receive_loop(recv_handler_);
                             return sa;
                         } else {
                             std::cerr << "[UDPClient] received SERVER_ACCEPT with unexpected size" << std::endl;
@@ -122,9 +125,17 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
     return std::nullopt;
 }
 
+std::string UdpClient::get_server_ip() const {
+    try {
+        return server_endpoint_.address().to_string();
+    } catch (...) {
+        return std::string();
+    }
+}
+
 void UdpClient::disconnect() {
-    asio::error_code ec;
-    if (socket_.is_open()) socket_.close(ec);
+    // Stop receive loop and close socket safely to avoid races with the recv thread
+    stop_receive_loop(true);
 }
 
 void UdpClient::send_disconnect(uint32_t player_id) {
@@ -160,8 +171,22 @@ void UdpClient::start_receive_loop(std::function<void(uint8_t,const char*,size_t
     recv_running_.store(true);
     recv_handler_ = handler;
 
-    // Use non-blocking receive so the thread can exit quickly when stop_receive_loop(false) is called
+    // Ensure socket is open before configuring non-blocking mode. If it's not open, attempt to open and bind
     asio::error_code ec;
+    if (!socket_.is_open()) {
+        // Try to open and bind an ephemeral port so the receive loop can operate
+        socket_.open(asio::ip::udp::v4(), ec);
+        if (ec) {
+            std::cerr << "[UDPClient] could not open socket for recv loop: " << ec.message() << std::endl;
+        } else {
+            socket_.set_option(asio::socket_base::broadcast(false));
+            socket_.set_option(asio::socket_base::reuse_address(true));
+            asio::ip::udp::endpoint local_ep(asio::ip::udp::v4(), 0);
+            socket_.bind(local_ep, ec);
+            if (ec) std::cerr << "[UDPClient] failed to bind socket for recv loop: " << ec.message() << std::endl;
+        }
+    }
+
     socket_.non_blocking(true, ec);
     if (ec) std::cerr << "[UDPClient] failed to set non-blocking mode for recv loop: " << ec.message() << std::endl;
 

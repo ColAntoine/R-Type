@@ -128,6 +128,11 @@ namespace RType::Network {
          */
         std::shared_ptr<Session> get_session(const std::string& connection_id);
 
+    /**
+     * @brief Get the server listening port
+     */
+    uint16_t get_port() const { return port_; }
+
         /**
          * @brief Find a session by player name (if any)
          * @param name Player display name

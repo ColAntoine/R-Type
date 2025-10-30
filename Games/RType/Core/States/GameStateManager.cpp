@@ -10,7 +10,9 @@
 #include <memory>
 
 void GameStateManager::push_state(const std::string& state_name, bool pause_current) {
-    if (processing_states_) {
+    // If states are currently being processed (update/render/input), enqueue operation
+    if (processing_states_.load()) {
+        std::lock_guard<std::mutex> lock(mutex_);
         pending_operations_.push_back({PendingOperation::Push, state_name, pause_current});
         return;
     }
@@ -21,75 +23,104 @@ void GameStateManager::push_state(const std::string& state_name, bool pause_curr
         return;
     }
 
-    // Pause current state if requested
-    if (!state_stack_.empty() && pause_current) {
-        state_stack_.top()->pause();
+    // Modify stack under lock, but call lifecycle methods outside the lock to avoid deadlocks
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!state_stack_.empty() && pause_current) {
+            state_stack_.top()->pause();
+        }
+        state_stack_.push(new_state);
     }
 
-    // Push and enter new state
-    state_stack_.push(new_state);
     new_state->enter();
 }
 
 void GameStateManager::pop_state() {
-    if (processing_states_) {
+    if (processing_states_.load()) {
+        std::lock_guard<std::mutex> lock(mutex_);
         pending_operations_.push_back({PendingOperation::Pop, "", false});
         return;
     }
 
-    if (state_stack_.empty()) {
-        std::cerr << "Cannot pop state: stack is empty" << std::endl;
-        return;
+    std::shared_ptr<IGameState> to_exit;
+    std::shared_ptr<IGameState> to_resume;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (state_stack_.empty()) {
+            std::cerr << "Cannot pop state: stack is empty" << std::endl;
+            return;
+        }
+        to_exit = state_stack_.top();
+        state_stack_.pop();
+        if (!state_stack_.empty()) {
+            to_resume = state_stack_.top();
+        }
     }
 
-    auto current_state = state_stack_.top();
-    current_state->exit();
-    state_stack_.pop();
-
-    // Resume previous state if it exists
-    if (!state_stack_.empty()) {
-        state_stack_.top()->resume();
-    }
+    // Call lifecycle methods outside lock
+    if (to_exit) to_exit->exit();
+    if (to_resume) to_resume->resume();
 }
 
 void GameStateManager::change_state(const std::string& state_name) {
-    if (processing_states_) {
+    if (processing_states_.load()) {
+        std::lock_guard<std::mutex> lock(mutex_);
         pending_operations_.push_back({PendingOperation::Change, state_name, false});
         return;
     }
 
-    // Clear current stack
-    while (!state_stack_.empty()) {
-        state_stack_.top()->exit();
-        state_stack_.pop();
+    // Pop all states under lock and collect them to call exit() outside the lock
+    std::vector<std::shared_ptr<IGameState>> to_exit;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        while (!state_stack_.empty()) {
+            to_exit.push_back(state_stack_.top());
+            state_stack_.pop();
+        }
     }
-    // Push new state
+    for (auto &s : to_exit) {
+        if (s) s->exit();
+    }
+
+    // Push new state (will handle locking)
     push_state(state_name, false);
 }
 
 void GameStateManager::clear_states() {
-    if (processing_states_) {
+    if (processing_states_.load()) {
+        std::lock_guard<std::mutex> lock(mutex_);
         pending_operations_.push_back({PendingOperation::Clear, "", false});
         return;
     }
 
-    while (!state_stack_.empty()) {
-        state_stack_.top()->exit();
-        state_stack_.pop();
+    std::vector<std::shared_ptr<IGameState>> to_exit;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        while (!state_stack_.empty()) {
+            to_exit.push_back(state_stack_.top());
+            state_stack_.pop();
+        }
+    }
+    for (auto &s : to_exit) {
+        if (s) s->exit();
     }
 }
 
 void GameStateManager::update(float delta_time) {
     process_pending_operations();
 
-    if (state_stack_.empty()) return;
+    // Snapshot stack under lock to avoid races with other threads
+    std::stack<std::shared_ptr<IGameState>> temp_stack;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (state_stack_.empty()) return;
+        temp_stack = state_stack_;
+    }
 
-    processing_states_ = true;
+    processing_states_.store(true);
 
     // Update states from bottom to top, but respect blocking
     std::vector<std::shared_ptr<IGameState>> states_to_update;
-    auto temp_stack = state_stack_;
-
     while (!temp_stack.empty()) {
         auto state = temp_stack.top();
         states_to_update.push_back(state);
@@ -107,16 +138,20 @@ void GameStateManager::update(float delta_time) {
         state->update(delta_time);
     }
 
-    processing_states_ = false;
+    processing_states_.store(false);
 }
 
 void GameStateManager::render() {
-    if (state_stack_.empty()) return;
+    // Snapshot stack under lock
+    std::stack<std::shared_ptr<IGameState>> temp_stack;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (state_stack_.empty()) return;
+        temp_stack = state_stack_;
+    }
 
     // Collect states to render (respecting blocking)
     std::vector<std::shared_ptr<IGameState>> states_to_render;
-    auto temp_stack = state_stack_;
-
     while (!temp_stack.empty()) {
         auto state = temp_stack.top();
         states_to_render.push_back(state);
@@ -136,15 +171,20 @@ void GameStateManager::render() {
 }
 
 void GameStateManager::handle_input() {
-    if (state_stack_.empty()) return;
+    std::shared_ptr<IGameState> top;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (state_stack_.empty()) return;
+        top = state_stack_.top();
+    }
 
-    processing_states_ = true;
-    // Only the top state handles input
-    state_stack_.top()->handle_input();
-    processing_states_ = false;
+    processing_states_.store(true);
+    if (top) top->handle_input();
+    processing_states_.store(false);
 }
 
 std::shared_ptr<IGameState> GameStateManager::get_current_state() const {
+    std::lock_guard<std::mutex> lock(mutex_);
     return state_stack_.empty() ? nullptr : state_stack_.top();
 }
 
@@ -160,7 +200,14 @@ bool GameStateManager::has_state(const std::string& state_name) const {
 
 
 void GameStateManager::process_pending_operations() {
-    for (const auto& operation : pending_operations_) {
+    // Snapshot pending operations under lock to avoid races with other threads
+    std::vector<StateOperation> ops;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        ops.swap(pending_operations_);
+    }
+
+    for (const auto& operation : ops) {
         switch (operation.operation) {
             case PendingOperation::Push:
                 push_state(operation.state_name, operation.pause_current);
@@ -176,7 +223,6 @@ void GameStateManager::process_pending_operations() {
                 break;
         }
     }
-    pending_operations_.clear();
 }
 
 std::shared_ptr<IGameState> GameStateManager::create_state(const std::string& state_name) {

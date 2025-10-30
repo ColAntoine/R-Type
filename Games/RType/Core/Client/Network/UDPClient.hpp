@@ -30,6 +30,11 @@ class UdpClient {
         // Generic send method for sending raw packet data
         void send_packet(const char* data, size_t length);
 
+    // Retrieve the last used player name (from last connect)
+    std::string get_player_name() const { return last_player_name_; }
+    // Return the currently configured server IP (as string) for reconnects
+    std::string get_server_ip() const;
+
         // Start/stop background receive loop. Handler invoked on each received message: (message_type, payload, size)
         void start_receive_loop(std::function<void(uint8_t,const char*,size_t)> handler);
         void stop_receive_loop(bool close_socket = true);
@@ -43,4 +48,5 @@ class UdpClient {
         std::atomic<bool> recv_running_{false};
         std::thread recv_thread_;
         std::function<void(uint8_t,const char*,size_t)> recv_handler_;
+    std::string last_player_name_;
 };
