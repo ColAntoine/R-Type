@@ -14,7 +14,7 @@
 
 namespace RType::Network {
 
-Multiplayer::Multiplayer(ServerECS &ecs) : ecs_(ecs) {}
+Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies, int maxPlayers) : ecs_(ecs), max_lobbies_(maxLobbies), max_players_(maxPlayers) {}
 Multiplayer::~Multiplayer() = default;
 
 void Multiplayer::set_udp_server(UdpServer* server) {
@@ -34,8 +34,11 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     std::vector<char> payload;
     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
 
-    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id
-              << " payload=" << payload.size() << std::endl;
+    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id;
+    if (udp_server_) {
+        std::cout << " (recv on port=" << udp_server_->get_port() << ")";
+    }
+    std::cout << " payload=" << payload.size() << std::endl;
 
     using RType::Protocol::SystemMessage;
     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_CONNECT)) {
@@ -52,6 +55,17 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     }
     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_UNREADY)) {
         handle_client_unready(session_id, payload);
+        return;
+    }
+
+    if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
+        // Client asks the front server to create a new instance (lobby+game)
+        std::cout << Console::cyan("[Multiplayer] ") << "REQUEST_INSTANCE from " << session_id << std::endl;
+        if (ecs_.instance_request_cb_) {
+            ecs_.instance_request_cb_(session_id);
+        } else {
+            std::cout << Console::yellow("[Multiplayer] ") << "Instance requests not supported on this server" << std::endl;
+        }
         return;
     }
 
@@ -88,6 +102,13 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
         return;
     }
 
+    // Check if we've reached the max players limit (only for instances, not front server)
+    if (max_lobbies_ == 0 && ecs_.session_token_map_.size() >= static_cast<size_t>(max_players_)) {
+        std::cout << Console::yellow("[Multiplayer] ") << "Rejecting client connection: max players (" << max_players_ << ") reached" << std::endl;
+        // Optionally send a rejection message, but for now just ignore
+        return;
+    }
+
     // Assign token but DON'T spawn entity yet (we're in lobby)
     uint32_t token = ecs_.next_session_token_++;
     ecs_.session_token_map_[session_id] = token;
@@ -111,7 +132,14 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
     send_server_accept(session_id, token, spawn_x, spawn_y);
     // Do NOT spawn player entities on clients yet (we're in lobby) - instead broadcast the client list
     if (udp_server_) {
-        udp_server_->send_player_list_to_client(session_id);
+            udp_server_->send_player_list_to_client(session_id);
+            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted CLIENT_LIST on port=" << udp_server_->get_port() << std::endl;
+        // Ensure the newly connected client also receives the current instance list (front server may supply it)
+        try {
+            if (ecs_.instance_list_request_cb_) ecs_.instance_list_request_cb_(session_id);
+        } catch (...) {
+            // best-effort
+        }
         udp_server_->broadcast_player_list();
     }
     
@@ -169,6 +197,7 @@ void Multiplayer::send_server_accept(const std::string &session_id, uint32_t tok
     sa.session_id = token;
     sa.spawn_x = x;
     sa.spawn_y = y;
+    sa.multi_instance = (max_lobbies_ > 0) ? 1 : 0;
     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT), sa, RType::Protocol::PacketFlags::RELIABLE);
     ecs_.send_callback_(session_id, packet);
 }
@@ -335,7 +364,7 @@ void Multiplayer::handle_client_ready(const std::string &session_id, const std::
             session->set_ready(cr.ready_state != 0);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
 
             // Check if all players are ready and start game if conditions met
             udp_server_->check_all_players_ready();
@@ -362,7 +391,7 @@ void Multiplayer::handle_client_unready(const std::string &session_id, const std
             session->set_ready(false);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
         } else {
             std::cerr << Console::yellow("[Multiplayer] ") << "Session " << session_id << " not found" << std::endl;
         }

@@ -69,6 +69,9 @@ namespace RType::Protocol {
         SERVER_INFO       = 0x10,
         CLIENT_LIST       = 0x11,
         START_GAME        = 0x12,
+        REQUEST_INSTANCE  = 0x13, // Client requests a new instance (lobby+game)
+        INSTANCE_CREATED  = 0x14, // Server informs client that instance was created (port)
+        INSTANCE_LIST     = 0x15, // Server sends list of instances
     };
 
     /**
@@ -135,6 +138,7 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Assigned player ID
         uint32_t session_id;     ///< Session identifier
         float spawn_x, spawn_y;  ///< Initial spawn position
+        uint8_t multi_instance;  ///< 1 if server supports multi-instance, 0 otherwise
     } __attribute__((packed));
 
     /**
@@ -168,6 +172,24 @@ namespace RType::Protocol {
     struct ClientListUpdate {
         uint8_t player_count;    ///< Number of players in the list
         PlayerInfo players[8];   ///< Array of player info (max 8 players)
+    } __attribute__((packed));
+
+    /**
+     * @brief Information about a running instance
+     */
+    struct InstanceInfo {
+        uint16_t port;          ///< UDP port where instance is running
+        uint8_t status;         ///< 0=waiting,1=running
+        char name[24];          ///< Optional name (null-terminated)
+    } __attribute__((packed));
+
+    struct InstanceList {
+        uint8_t instance_count; ///< Number of instances
+        InstanceInfo instances[8];
+    } __attribute__((packed));
+
+    struct InstanceCreated {
+        uint16_t port;          ///< Port for the newly created instance
     } __attribute__((packed));
 
     /**

@@ -10,8 +10,8 @@
 
 namespace RType::Network {
 
-    ServerECS::ServerECS() {
-        multiplayer_ = std::make_unique<Multiplayer>(*this);
+    ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
+        multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
     }
     ServerECS::~ServerECS() = default;
 
@@ -45,7 +45,7 @@ namespace RType::Network {
         for (auto &pkt : packets) {
             if (pkt.data.empty()) continue;
             if (multiplayer_) {
-                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " size=" << pkt.data.size() << std::endl;
+                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " on port=" << pkt.server_port << " size=" << pkt.data.size() << std::endl;
                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
             }
         }

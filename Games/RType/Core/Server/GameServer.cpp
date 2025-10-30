@@ -1,24 +1,31 @@
 #include "GameServer.hpp"
 #include "Network/NetworkManager.hpp"
+#include "Network/Session.hpp"
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include "ServerECS/Communication/Multiplayer.hpp"
 #include "ECS/Utils/Console.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "Core/Server/States/ServerLobby.hpp"
+#include <asio.hpp>
 #include <iostream>
 #include <thread>
 #include <chrono>
 #include <raylib.h>
 #include <random>
 
-GameServer::GameServer(bool display, bool windowed, float scale)
+GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers)
     : port_(8080)
     , running_(false)
     , display_(display)
     , windowed_(windowed)
     , scale_(scale)
     , game_started_(false)
+    , max_lobbies_(maxLobbies)
+    , max_players_(maxPlayers)
+    , zero_clients_timer_active_(false)
+    , zero_clients_since_{}
+    , zero_clients_grace_(std::chrono::milliseconds(5000))  // 5 seconds grace
 {
 }
 
@@ -52,7 +59,7 @@ bool GameServer::init()
     server->set_message_queue(msg_ptr);
 
     // Create ServerECS (game logic)
-    server_ecs_ = std::make_unique<RType::Network::ServerECS>();
+    server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_, max_players_);
     server_ecs_->set_message_queue(msg_ptr);
     // Provide a callback so ServerECS can send packets back to specific sessions
     server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {
@@ -62,6 +69,26 @@ bool GameServer::init()
 
     // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
     server_ecs_->set_udp_server(server.get());
+
+    // Register instance-request callback so we can spawn instances on demand
+    server_ecs_->set_instance_request_callback([this](const std::string &session_id){
+        this->handle_instance_request(session_id);
+    });
+
+    // Register instance-list request callback so ServerECS can ask the front server
+    // to send the current instance list to a newly connected session.
+    server_ecs_->set_instance_list_request_callback([this](const std::string &session_id){
+        auto server = network_manager_->get_server();
+        if (!server) return;
+        // Build InstanceList and send to specific client
+        RType::Protocol::InstanceList il{};
+        il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
+        for (size_t i = 0; i < il.instance_count; ++i) {
+            il.instances[i] = instances_[i];
+        }
+        auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
+        server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
+    });
 
     // Register game start callback with server (this will override the one in Multiplayer)
     // We need to call both start_game() and ensure players are spawned
@@ -152,6 +179,37 @@ void GameServer::run_tick_loop()
         if (elapsed < tick_duration) {
             std::this_thread::sleep_for(tick_duration - elapsed);
         }
+
+        // If this server is an instance (max_lobbies_ == 0), auto-shutdown when all clients
+        // have disconnected and stayed disconnected for the grace period. This ensures
+        // instances don't linger when nobody is connected (applies both in lobby and
+        // during/after a running game).
+        if (max_lobbies_ == 0 && running_) {
+            auto server = network_manager_->get_server();
+            if (server) {
+                size_t client_count = server->get_client_count();
+                if (client_count == 0) {
+                    if (!zero_clients_timer_active_) {
+                        zero_clients_timer_active_ = true;
+                        zero_clients_since_ = std::chrono::steady_clock::now();
+                        std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " has 0 clients; starting shutdown grace timer (" << zero_clients_grace_.count() << "ms)" << std::endl;
+                    } else {
+                        auto since = std::chrono::steady_clock::now() - zero_clients_since_;
+                        if (since >= zero_clients_grace_) {
+                            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " no clients after grace period; shutting down instance" << std::endl;
+                            running_ = false; // will break the run loop and cause instance to exit
+                            // allow a final tick to flush any state
+                        }
+                    }
+                } else {
+                    // clients present again -> reset timer
+                    if (zero_clients_timer_active_) {
+                        zero_clients_timer_active_ = false;
+                        std::cout << Console::cyan("[GameServer] ") << "Instance on port " << port_ << " clients reconnected; cancelling shutdown timer" << std::endl;
+                    }
+                }
+            }
+        }
     }
 
     std::cout << Console::yellow("[GameServer] ") << "Tick loop ended" << std::endl;
@@ -240,5 +298,184 @@ void GameServer::start_game()
     }
     
     std::cout << Console::green("[GameServer] ") << "Game started! ECS systems now active." << std::endl;
+}
+
+void GameServer::handle_instance_request(const std::string &session_id) {
+    std::lock_guard<std::mutex> lk(instances_mtx_);
+    if (max_lobbies_ <= 0) {
+        // Not supported
+        send_instance_created(session_id, 0);
+        return;
+    }
+    if (active_instances_ >= max_lobbies_) {
+        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: max instances reached (" << active_instances_ << "/" << max_lobbies_ << ")" << std::endl;
+        send_instance_created(session_id, 0);
+        return;
+    }
+
+    // Find next available UDP port starting from base port + 1.
+    // We'll probe ports until we find one that can be bound (and is not already in our instances_ list).
+    const uint16_t start_port = static_cast<uint16_t>(port_ + 1);
+    const uint16_t max_probe = 65535;
+    uint16_t new_port = 0;
+    for (uint32_t candidate = start_port; candidate <= max_probe; ++candidate) {
+        uint16_t cand = static_cast<uint16_t>(candidate);
+        // skip ports we already know about in instances_
+        bool used = false;
+        for (const auto &it : instances_) {
+            if (it.port == cand) { used = true; break; }
+        }
+        if (used) continue;
+
+        // Probe both UDP and TCP to avoid selecting a port already in use by either protocol.
+        // We attempt to bind a UDP socket and a TCP acceptor on the candidate port. If both succeed,
+        // consider the port free. Use error_code version to avoid exceptions and close handles on success.
+        try {
+            asio::io_context probe_ctx;
+            asio::error_code ec_udp;
+            asio::ip::udp::socket udp_sock(probe_ctx);
+            udp_sock.open(asio::ip::udp::v4(), ec_udp);
+            if (ec_udp) continue;
+            asio::ip::udp::endpoint udp_ep(asio::ip::udp::v4(), cand);
+            udp_sock.bind(udp_ep, ec_udp);
+            if (ec_udp) {
+                // UDP bind failed -> port in use for UDP
+                udp_sock.close();
+                continue;
+            }
+
+            asio::error_code ec_tcp;
+            asio::ip::tcp::acceptor tcp_acc(probe_ctx);
+            tcp_acc.open(asio::ip::tcp::v4(), ec_tcp);
+            if (ec_tcp) {
+                udp_sock.close();
+                continue;
+            }
+            // Allow address reuse false to ensure exclusivity
+            asio::ip::tcp::endpoint tcp_ep(asio::ip::tcp::v4(), cand);
+            tcp_acc.bind(tcp_ep, ec_tcp);
+            if (ec_tcp) {
+                // TCP bind failed -> port in use for TCP
+                tcp_acc.close();
+                udp_sock.close();
+                continue;
+            }
+            // If we reached here both binds succeeded: close and pick the port
+            tcp_acc.close();
+            udp_sock.close();
+            new_port = cand;
+            break;
+        } catch (...) {
+            // Any error -> skip candidate
+            continue;
+        }
+    }
+
+    if (new_port == 0) {
+        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: no available ports found" << std::endl;
+        send_instance_created(session_id, 0);
+        return;
+    }
+
+    ++active_instances_;
+
+    std::cout << Console::green("[GameServer] ") << "Spawning new instance on port " << new_port << std::endl;
+
+    // Spawn instance in background thread
+    std::thread t([this, new_port]() {
+        try {
+            // Create a headless GameServer instance (no display)
+            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_);
+            srv->set_port(new_port);
+            if (!srv->init()) {
+                std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;
+                // Decrement active instances
+                std::lock_guard<std::mutex> lk(instances_mtx_);
+                --active_instances_;
+                return;
+            }
+
+            // Run until the instance ends (init() -> run() blocks)
+            srv->run();
+
+            // When instance run returns, consider it terminated
+            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << new_port << " exited" << std::endl;
+        } catch (...) {
+            std::cout << Console::red("[GameServer] ") << "Exception while running instance on port " << new_port << std::endl;
+        }
+
+        std::lock_guard<std::mutex> lk(instances_mtx_);
+        --active_instances_;
+        // Remove instance info from list (if present)
+        for (auto it = instances_.begin(); it != instances_.end(); ++it) {
+            if (it->port == new_port) {
+                instances_.erase(it);
+                break;
+            }
+        }
+        // Erase thread entry from map (we're running inside that thread)
+        auto tit = instance_threads_.find(new_port);
+        if (tit != instance_threads_.end()) {
+            instance_threads_.erase(tit);
+        }
+        // Broadcast updated instance list to front clients
+        try {
+            broadcast_instance_list();
+        } catch (...) {
+            // best-effort
+        }
+    });
+
+    // Store thread and detach (we only need active_instances_ count)
+    instance_threads_.emplace(new_port, std::move(t));
+    instance_threads_[new_port].detach();
+
+    // Add to instances list and broadcast available instances to all connected clients
+    RType::Protocol::InstanceInfo info{};
+    info.port = new_port;
+    info.status = 0; // waiting
+    strncpy(info.name, "", sizeof(info.name)-1);
+    instances_.push_back(info);
+    broadcast_instance_list();
+
+    // Reply to the requesting client with instance port
+    send_instance_created(session_id, new_port);
+    // Proactively disconnect the requesting session from the front server so it stops
+    // receiving broadcasts from the front lobby. This avoids relying on the client's
+    // unreliable UDP CLIENT_DISCONNECT reaching the front server in time.
+    try {
+        auto server_ptr = network_manager_->get_server();
+        if (server_ptr) {
+            auto sess = server_ptr->get_session(session_id);
+            if (sess) {
+                std::cout << Console::yellow("[GameServer] ") << "Disconnecting requesting session " << session_id << " from front server after instance creation" << std::endl;
+                sess->disconnect();
+            }
+        }
+    } catch (...) {
+        // best-effort: don't crash the instance creation flow if this fails
+    }
+}
+
+void GameServer::send_instance_created(const std::string &session_id, uint16_t port) {
+    auto server = network_manager_->get_server();
+    if (!server) return;
+
+    RType::Protocol::InstanceCreated ic{};
+    ic.port = port;
+    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_CREATED), ic, RType::Protocol::PacketFlags::RELIABLE);
+    server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
+}
+
+void GameServer::broadcast_instance_list() {
+    auto server = network_manager_->get_server();
+    if (!server) return;
+    RType::Protocol::InstanceList il{};
+    il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
+    for (size_t i = 0; i < il.instance_count; ++i) {
+        il.instances[i] = instances_[i];
+    }
+    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
+    server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
 }
 
