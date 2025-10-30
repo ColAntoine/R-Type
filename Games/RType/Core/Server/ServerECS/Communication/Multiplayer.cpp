@@ -55,6 +55,17 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
         return;
     }
 
+    if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
+        // Client asks the front server to create a new instance (lobby+game)
+        std::cout << Console::cyan("[Multiplayer] ") << "REQUEST_INSTANCE from " << session_id << std::endl;
+        if (ecs_.instance_request_cb_) {
+            ecs_.instance_request_cb_(session_id);
+        } else {
+            std::cout << Console::yellow("[Multiplayer] ") << "Instance requests not supported on this server" << std::endl;
+        }
+        return;
+    }
+
     // Check for PLAYER_INPUT game message
     using RType::Protocol::GameMessage;
     if (msg_type == static_cast<uint8_t>(GameMessage::PLAYER_INPUT)) {

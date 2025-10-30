@@ -6,7 +6,11 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/UI/Components/InputField.hpp"
 #include "Core/Client/Network/ClientService.hpp"
+#include "Core/Client/Network/NetworkService.hpp"
 #include "ECS/Zipper.hpp"
+#include "Core/Server/Protocol/Protocol.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Messaging/Events/Event.hpp"
 
 void Browser::enter()
 {
@@ -17,14 +21,66 @@ void Browser::enter()
 
     setup_ui();
     subscribe_to_ui_event();
+    // Register for instance-created notifications (sent by front server when an instance is spawned)
+    auto* net_mgr = RType::Network::get_network_manager();
+    if (net_mgr) {
+        // INSTANCE_CREATED -> reconnect and enter lobby (creation flow)
+        // Capture the state manager pointer instead of `this` to avoid invoking a dangling Browser pointer
+        auto *stateMgr = this->_stateManager;
+        net_mgr->get_player_handler().set_instance_created_callback([stateMgr](uint16_t port) {
+            if (port == 0) {
+                std::cout << "[Browser] Instance creation failed or denied by server" << std::endl;
+                return;
+            }
+            std::cout << "[Browser] Received instance port " << port << ", reconnecting..." << std::endl;
+            auto client = RType::Network::get_client();
+            if (!client) return;
+            std::string server_ip = client->get_server_ip();
+            std::string player_name = client->get_player_name();
+            // Perform connect; upon success, update the game state via the state manager pointer
+            auto accept = client->connect(server_ip, port, player_name);
+            if (accept) {
+                // Defer UI state changes to the main thread via the event bus
+                auto& bus = MessagingManager::instance().get_event_bus();
+                Event ev("INSTANCE_CONNECTED_UI");
+                ev.set<uint16_t>("port", port);
+                bus.emit_deferred(ev);
+            } else {
+                std::cerr << "[Browser] Failed to connect to instance on port " << port << std::endl;
+            }
+        });
+
+        // INSTANCE_LIST -> update UI list
+        net_mgr->get_player_handler().set_instance_list_callback([this](const std::vector<RType::Protocol::InstanceInfo>& list) {
+            this->rebuild_instance_ui(list);
+        });
+    }
     _initialized = true;
+
+    // Subscribe to deferred instance-connected event to perform UI transitions on main thread
+    auto& bus = MessagingManager::instance().get_event_bus();
+    _instanceConnectedCallbackId = bus.subscribe("INSTANCE_CONNECTED_UI", [this](const Event& ev) {
+        if (this->_stateManager) {
+            this->_stateManager->pop_state();
+            this->_stateManager->push_state("Lobby");
+        }
+    });
 }
 
 void Browser::exit()
 {
     auto &eventBus = MessagingManager::instance().get_event_bus();
     eventBus.unsubscribe(_uiEventCallbackId);
+    // Unregister instance-created callback
+    auto* net_mgr = RType::Network::get_network_manager();
+    if (net_mgr) {
+        net_mgr->get_player_handler().set_instance_created_callback(nullptr);
+        net_mgr->get_player_handler().set_instance_list_callback(nullptr);
+    }
     _initialized = false;
+    // Unsubscribe deferred UI event
+    auto& bus = MessagingManager::instance().get_event_bus();
+    bus.unsubscribe(_instanceConnectedCallbackId);
 }
 
 void Browser::pause()
@@ -55,33 +111,35 @@ void Browser::setup_ui()
     auto titleEntity = _registry.spawn_entity();
     _registry.add_component(titleEntity, UI::UIComponent(title));
 
-    // Mock room #1
-    auto room1Label = TextBuilder()
+    // Create instance button
+    auto createButton = ButtonBuilder()
         .at(renderManager.scalePosX(20), renderManager.scalePosY(25))
-        .text("#1 - Players: 2/4")
-        .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
-        .build(winInfos.getWidth(), winInfos.getHeight());
-
-    auto room1Entity = _registry.spawn_entity();
-    _registry.add_component(room1Entity, UI::UIComponent(room1Label));
-
-    // Join button for room #1
-    auto joinButton = ButtonBuilder()
-        .at(renderManager.scalePosX(60), renderManager.scalePosY(25))
-        .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
-        .text("JOIN")
+        .size(renderManager.scaleSizeW(25), renderManager.scaleSizeH(10))
+        .text("CREATE INSTANCE")
         .green()
         .textColor(WHITE)
         .fontSize(renderManager.scaleSizeW(2))
         .border(2, WHITE)
         .onClick([this]() {
+            // Reuse join_room_callback to send REQUEST_INSTANCE (create-on-demand)
             this->join_room_callback();
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
 
-    auto joinButtonEntity = _registry.spawn_entity();
-    _registry.add_component(joinButtonEntity, UI::UIComponent(joinButton));
+    auto createButtonEntity = _registry.spawn_entity();
+    _registry.add_component(createButtonEntity, UI::UIComponent(createButton));
+
+    // Instruction text when there are no instances
+    auto infoLabel = TextBuilder()
+        .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
+        .text("No open instances. Create one or wait for others to create.")
+        .fontSize(renderManager.scaleSizeW(2))
+        .textColor(WHITE)
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto infoEntity = _registry.spawn_entity();
+    _registry.add_component(infoEntity, UI::UIComponent(infoLabel));
+    _instanceEntities.push_back(infoEntity);
 
     // Back Button
     auto backButton = ButtonBuilder()
@@ -116,8 +174,84 @@ void Browser::setup_ui()
 void Browser::join_room_callback()
 {
     std::cout << "[Browser] Join room clicked" << std::endl;
-    if (_stateManager) {
-        _stateManager->pop_state();
-        _stateManager->push_state("Lobby");
+    // Request the server to create a new instance (front server will reply with INSTANCE_CREATED)
+    auto client = RType::Network::get_client();
+    if (!client) {
+        std::cerr << "[Browser] No client available to send instance request" << std::endl;
+        return;
+    }
+    RType::Protocol::PacketBuilder builder;
+    builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::REQUEST_INSTANCE));
+    auto buf = builder.finalize();
+    client->send_packet(reinterpret_cast<const char*>(buf.data()), buf.size());
+}
+
+void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInfo>& list) {
+    // Clear previous instance UI entities
+    for (auto e : _instanceEntities) {
+        _registry.kill_entity(e);
+    }
+    _instanceEntities.clear();
+
+    auto &renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+
+    if (list.empty()) {
+        auto infoLabel = TextBuilder()
+            .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
+            .text("No open instances. Create one or wait for others to create.")
+            .fontSize(renderManager.scaleSizeW(2))
+            .textColor(WHITE)
+            .build(winInfos.getWidth(), winInfos.getHeight());
+        auto infoEntity = _registry.spawn_entity();
+        _registry.add_component(infoEntity, UI::UIComponent(infoLabel));
+        _instanceEntities.push_back(infoEntity);
+        return;
+    }
+
+    // Create a UI entry per instance with Join button
+    for (size_t i = 0; i < list.size(); ++i) {
+        const auto &inst = list[i];
+        std::string labelText = "Instance " + std::to_string(i+1) + " - Port: " + std::to_string(inst.port);
+        auto label = TextBuilder()
+            .at(renderManager.scalePosX(20), renderManager.scalePosY(40 + i*10))
+            .text(labelText.c_str())
+            .fontSize(renderManager.scaleSizeW(2))
+            .textColor(WHITE)
+            .build(winInfos.getWidth(), winInfos.getHeight());
+        auto labelEntity = _registry.spawn_entity();
+        _registry.add_component(labelEntity, UI::UIComponent(label));
+        _instanceEntities.push_back(labelEntity);
+
+        // Join button
+            // Capture state manager pointer, avoid capturing `this` to prevent dangling access in callback
+            auto *stateMgrJoin = this->_stateManager;
+            auto joinButton = ButtonBuilder()
+            .at(renderManager.scalePosX(60), renderManager.scalePosY(40 + i*10))
+            .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(6))
+            .text("JOIN")
+            .green()
+            .textColor(WHITE)
+            .fontSize(renderManager.scaleSizeW(2))
+            .border(2, WHITE)
+            .onClick([port = inst.port, stateMgrJoin]() {
+                // Connect directly to instance
+                auto client = RType::Network::get_client();
+                if (!client) return;
+                std::string server_ip = client->get_server_ip();
+                std::string player_name = client->get_player_name();
+                auto accept = client->connect(server_ip, port, player_name);
+                if (accept) {
+                    // Defer UI state changes to main thread
+                    auto& bus = MessagingManager::instance().get_event_bus();
+                    Event ev("INSTANCE_CONNECTED_UI");
+                    ev.set<uint16_t>("port", port);
+                    bus.emit_deferred(ev);
+                }
+            })
+            .build(winInfos.getWidth(), winInfos.getHeight());
+        auto btnEntity = _registry.spawn_entity();
+        _registry.add_component(btnEntity, UI::UIComponent(joinButton));
+        _instanceEntities.push_back(btnEntity);
     }
 }

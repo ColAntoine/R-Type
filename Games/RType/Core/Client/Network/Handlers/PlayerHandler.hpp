@@ -33,6 +33,16 @@ class PlayerHandler {
         // Register a callback for when START_GAME is received
         void set_game_start_callback(GameStartCallback callback);
 
+    // Register a callback for when the server informs about an instance created (port)
+    void set_instance_created_callback(std::function<void(uint16_t)> cb);
+
+    // Called by network dispatcher when INSTANCE_CREATED arrives
+    void on_instance_created(const char* payload, size_t size);
+    // Instance list handling
+    using InstanceListCallback = std::function<void(const std::vector<RType::Protocol::InstanceInfo>&)>;
+    void set_instance_list_callback(InstanceListCallback cb);
+    void on_instance_list(const char* payload, size_t size);
+
     private:
         registry& registry_;
         DLLoader& loader_;
@@ -46,4 +56,10 @@ class PlayerHandler {
         GameStartCallback game_start_callback_;
         // Cache of the last received player list
         std::vector<RType::Protocol::PlayerInfo> last_player_list_;
+    // Callback when an instance (lobby+game) is created by the server
+    std::function<void(uint16_t)> instance_created_callback_;
+    // Last known instance list
+    std::vector<RType::Protocol::InstanceInfo> last_instance_list_;
+    // Instance list callback
+    InstanceListCallback instance_list_callback_;
 };

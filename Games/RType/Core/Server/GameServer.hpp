@@ -4,6 +4,11 @@
 #include "Core/States/GameStateManager.hpp"
 #include <memory>
 #include <asio.hpp>
+#include <vector>
+#include "Core/Server/Protocol/Protocol.hpp"
+#include <thread>
+#include <mutex>
+#include <map>
 
 // Forward declarations
 namespace RType::Network {
@@ -44,4 +49,17 @@ private:
     float scale_;
     bool game_started_;
     int max_lobbies_;
+    // Instance management
+    std::mutex instances_mtx_;
+    int active_instances_{0};
+    uint16_t next_instance_offset_{0}; // offsets from base port_
+    std::map<uint16_t, std::thread> instance_threads_; // port -> thread
+    std::vector<RType::Protocol::InstanceInfo> instances_;
+
+    // Allow caller to override the bind port before init()
+    void set_port(uint16_t p) { port_ = p; }
+    // Handle client request to spawn instance
+    void handle_instance_request(const std::string &session_id);
+    void send_instance_created(const std::string &session_id, uint16_t port);
+    void broadcast_instance_list();
 };

@@ -6,6 +6,7 @@
 #include "ECS/Utils/Console.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "Core/Server/States/ServerLobby.hpp"
+#include <asio.hpp>
 #include <iostream>
 #include <thread>
 #include <chrono>
@@ -63,6 +64,11 @@ bool GameServer::init()
 
     // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
     server_ecs_->set_udp_server(server.get());
+
+    // Register instance-request callback so we can spawn instances on demand
+    server_ecs_->set_instance_request_callback([this](const std::string &session_id){
+        this->handle_instance_request(session_id);
+    });
 
     // Register game start callback with server (this will override the one in Multiplayer)
     // We need to call both start_game() and ensure players are spawned
@@ -241,5 +247,129 @@ void GameServer::start_game()
     }
     
     std::cout << Console::green("[GameServer] ") << "Game started! ECS systems now active." << std::endl;
+}
+
+void GameServer::handle_instance_request(const std::string &session_id) {
+    std::lock_guard<std::mutex> lk(instances_mtx_);
+    if (max_lobbies_ <= 0) {
+        // Not supported
+        send_instance_created(session_id, 0);
+        return;
+    }
+    if (active_instances_ >= max_lobbies_) {
+        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: max instances reached (" << active_instances_ << "/" << max_lobbies_ << ")" << std::endl;
+        send_instance_created(session_id, 0);
+        return;
+    }
+
+    // Find next available UDP port starting from base port + 1.
+    // We'll probe ports until we find one that can be bound (and is not already in our instances_ list).
+    const uint16_t start_port = static_cast<uint16_t>(port_ + 1);
+    const uint16_t max_probe = 65535;
+    uint16_t new_port = 0;
+    for (uint32_t candidate = start_port; candidate <= max_probe; ++candidate) {
+        uint16_t cand = static_cast<uint16_t>(candidate);
+        // skip ports we already use for instances
+        bool used = false;
+        for (const auto &it : instances_) {
+            if (it.port == cand) { used = true; break; }
+        }
+        if (used) continue;
+
+        // Try to bind a temporary UDP socket to test availability
+        try {
+            asio::io_context probe_ctx;
+            asio::ip::udp::socket probe_sock(probe_ctx);
+            asio::error_code ec;
+            probe_sock.open(asio::ip::udp::v4(), ec);
+            if (ec) continue;
+            asio::ip::udp::endpoint ep(asio::ip::udp::v4(), cand);
+            probe_sock.bind(ep, ec);
+            if (!ec) {
+                // success: port is available. Close probe socket and choose this port
+                probe_sock.close();
+                new_port = cand;
+                break;
+            }
+            // otherwise port in use - try next
+        } catch (...) {
+            // ignore and continue probing
+            continue;
+        }
+    }
+
+    if (new_port == 0) {
+        std::cout << Console::yellow("[GameServer] ") << "Instance creation denied: no available ports found" << std::endl;
+        send_instance_created(session_id, 0);
+        return;
+    }
+
+    ++active_instances_;
+
+    std::cout << Console::green("[GameServer] ") << "Spawning new instance on port " << new_port << std::endl;
+
+    // Spawn instance in background thread
+    std::thread t([this, new_port]() {
+        try {
+            // Create a headless GameServer instance (no display)
+            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0);
+            srv->set_port(new_port);
+            if (!srv->init()) {
+                std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;
+                // Decrement active instances
+                std::lock_guard<std::mutex> lk(instances_mtx_);
+                --active_instances_;
+                return;
+            }
+
+            // Run until the instance ends (init() -> run() blocks)
+            srv->run();
+
+            // When instance run returns, consider it terminated
+            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << new_port << " exited" << std::endl;
+        } catch (...) {
+            std::cout << Console::red("[GameServer] ") << "Exception while running instance on port " << new_port << std::endl;
+        }
+
+        std::lock_guard<std::mutex> lk(instances_mtx_);
+        --active_instances_;
+    });
+
+    // Store thread and detach (we only need active_instances_ count)
+    instance_threads_.emplace(new_port, std::move(t));
+    instance_threads_[new_port].detach();
+
+    // Add to instances list and broadcast available instances to all connected clients
+    RType::Protocol::InstanceInfo info{};
+    info.port = new_port;
+    info.status = 0; // waiting
+    strncpy(info.name, "", sizeof(info.name)-1);
+    instances_.push_back(info);
+    broadcast_instance_list();
+
+    // Reply to the requesting client with instance port
+    send_instance_created(session_id, new_port);
+}
+
+void GameServer::send_instance_created(const std::string &session_id, uint16_t port) {
+    auto server = network_manager_->get_server();
+    if (!server) return;
+
+    RType::Protocol::InstanceCreated ic{};
+    ic.port = port;
+    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_CREATED), ic, RType::Protocol::PacketFlags::RELIABLE);
+    server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
+}
+
+void GameServer::broadcast_instance_list() {
+    auto server = network_manager_->get_server();
+    if (!server) return;
+    RType::Protocol::InstanceList il{};
+    il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
+    for (size_t i = 0; i < il.instance_count; ++i) {
+        il.instances[i] = instances_[i];
+    }
+    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
+    server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
 }
 

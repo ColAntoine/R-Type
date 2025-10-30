@@ -40,6 +40,11 @@ int main(int argc, char *argv[])
         }
     }
 
+    if (display && maxLobbies > 0) {
+        std::cerr << "Display mode (-d) is incompatible with multi-instance (-m). Use headless mode for multi-instance." << std::endl;
+        return 1;
+    }
+
     GameServer server(display, windowed, scale, maxLobbies);
     if (!server.init())
         return 1;

@@ -38,6 +38,9 @@ class ServerECS {
         // Install the server UDP instance into multiplayer so it can trigger broadcasts directly
         void set_udp_server(UdpServer* server);
 
+    // Register a callback invoked when a client requests a new instance (session_id)
+    void set_instance_request_callback(std::function<void(const std::string&)> cb) { instance_request_cb_ = std::move(cb); }
+
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
         DLLoader& GetDLLoader() { return loader_; }
@@ -61,6 +64,8 @@ class ServerECS {
         std::unique_ptr<Multiplayer> multiplayer_;
         // Max lobbies for multi-instance
         int max_lobbies_;
+    // Callback to request instance creation (front server supplies implementation)
+    std::function<void(const std::string&)> instance_request_cb_;
 
     // No std::function broadcast here; multicast requests are performed directly by Multiplayer
 
