@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Check if vcpkg is available, if not set it up
+# ------------------------------------------------------------------------------
+# Toolchain (auto-setup vcpkg if not provided)
+# ------------------------------------------------------------------------------
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
     if(NOT EXISTS "${VCPKG_ROOT}")
@@ -13,6 +15,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         if(NOT git_result EQUAL 0)
             message(FATAL_ERROR "Failed to clone vcpkg")
         endif()
+
         # Bootstrap vcpkg
         if(WIN32)
             execute_process(
@@ -27,19 +30,24 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
                 RESULT_VARIABLE bootstrap_result
             )
         endif()
+
         if(NOT bootstrap_result EQUAL 0)
             message(FATAL_ERROR "Failed to bootstrap vcpkg")
         endif()
     endif()
+
     set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
 
+# ------------------------------------------------------------------------------
+# Project
+# ------------------------------------------------------------------------------
 project(R-Type)
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Pretty ASCII banner (pure cosmetic)
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "__________        ________________.___._____________________")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "\\______   \\       \\__    ___/\\__  |   |\\______   \\_   _____/")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |       _/  ______ |    |    /   |   | |     ___|    __)_ ")
@@ -47,39 +55,79 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |    |   \\
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red " |____|_  /         |____|    / ______| |____|   /_______  /")
 execute_process(COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --red "        \\/                    \\/                         \\/ ")
 
-find_package(raylib CONFIG REQUIRED)
+# ------------------------------------------------------------------------------
+# Dependencies (through vcpkg)
+# ------------------------------------------------------------------------------
+find_package(raylib CONFIG REQUIRED)   # raylib imported target (usually 'raylib')
+find_package(asio   CONFIG REQUIRED)   # asio::asio
+find_package(glfw3  CONFIG REQUIRED)   # glfw
+# Threads may be needed by server/tests later
+find_package(Threads REQUIRED)
 
-find_package(asio CONFIG REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
+# ------------------------------------------------------------------------------
+# Global Windows compatibility layer (INTERFACE target)
+# This ensures *all* targets that link to it get the same safe defines,
+# preventing conflicts with raylib symbols (CloseWindow/ShowCursor/Rectangle)
+# and winsock include order issues.
+# ------------------------------------------------------------------------------
+add_library(win_sanity INTERFACE)
 
-# Add ECS subdirectory to use its proper CMakeLists.txt
+if(WIN32)
+    target_compile_definitions(win_sanity INTERFACE
+        _WIN32_WINNT=0x0A00
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
+        NOGDI
+        NOUSER
+        # _WINSOCKAPI_  <-- REMOVE THIS LINE
+    )
+    if(MSVC)
+        target_compile_options(win_sanity INTERFACE
+            /Zc:__cplusplus
+            /permissive-
+            /U_WINSOCKAPI_       # <-- actively undef, just in case
+        )
+        # si tu as gardé la neutralisation de l’attribut:
+        # target_compile_definitions(win_sanity INTERFACE __attribute_maybe_unused__=)
+    endif()
+endif()
+
+
+# ------------------------------------------------------------------------------
+# Subprojects
+# ------------------------------------------------------------------------------
+# ECS subproject (builds ECS shared lib and its plugins)
 add_subdirectory(ECS)
 
+# RType game module (defines RType lib/exes inside)
+add_subdirectory(Games/RType)
+
+# ------------------------------------------------------------------------------
+# Copy runtime libs next to binaries (for Windows DLLs / plugins)
+# ------------------------------------------------------------------------------
 add_custom_target(copy_libs ALL
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/bin/lib/systems
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BINARY_DIR}/lib ${CMAKE_BINARY_DIR}/bin/lib
     COMMENT "Copying system libraries to binary directory"
 )
 
-if(TARGET r-type_client)
-    add_dependencies(r-type_client copy_libs)
-endif()
-
-# Add subdirectories for modular builds
-add_subdirectory(Games/RType)
-
-# Build Game executable (r-type_client) from Games/RType/main_client.cpp
-if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_client.cpp")
+# ------------------------------------------------------------------------------
+# r-type_client (define here only if not already defined in Games/RType)
+# ------------------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_client.cpp" AND NOT TARGET r-type_client)
     add_executable(r-type_client "${CMAKE_SOURCE_DIR}/Games/RType/main_client.cpp")
 
-    # Link with RType library
     target_link_libraries(r-type_client PRIVATE
         RType
         ECS
         raylib
         glfw
-        dl
+        win_sanity   # <-- propagate safe Windows defines
     )
+
+    if(UNIX)
+        target_link_libraries(r-type_client PRIVATE dl)
+    endif()
 
     target_include_directories(r-type_client PRIVATE
         Games/RType
@@ -87,29 +135,29 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_client.cpp")
         ECS/include
         ${RTYPE_INCLUDE_DIRS}
     )
-    
+
     set_target_properties(r-type_client PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
-else()
-    message(WARNING "No main_client.cpp found for r-type_client in Games/RType/")
+
+    add_dependencies(r-type_client copy_libs)
 endif()
 
-# Build Server executable (r-type_server) from Games/RType/main_server.cpp
-if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_server.cpp")
-    # Collect all Server sources from Games/RType/Core/Server/
-    file(GLOB_RECURSE SERVER_SOURCES 
-        "Games/RType/Core/Server/*.cpp"
+# ------------------------------------------------------------------------------
+# r-type_server (define here only if not already defined in Games/RType)
+# ------------------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_server.cpp" AND NOT TARGET r-type_server)
+    # Collect server sources (exclude any accidental main_*.cpp)
+    file(GLOB_RECURSE SERVER_SOURCES
+        "${CMAKE_SOURCE_DIR}/Games/RType/Core/Server/*.cpp"
     )
-    
-    # Remove the main files from server sources if they got included
     list(FILTER SERVER_SOURCES EXCLUDE REGEX ".*/main_.*\\.cpp")
-    
-    add_executable(r-type_server 
+
+    add_executable(r-type_server
         "${CMAKE_SOURCE_DIR}/Games/RType/main_server.cpp"
         ${SERVER_SOURCES}
     )
-    
+
     target_include_directories(r-type_server PRIVATE
         Games/RType
         Games/RType/Core
@@ -117,121 +165,103 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/Games/RType/main_server.cpp")
         ${CMAKE_SOURCE_DIR}
     )
 
-    # Link with required system libraries for Asio
-    find_package(Threads REQUIRED)
     target_link_libraries(r-type_server PRIVATE
         Threads::Threads
         asio::asio
+        win_sanity   # <-- propagate safe Windows defines
     )
 
-    # Link with RType game library so component symbols are available
+    if(WIN32)
+        target_link_libraries(r-type_server PRIVATE ws2_32 mswsock iphlpapi)
+    endif()
+
+    # Link game libs if present
     if(TARGET RType)
         target_link_libraries(r-type_server PRIVATE RType)
     endif()
-
-    # Link with ECS for registry and component factory
     if(TARGET ECS)
         target_link_libraries(r-type_server PRIVATE ECS)
         target_include_directories(r-type_server PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
     endif()
-else()
-    message(WARNING "No main_server.cpp found for r-type_server in Games/RType/")
-endif()
 
-# Set output directories
-set_target_properties(r-type_client r-type_server PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
-
-if(TARGET ECS)
-    set_target_properties(ECS PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    set_target_properties(r-type_server PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
 endif()
 
-# Enable testing
+# ------------------------------------------------------------------------------
+# Ensure ECS artefacts land under build/lib (so copy_libs can mirror them)
+# Also propagate Windows defines to ECS as it exposes headers used by others.
+# ------------------------------------------------------------------------------
+if(TARGET ECS)
+    set_target_properties(ECS PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    )
+    target_link_libraries(ECS PRIVATE win_sanity)
+endif()
+
+# ------------------------------------------------------------------------------
+# Tests (optional)
+# ------------------------------------------------------------------------------
 enable_testing()
 
-# Add test directories if they contain test files
+# ECS tests (if any)
 file(GLOB ECS_TEST_SOURCES "ECS/test/*.cpp")
 if(ECS_TEST_SOURCES)
     add_executable(test_ecs ${ECS_TEST_SOURCES})
-    target_include_directories(test_ecs PRIVATE 
+    target_include_directories(test_ecs PRIVATE
         ${CMAKE_SOURCE_DIR}/ECS/include
         ${CMAKE_SOURCE_DIR}/ECS
     )
     if(TARGET ECS)
-        target_link_libraries(test_ecs ECS raylib)
+        target_link_libraries(test_ecs PRIVATE ECS raylib win_sanity)
+    else()
+        target_link_libraries(test_ecs PRIVATE raylib win_sanity)
     endif()
-    
-    # Find and link doctest
+
     find_package(doctest CONFIG REQUIRED)
-    target_link_libraries(test_ecs doctest::doctest)
-    
+    target_link_libraries(test_ecs PRIVATE doctest::doctest)
+
     add_test(NAME ECS_Tests COMMAND test_ecs)
 endif()
 
-# Game tests disabled
-# file(GLOB GAME_TEST_SOURCES "Games/test/*.cpp")
-# if(GAME_TEST_SOURCES)
-#     add_executable(test_game ${GAME_TEST_SOURCES})
-# 
-#     # Link with RType library and its dependencies
-#     target_link_libraries(test_game PRIVATE
-#         RType
-#         raylib
-#         glfw
-#         dl
-#     )
-# 
-#     target_include_directories(test_game PRIVATE
-#         Games/RType
-#         Games/RType/Core
-#         ${RTYPE_INCLUDE_DIRS}
-#     )
-# 
-#     if(TARGET ECS)
-#         target_link_libraries(test_game PRIVATE ECS)
-#     endif()
-# 
-#     add_test(NAME Game_Tests COMMAND test_game)
-# endif()
-
-# Network tests are now part of the Server in Games/RType/Core/Server
-# If you need network tests, they should test the Server components
+# (Deprecated) network tests
 file(GLOB NETWORK_TEST_SOURCES "Network/test/*.cpp")
 if(NETWORK_TEST_SOURCES)
-    message(STATUS "Network tests found but Network folder is deprecated. Tests should be moved to Games/RType/Core/Server/test/")
-    
-    # Optional: Build network tests using the new Server location
+    message(STATUS "Network tests found but Network folder is deprecated. Prefer Games/RType/Core/Server/test/")
     file(GLOB_RECURSE SERVER_IMPL_SOURCES "Games/RType/Core/Server/*.cpp")
     list(FILTER SERVER_IMPL_SOURCES EXCLUDE REGEX ".*/test/.*")
     list(FILTER SERVER_IMPL_SOURCES EXCLUDE REGEX ".*/main_.*\\.cpp")
 
     add_executable(test_network ${NETWORK_TEST_SOURCES} ${SERVER_IMPL_SOURCES})
-    target_include_directories(test_network PRIVATE 
+    target_include_directories(test_network PRIVATE
         Games/RType/Core/Server
         Games/RType/Core
         Games/RType
         ${CMAKE_SOURCE_DIR}
     )
-    
+
     if(TARGET ECS)
         target_include_directories(test_network PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
         target_link_libraries(test_network PRIVATE ECS)
     endif()
-
     if(TARGET RType)
         target_link_libraries(test_network PRIVATE RType)
     endif()
 
-    # Find and link doctest
     find_package(doctest CONFIG REQUIRED)
     target_link_libraries(test_network PRIVATE doctest::doctest)
 
-    # Link with required system libraries for Asio
-    find_package(Threads REQUIRED)
-    target_link_libraries(test_network PRIVATE Threads::Threads asio::asio)
+    target_link_libraries(test_network PRIVATE
+        Threads::Threads
+        asio::asio
+        win_sanity
+    )
+    if(WIN32)
+        target_link_libraries(test_network PRIVATE ws2_32 mswsock iphlpapi)
+    endif()
 
     add_test(NAME Network_Tests COMMAND test_network)
 endif()

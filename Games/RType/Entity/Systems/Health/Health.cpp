@@ -16,7 +16,14 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 
-void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
+
+void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
 }
@@ -100,8 +107,14 @@ void HealthSys::addScore(registry &r)
     // }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<HealthSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new HealthSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

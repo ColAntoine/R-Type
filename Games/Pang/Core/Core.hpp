@@ -25,7 +25,7 @@
 
 // ====================================ECS======================================
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 // =============================================================================
 
 // =====================================Entity==================================
@@ -71,7 +71,7 @@ class Core
         // * VARS
         registry _reg;
         IComponentFactory *_componentFactory;
-        DLLoader _systemLoader;
+        ILoader _systemLoader;
         entity _ballEntity;
         bool _systemsLoaded;
 };

@@ -6,12 +6,26 @@
 #include "UI/Components/GlitchButton.hpp"
 #include "UI/ThemeManager.hpp"
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
 void MainMenuState::enter()
 {
     std::cout << "[MainMenu] Entering state" << std::endl;
 
-    this->_systemLoader.load_components_from_so("build/lib/libECS.so", this->_registry);
-    this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
+
+    this- _systemLoader->load_components(ecsLib, _registry);
+    this->_systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();
 
@@ -37,7 +51,7 @@ void MainMenuState::resume()
     std::cout << "[MainMenu] Resuming state" << std::endl;
 }
 
-void MainMenuState::update(__attribute_maybe_unused__ float delta_time)
+void MainMenuState::update(ATTR_MAYBE_UNUSED float delta_time)
 {
 }
 

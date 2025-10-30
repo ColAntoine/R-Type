@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Protocol/MessageQueue.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components/InputBuffer.hpp"
 #include <unordered_map>
@@ -40,13 +40,13 @@ class ServerECS {
 
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
-        DLLoader& GetDLLoader() { return loader_; }
+        ILoader& GetILoader() { return *loader_; }
         
         // Expose multiplayer for game start coordination
         Multiplayer* GetMultiplayer() { return multiplayer_.get(); }
 
     private:
-        DLLoader loader_;
+        std::unique_ptr<ILoader> loader_;
         registry registry_;
         IComponentFactory* factory_{nullptr};
         MessageQueue* msgq_{nullptr};

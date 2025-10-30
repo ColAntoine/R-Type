@@ -11,10 +11,31 @@
 #include "ECS/Messaging/Events/Event.hpp"
 #include <iostream>
 
-AGameState::AGameState() {}
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
 
-AGameState::AGameState(registry* shared_registry, DLLoader* shared_loader)
-    : _shared_registry(shared_registry), _shared_loader(shared_loader) {}
+#ifdef _WIN32
+    #include "ECS/WinLoader.hpp"
+    using PlatformLoader = WinLoader;
+#else
+    #include "ECS/LinuxLoader.hpp"
+    using PlatformLoader = LinuxLoader;
+#endif
+
+AGameState::AGameState() 
+{
+    _systemLoader = std::make_unique<PlatformLoader>();
+}
+
+AGameState::AGameState(registry* shared_registry, ILoader* shared_loader)
+    : _shared_registry(shared_registry), _shared_loader(shared_loader) 
+{
+    if (!_shared_loader)
+        _systemLoader = std::make_unique<PlatformLoader>();
+}
 
 AGameState::~AGameState()
 {
@@ -28,9 +49,9 @@ void AGameState::render()
     
     // Use shared registry/loader if available
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     
-    loader.update_all_systems(reg, 0.0f, DLLoader::RenderSystem);
+    loader.update_all_systems(reg, 0.0f, ILoader::RenderSystem);
 }
 
 void AGameState::update(float delta_time)
@@ -40,9 +61,9 @@ void AGameState::update(float delta_time)
     
     // Use shared registry/loader if available
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     
-    loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
+    loader.update_all_systems(reg, delta_time, ILoader::LogicSystem);
 }
 
 void AGameState::cleanup_ui()
@@ -75,10 +96,13 @@ void AGameState::handle_input() {
 void AGameState::subscribe_to_ui_event()
 {
     auto& eventBus = MessagingManager::instance().get_event_bus();
-    _uiEventCallbackId = eventBus.subscribe(EventTypes::SCREEN_PARAMETERS_CHANGED, [this](__attribute_maybe_unused__ const Event& event) {
-        std::cout << "Screen Parameter changed!!!" << std::endl;
-        this->cleanup_ui();
-        this->setup_ui();
-    });
+    _uiEventCallbackId = eventBus.subscribe(
+        EventTypes::SCREEN_PARAMETERS_CHANGED,
+        [this](ATTR_MAYBE_UNUSED const Event& event) {
+            std::cout << "Screen Parameter changed!!!" << std::endl;
+            this->cleanup_ui();
+            this->setup_ui();
+        }
+    );
 }
 

@@ -16,10 +16,10 @@ namespace RType::Network {
     ServerECS::~ServerECS() = default;
 
     bool ServerECS::init(const std::string& components_so) {
-        if (!loader_.load_components_from_so(components_so, registry_)) {
+        if (!loader_->load_components(components_so, registry_)) {
             std::cerr << "Warning: failed to load ECS components from " << components_so << std::endl;
         }
-        factory_ = loader_.get_factory();
+        factory_ = loader_->get_factory();
         if (factory_) {
             std::cout << Console::green("[ServerECS] ") << "Component factory available" << std::endl;
         } else {
@@ -70,7 +70,7 @@ namespace RType::Network {
         } catch (...) {}
         
         // run all registered systems (systems may consume net_input components)
-        loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
+        loader_->update_all_systems(registry_, dt, ILoader::LogicSystem);
 
         // After position system has run, broadcast updated positions to all clients
         if (multiplayer_) {

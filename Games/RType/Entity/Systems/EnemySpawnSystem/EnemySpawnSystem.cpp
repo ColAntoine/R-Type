@@ -121,6 +121,14 @@ void EnemySpawnSystem::set_world_bounds(float width, float height) {
     y_dist_ = std::uniform_real_distribution<>(50.0f, std::max(height - 50.0f, 100.0f));
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<EnemySpawnSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new EnemySpawnSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }
