@@ -288,10 +288,10 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
 void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
 {
     auto projectile = ctx.r.spawn_entity();
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 10.0f, false));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "pbShoot.gif", 34, 34, 5.0f, 5.0f, 0, false);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "followingShoot.gif", 17.08f, 18, 5.0f, 5.0f, 12, false);
     ctx.r.emplace_component<lifetime>(projectile, 10.f);
     ctx.r.emplace_component<Following>(projectile);
 }
