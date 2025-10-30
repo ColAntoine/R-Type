@@ -52,29 +52,17 @@ void WaveSys::handleStop(registry &r)
 void WaveSys::handleExplosion(registry &r)
 {
     auto waveArr = r.get_if<WaveShoot>();
+    auto weapArr = r.get_if<Weapon>();
     std::vector<entity> entToKill;
 
     if (!waveArr) return;
 
-    for (auto [wave, ent]: zipper(*waveArr)) {
+    for (auto [wave, weap, ent]: zipper(*waveArr, *weapArr)) {
         if (wave._lifeTime >= wave._expTimeout) {
-            // ! Creating an entity here cause segv at prog close somehow
-            // auto wEnt = r.spawn_entity();
-            // Weapon w(
-            //     wEnt,
-            //     {"explode"},
-            //     1.f,
-            //     10.f,
-            //     600.f,
-            //     -1,
-            //     true
-            // );
-            // w._wantsToFire = true;
-            // w._automatic = true;
-            // r.emplace_component<Weapon>(wEnt, w);
-            // r.emplace_component<position>(wEnt, wave._stopedPos);
-            // r.emplace_component<lifetime>(wEnt, 0.25f);
-            entToKill.push_back(entity(ent));
+            if (wave._didExplode)
+                entToKill.push_back(entity(ent));
+            weap._wantsToFire = true;
+            wave._didExplode = true;
         }
     }
     for (auto &ent: entToKill) {

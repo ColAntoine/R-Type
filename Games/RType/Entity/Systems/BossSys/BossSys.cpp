@@ -168,7 +168,6 @@ bool BossSys::shouldShoot(registry &r)
 
 }
 
-
 extern "C" {
     std::unique_ptr<ISystem> create_system() {
         return std::make_unique<BossSys>();

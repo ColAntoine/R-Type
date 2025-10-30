@@ -298,33 +298,45 @@ void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
 void Shoot::shootWaveBullets(const ProjectileContext &ctx)
 {
     auto projectile = ctx.r.spawn_entity();
+
+    Weapon w(
+        projectile,
+        {"explode"},
+        1.f,
+        10.f,
+        600.f,
+        -1,
+        true
+    );
+    w._wantsToFire = false;
+    w._automatic = false;
     ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
     ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
     ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
     ctx.r.emplace_component<Following>(projectile);
     ctx.r.emplace_component<WaveShoot>(projectile);
+    ctx.r.emplace_component<Weapon>(projectile, w);
 }
 
 void Shoot::shootExplosionBullets(const ProjectileContext &ctx)
 {
-    // int count = 10;
-    // float TWO_PI = 6.283185307179586f;
-    // float speed = ctx.weapon._projectileSpeed > 0 ? ctx.weapon._projectileSpeed : 300.f;
+    int count = 10;
+    float TWO_PI = 6.283185307179586f;
+    float speed = ctx.weapon._projectileSpeed > 0 ? ctx.weapon._projectileSpeed : 300.f;
 
-    // for (int i = 0; i < count; ++i) {
-    //     float angle = (TWO_PI * static_cast<float>(i)) / static_cast<float>(count);
-    //     float vx = std::cos(angle) * speed;
-    //     float vy = std::sin(angle) * speed;
+    for (int i = 0; i < count; ++i) {
+        float angle = (TWO_PI * static_cast<float>(i)) / static_cast<float>(count);
+        float vx = std::cos(angle) * speed;
+        float vy = std::sin(angle) * speed;
 
-    //     auto projectile = ctx.r.spawn_entity();
-    //     ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, speed, vx, vy, 5.0f, 5.0f, false));
-    //     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
-    //     ctx.r.emplace_component<velocity>(projectile, vx, vy);
-    //     ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
-    //     ctx.r.emplace_component<lifetime>(projectile, 5.f);
-    // }
-    // ctx.r.kill_entity(entity(ctx.weapon._ownerId));
+        auto projectile = ctx.r.spawn_entity();
+        ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, speed, vx, vy, 5.0f, 5.0f, false));
+        ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
+        ctx.r.emplace_component<velocity>(projectile, vx, vy);
+        ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
+        ctx.r.emplace_component<lifetime>(projectile, 5.f);
+    }
 }
 
 void Shoot::renderHitboxes(registry &r)
