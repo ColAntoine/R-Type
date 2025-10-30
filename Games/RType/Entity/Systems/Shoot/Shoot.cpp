@@ -25,7 +25,10 @@ Shoot::Shoot()
     _shootType["bigBullet"] = [this](const ProjectileContext& ctx) { shootBigBullets(ctx); };
     _shootType["parabol"] = [this](const ProjectileContext& ctx) { shootParabolBullets(ctx); };
     _shootType["enemy"] = [this](const ProjectileContext& ctx) { shootEnemyBullets(ctx); };
+
+    /* boss shoots */
     _shootType["bossDrop"] = [this](const ProjectileContext& ctx) { shootDropBullets(ctx); };
+    _shootType["following"] = [this](const ProjectileContext& ctx) { shootFollowingBullets(ctx); };
 
     // auto &eventBus = MessagingManager::instance().get_event_bus();
     // _playerCloseCallBackId = eventBus.subscribe(EventTypes::PLAYER_CLOSE, )
@@ -280,6 +283,17 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
         ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
         ctx.r.emplace_component<lifetime>(proj, 30.f);
     }
+}
+
+void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
+{
+    auto projectile = ctx.r.spawn_entity();
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 10.0f, false));
+    ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "pbShoot.gif", 34, 34, 5.0f, 5.0f, 0, false);
+    ctx.r.emplace_component<lifetime>(projectile, 10.f);
+    ctx.r.emplace_component<Following>(projectile);
 }
 
 void Shoot::renderHitboxes(registry &r)

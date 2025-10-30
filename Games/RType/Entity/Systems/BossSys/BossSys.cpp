@@ -12,7 +12,7 @@
 BossSys::BossSys()
 : _renderManager(RenderManager::instance())
 {
-    _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop"});
+    _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop", "following"});
     _bossWeapons[1] = std::vector<std::string>({"enemy"});
     _bossWeapons[2] = std::vector<std::string>({"enemy"});
     _bossWeapons[3] = std::vector<std::string>({"enemy", "bossDrop"});
@@ -34,11 +34,6 @@ void BossSys::update(registry& r, float dt)
             w._shouldShootSpecial = spe;
         }
     }
-
-    // auto &eventBus = MessagingManager::instance().get_event_bus();
-    // Event playerClose(EventTypes::PLAYER_CLOSE);
-    // playerClose.set()
-    // eventBus.emit(playerClose);
 }
 
 // TODO: this func should be field depending on the decision of when it should spawn
