@@ -36,7 +36,7 @@ class AGameState : public IGameState {
         GameStateManager* _stateManager;
         registry _registry;
         DLLoader _systemLoader;
-        
+
         // Optional pointers to shared registry/loader (for states that need to share ECS)
         registry* _shared_registry{nullptr};
         DLLoader* _shared_loader{nullptr};
@@ -59,13 +59,13 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::InGameHud: return "InGameHud";
         case IGameState::GameStateType::InGameBackground: return "InGameBackground";
         case IGameState::GameStateType::InGamePause: return "InGamePause";
-
         case IGameState::GameStateType::Connection: return "Connection";
         case IGameState::GameStateType::Credits: return "Credits";
         case IGameState::GameStateType::Lobby: return "Lobby";
         case IGameState::GameStateType::AudioSettings: return "AudioSettings";
         case IGameState::GameStateType::VideoSettings: return "VideoSettings";
-        case IGameState::GameStateType::BindingsSettings: return "BindsSettings";
+        case IGameState::GameStateType::BindingsSettings: return "BindingsSettings";
+        case IGameState::GameStateType::LoadingVideo: return "LoadingVideo";
         default: return "Unknown";
     }
 }

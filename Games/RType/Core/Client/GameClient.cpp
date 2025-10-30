@@ -23,6 +23,7 @@
 #include "Core/States/VideoSettings/VideoSettings.hpp"
 #include "Core/States/BindsSettings/BindsSettings.hpp"
 #include "Core/States/Browser/Browser.hpp"
+#include "Core/States/LoadingVideo/LoadingVideo.hpp"
 
 #include "Constants.hpp"
 
@@ -81,6 +82,7 @@ void GameClient::register_states() {
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
     _stateManager.register_state<Browser>("Browser");
+    _stateManager.register_state<LoadingVideoState>("LoadingVideo");
 }
 
 bool GameClient::init()
@@ -107,8 +109,7 @@ bool GameClient::init()
     register_states();
 
     // Start with loading screen
-    _stateManager.push_state("MenusBackground");
-    _stateManager.push_state("MainMenu");
+    _stateManager.push_state("LoadingVideo");
 
     // Load components into shared registry BEFORE starting network manager
     // This ensures components are registered when PLAYER_SPAWN messages arrive
