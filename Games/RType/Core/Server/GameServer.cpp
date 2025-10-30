@@ -1,5 +1,6 @@
 #include "GameServer.hpp"
 #include "Network/NetworkManager.hpp"
+#include "Network/Session.hpp"
 #include "Protocol/MessageQueue.hpp"
 #include "ServerECS/ServerECS.hpp"
 #include "ServerECS/Communication/Multiplayer.hpp"
@@ -68,6 +69,21 @@ bool GameServer::init()
     // Register instance-request callback so we can spawn instances on demand
     server_ecs_->set_instance_request_callback([this](const std::string &session_id){
         this->handle_instance_request(session_id);
+    });
+
+    // Register instance-list request callback so ServerECS can ask the front server
+    // to send the current instance list to a newly connected session.
+    server_ecs_->set_instance_list_request_callback([this](const std::string &session_id){
+        auto server = network_manager_->get_server();
+        if (!server) return;
+        // Build InstanceList and send to specific client
+        RType::Protocol::InstanceList il{};
+        il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
+        for (size_t i = 0; i < il.instance_count; ++i) {
+            il.instances[i] = instances_[i];
+        }
+        auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::INSTANCE_LIST), il, RType::Protocol::PacketFlags::NONE);
+        server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     });
 
     // Register game start callback with server (this will override the one in Multiplayer)
@@ -269,31 +285,53 @@ void GameServer::handle_instance_request(const std::string &session_id) {
     uint16_t new_port = 0;
     for (uint32_t candidate = start_port; candidate <= max_probe; ++candidate) {
         uint16_t cand = static_cast<uint16_t>(candidate);
-        // skip ports we already use for instances
+        // skip ports we already know about in instances_
         bool used = false;
         for (const auto &it : instances_) {
             if (it.port == cand) { used = true; break; }
         }
         if (used) continue;
 
-        // Try to bind a temporary UDP socket to test availability
+        // Probe both UDP and TCP to avoid selecting a port already in use by either protocol.
+        // We attempt to bind a UDP socket and a TCP acceptor on the candidate port. If both succeed,
+        // consider the port free. Use error_code version to avoid exceptions and close handles on success.
         try {
             asio::io_context probe_ctx;
-            asio::ip::udp::socket probe_sock(probe_ctx);
-            asio::error_code ec;
-            probe_sock.open(asio::ip::udp::v4(), ec);
-            if (ec) continue;
-            asio::ip::udp::endpoint ep(asio::ip::udp::v4(), cand);
-            probe_sock.bind(ep, ec);
-            if (!ec) {
-                // success: port is available. Close probe socket and choose this port
-                probe_sock.close();
-                new_port = cand;
-                break;
+            asio::error_code ec_udp;
+            asio::ip::udp::socket udp_sock(probe_ctx);
+            udp_sock.open(asio::ip::udp::v4(), ec_udp);
+            if (ec_udp) continue;
+            asio::ip::udp::endpoint udp_ep(asio::ip::udp::v4(), cand);
+            udp_sock.bind(udp_ep, ec_udp);
+            if (ec_udp) {
+                // UDP bind failed -> port in use for UDP
+                udp_sock.close();
+                continue;
             }
-            // otherwise port in use - try next
+
+            asio::error_code ec_tcp;
+            asio::ip::tcp::acceptor tcp_acc(probe_ctx);
+            tcp_acc.open(asio::ip::tcp::v4(), ec_tcp);
+            if (ec_tcp) {
+                udp_sock.close();
+                continue;
+            }
+            // Allow address reuse false to ensure exclusivity
+            asio::ip::tcp::endpoint tcp_ep(asio::ip::tcp::v4(), cand);
+            tcp_acc.bind(tcp_ep, ec_tcp);
+            if (ec_tcp) {
+                // TCP bind failed -> port in use for TCP
+                tcp_acc.close();
+                udp_sock.close();
+                continue;
+            }
+            // If we reached here both binds succeeded: close and pick the port
+            tcp_acc.close();
+            udp_sock.close();
+            new_port = cand;
+            break;
         } catch (...) {
-            // ignore and continue probing
+            // Any error -> skip candidate
             continue;
         }
     }
@@ -349,6 +387,21 @@ void GameServer::handle_instance_request(const std::string &session_id) {
 
     // Reply to the requesting client with instance port
     send_instance_created(session_id, new_port);
+    // Proactively disconnect the requesting session from the front server so it stops
+    // receiving broadcasts from the front lobby. This avoids relying on the client's
+    // unreliable UDP CLIENT_DISCONNECT reaching the front server in time.
+    try {
+        auto server_ptr = network_manager_->get_server();
+        if (server_ptr) {
+            auto sess = server_ptr->get_session(session_id);
+            if (sess) {
+                std::cout << Console::yellow("[GameServer] ") << "Disconnecting requesting session " << session_id << " from front server after instance creation" << std::endl;
+                sess->disconnect();
+            }
+        }
+    } catch (...) {
+        // best-effort: don't crash the instance creation flow if this fails
+    }
 }
 
 void GameServer::send_instance_created(const std::string &session_id, uint16_t port) {

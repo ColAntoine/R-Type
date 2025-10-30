@@ -90,12 +90,13 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
                     std::cerr << "[UDPClient] recv msg_type=" << int(hdr.message_type)
                               << " from " << from.address().to_string() << ":" << from.port()
                               << " payload=" << hdr.payload_size << " len=" << len << std::endl;
-                    if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
+                        if (hdr.message_type == static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT)) {
                         if (hdr.payload_size >= sizeof(RType::Protocol::ServerAccept)) {
                             RType::Protocol::ServerAccept sa;
                             memcpy(&sa, recvbuf.data() + RType::Protocol::HEADER_SIZE, sizeof(sa));
                             set_session_token(sa.session_id);
-                            if (was_running) start_receive_loop(recv_handler_);
+                            // If a receive handler is registered, ensure the async receive loop is running
+                            if (recv_handler_) start_receive_loop(recv_handler_);
                             return sa;
                         } else {
                             std::cerr << "[UDPClient] received SERVER_ACCEPT with unexpected size" << std::endl;

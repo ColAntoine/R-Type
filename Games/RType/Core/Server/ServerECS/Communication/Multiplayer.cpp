@@ -34,8 +34,11 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     std::vector<char> payload;
     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
 
-    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id
-              << " payload=" << payload.size() << std::endl;
+    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id;
+    if (udp_server_) {
+        std::cout << " (recv on port=" << udp_server_->get_port() << ")";
+    }
+    std::cout << " payload=" << payload.size() << std::endl;
 
     using RType::Protocol::SystemMessage;
     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_CONNECT)) {
@@ -122,7 +125,14 @@ void Multiplayer::handle_client_connect(const std::string &session_id, const std
     send_server_accept(session_id, token, spawn_x, spawn_y);
     // Do NOT spawn player entities on clients yet (we're in lobby) - instead broadcast the client list
     if (udp_server_) {
-        udp_server_->send_player_list_to_client(session_id);
+            udp_server_->send_player_list_to_client(session_id);
+            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted CLIENT_LIST on port=" << udp_server_->get_port() << std::endl;
+        // Ensure the newly connected client also receives the current instance list (front server may supply it)
+        try {
+            if (ecs_.instance_list_request_cb_) ecs_.instance_list_request_cb_(session_id);
+        } catch (...) {
+            // best-effort
+        }
         udp_server_->broadcast_player_list();
     }
     
@@ -347,7 +357,7 @@ void Multiplayer::handle_client_ready(const std::string &session_id, const std::
             session->set_ready(cr.ready_state != 0);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
 
             // Check if all players are ready and start game if conditions met
             udp_server_->check_all_players_ready();
@@ -374,7 +384,7 @@ void Multiplayer::handle_client_unready(const std::string &session_id, const std
             session->set_ready(false);
             // Broadcast updated player list to all clients
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list" << std::endl;
+                std::cout << Console::yellow("[Multiplayer] ") << "Broadcasted updated player list on port=" << udp_server_->get_port() << std::endl;
         } else {
             std::cerr << Console::yellow("[Multiplayer] ") << "Session " << session_id << " not found" << std::endl;
         }

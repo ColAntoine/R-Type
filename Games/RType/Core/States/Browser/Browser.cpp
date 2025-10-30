@@ -37,13 +37,29 @@ void Browser::enter()
             if (!client) return;
             std::string server_ip = client->get_server_ip();
             std::string player_name = client->get_player_name();
-            // Perform connect; upon success, update the game state via the state manager pointer
+
+            // If we have an active session on the front server, notify it we are leaving
+            uint32_t session_token = client->get_session_token();
+            if (session_token != 0) {
+                try {
+                    std::cout << "[Browser] Sending disconnect to front server (session=" << session_token << ") before reconnecting to instance" << std::endl;
+                    client->send_disconnect(session_token);
+                } catch (...) {
+                    // best-effort: ignore send failures
+                }
+            }
+
+            // Fully close the current connection so we stop receiving front-server broadcasts
+            client->disconnect();
+
+            // Now connect to the instance server (this will open a fresh socket)
             auto accept = client->connect(server_ip, port, player_name);
             if (accept) {
                 // Defer UI state changes to the main thread via the event bus
                 auto& bus = MessagingManager::instance().get_event_bus();
                 Event ev("INSTANCE_CONNECTED_UI");
                 ev.set<uint16_t>("port", port);
+                ev.set<uint8_t>("multi", static_cast<uint8_t>(accept->multi_instance));
                 bus.emit_deferred(ev);
             } else {
                 std::cerr << "[Browser] Failed to connect to instance on port " << port << std::endl;
@@ -60,9 +76,24 @@ void Browser::enter()
     // Subscribe to deferred instance-connected event to perform UI transitions on main thread
     auto& bus = MessagingManager::instance().get_event_bus();
     _instanceConnectedCallbackId = bus.subscribe("INSTANCE_CONNECTED_UI", [this](const Event& ev) {
-        if (this->_stateManager) {
-            this->_stateManager->pop_state();
+        if (!this->_stateManager) return;
+
+        // If the connected server is a game instance (multi==0), enter its Lobby.
+        // Otherwise (multi!=0) return to MainMenu.
+        bool is_instance_server = true;
+        try {
+            uint8_t multi = ev.get<uint8_t>("multi");
+            is_instance_server = (multi == 0);
+        } catch (...) {
+            // missing data; fallback to MainMenu
+            is_instance_server = false;
+        }
+
+        this->_stateManager->pop_state();
+        if (is_instance_server) {
             this->_stateManager->push_state("Lobby");
+        } else {
+            this->_stateManager->push_state("MainMenu");
         }
     });
 }
@@ -235,17 +266,31 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
             .fontSize(renderManager.scaleSizeW(2))
             .border(2, WHITE)
             .onClick([port = inst.port, stateMgrJoin]() {
-                // Connect directly to instance
+                // Connect directly to instance. First, gracefully leave the front server so
+                // we do not receive front-server broadcasts while connected to the instance.
                 auto client = RType::Network::get_client();
                 if (!client) return;
                 std::string server_ip = client->get_server_ip();
                 std::string player_name = client->get_player_name();
+
+                uint32_t session_token = client->get_session_token();
+                if (session_token != 0) {
+                    try {
+                        std::cout << "[Browser] Sending disconnect to front server (session=" << session_token << ") before joining instance" << std::endl;
+                        client->send_disconnect(session_token);
+                    } catch (...) {
+                        // ignore
+                    }
+                }
+                client->disconnect();
+
                 auto accept = client->connect(server_ip, port, player_name);
                 if (accept) {
                     // Defer UI state changes to main thread
                     auto& bus = MessagingManager::instance().get_event_bus();
                     Event ev("INSTANCE_CONNECTED_UI");
                     ev.set<uint16_t>("port", port);
+                    ev.set<uint8_t>("multi", static_cast<uint8_t>(accept->multi_instance));
                     bus.emit_deferred(ev);
                 }
             })

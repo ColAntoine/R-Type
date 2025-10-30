@@ -40,6 +40,8 @@ class ServerECS {
 
     // Register a callback invoked when a client requests a new instance (session_id)
     void set_instance_request_callback(std::function<void(const std::string&)> cb) { instance_request_cb_ = std::move(cb); }
+    // Register a callback invoked when the server wants to send the current instance list to a specific session
+    void set_instance_list_request_callback(std::function<void(const std::string&)> cb) { instance_list_request_cb_ = std::move(cb); }
 
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
@@ -66,6 +68,8 @@ class ServerECS {
         int max_lobbies_;
     // Callback to request instance creation (front server supplies implementation)
     std::function<void(const std::string&)> instance_request_cb_;
+    // Callback to request sending the current instance list to a specific session (front server supplies implementation)
+    std::function<void(const std::string&)> instance_list_request_cb_;
 
     // No std::function broadcast here; multicast requests are performed directly by Multiplayer
 

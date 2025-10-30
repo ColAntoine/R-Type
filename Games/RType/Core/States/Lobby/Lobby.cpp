@@ -219,14 +219,16 @@ void Lobby::toggle_ready_state() {
         return;
     }
 
+    // Identify our own player id using the session token stored in the UDP client
     uint32_t player_id = 0;
-    if (!current_players_.empty()) {
-        // TODO: Better way to identify which player is "us"
-        player_id = current_players_[0].player_id;
+    if (client) {
+        player_id = client->get_session_token();
     }
-
-    if (player_id == 0)
-        std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+    if (player_id == 0) {
+        // Fallback: try first entry from server list (legacy behavior)
+        if (!current_players_.empty()) player_id = current_players_[0].player_id;
+        if (player_id == 0) std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+    }
 
     // Create ClientReady message
     RType::Protocol::ClientReady ready_msg;
