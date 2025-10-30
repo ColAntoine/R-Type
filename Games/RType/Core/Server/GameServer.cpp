@@ -175,6 +175,37 @@ void GameServer::run_tick_loop()
         if (elapsed < tick_duration) {
             std::this_thread::sleep_for(tick_duration - elapsed);
         }
+
+        // If this server is an instance (max_lobbies_ == 0), auto-shutdown when all clients
+        // have disconnected and stayed disconnected for the grace period. This ensures
+        // instances don't linger when nobody is connected (applies both in lobby and
+        // during/after a running game).
+        if (max_lobbies_ == 0 && running_) {
+            auto server = network_manager_->get_server();
+            if (server) {
+                size_t client_count = server->get_client_count();
+                if (client_count == 0) {
+                    if (!zero_clients_timer_active_) {
+                        zero_clients_timer_active_ = true;
+                        zero_clients_since_ = std::chrono::steady_clock::now();
+                        std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " has 0 clients; starting shutdown grace timer (" << zero_clients_grace_.count() << "ms)" << std::endl;
+                    } else {
+                        auto since = std::chrono::steady_clock::now() - zero_clients_since_;
+                        if (since >= zero_clients_grace_) {
+                            std::cout << Console::yellow("[GameServer] ") << "Instance on port " << port_ << " no clients after grace period; shutting down instance" << std::endl;
+                            running_ = false; // will break the run loop and cause instance to exit
+                            // allow a final tick to flush any state
+                        }
+                    }
+                } else {
+                    // clients present again -> reset timer
+                    if (zero_clients_timer_active_) {
+                        zero_clients_timer_active_ = false;
+                        std::cout << Console::cyan("[GameServer] ") << "Instance on port " << port_ << " clients reconnected; cancelling shutdown timer" << std::endl;
+                    }
+                }
+            }
+        }
     }
 
     std::cout << Console::yellow("[GameServer] ") << "Tick loop ended" << std::endl;
@@ -371,6 +402,24 @@ void GameServer::handle_instance_request(const std::string &session_id) {
 
         std::lock_guard<std::mutex> lk(instances_mtx_);
         --active_instances_;
+        // Remove instance info from list (if present)
+        for (auto it = instances_.begin(); it != instances_.end(); ++it) {
+            if (it->port == new_port) {
+                instances_.erase(it);
+                break;
+            }
+        }
+        // Erase thread entry from map (we're running inside that thread)
+        auto tit = instance_threads_.find(new_port);
+        if (tit != instance_threads_.end()) {
+            instance_threads_.erase(tit);
+        }
+        // Broadcast updated instance list to front clients
+        try {
+            broadcast_instance_list();
+        } catch (...) {
+            // best-effort
+        }
     });
 
     // Store thread and detach (we only need active_instances_ count)

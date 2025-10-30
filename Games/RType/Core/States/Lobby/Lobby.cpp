@@ -299,7 +299,7 @@ void Lobby::on_back_clicked() {
         // Keep popping until we reach a main menu state or empty
         while (!_stateManager->is_empty()) {
             std::string current = _stateManager->get_current_state_name();
-            if (current == "MainMenu" || current == "Settings" || current == "Credits") {
+            if (current == "MainMenu" || current == "Settings" || current == "Credits" || current == "MenusBackground") {
                 // We're back at a main menu, stop here
                 break;
             }

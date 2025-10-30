@@ -193,7 +193,8 @@ void Browser::setup_ui()
                 client->disconnect();
             }
             if (this->_stateManager) {
-                this->_stateManager->pop_state();
+                this->_stateManager->pop_state(); // pop Browser
+                this->_stateManager->push_state("Connection"); // go back to Connection tab
             }
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
