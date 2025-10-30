@@ -14,7 +14,7 @@
 #include <raylib.h>
 #include <random>
 
-GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers)
+GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers, bool is_machine_made)
     : port_(8080)
     , running_(false)
     , display_(display)
@@ -23,6 +23,7 @@ GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies,
     , game_started_(false)
     , max_lobbies_(maxLobbies)
     , max_players_(maxPlayers)
+    , is_machine_made_(is_machine_made)
     , zero_clients_timer_active_(false)
     , zero_clients_since_{}
     , zero_clients_grace_(std::chrono::milliseconds(5000))  // 5 seconds grace
@@ -180,11 +181,11 @@ void GameServer::run_tick_loop()
             std::this_thread::sleep_for(tick_duration - elapsed);
         }
 
-        // If this server is an instance (max_lobbies_ == 0), auto-shutdown when all clients
+        // If this server is a machine-made instance, auto-shutdown when all clients
         // have disconnected and stayed disconnected for the grace period. This ensures
         // instances don't linger when nobody is connected (applies both in lobby and
         // during/after a running game).
-        if (max_lobbies_ == 0 && running_) {
+        if (is_machine_made_ && running_) {
             auto server = network_manager_->get_server();
             if (server) {
                 size_t client_count = server->get_client_count();
@@ -385,7 +386,7 @@ void GameServer::handle_instance_request(const std::string &session_id) {
     std::thread t([this, new_port]() {
         try {
             // Create a headless GameServer instance (no display)
-            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_);
+            auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_, true);
             srv->set_port(new_port);
             if (!srv->init()) {
                 std::cout << Console::red("[GameServer] ") << "Failed to initialize instance on port " << new_port << std::endl;
