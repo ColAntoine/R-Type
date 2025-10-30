@@ -18,7 +18,7 @@ void InGameState::enter()
 
     // Use shared registry if available (for multiplayer), otherwise use local registry
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
 
     if (_shared_registry) {
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
@@ -32,29 +32,35 @@ void InGameState::enter()
         std::cout << "[InGame] Generated solo game seed: " << solo_seed << std::endl;
     }
 
+    #ifdef _WIN32
+        const std::string ext = ".dll";
+    #else
+        const std::string ext = ".so";
+    #endif
+
     // Load components first (needed for both solo and multiplayer)
-    loader.load_components_from_so("build/lib/libECS.so", reg);
+    loader.load_components("build/lib/libECS" + ext, reg);
     
     // Load render systems
-    loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libgame_PUpAnimationSys" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
 
     // Load logic systems
-    loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
+    loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
 
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
@@ -94,15 +100,15 @@ void InGameState::update(float delta_time)
         return;
 
     // Use shared loader and registry if available (for multiplayer)
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     registry& reg = _shared_registry ? *_shared_registry : _registry;
 
     // Send input to server if connected
     handle_input();
 
     // Update both logic and render systems with the correct registry
-    loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
-    loader.update_all_systems(reg, delta_time, DLLoader::RenderSystem);
+    loader.update_all_systems(reg, delta_time, ILoader::LogicSystem);
+    loader.update_all_systems(reg, delta_time, ILoader::RenderSystem);
 }
 
 void InGameState::handle_input()
@@ -155,7 +161,7 @@ void InGameState::createPlayer()
     
     // Use shared registry/loader if available (for multiplayer), otherwise use local
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     auto componentFactory = loader.get_factory();
 
     if (!componentFactory) {

@@ -1,69 +1,52 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Project name and version
+# ------------------------------------------------------------------
+# Project
+# ------------------------------------------------------------------
 project(ECS_Library VERSION 1.0 LANGUAGES CXX)
 
-# Set the C++ standard
+# C++ standard (laisse 17 si ton code est écrit pour C++17)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include directories
+# Public include dir (headers ECS/) + accès au ${CMAKE_SOURCE_DIR} si utile
+# Remplacé par target_include_directories plus bas (meilleure pratique)
 include_directories(include ${CMAKE_SOURCE_DIR})
 
-# Only find packages if not already found by parent CMakeLists
+# ------------------------------------------------------------------
+# Dependencies (raylib + glfw3 via vcpkg)
+# ------------------------------------------------------------------
 if(NOT TARGET raylib)
     find_package(raylib QUIET)
 endif()
 
-if(NOT TARGET glfw)
+if(NOT TARGET glfw AND NOT TARGET glfw3::glfw)
     find_package(glfw3 QUIET)
 endif()
 
-# Check if raylib is available (either found here or in parent)
+# Build UI parts only if raylib is present
 if(TARGET raylib)
     set(BUILD_UI_COMPONENTS ON)
     message(STATUS "raylib found. UI components will be built.")
-    
-    if(TARGET glfw)
+    if(TARGET glfw OR TARGET glfw3::glfw)
         message(STATUS "glfw3 found.")
     else()
         message(WARNING "glfw3 not found but required for raylib.")
     endif()
 else()
     set(BUILD_UI_COMPONENTS OFF)
-    message(WARNING "raylib not found. UI components will not be built.")
+    message(WARNING "raylib not found. UI components will NOT be built.")
 endif()
 
-# Only find packages if not already found by parent CMakeLists
-if(NOT TARGET raylib)
-    find_package(raylib QUIET)
-endif()
-
-if(NOT TARGET glfw)
-    find_package(glfw3 QUIET)
-endif()
-
-# Check if raylib is available (either found here or in parent)
-if(TARGET raylib)
-    set(BUILD_UI_COMPONENTS ON)
-    message(STATUS "raylib found. UI components will be built.")
-    
-    if(TARGET glfw)
-        message(STATUS "glfw3 found.")
-    else()
-        message(WARNING "glfw3 not found but required for raylib.")
-    endif()
-else()
-    set(BUILD_UI_COMPONENTS OFF)
-    message(WARNING "raylib not found. UI components will not be built.")
-endif()
-
-
-# Source files for the libECS.so shared library (components + registry + dlloader + assetmanager + renderer + physics + audio + messaging + plugin)
+# ------------------------------------------------------------------
+# Sources
+# ------------------------------------------------------------------
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
-    src/dlloader.cpp
+    src/ALoader.cpp
+    src/WinLoader.cpp
+    src/LinuxLoader.cpp
     src/components/position.cpp
     src/components/velocity.cpp
     src/components/sprite.cpp
@@ -84,11 +67,8 @@ set(LIB_ECS_SOURCES
     src/Messaging/EventBus.cpp
     src/Messaging/CommandDispatcher.cpp
     src/Messaging/MessageQueue.cpp
-    src/Plugin/PluginManager.cpp
-    src/Plugin/Plugin.cpp
 )
 
-# UI Component sources (to be included in main ECS library)
 set(UI_COMPONENT_SOURCES
     src/UI/Components/Button.cpp
     src/UI/Components/InputField.cpp
@@ -96,123 +76,137 @@ set(UI_COMPONENT_SOURCES
     src/UI/Components/Text.cpp
 )
 
-# Source files for system libraries
-set(POSITION_SYSTEM_SOURCES
-    src/systems/position_system.cpp
-)
+set(POSITION_SYSTEM_SOURCES   src/systems/position_system.cpp)
+set(COLLISION_SYSTEM_SOURCES  src/systems/collision_system.cpp)
+set(SPRITE_SYSTEM_SOURCES     src/systems/sprite_system.cpp)
+set(ANIMATION_SYSTEM_SOURCES  src/systems/animation_system.cpp)
+set(UI_SYSTEM_SOURCES         src/systems/UISystem.cpp)
 
-set(COLLISION_SYSTEM_SOURCES
-    src/systems/collision_system.cpp
-)
-
-set(SPRITE_SYSTEM_SOURCES
-    src/systems/sprite_system.cpp
-)
-
-set(ANIMATION_SYSTEM_SOURCES
-    src/systems/animation_system.cpp
-)
-
-set(UI_SYSTEM_SOURCES
-    src/systems/UISystem.cpp
-)
-
-# Add the main ECS shared library (components + core functionality)
-# Include UI components but NOT UISystem
-if (BUILD_UI_COMPONENTS)
+# ------------------------------------------------------------------
+# ECS shared library
+# ------------------------------------------------------------------
+if(BUILD_UI_COMPONENTS)
     add_library(ECS SHARED ${LIB_ECS_SOURCES} ${UI_COMPONENT_SOURCES})
-    target_link_libraries(ECS dl raylib)
-    
-    # Link with glfw3 if available
+    target_link_libraries(ECS PRIVATE
+        raylib
+        $<$<NOT:$<PLATFORM_ID:Windows>>:dl>
+    )
     if(TARGET glfw)
-        target_link_libraries(ECS glfw)
+        target_link_libraries(ECS PRIVATE glfw)
         message(STATUS "Linking ECS with glfw")
+    elseif(TARGET glfw3::glfw)
+        target_link_libraries(ECS PRIVATE glfw3::glfw)
+        message(STATUS "Linking ECS with glfw3::glfw")
+    else()
+        message(WARNING "glfw target not found (but raylib was found).")
     endif()
-    
     message(STATUS "Building ECS with UI components")
 else()
     add_library(ECS SHARED ${LIB_ECS_SOURCES})
-    target_link_libraries(ECS dl)
+    target_link_libraries(ECS PRIVATE
+        $<$<NOT:$<PLATFORM_ID:Windows>>:dl>
+    )
     message(STATUS "Building ECS without UI components")
 endif()
 
+# Public include pour les consommateurs de ECS
+target_include_directories(ECS PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# Windows-safe defines (évite conflits Rectangle/CloseWindow/ShowCursor + winsock)
+if(WIN32)
+    target_compile_definitions(ECS PRIVATE
+        _WIN32_WINNT=0x0A00
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
+        NOGDI
+        _WINSOCKAPI_
+    )
+endif()
+
+# Si l’interface "win_sanity" (définie au root) existe, on en hérite
+if(TARGET win_sanity)
+    target_link_libraries(ECS PRIVATE win_sanity)
+endif()
+
+# MSVC: génère l'import lib même s'il n'y a pas d'__declspec(dllexport)
+if(MSVC)
+    set_target_properties(ECS PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
+# Nom de sortie de la DLL
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Add system libraries (only if raylib is available since they depend on it)
-if (BUILD_UI_COMPONENTS)
-    add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
-    set_target_properties(position_system PROPERTIES
-        OUTPUT_NAME "position_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+# Harmoniser les répertoires de sortie (multi-config: Debug/Release/…)
+# ARCHIVE = .lib (import lib), LIBRARY/RUNTIME = .dll
+foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    set_target_properties(ECS PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
+        LIBRARY_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
+        RUNTIME_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
     )
-    target_include_directories(position_system PRIVATE include)
-    target_link_libraries(position_system PRIVATE ECS raylib)
+endforeach()
 
-    add_library(collision_system SHARED ${COLLISION_SYSTEM_SOURCES})
-    set_target_properties(collision_system PROPERTIES
-        OUTPUT_NAME "collision_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-    target_include_directories(collision_system PRIVATE include)
-    target_link_libraries(collision_system PRIVATE ECS raylib)
+# ------------------------------------------------------------------
+# ECS system plugins (shared) si raylib est dispo
+# ------------------------------------------------------------------
+if(BUILD_UI_COMPONENTS)
+    # Helper pour appliquer les mêmes propriétés/links à chaque plugin
+    function(_ecs_setup_plugin target)
+        target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+        target_link_libraries(${target} PRIVATE ECS raylib)
 
-    add_library(sprite_system SHARED ${SPRITE_SYSTEM_SOURCES})
-    set_target_properties(sprite_system PROPERTIES
-        OUTPUT_NAME "sprite_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-    target_include_directories(sprite_system PRIVATE include)
-    target_link_libraries(sprite_system PRIVATE ECS raylib)
+        # Hérite des defines Windows safe si dispo
+        if(TARGET win_sanity)
+            target_link_libraries(${target} PRIVATE win_sanity)
+        endif()
 
-    add_library(animation_system SHARED ${ANIMATION_SYSTEM_SOURCES})
-    set_target_properties(animation_system PROPERTIES
-        OUTPUT_NAME "animation_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-    target_include_directories(animation_system PRIVATE include)
-    target_link_libraries(animation_system PRIVATE ECS raylib)
+        # Répertoires de sortie (multi-config)
+        foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+            set_target_properties(${target} PROPERTIES
+                ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/systems/${cfg}
+                LIBRARY_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/systems/${cfg}
+                RUNTIME_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/systems/${cfg}
+            )
+        endforeach()
+    endfunction()
 
-    # ✅ UISystem as plugin
-    add_library(render_UISystem SHARED ${UI_SYSTEM_SOURCES})
-    set_target_properties(render_UISystem PROPERTIES
-        OUTPUT_NAME "render_UISystem"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-    target_include_directories(render_UISystem PRIVATE include)
-    target_link_libraries(render_UISystem PRIVATE ECS raylib)
-    
+    add_library(position_system   SHARED ${POSITION_SYSTEM_SOURCES})
+    set_target_properties(position_system PROPERTIES OUTPUT_NAME "position_system")
+    _ecs_setup_plugin(position_system)
+
+    add_library(collision_system  SHARED ${COLLISION_SYSTEM_SOURCES})
+    set_target_properties(collision_system PROPERTIES OUTPUT_NAME "collision_system")
+    _ecs_setup_plugin(collision_system)
+
+    add_library(sprite_system     SHARED ${SPRITE_SYSTEM_SOURCES})
+    set_target_properties(sprite_system PROPERTIES OUTPUT_NAME "sprite_system")
+    _ecs_setup_plugin(sprite_system)
+
+    add_library(animation_system  SHARED ${ANIMATION_SYSTEM_SOURCES})
+    set_target_properties(animation_system PROPERTIES OUTPUT_NAME "animation_system")
+    _ecs_setup_plugin(animation_system)
+
+    add_library(render_UISystem   SHARED ${UI_SYSTEM_SOURCES})
+    set_target_properties(render_UISystem PROPERTIES OUTPUT_NAME "render_UISystem")
+    _ecs_setup_plugin(render_UISystem)
+
     message(STATUS "Building ECS system plugins with raylib support")
 else()
     message(STATUS "Skipping ECS system plugins (raylib not available)")
 endif()
 
-# Build UI components and system only if raylib is found
-if (BUILD_UI_COMPONENTS)
-    # UI components are part of the main ECS library
-    # UISystem is now a separate plugin
-    
-    # Create lib/ui directory for backward compatibility (if needed)
-    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/ui)
-
-    message(STATUS "  - UI components included in libECS.so")
-    message(STATUS "  - UISystem built as lib/systems/librender_UISystem.so")
-endif()
-
-# Create lib/systems directory
+# ------------------------------------------------------------------
+# Ensure dirs exist for single-config generators
+# ------------------------------------------------------------------
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems)
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/ui)
 
-# Add UI test executable if raylib is available (commented out - test file is commented)
-# if (BUILD_UI_COMPONENTS)
-#     add_executable(ui_test test/ui_test.cpp)
-#     target_link_libraries(ui_test ECS raylib)
-#     message(STATUS "  - ui_test: UI system test executable")
-# endif()
-
-# Display build information
+# ------------------------------------------------------------------
+# Summary
+# ------------------------------------------------------------------
 message(STATUS "Building ECS library and system plugins")
-message(STATUS "  - libECS.so: Core ECS library with components, registry, and dynamic loader")
-message(STATUS "  - lib/systems/libposition_system.so: Position update system")
-message(STATUS "  - lib/systems/libcollision_system.so: Collision detection system")
-message(STATUS "  - lib/systems/libsprite_system.so: Sprite rendering system")
-message(STATUS "  - lib/systems/libanimation_system.so: Animation system")
-message(STATUS "  - lib/systems/librender_UISystem.so: UI system plugin")
+message(STATUS "  - ECS core library with components, registry, and dynamic loader")
+message(STATUS "  - Systems will be built under lib/systems/<Config>/")
+message(STATUS "  - UI components included if raylib was found")

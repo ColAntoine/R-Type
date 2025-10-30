@@ -4,9 +4,15 @@
 
 void InGameBackground::enter()
 {
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/libgame_StarBg.so", DLLoader::LogicSystem);
+    #ifdef _WIN32
+        const std::string ext = ".dll";
+    #else
+        const std::string ext = ".so";
+    #endif
+
+    _systemLoader->load_components("build/lib/libECS" + ext, _registry);
+    _systemLoader->load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
+    _systemLoader->load_system("build/lib/systems/libgame_StarBg" + ext, ILoader::LogicSystem);
 
     setup_ui();
     _initialized = true;
@@ -38,5 +44,5 @@ void InGameBackground::update(float delta_time)
     if  (!_initialized)
         return;
 
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
+    _systemLoader->update_all_systems(_registry, delta_time, ILoader::LogicSystem);
 }

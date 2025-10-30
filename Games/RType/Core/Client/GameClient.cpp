@@ -1,3 +1,15 @@
+#ifdef _WIN32
+  #ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+  #endif
+  #ifndef NOMINMAX
+  #define NOMINMAX
+  #endif
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+#endif
+
+#include <raylib.h>
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "Core/Client/Network/ClientService.hpp"
@@ -29,6 +41,7 @@
 #include <thread>
 #include <chrono>
 #include <string>
+
 
 auto &renderManager = RenderManager::instance();
 auto &messageManager = MessagingManager::instance();
@@ -97,7 +110,7 @@ bool GameClient::init()
     // Load components into shared registry BEFORE starting network manager
     // This ensures components are registered when PLAYER_SPAWN messages arrive
     std::cout << "[GameClient] Loading components into shared registry..." << std::endl;
-    ecs_loader_.load_components_from_so("build/lib/libECS.so", ecs_registry_);
+    ecs_loader_.load_components("build/lib/libECS.so", ecs_registry_);
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
@@ -121,12 +134,12 @@ void GameClient::run()
 {
     std::cout << "GameClient::run" << std::endl;
 
-    float last_frame_time = 0.0f;
+    double last_frame_time = 0.0f;
 
     while (_running && !renderManager.window_should_close() && !_stateManager.is_empty()) {
         // Calculate delta time
-        float current_time = GetTime();
-        float delta_time = current_time - last_frame_time;
+        double current_time = GetTime();
+        double delta_time = current_time - last_frame_time;
         last_frame_time = current_time;
 
         // Cap delta time to prevent huge jumps
@@ -147,7 +160,7 @@ void GameClient::run()
     }
 }
 
-void GameClient::update(float delta)
+void GameClient::update(do delta)
 {
     (void)delta;
 }
@@ -177,4 +190,4 @@ void GameClient::shutdown()
 }
 
 registry &GameClient::GetRegistry() { return ecs_registry_; }
-DLLoader &GameClient::GetDLLoader() { return ecs_loader_; }
+ILoader &GameClient::GetILoader() { return ecs_loader_; }

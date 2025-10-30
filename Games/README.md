@@ -429,8 +429,8 @@ private:
 public:
     bool initialize() {
         // 1. Load ECS library
-        DLLoader loader;
-        loader.load_components_from_so("../ECS/build/libECS.so", ecs_registry_);
+        ILoader loader;
+        loader.load_components("../ECS/build/libECS.so", ecs_registry_);
         
         // 2. Register services
         service_manager_.register_service<InputService>(event_manager_);

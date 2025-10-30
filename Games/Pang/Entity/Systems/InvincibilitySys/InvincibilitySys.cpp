@@ -76,8 +76,13 @@ void InvincibilitySys::updatePlayerInvi(Invincibility &invi, float dt)
     }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<InvincibilitySys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

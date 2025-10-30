@@ -94,7 +94,15 @@ SpriteRenderSystem::~SpriteRenderSystem() {
     texture_cache_.clear();
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<SpriteRenderSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new SpriteRenderSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }
 

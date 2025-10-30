@@ -5,7 +5,7 @@
 #include <functional>
 #include <vector>
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Animation.hpp"
 #include "ECS/Components/Velocity.hpp"
@@ -17,7 +17,7 @@ class PlayerHandler {
         using ClientListCallback = std::function<void(const std::vector<RType::Protocol::PlayerInfo>&)>;
         using GameStartCallback = std::function<void()>;
 
-        PlayerHandler(registry& registry, DLLoader& loader);
+        PlayerHandler(registry& registry, ILoader& loader);
         void on_player_join(const char* payload, size_t size);
         void on_client_list(const char* payload, size_t size);
         void on_player_quit(const char* payload, size_t size);
@@ -35,7 +35,7 @@ class PlayerHandler {
 
     private:
         registry& registry_;
-        DLLoader& loader_;
+        ILoader& loader_;
         // Map remote player IDs (from server) to local entity IDs so we can remove them later
         std::unordered_map<uint32_t, entity> remote_player_map_;
         // local player entity id if assigned

@@ -5,7 +5,7 @@
 #include "Dispatcher.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "Handlers/PlayerHandler.hpp"
 #include "Handlers/EnemyHandler.hpp"
 
@@ -15,7 +15,7 @@
 
 class NetworkManager {
     public:
-        NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, DLLoader& loader);
+        NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, ILoader& loader);
         ~NetworkManager();
 
         // Start/stop receiving
@@ -39,7 +39,7 @@ class NetworkManager {
         std::shared_ptr<UdpClient> client_;
         NetworkDispatcher dispatcher_;
         registry& registry_;
-        DLLoader& loader_;
+        ILoader& loader_;
         PlayerHandler player_handler_;
         EnemyHandler enemy_handler_;
         // pending ENTITY_CREATE messages received before we know our session token
