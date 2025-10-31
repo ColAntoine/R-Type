@@ -19,6 +19,7 @@
 #include "Entity/Components/Boss/Boss.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 // TODO: the draw is temporary until we find some sprites
 #include "Entity/Components/Drawable/Drawable.hpp"
@@ -67,6 +68,8 @@ private:
     /* Boss Pattern functions */
     // ? punch funcs
     bool isPlayerClose(registry &r);
+    int getWave(registry &r);
+    void increaseWave(registry &r);
 
     // * weapons depending on wave for now
     // * the map use the wave as index and a vector of string to set the weapons
@@ -74,7 +77,6 @@ private:
 
     // * RenderManager for quick access
     RenderManager &_renderManager;
-    int _wave{0};
 };
 
 extern "C" {

@@ -50,7 +50,7 @@ bool BossSys::shouldSpawn(registry &r, float dt)
     for (auto [boss, ent]: zipper(*bossArr)) {
         if (boss._shouldSpawn) {
             boss._shouldSpawn = false;
-            _wave += 1;
+            increaseWave(r);
             return true;
         }
         else{
@@ -71,17 +71,18 @@ void BossSys::spawn(registry &r)
 
     for (auto [boss, bossEnt]: zipper(*bossArr)) {
         r.emplace_component<position>(entity(bossEnt), _renderManager.get_screen_infos().getWidth() + 300.f, _renderManager.get_screen_infos().getHeight() / 2.f);
-        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(_wave));
+        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r)));
         r.emplace_component<velocity>(entity(bossEnt), -300.f, 0.f);
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
+        int wave = getWave(r);
 
         Weapon w(
             entity(bossEnt),
-            _bossWeapons[_wave > 5 ? 5 : _wave],
-            BOSS_BASE_FIRERATE * static_cast<float>(_wave),
-            BOSS_BASE_DAMAGE * static_cast<float>(_wave),
-            BOSS_BASE_PROJ_SPEED * static_cast<float>(_wave),
+            _bossWeapons[wave > 5 ? 5 : wave],
+            BOSS_BASE_FIRERATE * static_cast<float>(wave),
+            BOSS_BASE_DAMAGE * static_cast<float>(wave),
+            BOSS_BASE_PROJ_SPEED * static_cast<float>(wave),
             -1,
             true
         );
@@ -166,6 +167,29 @@ bool BossSys::isPlayerClose(registry &r)
         return true;
     }
     return false;
+}
+
+int BossSys::getWave(registry &r)
+{
+    auto waveArr = r.get_if<CurrentWave>();
+
+    if (!waveArr) return 0;
+
+    for (auto [wave, ent]: zipper(*waveArr)) {
+        return wave._currentWave;
+    }
+    return 0;
+}
+
+void BossSys::increaseWave(registry &r)
+{
+    auto waveArr = r.get_if<CurrentWave>();
+
+    if (!waveArr) return;
+
+    for (auto [wave, ent]: zipper(*waveArr)) {
+        wave._currentWave += 1;
+    }
 }
 
 extern "C" {

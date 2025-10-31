@@ -199,5 +199,7 @@ void InGameState::createPlayer()
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
     }
-}
 
+    auto currentWave = reg.spawn_entity();
+    reg.emplace_component<CurrentWave>(currentWave, 0);
+}

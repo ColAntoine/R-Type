@@ -46,7 +46,7 @@ private:
     std::uniform_real_distribution<> y_dist_;
 
     bool initialized_{false};
-    
+
     // Callback to notify when an enemy is spawned (for server to broadcast)
     EnemySpawnCallback spawn_callback_;
 
@@ -62,10 +62,10 @@ public:
     void set_spawn_interval(float interval) { spawn_interval_ = interval; }
     void set_max_enemies(size_t max) { max_enemies_ = max; }
     void set_world_bounds(float width, float height);
-    
+
     // Seed the RNG with the registry's seed (for deterministic gameplay)
     void seed_from_registry(registry& r);
-    
+
     // Set callback to be invoked when enemy spawns (for server broadcasting)
     void set_spawn_callback(EnemySpawnCallback callback) { spawn_callback_ = std::move(callback); }
 

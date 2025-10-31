@@ -8,6 +8,7 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 #include "Constants.hpp"
 
