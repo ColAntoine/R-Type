@@ -92,27 +92,28 @@ void HealthSys::checkAndKillPlayer(registry &r)
 
 void HealthSys::addScore(registry &r)
 {
-    // // find existing Score entity or create one
-    // auto *scoreArr = r.get_if<Score>();
-    // entity scoreEnt = static_cast<entity>(-1);
+    // find existing Score entity or create one
+    auto *scoreArr = r.get_if<Score>();
+    entity scoreEnt = static_cast<entity>(-1);
 
-    // if (scoreArr) {
-    //     for (auto [s, ent] : zipper(*scoreArr)) {
-    //         scoreEnt = entity(ent);
-    //         break;
-    //     }
-    // }
+    if (scoreArr) {
+        for (auto [s, ent] : zipper(*scoreArr)) {
+            scoreEnt = entity(ent);
+            break;
+        }
+    }
 
-    // if (scoreEnt == static_cast<entity>(-1)) {
-    //     scoreEnt = r.spawn_entity();
-    //     r.emplace_component<Score>(scoreEnt, Score(0));
-    // }
+    if (scoreEnt == static_cast<entity>(-1)) {
+        scoreEnt = r.spawn_entity();
+        r.emplace_component<Score>(scoreEnt, Score(0));
+    }
 
-    // // increment the score by 1
-    // scoreArr = r.get_if<Score>();
-    // if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
-    //     scoreArr->get(static_cast<size_t>(scoreEnt))._score += 1;
-    // }
+    // increment the score by 1
+    scoreArr = r.get_if<Score>();
+    if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
+        scoreArr->get(static_cast<size_t>(scoreEnt))._score += 1;
+        std::cout << "SCORE: " << scoreArr->get(static_cast<size_t>(scoreEnt))._score << std::endl;
+    }
 }
 
 extern "C" {
