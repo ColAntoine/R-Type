@@ -7,18 +7,27 @@
 
 #include "Network/UDPServer.hpp"
 
+#ifdef _WIN32
+    #include "ECS/WinLoader.hpp"
+    using PlatformLoader = WinLoader;
+#else
+    #include "ECS/LinuxLoader.hpp"
+    using PlatformLoader = LinuxLoader;
+#endif
+
 namespace RType::Network {
 
     ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
+        loader_ = std::make_unique<PlatformLoader>();
         multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
     }
     ServerECS::~ServerECS() = default;
 
     bool ServerECS::init(const std::string& components_so) {
-        if (!loader_.load_components_from_so(components_so, registry_)) {
+        if (!loader_->load_components(components_so, registry_)) {
             std::cerr << "Warning: failed to load ECS components from " << components_so << std::endl;
         }
-        factory_ = loader_.get_factory();
+        factory_ = loader_->get_factory();
         if (factory_) {
             std::cout << "Component factory available" << std::endl;
         } else {
@@ -69,7 +78,7 @@ namespace RType::Network {
         } catch (...) {}
         
         // run all registered systems (systems may consume net_input components)
-        loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
+        loader_->update_all_systems(registry_, dt, ILoader::LogicSystem);
 
         // After position system has run, broadcast updated positions to all clients
         if (multiplayer_) {

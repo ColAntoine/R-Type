@@ -1,6 +1,7 @@
 build/
 vcpkg_installed/
 .vscode
+.vs
 
 external/
 

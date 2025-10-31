@@ -1,0 +1,64 @@
+name: CI - Build & Test
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches-ignore: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    env:
+      CMAKE_BUILD_TYPE: Release
+      CTEST_OUTPUT_ON_FAILURE: 1
+      CMAKE_BUILD_PARALLEL_LEVEL: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (OpenGL/X11 + headless)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git build-essential cmake ninja-build pkg-config \
+            xorg-dev libglu1-mesa-dev xvfb \
+            libasound2-dev libpulse-dev libxi-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libudev-dev
+
+      - name: Setup ccache
+        uses: hendrikmuhs/ccache-action@v1
+        with:
+          key: rtype-${{ runner.os }}
+
+      - name: Configure (CMake + Ninja)
+        run: |
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DOpenGL_GL_PREFERENCE=GLVND
+
+      - name: Build
+        run: cmake --build build --config "${CMAKE_BUILD_TYPE}"
+
+      - name: Run tests (ctest under Xvfb)
+        run: |
+          xvfb-run -a -s "-screen 0 1920x1080x24" \
+            ctest --test-dir build --output-on-failure -C "${CMAKE_BUILD_TYPE}"
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build/Testing
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log

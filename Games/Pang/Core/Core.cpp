@@ -53,15 +53,21 @@ void Core::loadSystems()
 {
     if (_systemsLoaded) return;
 
+    #ifdef _WIN32
+        const std::string ext = ".dll";
+    #else
+        const std::string ext = ".so";
+    #endif
+
     std::cout << "Loading game systems dynamically..." << std::endl;
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot.so");
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner.so");
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot" + ext);
+    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner" + ext);
     std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();

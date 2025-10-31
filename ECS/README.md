@@ -56,7 +56,7 @@ The ECS implementation in this project is modular and supports dynamic loading o
 - **Responsibilities**:
   - Provides methods to dynamically create components without exposing their concrete types.
 
-### 6. `include/ecs/dlloader.hpp`
+### 6. `include/ecs/ILoader.hpp`
 - **Purpose**: Handles dynamic loading of shared libraries.
 - **Responsibilities**:
   - Loads component libraries (`libECS.so`) at runtime.
@@ -81,7 +81,7 @@ The ECS library is built as a framework that supports dynamic loading of both co
    - Provides a factory (`IComponentFactory`) for creating component instances dynamically.
 
 2. **Loading Components**:
-   - Use the `DLLoader` class to load the shared library at runtime via `dlopen`.
+   - Use the `ILoader` class to load the shared library at runtime via `dlopen`.
    - Call `register_components` to register all components with the registry.
    - Retrieve the `IComponentFactory` to create component instances dynamically.
 
@@ -92,21 +92,21 @@ The ECS library is built as a framework that supports dynamic loading of both co
    - Located in `lib/systems/` directory by default.
 
 2. **Loading Systems**:
-   - Systems are loaded individually through `DLLoader::load_system_from_so()`.
+   - Systems are loaded individually through `ILoader::load_system()`.
    - Each system library provides its initialization and execution functions.
    - Systems can be loaded, unloaded, or replaced at runtime without affecting other systems.
 
 ### Integration Example
 ```cpp
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 
 int main() {
     registry reg;
-    DLLoader loader;
+    ILoader loader;
     
     // Load component library
-    if (!loader.load_components_from_so("./libECS.so", reg)) {
+    if (!loader.load_components("./libECS.so", reg)) {
         std::cerr << "Failed to load components!" << std::endl;
         return 1;
     }
@@ -139,7 +139,7 @@ To add a new system:
 2. **Implement** the system logic in `src/systems/<system_name>.cpp`.
 3. **Export** the system's initialization and execution functions.
 4. **Compile** as a separate shared library (e.g., `lib<system_name>.so`).
-5. **Load** the system dynamically using `DLLoader` in your application.
+5. **Load** the system dynamically using `ILoader` in your application.
 
 ### Building Component and System Libraries
 ```bash

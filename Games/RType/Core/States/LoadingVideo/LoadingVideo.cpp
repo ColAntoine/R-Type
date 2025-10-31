@@ -16,9 +16,20 @@ void LoadingVideoState::enter()
 {
     std::cout << "[LoadingVideoState] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+        const std::string spriteLib = "build/lib/systems/libsprite_system.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+        const std::string spriteLib = "build/lib/systems/libsprite_system.so";
+    #endif
+
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
+    _systemLoader->load_system(spriteLib, ILoader::RenderSystem);
+
     setup_ui();
 
     _skipEventCallbackId = MessagingManager::instance().get_event_bus().subscribe(EventTypes::KEY_PRESSED, [this](const Event& event) {

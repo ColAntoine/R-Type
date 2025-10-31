@@ -38,8 +38,14 @@ void ParabolSys::handleParabols(registry &r)
     }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<ParabolSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new ParabolSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

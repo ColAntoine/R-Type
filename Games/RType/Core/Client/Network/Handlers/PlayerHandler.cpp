@@ -10,7 +10,7 @@
 #include "ECS/Components/Collider.hpp"
 #include "Constants.hpp"
 
-PlayerHandler::PlayerHandler(registry& registry, DLLoader& loader)
+PlayerHandler::PlayerHandler(registry& registry, ILoader& loader)
     : registry_(registry), loader_(loader)
 {
 }

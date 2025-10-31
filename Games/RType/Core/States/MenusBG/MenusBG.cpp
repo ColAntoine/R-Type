@@ -12,8 +12,16 @@ void MenusBackgroundState::enter()
 {
     std::cout << "[MenusBackground] Entering state" << std::endl;
 
-    this->_systemLoader.load_components_from_so("build/lib/libECS.so", this->_registry);
-    this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
+
+    this-> _systemLoader->load_components(ecsLib, _registry);
+    this->_systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     this->_registry.register_component<UI::UIText>();
 
@@ -62,7 +70,7 @@ void MenusBackgroundState::update(float delta_time)
             this->_asciiGrid[r][c] = this->_asciiCharset[char_dist(rng)];
         }
     }
-    this->_systemLoader.update_all_systems(this->_registry, delta_time, DLLoader::LogicSystem);
+    this->_systemLoader->update_all_systems(this->_registry, delta_time, ILoader::LogicSystem);
 }
 
 void MenusBackgroundState::setup_ui()

@@ -24,3 +24,12 @@ private:
     EventBus::CallbackId _callbackId;
     std::map<std::string, int> _keyBinds;
 };
+
+#if defined(_WIN32)
+  #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+  #define DLL_EXPORT extern "C"
+#endif
+
+DLL_EXPORT ISystem* create_system();
+DLL_EXPORT void     destroy_system(ISystem* ptr);

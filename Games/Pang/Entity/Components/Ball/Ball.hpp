@@ -9,7 +9,7 @@
 
 #include <raylib.h>
 
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "Constants.hpp"
 #include "ECS/Components/Position.hpp"
 
