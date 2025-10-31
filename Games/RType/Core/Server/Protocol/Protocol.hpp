@@ -181,7 +181,7 @@ namespace RType::Protocol {
         uint8_t player_count;    ///< Number of players in the list
         PlayerInfo players[8];   ///< Array of player info (max 8 players)
     } PACKED;
-
+    
     /**
      * @brief Information about a running instance
      */
@@ -189,16 +189,16 @@ namespace RType::Protocol {
         uint16_t port;          ///< UDP port where instance is running
         uint8_t status;         ///< 0=waiting,1=running
         char name[24];          ///< Optional name (null-terminated)
-    } __attribute__((packed));
+    } PACKED;
 
     struct InstanceList {
         uint8_t instance_count; ///< Number of instances
         InstanceInfo instances[8];
-    } __attribute__((packed));
+    } PACKED;
 
     struct InstanceCreated {
         uint16_t port;          ///< Port for the newly created instance
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Start game signal message

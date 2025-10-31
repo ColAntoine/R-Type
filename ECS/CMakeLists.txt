@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
+# ------------------------------------------------------------------
+# vcpkg toolchain auto-setup (clone + bootstrap si nécessaire)
+# ------------------------------------------------------------------
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
     if(NOT EXISTS "${VCPKG_ROOT}")
@@ -12,6 +15,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         if(NOT git_result EQUAL 0)
             message(FATAL_ERROR "Failed to clone vcpkg")
         endif()
+
         # Bootstrap vcpkg
         if(WIN32)
             execute_process(
@@ -30,11 +34,14 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             message(FATAL_ERROR "Failed to bootstrap vcpkg")
         endif()
     endif()
+
     set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
         CACHE STRING "Vcpkg toolchain file")
 endif()
 
-# Project name and version
+# ------------------------------------------------------------------
+# Project
+# ------------------------------------------------------------------
 project(ECS_Library VERSION 1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -44,56 +51,28 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 include_directories(include ${CMAKE_SOURCE_DIR})
 
 # ------------------------------------------------------------------
-# Dependencies (raylib + glfw3 via vcpkg)
+# Dépendances (raylib + glfw3 via vcpkg si disponible)
 # ------------------------------------------------------------------
-if(NOT TARGET raylib)
-    find_package(raylib QUIET)
-endif()
+find_package(raylib QUIET)
+# glfw peut s'appeler "glfw" (cible) ou "glfw3::glfw" selon le port
+find_package(glfw3 QUIET)
 
-if(NOT TARGET glfw AND NOT TARGET glfw3::glfw)
-    find_package(glfw3 QUIET)
-endif()
-
-# Build UI parts only if raylib is present
 if(TARGET raylib)
     set(BUILD_UI_COMPONENTS ON)
     message(STATUS "raylib found. UI components will be built.")
     if(TARGET glfw OR TARGET glfw3::glfw)
         message(STATUS "glfw3 found.")
     else()
-        message(WARNING "glfw3 not found but required for raylib.")
+        message(WARNING "glfw3 not found but required for raylib UI parts.")
     endif()
 else()
     set(BUILD_UI_COMPONENTS OFF)
     message(WARNING "raylib not found. UI components will NOT be built.")
 endif()
 
-# Only find packages if not already found by parent CMakeLists
-if(NOT TARGET raylib)
-    find_package(raylib QUIET)
-endif()
-
-if(NOT TARGET glfw)
-    find_package(glfw3 QUIET)
-endif()
-
-# Check if raylib is available (either found here or in parent)
-if(TARGET raylib)
-    set(BUILD_UI_COMPONENTS ON)
-    message(STATUS "raylib found. UI components will be built.")
-
-    if(TARGET glfw)
-        message(STATUS "glfw3 found.")
-    else()
-        message(WARNING "glfw3 not found but required for raylib.")
-    endif()
-else()
-    set(BUILD_UI_COMPONENTS OFF)
-    message(WARNING "raylib not found. UI components will not be built.")
-endif()
-
-
-# Source files for the libECS.so shared library (components + registry + dlloader + assetmanager + renderer + physics + audio + messaging + plugin)
+# ------------------------------------------------------------------
+# Sources
+# ------------------------------------------------------------------
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
@@ -136,10 +115,21 @@ set(ANIMATION_SYSTEM_SOURCES  src/systems/animation_system.cpp)
 set(UI_SYSTEM_SOURCES         src/systems/UISystem.cpp)
 
 # ------------------------------------------------------------------
+# Helper : forcer le préfixe "lib" pour toutes les bibliothèques sous Windows
+# ------------------------------------------------------------------
+function(_prefix_lib_on_windows target)
+    if(WIN32)
+        set_target_properties(${target} PROPERTIES PREFIX "lib")
+    endif()
+endfunction()
+
+# ------------------------------------------------------------------
 # ECS shared library
 # ------------------------------------------------------------------
 if(BUILD_UI_COMPONENTS)
     add_library(ECS SHARED ${LIB_ECS_SOURCES} ${UI_COMPONENT_SOURCES})
+    _prefix_lib_on_windows(ECS)
+
     target_link_libraries(ECS PRIVATE
         raylib
         $<$<NOT:$<PLATFORM_ID:Windows>>:dl>
@@ -156,6 +146,8 @@ if(BUILD_UI_COMPONENTS)
     message(STATUS "Building ECS with UI components")
 else()
     add_library(ECS SHARED ${LIB_ECS_SOURCES})
+    _prefix_lib_on_windows(ECS)
+
     target_link_libraries(ECS PRIVATE
         $<$<NOT:$<PLATFORM_ID:Windows>>:dl>
     )
@@ -188,14 +180,18 @@ if(MSVC)
     set_target_properties(ECS PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
-# Nom de sortie de la DLL
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Copie libECS.so dans build/lib
+if(WIN32)
+  set(_ECS_RUNTIME_NAME libECS.dll)
+else()
+  set(_ECS_RUNTIME_NAME libECS.so)
+endif()
+
 add_custom_command(TARGET ECS POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lib
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ECS> ${CMAKE_BINARY_DIR}/lib/libECS.so
-    COMMENT "Copying libECS.so to build/lib"
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lib
+  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ECS> ${CMAKE_BINARY_DIR}/lib/${_ECS_RUNTIME_NAME}
+  COMMENT "Copying $<TARGET_FILE_NAME:ECS> to ${CMAKE_BINARY_DIR}/lib/${_ECS_RUNTIME_NAME}"
 )
 
 # ------------------------------------------------------------------
@@ -205,6 +201,9 @@ if(BUILD_UI_COMPONENTS)
     function(_ecs_setup_plugin target)
         target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(${target} PRIVATE ECS raylib)
+
+        # Préfixe "lib" sous Windows pour les plugins également
+        _prefix_lib_on_windows(${target})
 
         if(TARGET win_sanity)
             target_link_libraries(${target} PRIVATE win_sanity)
@@ -217,6 +216,12 @@ if(BUILD_UI_COMPONENTS)
                 RUNTIME_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/systems/${cfg}
             )
         endforeach()
+
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lib/systems
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${target}> ${CMAKE_BINARY_DIR}/lib/systems/$<TARGET_FILE_NAME:${target}>
+            COMMENT "Copying $<TARGET_FILE_NAME:${target}> to ${CMAKE_BINARY_DIR}/lib/systems"
+        )
     endfunction()
 
     add_library(position_system   SHARED ${POSITION_SYSTEM_SOURCES})
