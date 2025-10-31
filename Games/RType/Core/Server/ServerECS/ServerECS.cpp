@@ -1,29 +1,37 @@
 #include "ServerECS.hpp"
 #include "Communication/Multiplayer.hpp"
 #include <iostream>
-#include "ECS/Utils/Console.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "ECS/Components/Position.hpp"
 #include <algorithm>
 
 #include "Network/UDPServer.hpp"
 
+#ifdef _WIN32
+    #include "ECS/WinLoader.hpp"
+    using PlatformLoader = WinLoader;
+#else
+    #include "ECS/LinuxLoader.hpp"
+    using PlatformLoader = LinuxLoader;
+#endif
+
 namespace RType::Network {
 
-    ServerECS::ServerECS() {
-        multiplayer_ = std::make_unique<Multiplayer>(*this);
+    ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
+        loader_ = std::make_unique<PlatformLoader>();
+        multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
     }
     ServerECS::~ServerECS() = default;
 
     bool ServerECS::init(const std::string& components_so) {
-        if (!loader_.load_components_from_so(components_so, registry_)) {
+        if (!loader_->load_components(components_so, registry_)) {
             std::cerr << "Warning: failed to load ECS components from " << components_so << std::endl;
         }
-        factory_ = loader_.get_factory();
+        factory_ = loader_->get_factory();
         if (factory_) {
-            std::cout << Console::green("[ServerECS] ") << "Component factory available" << std::endl;
+            std::cout << "Component factory available" << std::endl;
         } else {
-            std::cerr << Console::red("[ServerECS] ") << "Component factory not available after load" << std::endl;
+            std::cerr << "Component factory not available after load" << std::endl;
         }
         return true;
     }
@@ -45,14 +53,14 @@ namespace RType::Network {
         for (auto &pkt : packets) {
             if (pkt.data.empty()) continue;
             if (multiplayer_) {
-                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " size=" << pkt.data.size() << std::endl;
+                std::cout << "[ServerECS] Processing pkt from " << pkt.session_id << " on port=" << pkt.server_port << " size=" << pkt.data.size() << std::endl;
                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
             }
         }
     }
 
     void ServerECS::tick(float dt) {
-        loader_.update_all_systems(registry_, dt, DLLoader::LogicSystem);
+        loader_->update_all_systems(registry_, dt, ILoader::LogicSystem);
 
         if (multiplayer_) {
             multiplayer_->broadcast_loop();

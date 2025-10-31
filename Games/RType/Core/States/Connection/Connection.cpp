@@ -12,9 +12,17 @@ void Connection::enter()
 {
     std::cout << "[Connection] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
 
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
+    
     setup_ui();
     subscribe_to_ui_event();
     _initialized = true;
@@ -249,13 +257,18 @@ void Connection::connection_callback()
 
     auto accept = client->connect(ServerIp_, port, PlayerName_, 1, 2000);
     if (accept) {
-        std::cout << "[Lobby] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << std::endl;
+        std::cout << "[Connection] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << " multi_instance=" << (accept->multi_instance ? "true" : "false") << std::endl;
         if (_stateManager) {
-        _stateManager->pop_state();
-        _stateManager->push_state("Lobby");
+            _stateManager->pop_state();
+            bool is_multi_instance = (accept->multi_instance != 0);
+            if (is_multi_instance) {
+                _stateManager->push_state("Browser");
+            } else {
+                _stateManager->push_state("Lobby");
+            }
         }
     } else {
-        std::cout << "[Lobby] Failed to connect to server." << std::endl;
+        std::cout << "[Connection] Failed to connect to server." << std::endl;
         // allow retry on failure
         connecting_ = false;
     }

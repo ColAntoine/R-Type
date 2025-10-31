@@ -16,7 +16,14 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 
-void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
+
+void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
 }
@@ -52,25 +59,18 @@ void HealthSys::checkAndKillEnemy(registry &r)
 void HealthSys::checkAndKillPlayer(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
-    std::vector<entity> entToKill;
+    auto *playerArr = r.get_if<Player>();
 
-    if (!healthArr) return;
+    if (!healthArr || !playerArr) return;
 
-    for (auto [healthEnt, ent] : zipper(*healthArr)) {
+    /* Ca met le player en mort et ennleve ses composant de display etc tu peux le gerer dans le serv avec le bool de player */
+    for (auto [healthEnt, playerComp, ent] : zipper(*healthArr, *playerArr)) {
         if (healthEnt._health <= 0) {
-            entToKill.push_back(entity(ent));
-        }
-    }
-
-    if (!entToKill.empty()) {
-        std::sort(entToKill.begin(), entToKill.end());
-        entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
-
-        for (auto ent : entToKill) {
-            // Check if entity still exists before killing
-            if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
-                r.kill_entity(ent);
-            }
+            playerComp._isDead = true;
+            r.remove_component<Health>(entity(ent)); // remove health to avoid repeated death*
+            r.remove_component<animation>(entity(ent)); // remove animation to stop rendering*
+            r.remove_component<controllable>(entity(ent)); // remove controllable to stop player input*
+            r.remove_component<collider>(entity(ent)); // remove collider to stop collisions*
         }
     }
 }
@@ -100,8 +100,14 @@ void HealthSys::addScore(registry &r)
     // }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<HealthSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new HealthSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

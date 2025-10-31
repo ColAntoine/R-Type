@@ -72,8 +72,14 @@ void EnemyAISystem::turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, flo
     }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<EnemyAISystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new EnemyAISystem();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

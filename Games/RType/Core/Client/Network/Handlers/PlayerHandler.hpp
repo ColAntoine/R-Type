@@ -5,7 +5,7 @@
 #include <functional>
 #include <vector>
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Animation.hpp"
 #include "ECS/Components/Velocity.hpp"
@@ -18,7 +18,7 @@ class PlayerHandler {
         using ClientListCallback = std::function<void(const std::vector<RType::Protocol::PlayerInfo>&)>;
         using GameStartCallback = std::function<void()>;
 
-        PlayerHandler(registry& registry, DLLoader& loader);
+        PlayerHandler(registry& registry, ILoader& loader);
         void on_player_join(const char* payload, size_t size);
         void on_client_list(const char* payload, size_t size);
         void on_player_quit(const char* payload, size_t size);
@@ -37,9 +37,19 @@ class PlayerHandler {
         // Register a callback for when START_GAME is received
         void set_game_start_callback(GameStartCallback callback);
 
+    // Register a callback for when the server informs about an instance created (port)
+    void set_instance_created_callback(std::function<void(uint16_t)> cb);
+
+    // Called by network dispatcher when INSTANCE_CREATED arrives
+    void on_instance_created(const char* payload, size_t size);
+    // Instance list handling
+    using InstanceListCallback = std::function<void(const std::vector<RType::Protocol::InstanceInfo>&)>;
+    void set_instance_list_callback(InstanceListCallback cb);
+    void on_instance_list(const char* payload, size_t size);
+
     private:
         registry& registry_;
-        DLLoader& loader_;
+        ILoader& loader_;
         // Map remote player IDs (from server) to local entity IDs so we can remove them later
         std::unordered_map<uint32_t, entity> remote_player_map_;
         // Tracks which remote players are currently holding the shoot input (reapplied every frame)
@@ -52,4 +62,10 @@ class PlayerHandler {
         GameStartCallback game_start_callback_;
         // Cache of the last received player list
         std::vector<RType::Protocol::PlayerInfo> last_player_list_;
+    // Callback when an instance (lobby+game) is created by the server
+    std::function<void(uint16_t)> instance_created_callback_;
+    // Last known instance list
+    std::vector<RType::Protocol::InstanceInfo> last_instance_list_;
+    // Instance list callback
+    InstanceListCallback instance_list_callback_;
 };

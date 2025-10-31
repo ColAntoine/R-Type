@@ -23,7 +23,7 @@
 #include "ECS/Components/Position.hpp"
 #include "ECS/Zipper.hpp"
 
-InGameScene::InGameScene(registry& reg, DLLoader& systemLoader, IComponentFactory* factory)
+InGameScene::InGameScene(registry& reg, ILoader& systemLoader, IComponentFactory* factory)
 : _reg(reg), _systemLoader(systemLoader), _componentFactory(factory), _initialized(false)
 {}
 

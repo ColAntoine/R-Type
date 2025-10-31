@@ -9,6 +9,7 @@
 #include "ECS/Components/Animation.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Constants.hpp"
 #include <iostream>
 #include <chrono>
 

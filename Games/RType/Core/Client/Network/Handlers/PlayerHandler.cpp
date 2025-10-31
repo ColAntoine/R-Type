@@ -10,7 +10,7 @@
 #include "ECS/Components/Collider.hpp"
 #include "Constants.hpp"
 
-PlayerHandler::PlayerHandler(registry& registry, DLLoader& loader)
+PlayerHandler::PlayerHandler(registry& registry, ILoader& loader)
     : registry_(registry), loader_(loader)
 {
 }
@@ -282,6 +282,36 @@ void PlayerHandler::set_client_list_callback(ClientListCallback callback) {
 
 void PlayerHandler::set_game_start_callback(GameStartCallback callback) {
     game_start_callback_ = callback;
+}
+
+void PlayerHandler::set_instance_created_callback(std::function<void(uint16_t)> cb) {
+    instance_created_callback_ = std::move(cb);
+}
+
+void PlayerHandler::on_instance_created(const char* payload, size_t size) {
+    if (!payload || size < sizeof(RType::Protocol::InstanceCreated)) return;
+    RType::Protocol::InstanceCreated ic;
+    memcpy(&ic, payload, sizeof(ic));
+    uint16_t port = ic.port;
+    if (instance_created_callback_) instance_created_callback_(port);
+}
+
+void PlayerHandler::set_instance_list_callback(InstanceListCallback cb) {
+    instance_list_callback_ = std::move(cb);
+    // If we already have a last known list, invoke immediately
+    if (instance_list_callback_ && !last_instance_list_.empty()) instance_list_callback_(last_instance_list_);
+}
+
+void PlayerHandler::on_instance_list(const char* payload, size_t size) {
+    if (!payload || size < sizeof(RType::Protocol::InstanceList)) return;
+    RType::Protocol::InstanceList il;
+    memcpy(&il, payload, sizeof(RType::Protocol::InstanceList));
+    std::vector<RType::Protocol::InstanceInfo> list;
+    for (uint8_t i = 0; i < il.instance_count && i < 8; ++i) {
+        list.push_back(il.instances[i]);
+    }
+    last_instance_list_ = list;
+    if (instance_list_callback_) instance_list_callback_(list);
 }
 
 void PlayerHandler::on_game_start(const char* payload, size_t size) {

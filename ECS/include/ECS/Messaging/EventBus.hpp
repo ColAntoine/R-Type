@@ -21,6 +21,7 @@ class EventBus {
 
         CallbackId subscribe(const std::string& type, EventCallback callback);
         void unsubscribe(CallbackId id);
+        void unsubscribe_deferred(CallbackId id);
 
         void emit(const Event& event);
         void emit_deferred(const Event& event);
@@ -40,5 +41,6 @@ class EventBus {
 
         std::unordered_map<std::string, std::vector<Subscription>> subscribers_;
         std::queue<Event> deferred_events_;
+        std::vector<CallbackId> pending_unsubscribes_;
         CallbackId next_id_;
 };

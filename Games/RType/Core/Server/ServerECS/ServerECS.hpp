@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Protocol/MessageQueue.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Components/InputBuffer.hpp"
 #include <unordered_map>
@@ -19,11 +19,11 @@ class UdpServer;
 
 class ServerECS {
     public:
-        ServerECS();
+        ServerECS(int maxLobbies = 0, int maxPlayers = 2);
         ~ServerECS();
 
         // Initialize components/systems from shared object (optional)
-        bool init(const std::string& components_so = "lib/libECS.so");
+        bool init(const std::string& components_so = "build/lib/libECS.so");
 
         // Attach the network message queue used by the UDP server
         void set_message_queue(MessageQueue* q);
@@ -38,9 +38,14 @@ class ServerECS {
         // Install the server UDP instance into multiplayer so it can trigger broadcasts directly
         void set_udp_server(UdpServer* server);
 
+        // Register a callback invoked when a client requests a new instance (session_id)
+        void set_instance_request_callback(std::function<void(const std::string&)> cb) { instance_request_cb_ = std::move(cb); }
+        // Register a callback invoked when the server wants to send the current instance list to a specific session
+        void set_instance_list_request_callback(std::function<void(const std::string&)> cb) { instance_list_request_cb_ = std::move(cb); }
+
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
-        DLLoader& GetDLLoader() { return loader_; }
+        ILoader& GetILoader() { return *loader_; }
 
         // Expose multiplayer for game start coordination
         Multiplayer* GetMultiplayer() { return multiplayer_.get(); }
@@ -50,7 +55,7 @@ class ServerECS {
         bool is_game_started() const { return game_started_; }
 
     private:
-        DLLoader loader_;
+        std::unique_ptr<ILoader> loader_;
         registry registry_;
         IComponentFactory* factory_{nullptr};
         MessageQueue* msgq_{nullptr};
@@ -62,12 +67,19 @@ class ServerECS {
         std::function<void(const std::string&, const std::vector<uint8_t>&)> send_callback_;
         // Multiplayer handler
         std::unique_ptr<Multiplayer> multiplayer_;
+        // Max lobbies for multi-instance
+        int max_lobbies_;
+        int max_players_;
+        // Callback to request instance creation (front server supplies implementation)
+        std::function<void(const std::string&)> instance_request_cb_;
+        // Callback to request sending the current instance list to a specific session (front server supplies implementation)
+        std::function<void(const std::string&)> instance_list_request_cb_;
 
 
-    // Allow communication helpers to access internals for now
-    friend class Multiplayer;
-    friend class Lobby;
-    friend class InGame;
+        // Allow communication helpers to access internals for now
+        friend class Multiplayer;
+        friend class Lobby;
+        friend class InGame;
 
     private:
         // Process buffered inputs for all players and apply to components

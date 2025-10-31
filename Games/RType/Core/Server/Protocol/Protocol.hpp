@@ -5,6 +5,14 @@
 #include <vector>
 #include <memory>
 
+#if defined(_MSC_VER)
+  #define PACKED
+  #pragma pack(push, 1)
+#else
+  #define PACKED __attribute__((packed))
+#endif
+
+
 namespace RType::Protocol {
 
     // ============================================================================
@@ -25,7 +33,7 @@ namespace RType::Protocol {
         uint8_t  message_type;   ///< Type of message
         uint8_t  flags;          ///< Message flags
         uint16_t payload_size;   ///< Size of payload following header
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Packet flags
@@ -69,6 +77,9 @@ namespace RType::Protocol {
         SERVER_INFO       = 0x10,
         CLIENT_LIST       = 0x11,
         START_GAME        = 0x12,
+        REQUEST_INSTANCE  = 0x13, // Client requests a new instance (lobby+game)
+        INSTANCE_CREATED  = 0x14, // Server informs client that instance was created (port)
+        INSTANCE_LIST     = 0x15, // Server sends list of instances
     };
 
     /**
@@ -107,7 +118,7 @@ namespace RType::Protocol {
     struct ClientConnect {
         char player_name[32];    ///< Player name (null-terminated)
         uint32_t client_version; ///< Client version
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Player spawn message (sent to the owning client)
@@ -117,7 +128,7 @@ namespace RType::Protocol {
         uint32_t server_entity;  ///< Server internal entity id (optional mapping)
         float x, y;              ///< Spawn position
         float health;            ///< Initial health
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Enemy spawn message (sent to other clients)
@@ -127,7 +138,7 @@ namespace RType::Protocol {
         uint32_t server_entity;  ///< Server internal entity id
         float x, y;              ///< Spawn position
         float health;            ///< Initial health
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Server acceptance response
@@ -136,7 +147,8 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Assigned player ID
         uint32_t session_id;     ///< Session identifier
         float spawn_x, spawn_y;  ///< Initial spawn position
-    } __attribute__((packed));
+        uint8_t multi_instance;
+    } PACKED;
 
     /**
      * @brief Client ready signal
@@ -144,7 +156,7 @@ namespace RType::Protocol {
     struct ClientReady {
         uint32_t player_id;      ///< Player ID confirming readiness
         uint8_t ready_state;     ///< 1 = ready, 0 = not ready
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Client disconnect signal
@@ -152,7 +164,7 @@ namespace RType::Protocol {
     struct ClientDisconnect {
         uint32_t player_id;      ///< Player ID disconnecting
         uint8_t reason;          ///< Disconnect reason (0=voluntary, 1=timeout, 2=error)
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Player information for client list
@@ -161,7 +173,7 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Player ID
         uint8_t ready_state;     ///< 1 = ready, 0 = not ready
         char name[32];           ///< Player name (null-terminated)
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Client list update message
@@ -169,21 +181,39 @@ namespace RType::Protocol {
     struct ClientListUpdate {
         uint8_t player_count;    ///< Number of players in the list
         PlayerInfo players[8];   ///< Array of player info (max 8 players)
-    } __attribute__((packed));
+    } PACKED;
+    
+    /**
+     * @brief Information about a running instance
+     */
+    struct InstanceInfo {
+        uint16_t port;          ///< UDP port where instance is running
+        uint8_t status;         ///< 0=waiting,1=running
+        char name[24];          ///< Optional name (null-terminated)
+    } PACKED;
+
+    struct InstanceList {
+        uint8_t instance_count; ///< Number of instances
+        InstanceInfo instances[8];
+    } PACKED;
+
+    struct InstanceCreated {
+        uint16_t port;          ///< Port for the newly created instance
+    } PACKED;
 
     /**
      * @brief Start game signal message
      */
     struct StartGame {
         uint32_t timestamp;      ///< Server timestamp when game starts
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Game seed message for deterministic gameplay
      */
     struct GameSeed {
         uint32_t seed;           ///< Random seed for game synchronization
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Position update message
@@ -193,7 +223,7 @@ namespace RType::Protocol {
         float x, y;              ///< Position coordinates
         float vx, vy;            ///< Velocity (optional)
         uint32_t timestamp;      ///< Client timestamp
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Player input message (client -> server)
@@ -202,7 +232,7 @@ namespace RType::Protocol {
         uint32_t player_token;   ///< Player session token
         uint8_t input_state;     ///< Bitfield: bit 0=up, 1=down, 2=left, 3=right
         uint32_t timestamp;      ///< Client timestamp
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Entity creation message
@@ -212,7 +242,7 @@ namespace RType::Protocol {
         uint8_t entity_type;     ///< Type of entity
         float x, y;              ///< Initial position
         float health;            ///< Initial health
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Entity destruction message
@@ -220,7 +250,7 @@ namespace RType::Protocol {
     struct EntityDestroy {
         uint32_t entity_id;      ///< Entity to destroy
         uint8_t reason;          ///< Destruction reason
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Player shooting message
@@ -230,7 +260,7 @@ namespace RType::Protocol {
         float start_x, start_y;  ///< Bullet start position
         float dir_x, dir_y;      ///< Bullet direction
         uint8_t weapon_type;     ///< Type of weapon used
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Ping message
@@ -238,7 +268,7 @@ namespace RType::Protocol {
     struct Ping {
         uint32_t timestamp;      ///< Client timestamp
         uint32_t sequence;       ///< Ping sequence number
-    } __attribute__((packed));
+    } PACKED;
 
     /**
      * @brief Pong response
@@ -247,7 +277,7 @@ namespace RType::Protocol {
         uint32_t timestamp;      ///< Original client timestamp
         uint32_t sequence;       ///< Original sequence number
         uint32_t server_time;    ///< Server timestamp
-    } __attribute__((packed));
+    } PACKED;
 
     // ============================================================================
     // Serialization Helpers
@@ -381,3 +411,7 @@ namespace RType::Protocol {
     bool validate_packet(const char* data, size_t size);
 
 } // namespace RType::Protocol
+
+#if defined(_MSC_VER)
+  #pragma pack(pop)
+#endif

@@ -141,8 +141,14 @@ void PUpAnimationSys::createText(registry &r)
     r.emplace_component<animationText>(textEnt);
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<PUpAnimationSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new PUpAnimationSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

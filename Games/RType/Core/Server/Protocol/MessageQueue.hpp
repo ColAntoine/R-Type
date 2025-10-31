@@ -11,6 +11,7 @@ namespace RType::Network {
     // Simple container for received packets pushed by UdpServer
     struct ReceivedPacket {
         std::string session_id; // connection id (address:port)
+        uint16_t server_port = 0; // local server port that received this packet
         std::vector<char> data; // raw dispatcher data (message_type + payload)
     };
 

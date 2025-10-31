@@ -124,7 +124,7 @@ mkdir -p UI/Components
 cmake_minimum_required(VERSION 3.10)
 project(MyGame VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Include ECS library
@@ -429,8 +429,8 @@ private:
 public:
     bool initialize() {
         // 1. Load ECS library
-        DLLoader loader;
-        loader.load_components_from_so("../ECS/build/libECS.so", ecs_registry_);
+        ILoader loader;
+        loader.load_components("../ECS/build/libECS.so", ecs_registry_);
         
         // 2. Register services
         service_manager_.register_service<InputService>(event_manager_);

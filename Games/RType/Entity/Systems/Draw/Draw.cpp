@@ -24,11 +24,24 @@ void DrawSystem::update(registry& r, float dt) {
         // Drawables are centered on the entity position (same convention as AnimationSystem)
         int drawX = (int)std::round(p.x - d.w / 2.0f);
         int drawY = (int)std::round(p.y - d.h / 2.0f);
-        RenderManager::instance().draw_rectangle(drawX, drawY, (int)d.w, (int)d.h,
-                     (Color){d.r, d.g, d.b, d.a});
+        const Color col{
+            static_cast<unsigned char>(d.r),
+            static_cast<unsigned char>(d.g),
+            static_cast<unsigned char>(d.b),
+            static_cast<unsigned char>(d.a)
+        };
+        RenderManager::instance().draw_rectangle(drawX, drawY, (int)d.w, (int)d.h, col);
     }
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<DrawSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new DrawSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

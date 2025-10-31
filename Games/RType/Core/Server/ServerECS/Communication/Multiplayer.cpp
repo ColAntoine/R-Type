@@ -2,11 +2,13 @@
 #include "ServerECS/ServerECS.hpp"
 #include "ServerECS/Communication/Lobby.hpp"
 #include "ServerECS/Communication/InGame.hpp"
+#include "Network/UDPServer.hpp"
+#include "Network/Session.hpp"
 #include <iostream>
 
 namespace RType::Network {
 
-Multiplayer::Multiplayer(ServerECS &ecs) : ecs_(ecs) {
+Multiplayer::Multiplayer(ServerECS &ecs, int maxLobbies, int maxPlayers) : ecs_(ecs), max_lobbies_(maxLobbies), max_players_(maxPlayers) {
     lobby_ = std::make_unique<Lobby>(ecs_);
     ingame_ = std::make_unique<InGame>(ecs_);
 }
@@ -63,9 +65,31 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     // Game-phase routing
     using RType::Protocol::GameMessage;
     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_DISCONNECT)) {
-        if (ingame_) ingame_->handle_client_disconnect(session_id, payload);
+        if (ingame_) lobby_->handle_client_disconnect(session_id, payload);
         return;
     }
+    if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_READY)) {
+        lobby_->handle_client_ready(session_id, payload);
+        return;
+    }
+    if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_UNREADY)) {
+        lobby_->handle_client_unready(session_id, payload);
+        return;
+    }
+
+    if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
+        // Client asks the front server to create a new instance (lobby+game)
+        std::cout << "[Multiplayer] REQUEST_INSTANCE from " << session_id << std::endl;
+        if (ecs_.instance_request_cb_) {
+            ecs_.instance_request_cb_(session_id);
+        } else {
+            std::cout << "[Multiplayer] Instance requests not supported on this server" << std::endl;
+        }
+        return;
+    }
+
+    // Check for PLAYER_INPUT game message
+    using RType::Protocol::GameMessage;
     if (msg_type == static_cast<uint8_t>(GameMessage::PLAYER_INPUT)) {
         if (ingame_) ingame_->handle_player_input(session_id, payload);
         return;

@@ -97,8 +97,8 @@ void STATE_NAME_CLASS::enter()
 {
     std::cout << "[STATE_NAME_CLASS] Entering state" << std::endl;
     
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    _systemLoader.load_components("build/lib/libECS.so", _registry);
+    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", ILoader::RenderSystem);
     
     setup_ui();
     _initialized = true;
@@ -140,7 +140,7 @@ void STATE_NAME_CLASS::render()
     if (!_initialized)
         return;
     
-    this->_systemLoader.update_all_systems(this->_registry, 0.0f, DLLoader::RenderSystem);
+    this->_systemLoader.update_all_systems(this->_registry, 0.0f, ILoader::RenderSystem);
 }
 
 void STATE_NAME_CLASS::update(float delta_time)

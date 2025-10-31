@@ -21,7 +21,14 @@ void PositionSystem::update(registry& r, float dt) {
     }
 }
 
-extern "C"
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<PositionSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new PositionSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

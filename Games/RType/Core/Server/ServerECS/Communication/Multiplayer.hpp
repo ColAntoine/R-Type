@@ -26,7 +26,7 @@ class InGame;
  */
 class Multiplayer {
     public:
-        Multiplayer(ServerECS &ecs);
+        Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 2);
         ~Multiplayer();
 
         // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts
@@ -45,6 +45,8 @@ class Multiplayer {
     private:
         ServerECS &ecs_;
         UdpServer* udp_server_{nullptr};
+        int max_lobbies_{0};
+        int max_players_{2};
 
     // Split lobby / in-game handlers (forward-declared above in namespace)
     std::unique_ptr<Lobby> lobby_;

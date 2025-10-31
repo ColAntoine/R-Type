@@ -39,7 +39,7 @@ The **R-Type Client** is a networked multiplayer game client built on a modern s
   - `ServiceManager`: Dependency injection container for services
   - `GameStateManager`: State machine for game flow
   - `registry`: ECS registry for game entities
-  - `DLLoader`: Dynamic library loader for ECS systems
+  - `ILoader`: Dynamic library loader for ECS systems
 
 #### 2. `Core/EventManager.hpp/cpp`
 - **Purpose**: Event system backbone
@@ -367,7 +367,7 @@ Server Update Received
 The R-Type client uses the shared ECS library for entity management. For core ECS concepts, component definitions and usage examples please refer to `../../ECS/README.md`.
 
 In short:
-- The client loads the ECS components library at startup and uses `DLLoader` to load game systems when required.
+- The client loads the ECS components library at startup and uses `ILoader` to load game systems when required.
 - Game-specific components and systems live under `Entity/Components/` and `Entity/Systems/`.
 
 

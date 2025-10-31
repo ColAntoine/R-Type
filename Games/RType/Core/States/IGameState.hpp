@@ -37,7 +37,8 @@ public:
         Lobby,
         AudioSettings,
         VideoSettings,
-        BindingsSettings
+        BindingsSettings,
+        LoadingVideo
     };
 
     virtual ~IGameState() = default;

@@ -8,12 +8,26 @@
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
 void Lobby::enter()
 {
     std::cout << "[Lobby] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
+
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     setup_ui();
     subscribe_to_ui_event();
@@ -62,11 +76,11 @@ void Lobby::resume()
     std::cout << "[Lobby] Resuming state" << std::endl;
 }
 
-void Lobby::update(__attribute_maybe_unused__ float delta_time)
+void Lobby::update(ATTR_MAYBE_UNUSED float delta_time)
 {
     if (game_start_ && _stateManager) {
         _stateManager->pop_state();
-        _stateManager->push_state("InGameMultiplayer");
+        _stateManager->push_state("InGame");
         _stateManager->push_state("InGameHud");
     }
 }
@@ -219,14 +233,16 @@ void Lobby::toggle_ready_state() {
         return;
     }
 
+    // Identify our own player id using the session token stored in the UDP client
     uint32_t player_id = 0;
-    if (!current_players_.empty()) {
-        // TODO: Better way to identify which player is "us"
-        player_id = current_players_[0].player_id;
+    if (client) {
+        player_id = client->get_session_token();
     }
-
-    if (player_id == 0)
-        std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+    if (player_id == 0) {
+        // Fallback: try first entry from server list (legacy behavior)
+        if (!current_players_.empty()) player_id = current_players_[0].player_id;
+        if (player_id == 0) std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
+    }
 
     // Create ClientReady message
     RType::Protocol::ClientReady ready_msg;
@@ -289,9 +305,24 @@ void Lobby::on_back_clicked() {
         }
         client->disconnect();
     }
-    // Then transition back to Connection state
+    // Go back to MainMenu, popping all states until we reach a menu state
     if (_stateManager) {
+        // Pop current state (Lobby)
         _stateManager->pop_state();
-        _stateManager->push_state("Connection");
+        
+        // Keep popping until we reach a main menu state or empty
+        while (!_stateManager->is_empty()) {
+            std::string current = _stateManager->get_current_state_name();
+            if (current == "MainMenu" || current == "Settings" || current == "Credits" || current == "MenusBackground") {
+                // We're back at a main menu, stop here
+                break;
+            }
+            _stateManager->pop_state();
+        }
+        
+        // If we popped everything, push MainMenu
+        if (_stateManager->is_empty()) {
+            _stateManager->push_state("MainMenu");
+        }
     }
 }

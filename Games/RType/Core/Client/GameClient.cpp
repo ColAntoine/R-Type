@@ -1,3 +1,15 @@
+#ifdef _WIN32
+  #ifndef WIN32_LEAN_AND_MEAN
+  #define WIN32_LEAN_AND_MEAN
+  #endif
+  #ifndef NOMINMAX
+  #define NOMINMAX
+  #endif
+  #include <winsock2.h>
+  #include <ws2tcpip.h>
+#endif
+
+#include <raylib.h>
 #include "GameClient.hpp"
 #include "Network/UDPClient.hpp"
 #include "Core/Client/Network/ClientService.hpp"
@@ -5,6 +17,8 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "ECS/Audio/AudioManager.hpp"
+#include "Core/Config/Config.hpp"
+#include "Core/KeyBindingManager/KeyBindingManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -20,6 +34,8 @@
 #include "Core/States/AudioSettings/AudioSettings.hpp"
 #include "Core/States/VideoSettings/VideoSettings.hpp"
 #include "Core/States/BindsSettings/BindsSettings.hpp"
+#include "Core/States/Browser/Browser.hpp"
+#include "Core/States/LoadingVideo/LoadingVideo.hpp"
 
 #include "Constants.hpp"
 
@@ -30,12 +46,25 @@
 #include <chrono>
 #include <string>
 
+
 auto &renderManager = RenderManager::instance();
 auto &messageManager = MessagingManager::instance();
 auto &audioManager = AudioManager::instance();
+auto &config = Config::instance();
+auto &keyBindingManager = KeyBindingManager::instance();
 
 GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
+
+void GameClient::set_bindings()
+{
+    auto controls = Config::instance().getSection("controls");
+
+    for (const auto& [action, keyStr] : controls) {
+        int keyCode = keyBindingManager.stringToKeyCode(keyStr);
+        keyBindingManager.setKeyBinding(action, keyCode);
+    }
+}
 
 void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
@@ -44,7 +73,7 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame for SOLO mode (no shared registry - uses local registry)
+    // Register InGame state with shared registry for multiplayer
     _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(nullptr, nullptr);
     });
@@ -65,6 +94,8 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
+    _stateManager.register_state<Browser>("Browser");
+    _stateManager.register_state<LoadingVideoState>("LoadingVideo");
 }
 
 bool GameClient::init()
@@ -91,13 +122,12 @@ bool GameClient::init()
     register_states();
 
     // Start with loading screen
-    _stateManager.push_state("MenusBackground");
-    _stateManager.push_state("MainMenu");
+    _stateManager.push_state("LoadingVideo");
 
     // Load components into shared registry BEFORE starting network manager
     // This ensures components are registered when PLAYER_SPAWN messages arrive
     std::cout << "[GameClient] Loading components into shared registry..." << std::endl;
-    ecs_loader_.load_components_from_so("build/lib/libECS.so", ecs_registry_);
+    ecs_loader_.load_components("build/lib/libECS.so", ecs_registry_);
 
     // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
@@ -111,6 +141,13 @@ bool GameClient::init()
     // Set network manager in service for states to access
     RType::Network::set_network_manager(network_manager_.get());
 
+    if (!config.openConfigFile(RTYPE_PATH_FILE_CONFIG)) {
+        std::cerr << "[GameClient] Failed to open config file: " << RTYPE_PATH_FILE_CONFIG << std::endl;
+        return false;
+    }
+
+    set_bindings();
+
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
 
@@ -121,17 +158,19 @@ void GameClient::run()
 {
     std::cout << "GameClient::run" << std::endl;
 
-    float last_frame_time = 0.0f;
+    double last_frame_time = 0.0f;
 
     while (_running && !renderManager.window_should_close() && !_stateManager.is_empty()) {
         // Calculate delta time
-        float current_time = GetTime();
-        float delta_time = current_time - last_frame_time;
+        double current_time = GetTime();
+        double delta_time = current_time - last_frame_time;
         last_frame_time = current_time;
 
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
+        keyBindingManager.checkAndEmitKeyEvents();
+        keyBindingManager.checkAndEmitMouseEvents();
         messageManager.update();
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
@@ -177,4 +216,4 @@ void GameClient::shutdown()
 }
 
 registry &GameClient::GetRegistry() { return ecs_registry_; }
-DLLoader &GameClient::GetDLLoader() { return ecs_loader_; }
+ILoader &GameClient::GetILoader() { return ecs_loader_; }
