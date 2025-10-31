@@ -28,11 +28,14 @@ bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
     dlerror();
 
     // Get the create_system function
-    typedef std::unique_ptr<ISystem> (*create_system_t)();
-    create_system_t create_system = reinterpret_cast<create_system_t>(dlsym(handle, "create_system"));
+    using create_system_t  = ISystem* (*)();
+    using destroy_system_t = void     (*)(ISystem*);
+
+    auto create_system  = reinterpret_cast<create_system_t>(dlsym(handle, "create_system"));
+    auto destroy_system = reinterpret_cast<destroy_system_t>(dlsym(handle, "destroy_system"));
 
     const char* dlsym_error = dlerror();
-    if (dlsym_error || !create_system) {
+    if (dlsym_error || !create_system || !destroy_system) {
         std::cerr << "Cannot load symbol create_system from " << so_path << ": "
                   << (dlsym_error ? dlsym_error : "Symbol not found") << std::endl;
         dlclose(handle);
@@ -40,26 +43,31 @@ bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
     }
 
     // Create the system instance
-    std::unique_ptr<ISystem> system;
+    ISystem*raw = nullptr;
     try {
-        system = create_system();
+        raw = create_system();
     } catch (const std::exception& e) {
         std::cerr << "Exception while creating system from " << so_path << ": " << e.what() << std::endl;
         dlclose(handle);
         return false;
     }
 
-    if (!system) {
+    if (!raw) {
         std::cerr << "Failed to create system from " << so_path << " (returned null)" << std::endl;
         dlclose(handle);
         return false;
     }
 
-    // Store the loaded system
+    // Wrap it in a unique_ptr with custom deleter that calls destroy_system (from the same DLL)
+    std::unique_ptr<ISystem, std::function<void(ISystem*)>> sys(raw, [destroy_system](ISystem* p){
+        if (p) destroy_system(p);
+    });
+
+    // Store
     ALoader::LoadedSystem loaded_sys;
-    loaded_sys.handle = handle;
-    loaded_sys.system = std::move(system);
-    loaded_sys.name = std::filesystem::path(so_path).stem().string();
+    loaded_sys.handle = reinterpret_cast<void*>(handle);
+    loaded_sys.system = std::move(sys);
+    loaded_sys.name   = std::filesystem::path(so_path).stem().string();
 
     systems.push_back(std::move(loaded_sys));
 

@@ -37,8 +37,8 @@ endif()
 # Project name and version
 project(ECS_Library VERSION 1.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include_directories(include ${CMAKE_SOURCE_DIR})
@@ -198,15 +198,6 @@ add_custom_command(TARGET ECS POST_BUILD
     COMMENT "Copying libECS.so to build/lib"
 )
 
-# Add system libraries (only if raylib is available since they depend on it)
-if (BUILD_UI_COMPONENTS)
-    add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
-    set_target_properties(position_system PROPERTIES
-        OUTPUT_NAME "position_system"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
-    )
-endforeach()
-
 # ------------------------------------------------------------------
 # ECS system plugins (shared) if raylib available
 # ------------------------------------------------------------------
@@ -229,23 +220,38 @@ if(BUILD_UI_COMPONENTS)
     endfunction()
 
     add_library(position_system   SHARED ${POSITION_SYSTEM_SOURCES})
-    set_target_properties(position_system PROPERTIES OUTPUT_NAME "position_system")
+    set_target_properties(position_system PROPERTIES 
+        OUTPUT_NAME "position_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
     _ecs_setup_plugin(position_system)
 
     add_library(collision_system  SHARED ${COLLISION_SYSTEM_SOURCES})
-    set_target_properties(collision_system PROPERTIES OUTPUT_NAME "collision_system")
+    set_target_properties(collision_system PROPERTIES 
+        OUTPUT_NAME "collision_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
     _ecs_setup_plugin(collision_system)
 
     add_library(sprite_system     SHARED ${SPRITE_SYSTEM_SOURCES})
-    set_target_properties(sprite_system PROPERTIES OUTPUT_NAME "sprite_system")
+    set_target_properties(sprite_system PROPERTIES 
+        OUTPUT_NAME "sprite_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
     _ecs_setup_plugin(sprite_system)
 
     add_library(animation_system  SHARED ${ANIMATION_SYSTEM_SOURCES})
-    set_target_properties(animation_system PROPERTIES OUTPUT_NAME "animation_system")
+    set_target_properties(animation_system PROPERTIES 
+        OUTPUT_NAME "animation_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
     _ecs_setup_plugin(animation_system)
 
     add_library(render_UISystem   SHARED ${UI_SYSTEM_SOURCES})
-    set_target_properties(render_UISystem PROPERTIES OUTPUT_NAME "render_UISystem")
+    set_target_properties(render_UISystem PROPERTIES 
+        OUTPUT_NAME "render_UISystem"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
+    )
     _ecs_setup_plugin(render_UISystem)
 
     message(STATUS "Building ECS system plugins with raylib support")

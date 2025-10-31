@@ -24,7 +24,7 @@ void MainMenuState::enter()
         const std::string uiSys = "build/lib/systems/librender_UISystem.so";
     #endif
 
-    this- _systemLoader->load_components(ecsLib, _registry);
+    this->_systemLoader->load_components(ecsLib, _registry);
     this->_systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();

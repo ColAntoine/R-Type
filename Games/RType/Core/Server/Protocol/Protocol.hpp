@@ -146,6 +146,7 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Assigned player ID
         uint32_t session_id;     ///< Session identifier
         float spawn_x, spawn_y;  ///< Initial spawn position
+        uint8_t multi_instance;
     } PACKED;
 
     /**
