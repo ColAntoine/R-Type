@@ -1,7 +1,7 @@
 #include "NetworkManager.hpp"
 #include <iostream>
 
-NetworkManager::NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, DLLoader& loader)
+NetworkManager::NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, ILoader& loader)
     : client_(client), registry_(registry), loader_(loader), player_handler_(registry, loader), enemy_handler_(registry, loader)
 {
 }

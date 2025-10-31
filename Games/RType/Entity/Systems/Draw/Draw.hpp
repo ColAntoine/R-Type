@@ -15,6 +15,11 @@ public:
     const char* get_name() const override { return "DrawSystem"; }
 };
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system();
-}
+#if defined(_WIN32)
+  #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+  #define DLL_EXPORT extern "C"
+#endif
+
+DLL_EXPORT ISystem* create_system();
+DLL_EXPORT void     destroy_system(ISystem* ptr);

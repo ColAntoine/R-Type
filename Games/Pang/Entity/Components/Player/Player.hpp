@@ -9,7 +9,7 @@
 
 #include "ECS/Components/IComponent.hpp"
 #include "ECS/Components.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Registry.hpp"
 #include "Entity/Components/Invincibility/Invincibility.hpp"
 

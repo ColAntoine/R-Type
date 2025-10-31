@@ -10,7 +10,7 @@
 #include "Entity/Components/Health/Health.hpp"
 #include "Constants.hpp"
 
-EnemyHandler::EnemyHandler(registry& registry, DLLoader& loader)
+EnemyHandler::EnemyHandler(registry& registry, ILoader& loader)
     : registry_(registry), loader_(loader)
 {
 }

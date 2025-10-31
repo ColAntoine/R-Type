@@ -18,7 +18,7 @@ void PacketBuilder::begin_packet(uint8_t message_type, PacketFlags flags) {
     // Reserve space for header
     buffer_.resize(HEADER_SIZE);
     header_offset_ = 0;
-
+        
     // Fill header (payload_size will be set in finalize())
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer_.data());
     header->message_type = message_type;

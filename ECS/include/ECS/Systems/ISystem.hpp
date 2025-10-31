@@ -19,4 +19,5 @@ public:
 };
 
 // Factory function type for creating systems
-typedef std::unique_ptr<ISystem> (*create_system_t)();
+using create_system_t  = ISystem* (*)();
+using destroy_system_t = void      (*)(ISystem*);
