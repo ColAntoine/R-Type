@@ -99,7 +99,6 @@ void AGameState::subscribe_to_ui_event()
     _uiEventCallbackId = eventBus.subscribe(
         EventTypes::SCREEN_PARAMETERS_CHANGED,
         [this](ATTR_MAYBE_UNUSED const Event& event) {
-            std::cout << "Screen Parameter changed!!!" << std::endl;
             this->cleanup_ui();
             this->setup_ui();
         }

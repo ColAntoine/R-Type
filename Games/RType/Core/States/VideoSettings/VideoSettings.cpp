@@ -121,10 +121,12 @@ void VideoSettingsState::applyColorChange(MoveDirection direction)
             _colorModeIndex += 1;
     }
 
-    theme.setTheme(std::get<1>(_availableColorModes[_colorModeIndex]));
+    const auto& [name, palette, colorBlindMode] = _availableColorModes[_colorModeIndex];
+    theme.setTheme(palette, colorBlindMode);
 
     auto& eventBus = MessagingManager::instance().get_event_bus();
     Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
+    themeEvent.set("palette", palette);
     eventBus.emit(themeEvent);
 }
 

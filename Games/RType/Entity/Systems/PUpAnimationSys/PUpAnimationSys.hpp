@@ -21,6 +21,7 @@
 #include "ECS/Components/UIComponent.hpp"
 
 #include "Entity/Components/PUpAnimation/PUpAnimation.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 #include "Constants.hpp"
 
@@ -32,6 +33,9 @@ struct animationText : IComponent {};
 
 class PUpAnimationSys : public ISystem {
 public:
+    PUpAnimationSys();
+    ~PUpAnimationSys() override;
+
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "PUpAnimationSys"; }
 private:
@@ -48,6 +52,8 @@ private:
     entity _arrowEnt{0};
     float _arrowBaseY{0.0f};
     entity _textEnt{0};
+
+    EventBus::CallbackId _themeChangedCallbackId{0};
 };
 
 

@@ -4,6 +4,7 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Components.hpp"
 #include "UI/ColorPalette.hpp"
+#include "UI/ThemeManager.hpp"
 #include <string>
 #include <tuple>
 
@@ -42,8 +43,15 @@ class VideoSettingsState : public AGameState {
         };
 
         size_t _colorModeIndex;
-        const std::vector<std::tuple<std::string, ColorPalette>> _availableColorModes = {
-            {"Default", DefaultPalette},
-            {"BlackText", BlackText}
+        const std::vector<std::tuple<std::string, ColorPalette, ColorBlindMode>> _availableColorModes = {
+            {"Default", DefaultPalette, ColorBlindMode::Normal},
+            {"Protanopia", DefaultPalette, ColorBlindMode::Protanopia},
+            {"Deuteranopia", DefaultPalette, ColorBlindMode::Deuteranopia},
+            {"Tritanopia", DefaultPalette, ColorBlindMode::Tritanopia},
+            {"Protanomaly", DefaultPalette, ColorBlindMode::Protanomaly},
+            {"Deuteranomaly", DefaultPalette, ColorBlindMode::Deuteranomaly},
+            {"Tritanomaly", DefaultPalette, ColorBlindMode::Tritanomaly},
+            {"Achromatopsia", DefaultPalette, ColorBlindMode::Achromatopsia},
+            {"Monochromacy", DefaultPalette, ColorBlindMode::Monochromacy}
         };
 };
