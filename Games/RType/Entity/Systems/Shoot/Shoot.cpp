@@ -6,14 +6,12 @@
 */
 
 #include <memory>
-#include <raylib.h>
 #include <iostream>
 #include <algorithm>
 #include <string>
 
 #include "Shoot.hpp"
 
-#include <raylib.h>
 #include <cmath>
 #include "ECS/Renderer/RenderManager.hpp"
 
@@ -50,12 +48,13 @@ static void killEntity(std::vector<entity> ents, registry &r)
 void Shoot::checkShootIntention(registry & r)
 {
     auto *ctrl_arr = r.get_if<controllable>();
+    auto *input_arr = r.get_if<Input>();
     auto *weaponArr = r.get_if<Weapon>();
 
-    if (!ctrl_arr || !weaponArr) return;
+    if (!ctrl_arr || !weaponArr || !input_arr) return;
 
-    for (auto [ctrl, weapon, entity] : zipper(*ctrl_arr, *weaponArr)) {
-        if (IsKeyDown(KEY_SPACE)) {
+    for (auto [ctrl, weapon, input, entity] : zipper(*ctrl_arr, *weaponArr, *input_arr)) {
+        if (input.shoot) {
             weapon._wantsToFire = true;
             weapon._ownerId = entity;
         }

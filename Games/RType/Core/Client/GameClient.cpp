@@ -5,6 +5,8 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "ECS/Audio/AudioManager.hpp"
+#include "Core/Config/Config.hpp"
+#include "Core/KeyBindingManager/KeyBindingManager.hpp"
 
 #include "Core/States/MainMenu/MainMenu.hpp"
 #include "Core/States/InGame/InGame.hpp"
@@ -20,6 +22,8 @@
 #include "Core/States/AudioSettings/AudioSettings.hpp"
 #include "Core/States/VideoSettings/VideoSettings.hpp"
 #include "Core/States/BindsSettings/BindsSettings.hpp"
+#include "Core/States/Browser/Browser.hpp"
+#include "Core/States/LoadingVideo/LoadingVideo.hpp"
 
 #include "Constants.hpp"
 
@@ -33,9 +37,21 @@
 auto &renderManager = RenderManager::instance();
 auto &messageManager = MessagingManager::instance();
 auto &audioManager = AudioManager::instance();
+auto &config = Config::instance();
+auto &keyBindingManager = KeyBindingManager::instance();
 
 GameClient::GameClient(float scale, bool windowed) : _scale(scale), _windowed(windowed) {}
 GameClient::~GameClient() {}
+
+void GameClient::set_bindings()
+{
+    auto controls = Config::instance().getSection("controls");
+
+    for (const auto& [action, keyStr] : controls) {
+        int keyCode = keyBindingManager.stringToKeyCode(keyStr);
+        keyBindingManager.setKeyBinding(action, keyCode);
+    }
+}
 
 void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
@@ -44,11 +60,11 @@ void GameClient::register_states() {
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame for SOLO mode (no shared registry - uses local registry)
+    // Register InGame state with shared registry for multiplayer
     _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(nullptr, nullptr);
     });
-    
+
     // Register InGame for MULTIPLAYER mode (with shared registry)
     _stateManager.register_state_with_factory("InGameMultiplayer", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);
@@ -65,6 +81,8 @@ void GameClient::register_states() {
     _stateManager.register_state<VideoSettingsState>("VideoSettings");
     _stateManager.register_state<BindsSettingsState>("BindsSettings");
     _stateManager.register_state<InGamePauseState>("InGamePause");
+    _stateManager.register_state<Browser>("Browser");
+    _stateManager.register_state<LoadingVideoState>("LoadingVideo");
 }
 
 bool GameClient::init()
@@ -91,8 +109,7 @@ bool GameClient::init()
     register_states();
 
     // Start with loading screen
-    _stateManager.push_state("MenusBackground");
-    _stateManager.push_state("MainMenu");
+    _stateManager.push_state("LoadingVideo");
 
     // Load components into shared registry BEFORE starting network manager
     // This ensures components are registered when PLAYER_SPAWN messages arrive
@@ -110,6 +127,13 @@ bool GameClient::init()
 
     // Set network manager in service for states to access
     RType::Network::set_network_manager(network_manager_.get());
+
+    if (!config.openConfigFile(RTYPE_PATH_FILE_CONFIG)) {
+        std::cerr << "[GameClient] Failed to open config file: " << RTYPE_PATH_FILE_CONFIG << std::endl;
+        return false;
+    }
+
+    set_bindings();
 
     _running = true;
     std::cout << "[GameClient] Initialized successfully (No server required for Solo mode)" << std::endl;
@@ -132,6 +156,8 @@ void GameClient::run()
         // Cap delta time to prevent huge jumps
         if (delta_time > 0.1f) delta_time = 0.1f;
 
+        keyBindingManager.checkAndEmitKeyEvents();
+        keyBindingManager.checkAndEmitMouseEvents();
         messageManager.update();
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)

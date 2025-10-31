@@ -39,7 +39,7 @@ void HealthSys::checkAndKillEnemy(registry &r)
             entity anim = r.spawn_entity();
             float frame_w = 105.0f;
             float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, std::string(RTYPE_PATH_ASSETS) + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
@@ -72,7 +72,7 @@ void HealthSys::checkAndKillPlayer(registry &r)
             entity anim = r.spawn_entity();
             float frame_w = 105.0f;
             float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, std::string(RTYPE_PATH_ASSETS) + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }

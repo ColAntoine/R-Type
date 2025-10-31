@@ -219,6 +219,13 @@ void RenderManager::unload_font()
 void RenderManager::set_window_size(int width, int height)
 {
     SetWindowSize(width, height);
+
+    if (width < _monitorWidth || height < _monitorHeight) {
+        SetWindowState(FLAG_WINDOW_RESIZABLE | FLAG_WINDOW_UNDECORATED);
+        SetWindowPosition(_monitorWidth / 2 - width / 2, _monitorHeight / 2 - height / 2);
+    } else {
+        SetWindowState(FLAG_FULLSCREEN_MODE);
+    }
     _winInfos.setWidth(width);
     _winInfos.setHeight(height);
 }

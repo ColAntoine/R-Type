@@ -1,4 +1,5 @@
 #include "Core/Client/GameClient.hpp"
+#include "Constants.hpp"
 #include <iostream>
 #include <string>
 

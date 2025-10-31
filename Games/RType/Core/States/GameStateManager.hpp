@@ -13,6 +13,9 @@
 #include <unordered_map>
 #include <functional>
 #include <iostream>
+#include <vector>
+#include <mutex>
+#include <atomic>
 
 class GameStateManager {
     private:
@@ -33,8 +36,11 @@ class GameStateManager {
             bool pause_current;
         };
 
-        std::vector<StateOperation> pending_operations_;
-        bool processing_states_{false};
+    std::vector<StateOperation> pending_operations_;
+    // Protects pending_operations_ and state_stack_ for calls coming from other threads
+    mutable std::mutex mutex_;
+    // When true, states are being processed (update/render/handle_input)
+    std::atomic_bool processing_states_{false};
 
     public:
         GameStateManager() = default;

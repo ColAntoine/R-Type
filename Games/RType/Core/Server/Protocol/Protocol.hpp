@@ -36,6 +36,17 @@ namespace RType::Protocol {
         FRAGMENT = 0x02,    ///< Part of fragmented message
     };
 
+    /**
+     * @brief Input state flags (bitfield for PlayerInput)
+     */
+    enum class InputFlags : uint8_t {
+        NONE  = 0x00,
+        UP    = 0x01,  // Bit 0
+        DOWN  = 0x02,  // Bit 1
+        LEFT  = 0x04,  // Bit 2
+        RIGHT = 0x08,  // Bit 3
+    };
+
     // ============================================================================
     // Message Types
     // ============================================================================
@@ -58,6 +69,9 @@ namespace RType::Protocol {
         SERVER_INFO       = 0x10,
         CLIENT_LIST       = 0x11,
         START_GAME        = 0x12,
+        REQUEST_INSTANCE  = 0x13, // Client requests a new instance (lobby+game)
+        INSTANCE_CREATED  = 0x14, // Server informs client that instance was created (port)
+        INSTANCE_LIST     = 0x15, // Server sends list of instances
     };
 
     /**
@@ -74,6 +88,7 @@ namespace RType::Protocol {
         // Player actions
         PLAYER_JOIN       = 0xC5,
         PLAYER_LEAVE      = 0xC6,
+    PLAYER_INPUT      = 0xC9,        // Client input (arrow keys)
         POSITION_UPDATE   = 0xC7,
         PLAYER_SHOOT      = 0xC8,
 
@@ -123,6 +138,7 @@ namespace RType::Protocol {
         uint32_t player_id;      ///< Assigned player ID
         uint32_t session_id;     ///< Session identifier
         float spawn_x, spawn_y;  ///< Initial spawn position
+        uint8_t multi_instance;  ///< 1 if server supports multi-instance, 0 otherwise
     } __attribute__((packed));
 
     /**
@@ -159,6 +175,24 @@ namespace RType::Protocol {
     } __attribute__((packed));
 
     /**
+     * @brief Information about a running instance
+     */
+    struct InstanceInfo {
+        uint16_t port;          ///< UDP port where instance is running
+        uint8_t status;         ///< 0=waiting,1=running
+        char name[24];          ///< Optional name (null-terminated)
+    } __attribute__((packed));
+
+    struct InstanceList {
+        uint8_t instance_count; ///< Number of instances
+        InstanceInfo instances[8];
+    } __attribute__((packed));
+
+    struct InstanceCreated {
+        uint16_t port;          ///< Port for the newly created instance
+    } __attribute__((packed));
+
+    /**
      * @brief Start game signal message
      */
     struct StartGame {
@@ -179,6 +213,15 @@ namespace RType::Protocol {
         uint32_t entity_id;      ///< Entity ID
         float x, y;              ///< Position coordinates
         float vx, vy;            ///< Velocity (optional)
+        uint32_t timestamp;      ///< Client timestamp
+    } __attribute__((packed));
+
+    /**
+     * @brief Player input message (client -> server)
+     */
+    struct PlayerInput {
+        uint32_t player_token;   ///< Player session token
+        uint8_t input_state;     ///< Bitfield: bit 0=up, 1=down, 2=left, 3=right
         uint32_t timestamp;      ///< Client timestamp
     } __attribute__((packed));
 

@@ -10,7 +10,7 @@
 all: build
 
 build:
-	mkdir -p build && cd build && cmake .. && cmake --build . && cp -r bin/* ../
+	mkdir -p build && cd build && cmake .. && make -j$(nproc)
 
 clean:
 	@echo "Removing object files (.o)..."

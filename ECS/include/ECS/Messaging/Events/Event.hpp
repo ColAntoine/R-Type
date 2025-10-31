@@ -18,6 +18,7 @@ namespace EventTypes {
     const std::string ENTITY_DESTROYED = "ENTITY_DESTROYED";
     const std::string COLLISION_ENTER = "COLLISION_ENTER";
     const std::string COLLISION_EXIT = "COLLISION_EXIT";
+    const std::string SET_KEY_BINDINGS = "SET_KEY_BINDINGS";
 }
 struct Event {
     std::string type;
