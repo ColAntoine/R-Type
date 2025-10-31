@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 
-# Setup vcpkg if not defined
+# =============================
+#   VCPKG AUTOMATIC SETUP
+# =============================
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
     if(NOT EXISTS "${VCPKG_ROOT}")
@@ -13,6 +15,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         if(NOT git_result EQUAL 0)
             message(FATAL_ERROR "Failed to clone vcpkg")
         endif()
+
         # Bootstrap vcpkg
         if(WIN32)
             execute_process(
@@ -31,7 +34,7 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             message(FATAL_ERROR "Failed to bootstrap vcpkg")
         endif()
 
-        # Install vcpkg dependencies from vcpkg.json
+        # Install vcpkg dependencies
         message(STATUS "Installing vcpkg dependencies...")
         execute_process(
             COMMAND ${VCPKG_ROOT}/vcpkg install
@@ -46,24 +49,25 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
         CACHE STRING "Vcpkg toolchain file")
 endif()
 
+# =============================
+#   PROJECT SETUP
+# =============================
 project(RType)
 
-# Build ECS if not already built (standalone mode)
+# Build ECS if not already built
 if(NOT TARGET ECS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../ECS ${CMAKE_BINARY_DIR}/ECS_build)
 endif()
 
-# Set the project name
 set(RTYPE_PROJECT_NAME "RType")
 
-# Collect all source files
-file(GLOB_RECURSE RTYPE_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-)
-list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/external/.*")  # Exclue external (vcpkg)
-list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Constants.cpp")  # Ajout Constants.cpp
+# =============================
+#   SOURCE COLLECTION
+# =============================
+file(GLOB_RECURSE RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/external/.*")
+list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Constants.cpp")
 
-# Collect system source files separately
 file(GLOB_RECURSE GAME_SYSTEM_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Entity/Systems/*.cpp")
 list(REMOVE_ITEM RTYPE_SOURCES ${GAME_SYSTEM_SOURCES})
 list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/main_client\\.cpp")
@@ -71,18 +75,20 @@ list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/main_server\\.cpp")
 list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/Core/Server/.*")
 list(APPEND RTYPE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/Protocol/Protocol.cpp")
 
-# Collect all header files
 file(GLOB_RECURSE RTYPE_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
 )
-list(FILTER RTYPE_HEADERS EXCLUDE REGEX ".*/external/.*")  # Exclue external
+list(FILTER RTYPE_HEADERS EXCLUDE REGEX ".*/external/.*")
 
-# Filter out test files if any
 list(FILTER RTYPE_SOURCES EXCLUDE REGEX ".*/test/.*")
 list(FILTER GAME_SYSTEM_SOURCES EXCLUDE REGEX ".*/test/.*")
+
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${RTYPE_SOURCES} ${RTYPE_HEADERS})
 
+# =============================
+#   INCLUDE DIRECTORIES
+# =============================
 set(RTYPE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Core
@@ -95,7 +101,9 @@ set(RTYPE_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/UI
 )
 
-# --- RType static library ---
+# =============================
+#   RType STATIC LIBRARY
+# =============================
 add_library(${RTYPE_PROJECT_NAME} STATIC ${RTYPE_SOURCES})
 set_target_properties(${RTYPE_PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -105,17 +113,12 @@ target_compile_definitions(${RTYPE_PROJECT_NAME} PRIVATE REPO_ROOT="${REPO_ROOT}
 
 target_include_directories(${RTYPE_PROJECT_NAME} PUBLIC ${RTYPE_INCLUDE_DIRS})
 
-# IMPORTANT: propagate Windows-safe defines (NOGDI, NOMINMAX, _WIN32_WINNT, etc.)
-# via the interface target created in the root CMakeLists.txt
-# This fixes Rectangle/CloseWindow/ShowCursor conflicts inside this library.
 target_link_libraries(${RTYPE_PROJECT_NAME} PUBLIC
     $<$<TARGET_EXISTS:raylib>:raylib>
     $<$<TARGET_EXISTS:glfw>:glfw>
     $<$<TARGET_EXISTS:win_sanity>:win_sanity>
+    ECS
 )
-
-# Link with ECS library
-target_link_libraries(${RTYPE_PROJECT_NAME} PUBLIC ECS)
 target_include_directories(${RTYPE_PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
 )
@@ -127,7 +130,9 @@ target_compile_options(${RTYPE_PROJECT_NAME} PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4>
 )
 
-# --- Build each game system as a separate shared lib (plugins) ---
+# =============================
+#   BUILD GAME SYSTEMS (PLUGINS)
+# =============================
 foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     get_filename_component(SYSTEM_NAME ${SYSTEM_FILE} NAME_WE)
     set(GAME_SYSTEM_NAME "game_${SYSTEM_NAME}")
@@ -135,76 +140,94 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     add_library(${GAME_SYSTEM_NAME} SHARED ${SYSTEM_FILE})
 
     target_include_directories(${GAME_SYSTEM_NAME} PUBLIC ${RTYPE_INCLUDE_DIRS})
-
     target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC
         $<$<TARGET_EXISTS:raylib>:raylib>
         $<$<TARGET_EXISTS:glfw>:glfw>
         $<$<TARGET_EXISTS:win_sanity>:win_sanity>
         ${RTYPE_PROJECT_NAME}
+        ECS
     )
-
-    # Link with ECS library
-    target_link_libraries(${GAME_SYSTEM_NAME} PUBLIC ECS)
     target_include_directories(${GAME_SYSTEM_NAME} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
     )
-
     target_compile_features(${GAME_SYSTEM_NAME} PUBLIC cxx_std_20)
 
-    # Set output directory for game system libraries (dans Games/RType/lib/systems)
+    # Output directory
+    set(SYSTEM_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/systems)
     set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib/systems
+        RUNTIME_OUTPUT_DIRECTORY ${SYSTEM_OUTPUT_DIR}
+        LIBRARY_OUTPUT_DIRECTORY ${SYSTEM_OUTPUT_DIR}
+        ARCHIVE_OUTPUT_DIRECTORY ${SYSTEM_OUTPUT_DIR}
     )
+
+    # Windows-specific: add prefix "lib" and copy DLLs
+    if(WIN32)
+        set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES PREFIX "lib")
+        add_custom_command(TARGET ${GAME_SYSTEM_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:${GAME_SYSTEM_NAME}>"
+                "${SYSTEM_OUTPUT_DIR}/"
+        )
+    endif()
 
     message(STATUS "Building game system: ${GAME_SYSTEM_NAME} from ${SYSTEM_FILE}")
 endforeach()
 
-    find_package(raylib QUIET)
-    find_package(glfw3 QUIET)
-    find_package(Threads REQUIRED)
-    find_package(asio CONFIG REQUIRED)
+# =============================
+#   DEPENDENCIES
+# =============================
+find_package(raylib QUIET)
+find_package(glfw3 QUIET)
+find_package(Threads REQUIRED)
+find_package(asio CONFIG REQUIRED)
 
-    # Build client executable
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_client.cpp")
-        add_executable(r-type_client main_client.cpp)
-        target_link_libraries(r-type_client PRIVATE
-            ${RTYPE_PROJECT_NAME}
-            ECS
-            $<$<TARGET_EXISTS:raylib>:raylib>
-            $<$<TARGET_EXISTS:glfw>:glfw>
-            dl
-        )
-        target_include_directories(r-type_client PRIVATE
-            ${RTYPE_INCLUDE_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
-        )
-        set_target_properties(r-type_client PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
-        )
-    endif()
+# =============================
+#   CLIENT EXECUTABLE
+# =============================
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_client.cpp")
+    add_executable(r-type_client main_client.cpp)
+    target_link_libraries(r-type_client PRIVATE
+        ${RTYPE_PROJECT_NAME}
+        ECS
+        $<$<TARGET_EXISTS:raylib>:raylib>
+        $<$<TARGET_EXISTS:glfw>:glfw>
+        $<$<AND:$<BOOL:${UNIX}>,$<NOT:$<BOOL:${APPLE}>>>:dl>
+    )
+    target_include_directories(r-type_client PRIVATE
+        ${RTYPE_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
+    )
+    set_target_properties(r-type_client PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
+    )
+endif()
 
-    # Build server executable
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_server.cpp")
-        # Collect server sources
-        file(GLOB_RECURSE SERVER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/*.cpp")
-        list(FILTER SERVER_SOURCES EXCLUDE REGEX ".*/main_.*\\.cpp")
+# =============================
+#   SERVER EXECUTABLE
+# =============================
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_server.cpp")
+    file(GLOB_RECURSE SERVER_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/Core/Server/*.cpp")
+    list(FILTER SERVER_SOURCES EXCLUDE REGEX ".*/main_.*\\.cpp")
 
-        add_executable(r-type_server main_server.cpp ${SERVER_SOURCES})
-        target_link_libraries(r-type_server PRIVATE
-            ${RTYPE_PROJECT_NAME}
-            ECS
-            Threads::Threads
-            asio::asio
-        )
-        target_include_directories(r-type_server PRIVATE
-            ${RTYPE_INCLUDE_DIRS}
-            ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
-        )
-        set_target_properties(r-type_server PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
-        )
-    endif()
+    add_executable(r-type_server main_server.cpp ${SERVER_SOURCES})
+    target_link_libraries(r-type_server PRIVATE
+        ${RTYPE_PROJECT_NAME}
+        ECS
+        Threads::Threads
+        asio::asio
+    )
+    target_include_directories(r-type_server PRIVATE
+        ${RTYPE_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../ECS/include
+    )
+    set_target_properties(r-type_server PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../
+    )
+endif()
 
+# =============================
+#   SUMMARY MESSAGE
+# =============================
 list(LENGTH RTYPE_SOURCES RTYPE_SOURCES_COUNT)
 list(LENGTH GAME_SYSTEM_SOURCES GAME_SYSTEM_SOURCES_COUNT)
 message(STATUS "RType Game Configuration: (sources=${RTYPE_SOURCES_COUNT}, systems=${GAME_SYSTEM_SOURCES_COUNT})")
