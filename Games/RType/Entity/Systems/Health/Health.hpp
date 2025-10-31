@@ -11,6 +11,8 @@
 
 #include "Components/Health/Health.hpp"
 #include "Components/Score/Score.hpp"
+#include "Components/Controllable/Controllable.hpp"
+#include "Components/Player/Player.hpp"
 
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"

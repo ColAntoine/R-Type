@@ -257,13 +257,18 @@ void Connection::connection_callback()
 
     auto accept = client->connect(ServerIp_, port, PlayerName_, 1, 2000);
     if (accept) {
-        std::cout << "[Lobby] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << std::endl;
+        std::cout << "[Connection] Server accepted connection. Assigned player_id=" << accept->player_id << " session_token=" << accept->session_id << " multi_instance=" << (accept->multi_instance ? "true" : "false") << std::endl;
         if (_stateManager) {
-        _stateManager->pop_state();
-        _stateManager->push_state("Lobby");
+            _stateManager->pop_state();
+            bool is_multi_instance = (accept->multi_instance != 0);
+            if (is_multi_instance) {
+                _stateManager->push_state("Browser");
+            } else {
+                _stateManager->push_state("Lobby");
+            }
         }
     } else {
-        std::cout << "[Lobby] Failed to connect to server." << std::endl;
+        std::cout << "[Connection] Failed to connect to server." << std::endl;
         // allow retry on failure
         connecting_ = false;
     }

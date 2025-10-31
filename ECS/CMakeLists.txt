@@ -1,16 +1,46 @@
 cmake_minimum_required(VERSION 3.21)
 
-# ------------------------------------------------------------------
-# Project
-# ------------------------------------------------------------------
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
+    if(NOT EXISTS "${VCPKG_ROOT}")
+        find_package(Git REQUIRED)
+        message(STATUS "Cloning vcpkg...")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} clone https://github.com/Microsoft/vcpkg.git ${VCPKG_ROOT}
+            RESULT_VARIABLE git_result
+        )
+        if(NOT git_result EQUAL 0)
+            message(FATAL_ERROR "Failed to clone vcpkg")
+        endif()
+        # Bootstrap vcpkg
+        if(WIN32)
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
+        else()
+            execute_process(
+                COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.sh
+                WORKING_DIRECTORY ${VCPKG_ROOT}
+                RESULT_VARIABLE bootstrap_result
+            )
+        endif()
+        if(NOT bootstrap_result EQUAL 0)
+            message(FATAL_ERROR "Failed to bootstrap vcpkg")
+        endif()
+    endif()
+    set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
+
+# Project name and version
 project(ECS_Library VERSION 1.0 LANGUAGES CXX)
 
-# C++ standard (laisse 17 si ton code est écrit pour C++17)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Public include dir (headers ECS/) + accès au ${CMAKE_SOURCE_DIR} si utile
-# Remplacé par target_include_directories plus bas (meilleure pratique)
 include_directories(include ${CMAKE_SOURCE_DIR})
 
 # ------------------------------------------------------------------
@@ -38,9 +68,32 @@ else()
     message(WARNING "raylib not found. UI components will NOT be built.")
 endif()
 
-# ------------------------------------------------------------------
-# Sources
-# ------------------------------------------------------------------
+# Only find packages if not already found by parent CMakeLists
+if(NOT TARGET raylib)
+    find_package(raylib QUIET)
+endif()
+
+if(NOT TARGET glfw)
+    find_package(glfw3 QUIET)
+endif()
+
+# Check if raylib is available (either found here or in parent)
+if(TARGET raylib)
+    set(BUILD_UI_COMPONENTS ON)
+    message(STATUS "raylib found. UI components will be built.")
+
+    if(TARGET glfw)
+        message(STATUS "glfw3 found.")
+    else()
+        message(WARNING "glfw3 not found but required for raylib.")
+    endif()
+else()
+    set(BUILD_UI_COMPONENTS OFF)
+    message(WARNING "raylib not found. UI components will not be built.")
+endif()
+
+
+# Source files for the libECS.so shared library (components + registry + dlloader + assetmanager + renderer + physics + audio + messaging + plugin)
 set(LIB_ECS_SOURCES
     src/library.cpp
     src/registry.cpp
@@ -138,13 +191,19 @@ endif()
 # Nom de sortie de la DLL
 set_target_properties(ECS PROPERTIES OUTPUT_NAME "ECS")
 
-# Harmoniser les répertoires de sortie (multi-config: Debug/Release/…)
-# ARCHIVE = .lib (import lib), LIBRARY/RUNTIME = .dll
-foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
-    set_target_properties(ECS PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
-        LIBRARY_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
-        RUNTIME_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/${cfg}
+# Copie libECS.so dans build/lib
+add_custom_command(TARGET ECS POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/lib
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ECS> ${CMAKE_BINARY_DIR}/lib/libECS.so
+    COMMENT "Copying libECS.so to build/lib"
+)
+
+# Add system libraries (only if raylib is available since they depend on it)
+if (BUILD_UI_COMPONENTS)
+    add_library(position_system SHARED ${POSITION_SYSTEM_SOURCES})
+    set_target_properties(position_system PROPERTIES
+        OUTPUT_NAME "position_system"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/systems"
     )
 endforeach()
 

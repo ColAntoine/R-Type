@@ -49,4 +49,5 @@ class GameClient : public AGameCore {
         float _scale;
         bool _windowed;
         void register_states();
+        void set_bindings();
 };

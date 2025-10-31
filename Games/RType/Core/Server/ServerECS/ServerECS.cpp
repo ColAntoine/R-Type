@@ -1,7 +1,6 @@
 #include "ServerECS.hpp"
 #include "Communication/Multiplayer.hpp"
 #include <iostream>
-#include "ECS/Utils/Console.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "ECS/Components/Position.hpp"
 #include <algorithm>
@@ -10,8 +9,8 @@
 
 namespace RType::Network {
 
-    ServerECS::ServerECS() {
-        multiplayer_ = std::make_unique<Multiplayer>(*this);
+    ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
+        multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
     }
     ServerECS::~ServerECS() = default;
 
@@ -21,9 +20,9 @@ namespace RType::Network {
         }
         factory_ = loader_->get_factory();
         if (factory_) {
-            std::cout << Console::green("[ServerECS] ") << "Component factory available" << std::endl;
+            std::cout << "Component factory available" << std::endl;
         } else {
-            std::cerr << Console::red("[ServerECS] ") << "Component factory not available after load" << std::endl;
+            std::cerr << "Component factory not available after load" << std::endl;
         }
         return true;
     }
@@ -45,7 +44,7 @@ namespace RType::Network {
         for (auto &pkt : packets) {
             if (pkt.data.empty()) continue;
             if (multiplayer_) {
-                std::cout << Console::blue("[ServerECS] ") << "Processing pkt from " << pkt.session_id << " size=" << pkt.data.size() << std::endl;
+                std::cout << "[ServerECS] Processing pkt from " << pkt.session_id << " on port=" << pkt.server_port << " size=" << pkt.data.size() << std::endl;
                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
             }
         }
@@ -103,7 +102,7 @@ namespace RType::Network {
                 }
             }
         } catch (...) {
-            std::cerr << Console::red("[ServerECS] ") << "Exception occurred during enemy broadcasting (details unavailable)" << std::endl;
+            std::cerr << "Exception occurred during enemy broadcasting (details unavailable)" << std::endl;
         }
     }
 
