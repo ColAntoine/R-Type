@@ -208,20 +208,17 @@ if (BUILD_UI_COMPONENTS)
 endforeach()
 
 # ------------------------------------------------------------------
-# ECS system plugins (shared) si raylib est dispo
+# ECS system plugins (shared) if raylib available
 # ------------------------------------------------------------------
 if(BUILD_UI_COMPONENTS)
-    # Helper pour appliquer les mêmes propriétés/links à chaque plugin
     function(_ecs_setup_plugin target)
         target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(${target} PRIVATE ECS raylib)
 
-        # Hérite des defines Windows safe si dispo
         if(TARGET win_sanity)
             target_link_libraries(${target} PRIVATE win_sanity)
         endif()
 
-        # Répertoires de sortie (multi-config)
         foreach(cfg IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
             set_target_properties(${target} PROPERTIES
                 ARCHIVE_OUTPUT_DIRECTORY_${cfg} ${CMAKE_BINARY_DIR}/lib/systems/${cfg}
