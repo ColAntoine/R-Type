@@ -7,9 +7,18 @@
 
 #include "Network/UDPServer.hpp"
 
+#ifdef _WIN32
+    #include "ECS/WinLoader.hpp"
+    using PlatformLoader = WinLoader;
+#else
+    #include "ECS/LinuxLoader.hpp"
+    using PlatformLoader = LinuxLoader;
+#endif
+
 namespace RType::Network {
 
     ServerECS::ServerECS(int maxLobbies, int maxPlayers) : max_lobbies_(maxLobbies), max_players_(maxPlayers) {
+        loader_ = std::make_unique<PlatformLoader>();
         multiplayer_ = std::make_unique<Multiplayer>(*this, maxLobbies, maxPlayers);
     }
     ServerECS::~ServerECS() = default;
