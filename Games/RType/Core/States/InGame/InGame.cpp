@@ -201,5 +201,5 @@ void InGameState::createPlayer()
     }
 
     auto currentWave = reg.spawn_entity();
-    reg.emplace_component<CurrentWave>(currentWave, 4);
+    reg.emplace_component<CurrentWave>(currentWave, 0);
 }
