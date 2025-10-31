@@ -160,7 +160,7 @@ void GameClient::run()
     }
 }
 
-void GameClient::update(do delta)
+void GameClient::update(float delta)
 {
     (void)delta;
 }
