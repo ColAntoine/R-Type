@@ -75,7 +75,6 @@ void BossSys::spawn(registry &r)
         r.emplace_component<velocity>(entity(bossEnt), -300.f, 0.f);
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
-    std::cout << "SPAWNED" << std::endl;
 
         Weapon w(
             entity(bossEnt),

@@ -21,6 +21,7 @@
 #include "ECS/Components/Animation.hpp"
 
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Boss/Boss.hpp"
 
 #include "Constants.hpp"
 
@@ -70,6 +71,9 @@ public:
 
     size_t get_max_enemies() const { return max_enemies_; }
     float get_spawn_interval() const { return spawn_interval_; }
+
+    bool shouldEnemySpawn(registry &r);
+
 private:
     void initialize_if_needed(registry& r);
 };

@@ -111,7 +111,9 @@ void EnemySpawnSystem::spawn_random_enemy(registry& r) {
     float spawn_x = screen_width + 50.0f;
     float spawn_y = y_dist_(rng_);
 
-    spawn_enemy(r, enemy_type, spawn_x, spawn_y);
+    if (shouldEnemySpawn(r)){
+        spawn_enemy(r, enemy_type, spawn_x, spawn_y);
+    }
 }
 
 void EnemySpawnSystem::set_world_bounds(float width, float height) {
@@ -119,6 +121,13 @@ void EnemySpawnSystem::set_world_bounds(float width, float height) {
     // This method is kept for backward compatibility but is no longer used
     // Y distribution is updated based on screen height from RenderManager
     y_dist_ = std::uniform_real_distribution<>(50.0f, std::max(height - 50.0f, 100.0f));
+}
+
+bool EnemySpawnSystem::shouldEnemySpawn(registry &r)
+{
+    auto bossArr = r.get_if<Boss>();
+
+    return (!bossArr || bossArr->size() == 0);
 }
 
 std::unique_ptr<ISystem> create_system() {
