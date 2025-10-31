@@ -12,7 +12,7 @@ public:
     
     // Handle enemy spawn (ENTITY_CREATE messages for enemies)
     void on_enemy_spawn(const char* payload, size_t size);
-    
+
 private:
     registry& registry_;
     ILoader& loader_;

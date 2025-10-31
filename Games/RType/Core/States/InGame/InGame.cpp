@@ -170,6 +170,35 @@ void InGameState::handle_input()
             }
             last_input_state = input_state;
         }
+        // Handle shooting (space) -- send start/stop events to server when state changes
+        static bool last_shoot_state = false;
+        bool shoot_down = IsKeyDown(KEY_V);
+        if (shoot_down != last_shoot_state) {
+            auto client = RType::Network::get_client();
+            if (client) {
+                uint32_t player_token = client->get_session_token();
+                if (player_token != 0) {
+                    RType::Protocol::PlayerShoot ps{};
+                    ps.player_id = player_token;
+                    ps.start_x = 0.0f; ps.start_y = 0.0f;
+                    ps.dir_x = 1.0f; ps.dir_y = 0.0f; // default rightwards
+                    if (shoot_down) {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    } else {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_UNSHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    }
+                }
+            }
+            last_shoot_state = shoot_down;
+        }
     }
 }
 
@@ -201,7 +230,7 @@ void InGameState::createPlayer()
         componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
         componentFactory->create_component<Input>(reg, _playerEntity);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
-        componentFactory->create_component<collider>(reg, _playerEntity, 100.f, 100.f, -50.f, -50.f);
+        componentFactory->create_component<collider>(reg, _playerEntity, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         componentFactory->create_component<Score>(reg, _playerEntity);
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);

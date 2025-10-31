@@ -19,7 +19,7 @@ ALoader::ALoader(ALoader&& other) noexcept
 
 ALoader& ALoader::operator=(ALoader&& other) noexcept {
     if (this != &other) {
-        // Clean up current resources   
+        // Clean up current resources
         this->~ALoader();
 
         // Move from other
