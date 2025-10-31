@@ -73,7 +73,7 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
     r.emplace_component<position>(e, x, y);
     r.emplace_component<collider>(e, 65.0f, 132.0f, -32.5f, -66.0f, false);
     r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
-    r.emplace_component<Health>(e, 15 * (wave + 1)); // DEFAULT VALUE, TO CHANGE LATER
+    r.emplace_component<Health>(e, 50 * (wave + 1)); // DEFAULT VALUE, TO CHANGE LATER
 
     float speed_scale = 1.0f + wave * 0.1f;
 
