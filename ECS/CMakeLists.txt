@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
 
-# ------------------------------------------------------------------
-# vcpkg toolchain auto-setup (clone + bootstrap si nécessaire)
-# ------------------------------------------------------------------
 if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(VCPKG_ROOT "${CMAKE_SOURCE_DIR}/external/vcpkg")
     if(NOT EXISTS "${VCPKG_ROOT}")
@@ -50,11 +47,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include_directories(include ${CMAKE_SOURCE_DIR})
 
-# ------------------------------------------------------------------
-# Dépendances (raylib + glfw3 via vcpkg si disponible)
-# ------------------------------------------------------------------
 find_package(raylib QUIET)
-# glfw peut s'appeler "glfw" (cible) ou "glfw3::glfw" selon le port
 find_package(glfw3 QUIET)
 
 if(TARGET raylib)
@@ -151,12 +144,10 @@ else()
     message(STATUS "Building ECS without UI components")
 endif()
 
-# Public include pour les consommateurs de ECS
 target_include_directories(ECS PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Windows-safe defines (évite conflits Rectangle/CloseWindow/ShowCursor + winsock)
 if(WIN32)
     target_compile_definitions(ECS PRIVATE
         _WIN32_WINNT=0x0A00
@@ -167,12 +158,10 @@ if(WIN32)
     )
 endif()
 
-# Si l’interface "win_sanity" (définie au root) existe, on en hérite
 if(TARGET win_sanity)
     target_link_libraries(ECS PRIVATE win_sanity)
 endif()
 
-# MSVC: génère l'import lib même s'il n'y a pas d'__declspec(dllexport)
 if(MSVC)
     set_target_properties(ECS PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
@@ -199,7 +188,6 @@ if(BUILD_UI_COMPONENTS)
         target_include_directories(${target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
         target_link_libraries(${target} PRIVATE ECS raylib)
 
-        # Préfixe "lib" sous Windows pour les plugins également
         _prefix_lib_on_windows(${target})
 
         if(TARGET win_sanity)

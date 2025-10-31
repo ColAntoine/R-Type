@@ -16,7 +16,6 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             message(FATAL_ERROR "Failed to clone vcpkg")
         endif()
 
-        # Bootstrap vcpkg
         if(WIN32)
             execute_process(
                 COMMAND ${VCPKG_ROOT}/bootstrap-vcpkg.bat
@@ -34,7 +33,6 @@ if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
             message(FATAL_ERROR "Failed to bootstrap vcpkg")
         endif()
 
-        # Install vcpkg dependencies
         message(STATUS "Installing vcpkg dependencies...")
         execute_process(
             COMMAND ${VCPKG_ROOT}/vcpkg install
@@ -152,7 +150,6 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
     )
     target_compile_features(${GAME_SYSTEM_NAME} PUBLIC cxx_std_20)
 
-    # Output directory
     set(SYSTEM_OUTPUT_DIR ${CMAKE_BINARY_DIR}/lib/systems)
     set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${SYSTEM_OUTPUT_DIR}
@@ -160,7 +157,6 @@ foreach(SYSTEM_FILE ${GAME_SYSTEM_SOURCES})
         ARCHIVE_OUTPUT_DIRECTORY ${SYSTEM_OUTPUT_DIR}
     )
 
-    # Windows-specific: add prefix "lib" and copy DLLs
     if(WIN32)
         set_target_properties(${GAME_SYSTEM_NAME} PROPERTIES PREFIX "lib")
         add_custom_command(TARGET ${GAME_SYSTEM_NAME} POST_BUILD
