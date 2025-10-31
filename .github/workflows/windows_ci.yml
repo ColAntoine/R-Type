@@ -1,0 +1,59 @@
+name: CI - Build & Test (Windows)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches-ignore: [ main ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    env:
+      CMAKE_BUILD_TYPE: Release
+      CTEST_OUTPUT_ON_FAILURE: 1
+      CMAKE_BUILD_PARALLEL_LEVEL: 3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (CMake, Ninja, ccache)
+        run: |
+          choco install cmake ninja ccache -y
+        shell: powershell
+
+      - name: Add ccache to PATH
+        run: echo "C:\ProgramData\chocolatey\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        shell: powershell
+
+      - name: Configure (CMake + Ninja)
+        run: |
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE="${{ env.CMAKE_BUILD_TYPE }}" `
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+        shell: powershell
+
+      - name: Build
+        run: cmake --build build --config "${{ env.CMAKE_BUILD_TYPE }}"
+        shell: powershell
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure -C "${{ env.CMAKE_BUILD_TYPE }}"
+        shell: powershell
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            build/Testing
+            build/CMakeFiles/CMakeOutput.log
+            build/CMakeFiles/CMakeError.log
