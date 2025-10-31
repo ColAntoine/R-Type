@@ -15,7 +15,7 @@ BossSys::BossSys()
     _bossWeapons[-1] = std::vector<std::string>({"enemy", "bossDrop", "following", "wave"});
     _bossWeapons[0] = std::vector<std::string>({});
     _bossWeapons[1] = std::vector<std::string>({"enemy"});
-    _bossWeapons[2] = std::vector<std::string>({"enemy, bossDrop"});
+    _bossWeapons[2] = std::vector<std::string>({"enemy", "bossDrop"});
     _bossWeapons[3] = std::vector<std::string>({"enemy", "bossDrop", "following"});
     _bossWeapons[4] = std::vector<std::string>({"enemy", "bossDrop", "wave"});
     _bossWeapons[5] = std::vector<std::string>({"enemy", "bossDrop", "following", "wave"});
@@ -77,6 +77,7 @@ void BossSys::spawn(registry &r)
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
         int wave = getWave(r);
 
+        std::cout << "wave: " << wave << std::endl;
         Weapon w(
             entity(bossEnt),
             _bossWeapons[wave > 5 ? 5 : wave],
