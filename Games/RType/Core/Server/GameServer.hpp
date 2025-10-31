@@ -21,7 +21,7 @@ class ServerLobby;
 
 class GameServer : public AGameCore {
 public:
-    GameServer(bool display = false, bool windowed = false, float scale = 1.0f, int maxLobbies = 0, int maxPlayers = 2);
+    GameServer(bool display = false, bool windowed = false, float scale = 1.0f, int maxLobbies = 0, int maxPlayers = 2, bool is_machine_made = false);
     ~GameServer();
 
     bool init() override;
@@ -50,6 +50,7 @@ private:
     bool game_started_;
     int max_lobbies_;
     int max_players_;
+    bool is_machine_made_;
     // Instance management
     std::mutex instances_mtx_;
     int active_instances_{0};

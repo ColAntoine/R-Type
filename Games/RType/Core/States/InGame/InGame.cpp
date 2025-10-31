@@ -1,16 +1,17 @@
 #include "InGame.hpp"
-#include "ECS/Systems/Position.hpp"
-#include "Entity/Systems/Draw/Draw.hpp"
 #include "Entity/Components/Player/Player.hpp"
 #include "ECS/Components/Animation.hpp"
-
 #include "ECS/Components/Position.hpp"
-#include <string>
-#include <random>
+#include "Entity/Components/Input/Input.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Server/Protocol/Protocol.hpp"
-#include <raylib.h>
+#include "Core/Config/Config.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "Core/KeyBindingManager/KeyBindingManager.hpp"
+
+#include <string>
+#include <random>
 
 void InGameState::enter()
 {
@@ -24,7 +25,7 @@ void InGameState::enter()
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
-        
+
         // Generate random seed for solo play (deterministic for potential replay features)
         std::random_device rd;
         unsigned int solo_seed = rd();
@@ -34,7 +35,7 @@ void InGameState::enter()
 
     // Load components first (needed for both solo and multiplayer)
     loader.load_components_from_so("build/lib/libECS.so", reg);
-    
+
     // Load render systems
     loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
@@ -45,6 +46,7 @@ void InGameState::enter()
     // Load logic systems
     loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
+    loader.load_system_from_so("build/lib/systems/libgame_KeyInput.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
     loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
@@ -68,7 +70,15 @@ void InGameState::enter()
     } else {
         std::cout << "[InGame] Multiplayer mode - Player will be created by network (PLAYER_SPAWN message)" << std::endl;
     }
-    
+
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    Event event(EventTypes::SET_KEY_BINDINGS);
+
+    const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
+
+    event.set("keyBindings", keyBinds);
+    eventBus.emit(event);
+
     setup_ui();
     _initialized = true;
 }
@@ -109,12 +119,17 @@ void InGameState::handle_input()
 {
     auto* network_manager = RType::Network::get_network_manager();
     if (network_manager) {
+        const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        if (IsKeyDown(KEY_UP))    input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        if (IsKeyDown(KEY_DOWN))  input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        if (IsKeyDown(KEY_LEFT))  input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        if (IsKeyDown(KEY_RIGHT)) input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
+        if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
+        if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
+        if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
+        if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
         static uint8_t last_input_state = 0;
@@ -152,7 +167,7 @@ void InGameState::setup_ui()
 void InGameState::createPlayer()
 {
     std::cout << "[InGame] createPlayer() called" << std::endl;
-    
+
     // Use shared registry/loader if available (for multiplayer), otherwise use local
     registry& reg = _shared_registry ? *_shared_registry : _registry;
     DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
@@ -165,17 +180,15 @@ void InGameState::createPlayer()
 
     _playerEntity = reg.spawn_entity();
     std::cout << "[InGame] Spawned player entity: " << static_cast<size_t>(_playerEntity) << std::endl;
-    
+
     if (componentFactory) {
-        std::cout << "[InGame] Creating player components..." << std::endl;
         componentFactory->create_component<position>(reg, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
-        std::cout << "[InGame] - position created at (" << PLAYER_SPAWN_X << ", " << PLAYER_SPAWN_Y << ")" << std::endl;
         componentFactory->create_component<animation>(reg, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
         componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
+        componentFactory->create_component<Input>(reg, _playerEntity);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
         componentFactory->create_component<collider>(reg, _playerEntity, 100.f, 100.f, -50.f, -50.f);
         componentFactory->create_component<Score>(reg, _playerEntity);
-        std::cout << "[InGame] - score created" << std::endl;
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
     }

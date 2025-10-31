@@ -2,7 +2,6 @@
 #include "Session.hpp"
 #include "Protocol/Protocol.hpp"
 #include <iostream>
-#include "ECS/Utils/Console.hpp"
 #include <cstring>
 #include <chrono>
 #include <ctime>
@@ -38,10 +37,10 @@ namespace RType::Network {
 
             // Start cleanup timer
             setup_cleanup_timer();
-            std::cout << Console::green("[UdpServer] ") << "Started on port " << port_ << std::endl;
+            std::cout << "[UdpServer] " << "Started on port " << port_ << std::endl;
             return true;
         } catch (const std::exception& e) {
-            std::cerr << Console::red("[UdpServer] ") << "Failed to start UdpServer: " << e.what() << std::endl;
+            std::cerr << "[UdpServer] " << "Failed to start UdpServer: " << e.what() << std::endl;
             running_ = false;
             return false;
         }
@@ -52,7 +51,7 @@ namespace RType::Network {
             return;
         }
 
-    std::cout << Console::yellow("[UdpServer] ") << "Stopping..." << std::endl;
+    std::cout << "[UdpServer] " << "Stopping..." << std::endl;
 
         running_ = false;
 
@@ -68,7 +67,7 @@ namespace RType::Network {
         sessions_.clear();
         connections_.clear();
 
-        std::cout << Console::green("[UdpServer] ") << "Stopped" << std::endl;
+        std::cout << "[UdpServer] " << "Stopped" << std::endl;
     }
 
     void UdpServer::send_to_client(const std::string& connection_id, const char* data, size_t size) {
@@ -78,11 +77,11 @@ namespace RType::Network {
             if (size >= sizeof(RType::Protocol::PacketHeader)) {
                 RType::Protocol::PacketHeader hdr;
                 memcpy(&hdr, data, sizeof(hdr));
-                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                std::cout << "[UdpServer send] port=" << port_ << " -> " << connection_id
                           << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
                           << " len=" << size << std::endl;
             } else {
-                std::cout << Console::blue("[UdpServer send] ") << "port=" << port_ << " -> " << connection_id
+                std::cout << "[UdpServer send] port=" << port_ << " -> " << connection_id
                           << " raw_len=" << size << std::endl;
             }
             it->second->send(data, size);
@@ -96,11 +95,11 @@ namespace RType::Network {
                 if (size >= sizeof(RType::Protocol::PacketHeader)) {
                     RType::Protocol::PacketHeader hdr;
                     memcpy(&hdr, data, sizeof(hdr));
-                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
                               << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
                               << " len=" << size << std::endl;
                 } else {
-                    std::cout << Console::blue("[UdpServer broadcast] ") << "port=" << port_ << " -> " << id
+                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
                               << " raw_len=" << size << std::endl;
                 }
                 connection->send(data, size);
@@ -245,7 +244,7 @@ namespace RType::Network {
 
         // Need at least 2 players and all connected players must be ready
         if (connected_players > 1 && ready_players == connected_players) {
-            std::cout << Console::green("[UdpServer] ") << "All " << connected_players
+            std::cout << "[UdpServer] " << "All " << connected_players
                       << " players are ready! Starting game..." << std::endl;
 
             // Create START_GAME message
@@ -260,11 +259,11 @@ namespace RType::Network {
             // Broadcast to all connected clients
             broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
 
-            std::cout << Console::green("[UdpServer] ") << "START_GAME broadcasted to all clients" << std::endl;
+            std::cout << "[UdpServer] " << "START_GAME broadcasted to all clients" << std::endl;
 
             // Invoke game start callback to spawn all players
             if (game_start_callback_) {
-                std::cout << Console::green("[UdpServer] ") << "Invoking game start callback..." << std::endl;
+                std::cout << "[UdpServer] " << "Invoking game start callback..." << std::endl;
                 game_start_callback_();
             }
         }
