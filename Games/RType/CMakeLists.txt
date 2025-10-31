@@ -51,6 +51,7 @@ endif()
 #   PROJECT SETUP
 # =============================
 project(RType)
+set(CMAKE_CXX_STANDARD 17)
 
 # Build ECS if not already built
 if(NOT TARGET ECS)
