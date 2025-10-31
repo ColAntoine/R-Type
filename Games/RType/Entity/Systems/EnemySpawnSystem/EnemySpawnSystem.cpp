@@ -47,6 +47,12 @@ void EnemySpawnSystem::initialize_if_needed(registry& r) {
 void EnemySpawnSystem::update(registry& r, float dt) {
     initialize_if_needed(r);
 
+    int wave = getWave(r);
+    float base_interval = 3.0f;
+    size_t base_max = 10;
+    spawn_interval_ = base_interval / (1.0f + wave * 0.1f);
+    max_enemies_ = base_max + static_cast<size_t>(wave * 2);
+
     auto* enemies = r.get_if<Enemy>();
     size_t current_count = enemies ? enemies->size() : 0;
 
@@ -60,35 +66,37 @@ void EnemySpawnSystem::update(registry& r, float dt) {
     }
 }
 
-entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, float y) {
+entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, float y, int wave) {
     entity e = r.spawn_entity();
     uint32_t net_id = next_network_id_++;
 
     r.emplace_component<position>(e, x, y);
     r.emplace_component<collider>(e, 65.0f, 132.0f, -32.5f, -66.0f, false);
     r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
-    r.emplace_component<Health>(e, 15); // DEFAULT VALUE, TO CHANGE LATER
+    r.emplace_component<Health>(e, 15 * (wave + 1)); // DEFAULT VALUE, TO CHANGE LATER
+
+    float speed_scale = 1.0f + wave * 0.1f;
 
     switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
         case Enemy::EnemyAIType::BASIC:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
-            r.emplace_component<velocity>(e, -80.0f, 0.0f);
+            r.emplace_component<velocity>(e, -80.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::SINE_WAVE:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
-            r.emplace_component<velocity>(e, -60.0f, 0.0f);
+            r.emplace_component<velocity>(e, -60.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::FAST:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
-            r.emplace_component<velocity>(e, -120.0f, 0.0f);
+            r.emplace_component<velocity>(e, -120.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::ZIGZAG:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
-            r.emplace_component<velocity>(e, -70.0f, 50.0f);
+            r.emplace_component<velocity>(e, -70.0f * speed_scale, 50.0f * speed_scale);
             break;
         case Enemy::EnemyAIType::TURRET:
             r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
-            r.emplace_component<velocity>(e, -80.0f, 0.0f);
+            r.emplace_component<velocity>(e, -80.0f * speed_scale, 0.0f);
             break;
     }
 
@@ -112,7 +120,8 @@ void EnemySpawnSystem::spawn_random_enemy(registry& r) {
     float spawn_y = y_dist_(rng_);
 
     if (shouldEnemySpawn(r)){
-        spawn_enemy(r, enemy_type, spawn_x, spawn_y);
+        int wave = getWave(r);
+        spawn_enemy(r, enemy_type, spawn_x, spawn_y, wave);
     }
 }
 
@@ -128,6 +137,18 @@ bool EnemySpawnSystem::shouldEnemySpawn(registry &r)
     auto bossArr = r.get_if<Boss>();
 
     return (!bossArr || bossArr->size() == 0);
+}
+
+int EnemySpawnSystem::getWave(registry &r)
+{
+    auto waveArr = r.get_if<CurrentWave>();
+
+    if (!waveArr) return 0;
+
+    for (auto [wave, ent]: zipper(*waveArr)) {
+        return wave._currentWave;
+    }
+    return 0;
 }
 
 std::unique_ptr<ISystem> create_system() {

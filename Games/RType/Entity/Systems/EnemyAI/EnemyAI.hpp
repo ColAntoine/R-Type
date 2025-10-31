@@ -11,8 +11,10 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
+
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 class EnemyAISystem : public ISystem {
 private:
@@ -24,7 +26,9 @@ public:
 
     void set_world_height(float height) { world_height_ = height; }
 
+private:
     void turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, float dt, entity ent, registry &r);
+    int getWave(registry &r);
 };
 
 extern "C" {

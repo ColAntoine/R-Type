@@ -13,6 +13,7 @@
 
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 #include "ECS/ComponentFactory.hpp"
 #include "ECS/Components/Position.hpp"
@@ -22,6 +23,8 @@
 
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Boss/Boss.hpp"
+
+#include "ECS/Zipper.hpp"
 
 #include "Constants.hpp"
 
@@ -56,7 +59,7 @@ public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "EnemySpawnSystem"; }
 
-    entity spawn_enemy(registry& r, uint8_t enemy_type, float x, float y);
+    entity spawn_enemy(registry& r, uint8_t enemy_type, float x, float y, int wave);
     void spawn_random_enemy(registry& r);
 
     void set_spawn_interval(float interval) { spawn_interval_ = interval; }
@@ -76,6 +79,8 @@ public:
 
 private:
     void initialize_if_needed(registry& r);
+
+    int getWave(registry &r);
 };
 
 // Global function to set enemy spawn callback (for server broadcasting)

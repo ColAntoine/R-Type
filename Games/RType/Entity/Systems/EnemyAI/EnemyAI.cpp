@@ -56,6 +56,7 @@ void EnemyAISystem::turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, flo
     auto &rm = RenderManager::instance();
     float screen_width = rm.get_screen_infos().getWidth();
     float target_x = screen_width * 0.75f;
+    int currentWave = getWave(r);
 
     if (pos.x > target_x) {
         if (vel.vx > 0) vel.vx = -std::abs(vel.vx);
@@ -63,7 +64,7 @@ void EnemyAISystem::turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, flo
         auto *weaponArr = r.get_if<Weapon>();
         size_t ent_id = static_cast<size_t>(ent);
         if (!weaponArr || !weaponArr->has(ent_id)) {
-            Weapon w(ent, std::string("enemy"), 1.0f, 10, 300.0f, -1, true);
+            Weapon w(ent, std::string("enemy"), 1.0f, 10 * (currentWave + 1), 300.0f, -1, true);
             w._wantsToFire = true;
             w._automatic = true;
             r.emplace_component<Weapon>(ent, w);
@@ -74,6 +75,19 @@ void EnemyAISystem::turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, flo
         enm.timer = 0.0f;
     }
 }
+
+int EnemyAISystem::getWave(registry &r)
+{
+    auto waveArr = r.get_if<CurrentWave>();
+
+    if (!waveArr) return 0;
+
+    for (auto [wave, ent]: zipper(*waveArr)) {
+        return wave._currentWave;
+    }
+    return 0;
+}
+
 
 extern "C" {
     std::unique_ptr<ISystem> create_system() {
