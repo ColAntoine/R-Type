@@ -9,6 +9,7 @@
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
+#include "UI/ThemeManager.hpp"
 
 #include <string>
 #include <random>
@@ -79,11 +80,14 @@ void InGameState::enter()
 
     auto &eventBus = MessagingManager::instance().get_event_bus();
     Event event(EventTypes::SET_KEY_BINDINGS);
-
     const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
-
     event.set("keyBindings", keyBinds);
     eventBus.emit(event);
+
+    auto &theme = ThemeManager::instance().getTheme();
+    Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
+    themeEvent.set("palette", theme);
+    eventBus.emit(themeEvent);
 
     setup_ui();
     _initialized = true;

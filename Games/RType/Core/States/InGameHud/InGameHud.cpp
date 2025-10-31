@@ -66,20 +66,10 @@ void InGameHudState::setup_ui()
 
     auto &theme = ThemeManager::instance().getTheme();
 
-    // auto warningText = TextBuilder()
-    //     .at(renderManager.scalePosX(50), renderManager.scalePosY(1))
-    //     .textColor(RED)
-    //     .text("R-TYPE /!\\ WARNING /!\\")
-    //     .alignment(UI::TextAlignment::Center)
-    //     .fontSize(renderManager.scaleSizeW(2))
-    // .build(winInfos.getWidth(), winInfos.getWidth());
-
-    // auto warningTextEnt = _registry.spawn_entity();
-    // _registry.add_component<UI::UIComponent>(warningTextEnt, UI::UIComponent(warningText));
-
     auto scoreText = TextBuilder()
         .at(renderManager.scalePosX(1), renderManager.scalePosY(1))
         .text("Score: " + std::to_string(_score))
+        .textColor(theme.gameColors.info)
         .fontSize(renderManager.scaleSizeW(3))
     .build(winInfos.getWidth(), winInfos.getWidth());
 
@@ -90,7 +80,7 @@ void InGameHudState::setup_ui()
     auto fpsText = TextBuilder()
         .at(renderManager.scalePosX(99), renderManager.scalePosY(1))
         .text("FPS: " + std::to_string(GetFPS()))
-        .textColor(GREEN)
+        .textColor(theme.gameColors.info)
         .fontSize(renderManager.scaleSizeW(2))
         .alignment(UI::TextAlignment::Right)
     .build(winInfos.getWidth(), winInfos.getWidth());
@@ -98,36 +88,6 @@ void InGameHudState::setup_ui()
     auto fpsTextent = _registry.spawn_entity();
     _registry.add_component<UI::UIComponent>(fpsTextent, UI::UIComponent(fpsText));
     _registry.add_component<FPSText>(fpsTextent, FPSText());    // ? Tag to access it quickly
-
-    // auto weaponText = TextBuilder()
-    //     .at(10.f, winInfos.getHeight() - 85.f)
-    //     .text("Weapon: Plasma Cannon")
-    //     .textColor(YELLOW)
-    //     .fontSize(30)
-    // .build(winInfos.getWidth(), winInfos.getHeight());
-
-    // auto weaponTextent = _registry.spawn_entity();
-    // _registry.add_component<UI::UIComponent>(weaponTextent, UI::UIComponent(weaponText));
-
-    // auto ammoText = TextBuilder()
-    //     .at(10.f, winInfos.getHeight() - 55.f)
-    //     .text("Ammo: 25/100")
-    //     .textColor(WHITE)
-    //     .fontSize(25)
-    // .build(winInfos.getWidth(), winInfos.getHeight());
-
-    // auto ammoTextent = _registry.spawn_entity();
-    // _registry.add_component<UI::UIComponent>(ammoTextent, UI::UIComponent(ammoText));
-
-    // auto damageText = TextBuilder()
-    //     .at(10.f, winInfos.getHeight() - 30.f)
-    //     .text("Damage: 45")
-    //     .textColor(ORANGE)
-    //     .fontSize(20)
-    // .build(winInfos.getWidth(), winInfos.getHeight());
-
-    // auto damageTextent = _registry.spawn_entity();
-    // _registry.add_component<UI::UIComponent>(damageTextent, UI::UIComponent(damageText));
 }
 
 void InGameHudState::update(float delta_time)
