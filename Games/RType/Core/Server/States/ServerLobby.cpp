@@ -7,7 +7,7 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "ECS/Zipper.hpp"
 
-ServerLobby::ServerLobby(RType::Network::UdpServer* udp_server) 
+ServerLobby::ServerLobby(RType::Network::UdpServer* udp_server)
     : udp_server_(udp_server)
 {
 }
@@ -45,7 +45,7 @@ void ServerLobby::update(float delta_time)
     // Update player list display periodically
     static float update_timer = 0.0f;
     update_timer += delta_time;
-    
+
     if (update_timer >= 0.5f) { // Update twice per second
         update_player_list();
         update_timer = 0.0f;
@@ -113,7 +113,7 @@ void ServerLobby::update_player_list()
 
     // Get current player list from UDP server
     auto client_list = udp_server_->generate_player_list();
-    
+
     // Convert to vector for easier handling
     std::vector<RType::Protocol::PlayerInfo> players;
     for (uint8_t i = 0; i < client_list.player_count; ++i) {
@@ -175,7 +175,7 @@ void ServerLobby::rebuild_player_ui()
 
         // Player name and status text combined
         std::string display_text = name + ready_status;
-        
+
         auto playerText = TextBuilder()
             .at(renderManager.scalePosX(7), renderManager.scalePosY(startY + i * spacing))
             .text(display_text)

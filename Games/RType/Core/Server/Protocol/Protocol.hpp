@@ -85,9 +85,10 @@ namespace RType::Protocol {
         // Player actions
         PLAYER_JOIN       = 0xC5,
         PLAYER_LEAVE      = 0xC6,
-    PLAYER_INPUT      = 0xC9,        // Client input (arrow keys)
+        PLAYER_INPUT      = 0xC9,        // Client input (arrow keys)
         POSITION_UPDATE   = 0xC7,
         PLAYER_SHOOT      = 0xC8,
+        PLAYER_UNSHOOT    = 0xCA,
 
         // Game state
         GAME_START        = 0xD0,

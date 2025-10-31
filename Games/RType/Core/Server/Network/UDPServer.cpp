@@ -223,7 +223,7 @@ namespace RType::Network {
         }
 
         // Need at least 2 players and all connected players must be ready
-        if (connected_players > 1 && ready_players == connected_players) {
+        if (connected_players >= 1 && ready_players == connected_players) {
             std::cout << Console::green("[UdpServer] ") << "All " << connected_players
                       << " players are ready! Starting game..." << std::endl;
 

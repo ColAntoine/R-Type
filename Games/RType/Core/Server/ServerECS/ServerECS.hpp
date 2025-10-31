@@ -41,9 +41,13 @@ class ServerECS {
         IComponentFactory* get_factory() const { return factory_; }
         registry& GetRegistry();
         DLLoader& GetDLLoader() { return loader_; }
-        
+
         // Expose multiplayer for game start coordination
         Multiplayer* GetMultiplayer() { return multiplayer_.get(); }
+
+        // Game state flag (set by GameServer when game starts)
+        void set_game_started(bool v) { game_started_ = v; }
+        bool is_game_started() const { return game_started_; }
 
     private:
         DLLoader loader_;
@@ -52,7 +56,6 @@ class ServerECS {
         MessageQueue* msgq_{nullptr};
         // Map session id -> player entity id for input routing
         std::unordered_map<std::string, entity> session_entity_map_;
-    // Numeric session token allocator and mapping (string session -> token)
         uint32_t next_session_token_{1};
         std::unordered_map<std::string, uint32_t> session_token_map_;
         // Optional callback to send data back to clients (session_id, raw packet bytes)
@@ -60,16 +63,20 @@ class ServerECS {
         // Multiplayer handler
         std::unique_ptr<Multiplayer> multiplayer_;
 
-    // No std::function broadcast here; multicast requests are performed directly by Multiplayer
 
-        // Allow Multiplayer implementation to access internals for now
-        friend class Multiplayer;
+    // Allow communication helpers to access internals for now
+    friend class Multiplayer;
+    friend class Lobby;
+    friend class InGame;
 
     private:
         // Process buffered inputs for all players and apply to components
         void process_inputs();
         // Build and send snapshots to connected clients
         void send_snapshots();
+
+        // Whether the game has started (no new clients should be accepted)
+        bool game_started_{false};
 };
 
 } // namespace RType::Network

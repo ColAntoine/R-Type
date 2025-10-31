@@ -43,4 +43,6 @@ private:
     bool windowed_;
     float scale_;
     bool game_started_;
+    // Whether ECS logic/render systems have been loaded into the DLLoader
+    bool systems_loaded_{false};
 };

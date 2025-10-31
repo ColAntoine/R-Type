@@ -24,7 +24,7 @@ void InGameState::enter()
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
-        
+
         // Generate random seed for solo play (deterministic for potential replay features)
         std::random_device rd;
         unsigned int solo_seed = rd();
@@ -34,7 +34,7 @@ void InGameState::enter()
 
     // Load components first (needed for both solo and multiplayer)
     loader.load_components_from_so("build/lib/libECS.so", reg);
-    
+
     // Load render systems
     loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
     loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
@@ -68,7 +68,7 @@ void InGameState::enter()
     } else {
         std::cout << "[InGame] Multiplayer mode - Player will be created by network (PLAYER_SPAWN message)" << std::endl;
     }
-    
+
     setup_ui();
     _initialized = true;
 }
@@ -141,6 +141,35 @@ void InGameState::handle_input()
             }
             last_input_state = input_state;
         }
+        // Handle shooting (space) -- send start/stop events to server when state changes
+        static bool last_shoot_state = false;
+        bool shoot_down = IsKeyDown(KEY_SPACE);
+        if (shoot_down != last_shoot_state) {
+            auto client = RType::Network::get_client();
+            if (client) {
+                uint32_t player_token = client->get_session_token();
+                if (player_token != 0) {
+                    RType::Protocol::PlayerShoot ps{};
+                    ps.player_id = player_token;
+                    ps.start_x = 0.0f; ps.start_y = 0.0f;
+                    ps.dir_x = 1.0f; ps.dir_y = 0.0f; // default rightwards
+                    if (shoot_down) {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    } else {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_UNSHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    }
+                }
+            }
+            last_shoot_state = shoot_down;
+        }
     }
 }
 
@@ -152,7 +181,7 @@ void InGameState::setup_ui()
 void InGameState::createPlayer()
 {
     std::cout << "[InGame] createPlayer() called" << std::endl;
-    
+
     // Use shared registry/loader if available (for multiplayer), otherwise use local
     registry& reg = _shared_registry ? *_shared_registry : _registry;
     DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
@@ -165,7 +194,7 @@ void InGameState::createPlayer()
 
     _playerEntity = reg.spawn_entity();
     std::cout << "[InGame] Spawned player entity: " << static_cast<size_t>(_playerEntity) << std::endl;
-    
+
     if (componentFactory) {
         std::cout << "[InGame] Creating player components..." << std::endl;
         componentFactory->create_component<position>(reg, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
@@ -173,7 +202,7 @@ void InGameState::createPlayer()
         componentFactory->create_component<animation>(reg, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
         componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
-        componentFactory->create_component<collider>(reg, _playerEntity, 100.f, 100.f, -50.f, -50.f);
+        componentFactory->create_component<collider>(reg, _playerEntity, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         componentFactory->create_component<Score>(reg, _playerEntity);
         std::cout << "[InGame] - score created" << std::endl;
         componentFactory->create_component<Health>(reg, _playerEntity);
