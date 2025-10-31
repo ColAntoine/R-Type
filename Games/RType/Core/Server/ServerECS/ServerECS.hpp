@@ -23,7 +23,7 @@ class ServerECS {
         ~ServerECS();
 
         // Initialize components/systems from shared object (optional)
-        bool init(const std::string& components_so = "lib/libECS.so");
+        bool init(const std::string& components_so = "build/lib/libECS.so");
 
         // Attach the network message queue used by the UDP server
         void set_message_queue(MessageQueue* q);

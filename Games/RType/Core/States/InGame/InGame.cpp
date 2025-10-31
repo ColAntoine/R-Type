@@ -62,6 +62,7 @@ void InGameState::enter()
     loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
 
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
@@ -127,14 +128,22 @@ void InGameState::handle_input()
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
+        if (IsKeyDown(KEY_UP))
             input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
+        if (IsKeyDown(KEY_DOWN))
             input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
+        if (IsKeyDown(KEY_LEFT))
             input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
+        if (IsKeyDown(KEY_RIGHT))
             input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
+        // if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
+        // if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
+        // if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
+        // if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
         static uint8_t last_input_state = 0;

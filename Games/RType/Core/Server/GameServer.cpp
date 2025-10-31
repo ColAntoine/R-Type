@@ -102,25 +102,25 @@ bool GameServer::init()
         const std::string ext = ".so";
     #endif
     
-    server_ecs_->init("lib/libECS" + ext);
+    server_ecs_->init("build/lib/libECS" + ext);
 
     // Load logic systems (they won't run until game starts)
-    server_ecs_->GetILoader().load_system("build/lib/systems/libposition_system.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libcollision_system.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Control.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Shoot.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_GravitySys.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemyCleanup.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemyAI.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Health.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_LifeTime.so" + ext, ILoader::LogicSystem);
-    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemySpawnSystem.so" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+    server_ecs_->GetILoader().load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
 
     if (display_) {
         RenderManager::instance().init("R-Type Server", scale_, !windowed_);
         // Load render systems for display
-        server_ecs_->GetILoader().load_system("build/lib/systems/libanimation_system.so" + ext, ILoader::RenderSystem);
-        server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Draw.so" + ext, ILoader::RenderSystem);
+        server_ecs_->GetILoader().load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
+        server_ecs_->GetILoader().load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
         
         // Register and setup lobby state
         register_states();

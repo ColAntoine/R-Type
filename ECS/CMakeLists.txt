@@ -114,9 +114,6 @@ set(SPRITE_SYSTEM_SOURCES     src/systems/sprite_system.cpp)
 set(ANIMATION_SYSTEM_SOURCES  src/systems/animation_system.cpp)
 set(UI_SYSTEM_SOURCES         src/systems/UISystem.cpp)
 
-# ------------------------------------------------------------------
-# Helper : forcer le préfixe "lib" pour toutes les bibliothèques sous Windows
-# ------------------------------------------------------------------
 function(_prefix_lib_on_windows target)
     if(WIN32)
         set_target_properties(${target} PROPERTIES PREFIX "lib")
