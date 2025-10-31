@@ -3,7 +3,6 @@
 #include "ServerECS/Communication/Lobby.hpp"
 #include "ServerECS/Communication/InGame.hpp"
 #include <iostream>
-#include "ECS/Utils/Console.hpp"
 
 namespace RType::Network {
 
@@ -33,7 +32,7 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     std::vector<char> payload;
     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
 
-    std::cout << Console::blue("[Multiplayer] ") << "Pkt type=" << int(msg_type) << " from " << session_id
+    std::cout << "[Multiplayer] Pkt type=" << int(msg_type) << " from " << session_id
               << " payload=" << payload.size() << std::endl;
 
     using RType::Protocol::SystemMessage;

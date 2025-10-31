@@ -2,7 +2,6 @@
 #include "ServerECS/ServerECS.hpp"
 #include "Network/UDPServer.hpp"
 #include "Network/Session.hpp"
-#include "ECS/Utils/Console.hpp"
 #include "ECS/Components/Position.hpp"
 #include <iostream>
 
@@ -23,7 +22,7 @@ void Lobby::handle_client_connect(const std::string &session_id, const std::vect
 
     // If the game has already started, do not accept new clients
     if (ecs_.is_game_started()) {
-        std::cout << Console::yellow("[Lobby] ") << "Rejecting CLIENT_CONNECT from " << session_id << " (game already started)" << std::endl;
+        std::cout << "[Lobby] Rejecting CLIENT_CONNECT from " << session_id << " (game already started)" << std::endl;
         if (ecs_.send_callback_) {
             auto packet = RType::Protocol::create_simple_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_DISCONNECT), RType::Protocol::PacketFlags::RELIABLE);
             ecs_.send_callback_(session_id, packet);
@@ -35,7 +34,7 @@ void Lobby::handle_client_connect(const std::string &session_id, const std::vect
     auto existing_tok_it = ecs_.session_token_map_.find(session_id);
     if (existing_tok_it != ecs_.session_token_map_.end()) {
         uint32_t existing_token = existing_tok_it->second;
-        std::cout << Console::yellow("[Lobby] ") << "Duplicate CLIENT_CONNECT from " << session_id << ". Replying with existing token " << existing_token << std::endl;
+        std::cout << "[Lobby] Duplicate CLIENT_CONNECT from " << session_id << ". Replying with existing token " << existing_token << std::endl;
 
         auto [spawn_x, spawn_y] = choose_spawn_position();
         send_server_accept(session_id, existing_token, spawn_x, spawn_y);
@@ -69,7 +68,7 @@ void Lobby::handle_client_connect(const std::string &session_id, const std::vect
         udp_server_->broadcast_player_list();
     }
 
-    std::cout << Console::green("[Lobby] ") << "Client " << session_id << " connected and authenticated with token " << token << " (entity will spawn on game start)" << std::endl;
+    std::cout << "[Lobby] Client " << session_id << " connected and authenticated with token " << token << " (entity will spawn on game start)" << std::endl;
 }
 
 void Lobby::handle_client_disconnect(const std::string &session_id, const std::vector<char> &payload) {
@@ -85,16 +84,16 @@ void Lobby::handle_client_disconnect(const std::string &session_id, const std::v
         for (const auto &kv : ecs_.session_token_map_) {
             if (kv.second == leaving_player) { leaving_session = kv.first; break; }
         }
-        std::cout << Console::yellow("[Lobby] ") << "ClientDisconnect payload: player_id=" << leaving_player << std::endl;
+        std::cout << "[Lobby] ClientDisconnect payload: player_id=" << leaving_player << std::endl;
     } else {
         auto sit = ecs_.session_token_map_.find(session_id);
         if (sit != ecs_.session_token_map_.end()) {
             leaving_player = sit->second;
             found_player = true;
             leaving_session = session_id;
-            std::cout << Console::yellow("[Lobby] ") << "Session " << session_id << " disconnected, inferred token " << leaving_player << std::endl;
+            std::cout << "[Lobby] Session " << session_id << " disconnected, inferred token " << leaving_player << std::endl;
         } else {
-            std::cout << Console::yellow("[Lobby] ") << "Session " << session_id << " disconnected but no token found" << std::endl;
+            std::cout << "[Lobby] Session " << session_id << " disconnected but no token found" << std::endl;
         }
     }
 
@@ -116,7 +115,7 @@ void Lobby::handle_client_disconnect(const std::string &session_id, const std::v
             if (udp_server_) {
                 auto session = udp_server_->get_session(leaving_session);
                 if (session) {
-                    std::cout << Console::yellow("[Lobby] ") << "Disconnecting session from UdpServer" << std::endl;
+                    std::cout << "[Lobby] Disconnecting session from UdpServer" << std::endl;
                     session->disconnect();
                 }
             }
@@ -128,7 +127,7 @@ void Lobby::handle_client_ready(const std::string &session_id, const std::vector
     using RType::Protocol::ClientReady;
 
     if (payload.size() < sizeof(ClientReady)) {
-        std::cerr << Console::yellow("[Lobby] ") << "Invalid CLIENT_READY payload size" << std::endl;
+        std::cerr << "[Lobby] Invalid CLIENT_READY payload size" << std::endl;
         return;
     }
 
@@ -140,10 +139,10 @@ void Lobby::handle_client_ready(const std::string &session_id, const std::vector
         if (session) {
             session->set_ready(cr.ready_state != 0);
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Lobby] ") << "Broadcasted updated player list" << std::endl;
+            std::cout << "[Lobby] Broadcasted updated player list" << std::endl;
             udp_server_->check_all_players_ready();
         } else {
-            std::cerr << Console::yellow("[Lobby] ") << "Session " << session_id << " not found" << std::endl;
+            std::cerr << "[Lobby] Session " << session_id << " not found" << std::endl;
         }
     }
 }
@@ -152,7 +151,7 @@ void Lobby::handle_client_unready(const std::string &session_id, const std::vect
     using RType::Protocol::ClientReady;
 
     if (payload.size() < sizeof(ClientReady)) {
-        std::cerr << Console::yellow("[Lobby] ") << "Invalid CLIENT_UNREADY payload size" << std::endl;
+        std::cerr << "[Lobby] Invalid CLIENT_UNREADY payload size" << std::endl;
         return;
     }
 
@@ -163,9 +162,9 @@ void Lobby::handle_client_unready(const std::string &session_id, const std::vect
         if (session) {
             session->set_ready(false);
             udp_server_->broadcast_player_list();
-            std::cout << Console::yellow("[Lobby] ") << "Broadcasted updated player list" << std::endl;
+            std::cout << "[Lobby] Broadcasted updated player list" << std::endl;
         } else {
-            std::cerr << Console::yellow("[Lobby] ") << "Session " << session_id << " not found" << std::endl;
+            std::cerr << "[Lobby] Session " << session_id << " not found" << std::endl;
         }
     }
 }

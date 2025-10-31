@@ -2,7 +2,6 @@
 #include "ServerECS/ServerECS.hpp"
 #include "Network/UDPServer.hpp"
 #include "Network/Session.hpp"
-#include "ECS/Utils/Console.hpp"
 #include "ECS/Components/InputBuffer.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Components/Velocity.hpp"
@@ -36,16 +35,16 @@ void InGame::handle_client_disconnect(const std::string &session_id, const std::
         for (const auto &kv : ecs_.session_token_map_) {
             if (kv.second == leaving_player) { leaving_session = kv.first; break; }
         }
-        std::cout << Console::yellow("[InGame] ") << "ClientDisconnect payload: player_id=" << leaving_player << std::endl;
+        std::cout << "[InGame] ClientDisconnect payload: player_id=" << leaving_player << std::endl;
     } else {
         auto sit = ecs_.session_token_map_.find(session_id);
         if (sit != ecs_.session_token_map_.end()) {
             leaving_player = sit->second;
             found_player = true;
             leaving_session = session_id;
-            std::cout << Console::yellow("[InGame] ") << "Session " << session_id << " disconnected, inferred token " << leaving_player << std::endl;
+            std::cout << "[InGame] Session " << session_id << " disconnected, inferred token " << leaving_player << std::endl;
         } else {
-            std::cout << Console::yellow("[InGame] ") << "Session " << session_id << " disconnected but no token found" << std::endl;
+            std::cout << "[InGame] Session " << session_id << " disconnected but no token found" << std::endl;
         }
     }
 
@@ -67,7 +66,7 @@ void InGame::handle_client_disconnect(const std::string &session_id, const std::
             if (udp_server_) {
                 auto session = udp_server_->get_session(leaving_session);
                 if (session) {
-                    std::cout << Console::yellow("[InGame] ") << "Disconnecting session from UdpServer" << std::endl;
+                    std::cout << "[InGame] Disconnecting session from UdpServer" << std::endl;
                     session->disconnect();
                 }
             }
@@ -185,15 +184,15 @@ void InGame::handle_game_message(const std::string &session_id, uint8_t msg_type
             Input input{msg_type, std::move(payload_copy), timestamp};
             ib.inputs.push_back(std::move(input));
             if (ecs_.get_factory()) ecs_.get_factory()->create_component<InputBuffer>(ecs_.GetRegistry(), player_ent, std::move(ib));
-            else std::cout << Console::yellow("[InGame] ") << "Cannot create InputBuffer: factory missing" << std::endl;
+            else std::cout << "[InGame] Cannot create InputBuffer: factory missing" << std::endl;
         }
     } else {
-        std::cout << Console::yellow("[InGame] ") << "No mapped entity for session " << session_id << ". Packet ignored or handled elsewhere." << std::endl;
+        std::cout << "[InGame] No mapped entity for session " << session_id << ". Packet ignored or handled elsewhere." << std::endl;
     }
 }
 
 void InGame::spawn_all_players() {
-    std::cout << Console::green("[InGame] ") << "Spawning all connected players for game start..." << std::endl;
+    std::cout << "[InGame] Spawning all connected players for game start..." << std::endl;
 
     for (const auto &kv : ecs_.session_token_map_) {
         const std::string& session_id = kv.first;
@@ -201,7 +200,7 @@ void InGame::spawn_all_players() {
 
         auto entity_it = ecs_.session_entity_map_.find(session_id);
         if (entity_it != ecs_.session_entity_map_.end()) {
-            std::cout << Console::yellow("[InGame] ") << "WARNING: Player entity already exists for session "
+            std::cout << "[InGame] WARNING: Player entity already exists for session "
                       << session_id << " (token " << token << "). Using existing entity." << std::endl;
 
             entity player_ent = entity_it->second;
@@ -215,7 +214,7 @@ void InGame::spawn_all_players() {
                 y = pos.y;
             } catch (...) {}
 
-            std::cout << Console::green("[InGame] ") << "Broadcasting spawn for player "
+            std::cout << "[InGame] Broadcasting spawn for player "
                       << token << " at (" << x << ", " << y << ")" << std::endl;
             // create and send packets
             if (ecs_.send_callback_) {
@@ -254,7 +253,7 @@ void InGame::spawn_all_players() {
         }
         ecs_.session_entity_map_[session_id] = player_ent;
 
-        std::cout << Console::green("[InGame] ") << "Spawned and broadcasting player " << token << " (entity " << player_ent << ") at (" << spawn_x << ", " << spawn_y << ")" << std::endl;
+        std::cout << "[InGame] Spawned and broadcasting player " << token << " (entity " << player_ent << ") at (" << spawn_x << ", " << spawn_y << ")" << std::endl;
 
         if (ecs_.send_callback_) {
             RType::Protocol::PlayerSpawn ps{};
@@ -276,7 +275,7 @@ void InGame::spawn_all_players() {
         }
     }
 
-    std::cout << Console::green("[InGame] ") << "All players spawned!" << std::endl;
+    std::cout << "[InGame] All players spawned!" << std::endl;
 }
 
 void InGame::broadcast_loop()
@@ -356,7 +355,7 @@ void InGame::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, floa
     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_CREATE), ec, RType::Protocol::PacketFlags::RELIABLE);
     udp_server_->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
 
-    std::cout << Console::blue("[InGame] ") << "Broadcasted enemy spawn: entity=" << ent
+    std::cout << "[InGame] Broadcasted enemy spawn: entity=" << ent
               << " type=" << (int)enemy_type << " pos=(" << x << ", " << y << ")" << std::endl;
 }
 
