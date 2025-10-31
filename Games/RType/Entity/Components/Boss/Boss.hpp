@@ -15,8 +15,9 @@ struct Boss : public IComponent {
     std::string _armSpritePath{""};
     std::string _bodySpritePath{""};
     std::string _bulletSpritePath{""};
-    int _wave{1};
+    bool _shouldSpawn{false};
+    bool _doneMoving{false};
 
     Boss();
-    Boss(std::string armPath, std::string bodyPath, std::string bulletPath, int wave);
+    Boss(std::string armPath, std::string bodyPath, std::string bulletPath);
 };

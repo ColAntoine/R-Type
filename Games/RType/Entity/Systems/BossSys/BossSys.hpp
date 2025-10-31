@@ -67,12 +67,6 @@ private:
     /* Boss Pattern functions */
     // ? punch funcs
     bool isPlayerClose(registry &r);
-    void smashPlayers(registry &r);
-
-    // ? Shoot patterns
-    // ? need to create new weapons type and apply them based on the current wave
-    bool isPlayerFar(registry &r);
-    bool shouldShoot(registry &r);
 
     // * weapons depending on wave for now
     // * the map use the wave as index and a vector of string to set the weapons
@@ -80,6 +74,7 @@ private:
 
     // * RenderManager for quick access
     RenderManager &_renderManager;
+    int _wave{0};
 };
 
 extern "C" {

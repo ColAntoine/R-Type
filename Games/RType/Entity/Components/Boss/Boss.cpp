@@ -8,6 +8,6 @@
 #include "Boss.hpp"
 
 Boss::Boss() {}
-Boss::Boss(std::string armPath, std::string bodyPath, std::string bulletPath, int wave)
-: _armSpritePath(armPath), _bodySpritePath(bodyPath), _bulletSpritePath(bulletPath), _wave(wave)
+Boss::Boss(std::string armPath, std::string bodyPath, std::string bulletPath)
+: _armSpritePath(armPath), _bodySpritePath(bodyPath), _bulletSpritePath(bulletPath)
 {}
