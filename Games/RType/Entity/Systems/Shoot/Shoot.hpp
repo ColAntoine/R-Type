@@ -26,6 +26,7 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Constants.hpp"
 #include <map>
@@ -54,6 +55,10 @@ public:
     const char* get_name() const override { return "Shoot"; }
 
 private:
+    AudioManager& _audioManager = AudioManager::instance();
+    float _lastLaserSoundTime = 0.0f;
+    const float _laserSoundCooldown = 0.05f;  // 50ms minimum between laser sounds
+    
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);

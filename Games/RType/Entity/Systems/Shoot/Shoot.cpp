@@ -9,6 +9,7 @@
 #include <iostream>
 #include <algorithm>
 #include <string>
+#include <ctime>
 
 #include "Shoot.hpp"
 
@@ -105,6 +106,17 @@ void Shoot::spawnProjectiles(registry &r, float dt)
             auto it = _shootType.find(projType);
             if (it != _shootType.end()) {
                 it->second(ctx);
+            }
+        }
+
+        if (_lastLaserSoundTime <= 0.0f && _audioManager.is_initialized()) {
+            try {
+                std::string laserSoundPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Laser.mp3";
+                _audioManager.get_sfx().load("laser_shot", laserSoundPath);
+                _audioManager.get_sfx().play("laser_shot", 0.7f);
+                _lastLaserSoundTime = _laserSoundCooldown;
+            } catch (const std::exception& ex) {
+                std::cerr << "[Shoot] Error playing laser sound: " << ex.what() << std::endl;
             }
         }
 
@@ -359,6 +371,11 @@ void Shoot::renderHitboxes(registry &r)
 }
 
 void Shoot::update(registry& r, float dt) {
+    /* Update laser sound cooldown */
+    if (_lastLaserSoundTime > 0.0f) {
+        _lastLaserSoundTime -= dt;
+    }
+    
     /* Player Shooting*/
     checkShootIntention(r);
     spawnProjectiles(r, dt);
