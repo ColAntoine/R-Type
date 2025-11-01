@@ -59,8 +59,14 @@ void GameLogic::spawnBoss(registry &r)
     r.emplace_component<Boss>(bossEnt, b);
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<GameLogic>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new GameLogic();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }
