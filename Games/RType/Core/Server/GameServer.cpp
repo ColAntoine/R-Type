@@ -13,12 +13,6 @@
 #include <raylib.h>
 #include <random>
 
-#ifdef _WIN32
-    const std::string ext = ".dll";
-#else
-    const std::string ext = ".so";
-#endif
-
 GameServer::GameServer(bool display, bool windowed, float scale, int maxLobbies, int maxPlayers, bool is_machine_made)
     : port_(8080)
     , running_(false)

@@ -11,8 +11,10 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
+
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 class EnemyAISystem : public ISystem {
 private:
@@ -23,8 +25,10 @@ public:
     const char* get_name() const override { return "EnemyAISystem"; }
 
     void set_world_height(float height) { world_height_ = height; }
-    // Handle turret enemy behavior: move to 3/4 of the screen width then stop
+
+private:
     void turretEnnemyAi(Enemy &enm, velocity &vel, position &pos, float dt, entity ent, registry &r);
+    int getWave(registry &r);
 };
 
 

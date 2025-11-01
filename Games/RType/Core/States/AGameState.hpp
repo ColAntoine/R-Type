@@ -70,6 +70,7 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::VideoSettings: return "VideoSettings";
         case IGameState::GameStateType::BindingsSettings: return "BindingsSettings";
         case IGameState::GameStateType::LoadingVideo: return "LoadingVideo";
+        case IGameState::GameStateType::InGameExit: return "InGameExit";
         default: return "Unknown";
     }
 }

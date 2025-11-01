@@ -78,6 +78,7 @@ void InvincibilitySys::updatePlayerInvi(Invincibility &invi, float dt)
 
 DLL_EXPORT ISystem* create_system() {
     try {
+        return new InvincibilitySys();
     } catch (...) {
         return nullptr;
     }

@@ -60,6 +60,9 @@ void RenderManager::init(const char *title, float scale, bool fullscreen)
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(100, 100, title);
 
+        // Disable ESC key from closing the window by default
+        SetExitKey(KEY_NULL);
+
         if (!IsWindowReady()) {
             std::cerr << "RenderManager: Failed to create main window" << std::endl;
             std::cerr << "  - Requested resolution: " << this->_winInfos.getWidth() << "x" << this->_winInfos.getHeight() << std::endl;

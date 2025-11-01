@@ -17,6 +17,8 @@
 #include "ECS/Registry.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 
+#include "Constants.hpp"
+
 #if defined(_MSC_VER)
   #define ATTR_MAYBE_UNUSED [[maybe_unused]]
 #else
@@ -32,14 +34,21 @@ void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
 void HealthSys::checkAndKillEnemy(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
+    auto *posArr = r.get_if<position>();
     auto *enemyArr = r.get_if<Enemy>();
     std::vector<entity> entToKill;
 
     if (!healthArr || !enemyArr) return;
 
-    for (auto [healthEnt, enemyComp, ent] : zipper(*healthArr, *enemyArr)) {
+    for (auto [healthEnt, enemyComp, pos, ent] : zipper(*healthArr, *enemyArr, *posArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
+
+            entity anim = r.spawn_entity();
+            float frame_w = 105.0f;
+            float frame_h = 107.0f;
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
 
@@ -48,7 +57,6 @@ void HealthSys::checkAndKillEnemy(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            // Check if entity still exists before killing
             if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
                 addScore(r);
                 r.kill_entity(ent);
@@ -61,17 +69,31 @@ void HealthSys::checkAndKillPlayer(registry &r)
 {
     auto *healthArr = r.get_if<Health>();
     auto *playerArr = r.get_if<Player>();
+    auto *posArr = r.get_if<position>();
+    std::vector<entity> entToKill;
 
-    if (!healthArr || !playerArr) return;
+    if (!healthArr || !playerArr || !posArr) return;
 
-    /* Ca met le player en mort et ennleve ses composant de display etc tu peux le gerer dans le serv avec le bool de player */
-    for (auto [healthEnt, playerComp, ent] : zipper(*healthArr, *playerArr)) {
+    for (auto [healthEnt, player, pos, ent] : zipper(*healthArr, *playerArr, *posArr)) {
         if (healthEnt._health <= 0) {
-            playerComp._isDead = true;
-            r.remove_component<Health>(entity(ent)); // remove health to avoid repeated death*
-            r.remove_component<animation>(entity(ent)); // remove animation to stop rendering*
-            r.remove_component<controllable>(entity(ent)); // remove controllable to stop player input*
-            r.remove_component<collider>(entity(ent)); // remove collider to stop collisions*
+            entToKill.push_back(entity(ent));
+            entity anim = r.spawn_entity();
+            float frame_w = 105.0f;
+            float frame_h = 107.0f;
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            r.emplace_component<position>(anim, pos.x, pos.y);
+        }
+    }
+
+    if (!entToKill.empty()) {
+        std::sort(entToKill.begin(), entToKill.end());
+        entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
+
+        for (auto ent : entToKill) {
+            // Check if entity still exists before killing
+            if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
+                r.kill_entity(ent);
+            }
         }
     }
 }

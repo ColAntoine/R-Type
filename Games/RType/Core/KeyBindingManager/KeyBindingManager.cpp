@@ -44,6 +44,12 @@ void KeyBindingManager::checkAndEmitKeyEvents()
         bool wasDown = _previousKeyStates[value];
 
         if (isDown && !wasDown) {
+            // Special handling for ESCAPE key
+            if (key == "ESCAPE") {
+                Event escapePressed(EventTypes::ESCAPE_KEY_PRESSED);
+                eventBus.emit(escapePressed);
+            }
+
             Event keyPressed(EventTypes::KEY_PRESSED);
             keyPressed.set("key", key);
             eventBus.emit(keyPressed);

@@ -16,16 +16,19 @@
 #include "ECS/Zipper.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "Entity/Components/Health/Health.hpp"
 
 PowerUpSys::PowerUpSys()
 : _rng(std::random_device{}()),
     _x_dist(0.0f, 800.0f),
-    _powerup_type_dist(0, 3)
+    _powerup_type_dist(0, 5)
 {
     _pUpText[WEAPON_FIRERATE] = "Firerate increased!";
     _pUpText[WAEPON_COOLDOWN] = "Cooldown decreased!";
     _pUpText[PLAYER_SPEED] = "Player speed increased!";
     _pUpText[WEAPON_NEW] = "New weapon unlocked";
+    _pUpText[HEALTH_UP] = "Health increased!";
+    _pUpText[WEAPON_DAMAGE] = "Weapon damage increased!";
 }
 
 void PowerUpSys::update(registry& r, float dt)
@@ -92,6 +95,20 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/speed.png", orig_w, orig_h, sx, sy);
             break;
         }
+        case HEALTH_UP: {
+            float orig_w = 254.f, orig_h = 254.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/health.png", orig_w, orig_h, sx, sy);
+            break;
+        }
+        case WEAPON_DAMAGE: {
+            float orig_w = 1024.f, orig_h = 1024.f;
+            float sx = target_w / orig_w;
+            float sy = target_h / orig_h;
+            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/damage.png", orig_w, orig_h, sx, sy);
+            break;
+        }
         default:
             r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
             break;
@@ -109,8 +126,9 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     auto playerArr = r.get_if<Player>();
     auto weaponArr = r.get_if<Weapon>();
     auto velArr = r.get_if<velocity>();
+    auto healthArr = r.get_if<Health>();
 
-    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr) return;
+    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr || !velArr || !healthArr) return;
 
     std::vector<size_t> entitiesToKill;
 
@@ -120,7 +138,7 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
         float p_top = pPos.y + pCol.offset_y;
         float p_bottom = pPos.y + pCol.offset_y + pCol.h;
 
-        for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr)) {
+        for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
             if (pEntity == playerEntity) continue;
 
             float pl_left = playerPos.x + playerCol.offset_x;
@@ -131,7 +149,8 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
             bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
 
             if (overlap) {
-                applyPowerUps(playerWeapon, &playerVel, pUp);
+                int wave = getWave(r);
+                applyPowerUps(playerWeapon, &playerVel, &playerHealth, pUp, wave);
                 entitiesToKill.push_back(static_cast<size_t>(pEntity));
                 auto animEnt = r.spawn_entity();
                 r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
@@ -152,7 +171,7 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     }
 }
 
-void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp)
+void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, PowerUp &pUp, int wave)
 {
     switch (pUp._pwType) {
         case PLAYER_SPEED:
@@ -185,7 +204,33 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp)
                 }
             }
             break;
+        case HEALTH_UP:
+            if (health) {
+                int increase = 20 * (wave + 1);
+                health->_health += increase;
+                std::cout << "Applied HEALTH_UP powerup: +" << increase << " health\n";
+            }
+            break;
+        case WEAPON_DAMAGE:
+            {
+                int increase = 5 * (wave + 1);
+                weapon._damage += increase;
+                std::cout << "Applied WEAPON_DAMAGE powerup: +" << increase << " damage\n";
+            }
+            break;
     }
+}
+
+int PowerUpSys::getWave(registry &r)
+{
+    auto waveArr = r.get_if<CurrentWave>();
+
+    if (!waveArr) return 0;
+
+    for (auto [wave, ent]: zipper(*waveArr)) {
+        return wave._currentWave;
+    }
+    return 0;
 }
 
 DLL_EXPORT ISystem* create_system() {

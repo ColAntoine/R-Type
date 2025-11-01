@@ -9,10 +9,17 @@
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 #include "UI/ThemeManager.hpp"
 
 #include <string>
 #include <random>
+
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
 
 void InGameState::enter()
 {
@@ -42,29 +49,36 @@ void InGameState::enter()
 
     // Load components first (needed for both solo and multiplayer)
     loader.load_components("build/lib/libECS" + ext, reg);
-    
+
     // Load render systems
+    loader.load_components("build/lib/libECS" + ext, _registry);
     loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_PUpAnimationSys" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
 
-    // Load logic systems
     loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
+
+    // ! unload the enemy for boss testing
     loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
+
+    loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
+
     loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
-    loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
-    loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
-
+    loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
@@ -84,17 +98,42 @@ void InGameState::enter()
     event.set("keyBindings", keyBinds);
     eventBus.emit(event);
 
+    // Subscribe to KEY_PRESSED event and check if it's the ESCAPE key
+    _keyPressedCallbackId = eventBus.subscribe(EventTypes::KEY_PRESSED,
+        [this](ATTR_MAYBE_UNUSED const Event& e) {
+            try {
+                std::string key = e.get<std::string>("key");
+
+                if (key == "ESCAPE") {
+                    if (_stateManager) {
+                        _stateManager->push_state("InGameExit", true);
+                    }
+                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[InGame] Error in key pressed handler: " << ex.what() << std::endl;
+            }
+        });
     auto &theme = ThemeManager::instance().getTheme();
     Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
     themeEvent.set("palette", theme);
     eventBus.emit(themeEvent);
 
     setup_ui();
+    startMusic();
     _initialized = true;
 }
 
 void InGameState::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_keyPressedCallbackId);
+
+    auto& audioManager = AudioManager::instance();
+    if (audioManager.is_initialized()) {
+        audioManager.get_music().stopAll();
+        audioManager.get_music().clear();
+    }
+
     _initialized = false;
 }
 
@@ -132,21 +171,13 @@ void InGameState::handle_input()
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        if (IsKeyDown(KEY_UP))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        if (IsKeyDown(KEY_DOWN))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        if (IsKeyDown(KEY_LEFT))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        if (IsKeyDown(KEY_RIGHT))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
-        // if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
+        // if (IsKeyDown(KEY_UP))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        // if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
+        // if (IsKeyDown(KEY_DOWN))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        // if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
+        // if (IsKeyDown(KEY_LEFT))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        // if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
+        // if (IsKeyDown(KEY_RIGHT))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
@@ -239,5 +270,23 @@ void InGameState::createPlayer()
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
     }
+
+    auto currentWave = reg.spawn_entity();
+    reg.emplace_component<CurrentWave>(currentWave, 0);
 }
 
+void InGameState::startMusic()
+{
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
+            audioManager.get_music().load("game_theme", gameMusicPath);
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+            std::cout << "[InGame] Playing game music" << std::endl;
+        } catch (const std::exception& ex) {
+            std::cerr << "[InGame] Error playing game music: " << ex.what() << std::endl;
+        }
+    }
+}

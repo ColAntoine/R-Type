@@ -36,8 +36,8 @@ class MenuScene : public IScene
         void destroy(float dt) override;
 
     private:
-        std::unique_ptr<UI::UIButton> _playButton;
-        std::unique_ptr<UI::UIButton> _quitButton;
+        std::shared_ptr<UI::UIButton> _playButton;
+        std::shared_ptr<UI::UIButton> _quitButton;
         bool _shouldStartGame;
         bool _shouldQuit;
 };

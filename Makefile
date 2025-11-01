@@ -19,6 +19,7 @@ clean:
 fclean:
 	@echo "Removing lib directory, rtype binary, and build directory..."
 	rm -rf lib rtype build r-type_client r-type_server lib pang
+	cd Games/Pang && make fclean
 
 re: fclean all
 

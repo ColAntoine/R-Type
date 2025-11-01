@@ -22,6 +22,7 @@
     #include <iostream>
     #include <map>
     #include <raylib.h>
+    #include <memory>
 
 // ====================================ECS======================================
 #include "ECS/Registry.hpp"
@@ -43,6 +44,14 @@
 #include "Scene/InGameScene/InGameScene.hpp"
 #include "Scene/EndScene/EndScene.hpp"
 // =============================================================================
+
+#ifdef _WIN32
+  #include "ECS/WinLoader.hpp"
+  using PlatformLoader = WinLoader;
+#else
+  #include "ECS/LinuxLoader.hpp"
+  using PlatformLoader = LinuxLoader;
+#endif
 
 class Core
 {
@@ -71,7 +80,7 @@ class Core
         // * VARS
         registry _reg;
         IComponentFactory *_componentFactory;
-        ILoader _systemLoader;
+        PlatformLoader _systemLoader;
         entity _ballEntity;
         bool _systemsLoaded;
 };
