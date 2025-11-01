@@ -171,14 +171,14 @@ void InGameState::handle_input()
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        // if (IsKeyDown(KEY_UP))
-        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        // if (IsKeyDown(KEY_DOWN))
-        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        // if (IsKeyDown(KEY_LEFT))
-        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        // if (IsKeyDown(KEY_RIGHT))
-        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
+        if (IsKeyDown(keyBinds.at("move_up")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
+        if (IsKeyDown(keyBinds.at("move_down")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
+        if (IsKeyDown(keyBinds.at("move_left")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
+        if (IsKeyDown(keyBinds.at("move_right")))
+            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
         static uint8_t last_input_state = 0;
