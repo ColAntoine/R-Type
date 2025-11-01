@@ -194,40 +194,49 @@ void InGame::handle_game_message(const std::string &session_id, uint8_t msg_type
 
 void InGame::spawn_all_players() {
     std::cout << "[InGame] Spawning all connected players for game start..." << std::endl;
+    // Arrange players vertically with a fixed spacing to avoid overlapping spawns.
+    const float base_x = 100.0f;
+    const float base_y = 100.0f;
+    const float spacing_y = 80.0f; // pixels between players vertically
+    size_t idx = 0;
 
     for (const auto &kv : ecs_.session_token_map_) {
         const std::string& session_id = kv.first;
         uint32_t token = kv.second;
 
+        // Compute spawn position based on index so each player is placed under the previous one
+        float spawn_x = base_x;
+        float spawn_y = base_y + static_cast<float>(idx) * spacing_y;
+
         auto entity_it = ecs_.session_entity_map_.find(session_id);
         if (entity_it != ecs_.session_entity_map_.end()) {
             std::cout << "[InGame] WARNING: Player entity already exists for session "
-                      << session_id << " (token " << token << "). Using existing entity." << std::endl;
+                      << session_id << " (token " << token << "). Repositioning and using existing entity." << std::endl;
 
             entity player_ent = entity_it->second;
 
-            float x = 100.0f;
-            float y = 100.0f;
-            try {
-                auto& positions = ecs_.registry_.get_components<position>();
-                const auto& pos = positions[player_ent];
-                x = pos.x;
-                y = pos.y;
-            } catch (...) {}
+            // Ensure the entity position matches the computed spawn location so clients see them separated
+            auto& registry = ecs_.GetRegistry();
+            auto* pos_arr = registry.get_if<position>();
+            if (pos_arr) {
+                if (pos_arr->has(player_ent)) (*pos_arr)[player_ent] = position{spawn_x, spawn_y};
+                else registry.emplace_component<position>(player_ent, spawn_x, spawn_y);
+            } else {
+                if (ecs_.get_factory()) ecs_.get_factory()->create_component<position>(registry, player_ent, spawn_x, spawn_y);
+            }
 
-            std::cout << "[InGame] Broadcasting spawn for player "
-                      << token << " at (" << x << ", " << y << ")" << std::endl;
+            std::cout << "[InGame] Broadcasting spawn for player " << token << " at (" << spawn_x << ", " << spawn_y << ")" << std::endl;
             // create and send packets
             if (ecs_.send_callback_) {
                 RType::Protocol::PlayerSpawn ps{};
                 ps.player_token = token;
                 ps.server_entity = static_cast<uint32_t>(player_ent);
-                ps.x = x; ps.y = y; ps.health = 1.0f;
+                ps.x = spawn_x; ps.y = spawn_y; ps.health = 1.0f;
                 auto player_packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SPAWN), ps, RType::Protocol::PacketFlags::RELIABLE);
                 RType::Protocol::PlayerRemoteSpawn es{};
                 es.player_token = token;
                 es.server_entity = static_cast<uint32_t>(player_ent);
-                es.x = x; es.y = y; es.health = 1.0f;
+                es.x = spawn_x; es.y = spawn_y; es.health = 1.0f;
                 auto remote_packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SPAWN_REMOTE), es, RType::Protocol::PacketFlags::NONE);
                 for (const auto &kv2 : ecs_.session_token_map_) {
                     const auto &s = kv2.first;
@@ -236,11 +245,12 @@ void InGame::spawn_all_players() {
                 }
                 ecs_.send_callback_(session_id, player_packet);
             }
+            // increment index for next player
+            ++idx;
             continue;
         }
 
-        auto [spawn_x, spawn_y] = std::pair<float,float>{100.0f, 100.0f};
-        // Choose spawn like Lobby would - simple default here
+        // New player: spawn entity and attach needed components with computed spawn pos
         entity player_ent = ecs_.GetRegistry().spawn_entity();
         if (ecs_.get_factory()) {
             ecs_.get_factory()->create_component<position>(ecs_.GetRegistry(), player_ent, spawn_x, spawn_y);
@@ -274,6 +284,7 @@ void InGame::spawn_all_players() {
             }
             ecs_.send_callback_(session_id, player_packet);
         }
+        ++idx;
     }
 
     std::cout << "[InGame] All players spawned!" << std::endl;

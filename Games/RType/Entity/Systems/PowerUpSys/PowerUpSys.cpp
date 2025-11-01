@@ -16,6 +16,7 @@
 #include "ECS/Zipper.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "ECS/Components/Velocity.hpp"
+#include "Entity/Components/RemotePlayer/RemotePlayer.hpp"
 
 PowerUpSys::PowerUpSys()
 : _rng(std::random_device{}()),
@@ -30,8 +31,25 @@ PowerUpSys::PowerUpSys()
 
 void PowerUpSys::update(registry& r, float dt)
 {
+    // Seed RNG from registry once if available (server provides game seed in multiplayer)
+    if (!_seeded) {
+        seed_from_registry(r);
+        _seeded = true;
+    }
+
     spawnPowerUps(r, dt);
     colisionPowerUps(r, dt);
+}
+
+void PowerUpSys::seed_from_registry(registry& r) {
+    if (r.has_random_seed()) {
+        _rng.seed(r.get_random_seed());
+        std::cout << "[PowerUpSys] Seeded RNG with: " << r.get_random_seed() << std::endl;
+    } else {
+        // fall back to random_device but keep the default behavior
+        _rng.seed(std::random_device{}());
+        std::cout << "[PowerUpSys] No registry seed found, using random seed" << std::endl;
+    }
 }
 
 void PowerUpSys::spawnPowerUps(registry &r, float dt)
@@ -107,10 +125,12 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     auto posArr = r.get_if<position>();
     auto colArr = r.get_if<collider>();
     auto playerArr = r.get_if<Player>();
+    auto remoteArr = r.get_if<remote_player>();
     auto weaponArr = r.get_if<Weapon>();
     auto velArr = r.get_if<velocity>();
 
-    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr) return;
+    // We need powerups, positions, colliders and weapons (velocity optional but expected).
+    if (!pUpArr || !posArr || !colArr || !weaponArr || !velArr) return;
 
     std::vector<size_t> entitiesToKill;
 
@@ -120,24 +140,29 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
         float p_top = pPos.y + pCol.offset_y;
         float p_bottom = pPos.y + pCol.offset_y + pCol.h;
 
-        for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr)) {
-            if (pEntity == playerEntity) continue;
+        for (auto [playerPos, playerCol, playerWeapon, playerVel, playerEntity] : zipper(*posArr, *colArr, *weaponArr, *velArr)) {
+                // Skip if this entity is the powerup itself
+                if (pEntity == playerEntity) continue;
 
-            float pl_left = playerPos.x + playerCol.offset_x;
-            float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
-            float pl_top = playerPos.y + playerCol.offset_y;
-            float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
+                // Only consider entities that are either a local Player or a remote_player representation
+                bool is_player = (playerArr && playerArr->has(playerEntity)) || (remoteArr && remoteArr->has(playerEntity));
+                if (!is_player) continue;
 
-            bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
+                float pl_left = playerPos.x + playerCol.offset_x;
+                float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
+                float pl_top = playerPos.y + playerCol.offset_y;
+                float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
 
-            if (overlap) {
-                applyPowerUps(playerWeapon, &playerVel, pUp);
-                entitiesToKill.push_back(static_cast<size_t>(pEntity));
-                auto animEnt = r.spawn_entity();
-                r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
-                break;
+                bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
+
+                if (overlap) {
+                    applyPowerUps(playerWeapon, &playerVel, pUp);
+                    entitiesToKill.push_back(static_cast<size_t>(pEntity));
+                    auto animEnt = r.spawn_entity();
+                    r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                    break;
+                }
             }
-        }
     }
 
     if (!entitiesToKill.empty()) {

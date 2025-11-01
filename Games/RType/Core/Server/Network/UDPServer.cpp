@@ -95,12 +95,6 @@ namespace RType::Network {
                 if (size >= sizeof(RType::Protocol::PacketHeader)) {
                     RType::Protocol::PacketHeader hdr;
                     memcpy(&hdr, data, sizeof(hdr));
-                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
-                              << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
-                              << " len=" << size << std::endl;
-                } else {
-                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
-                              << " raw_len=" << size << std::endl;
                 }
                 connection->send(data, size);
             }

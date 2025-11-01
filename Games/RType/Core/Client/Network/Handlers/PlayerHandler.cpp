@@ -7,6 +7,8 @@
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Input/Input.hpp"
+#include "Entity/Components/RemotePlayer/RemotePlayer.hpp"
 #include "ECS/Components/Collider.hpp"
 #include "Constants.hpp"
 
@@ -148,6 +150,7 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<controllable>(registry_, ent, 300.0f);
         factory->create_component<Weapon>(registry_, ent);
+        factory->create_component<Input>(registry_, ent);
         factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         factory->create_component<Score>(registry_, ent);
         factory->create_component<Health>(registry_, ent);
@@ -193,9 +196,9 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<Weapon>(registry_, ent);
-        // factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
-        // factory->create_component<Health>(registry_, ent);
-        // factory->create_component<Player>(registry_, ent);
+        factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
+        factory->create_component<Health>(registry_, ent);
+        factory->create_component<remote_player>(registry_, ent, std::string("remote_") + std::to_string(ps.player_token));
         return;
     }
     registry_.emplace_component<position>(ent, x, y);

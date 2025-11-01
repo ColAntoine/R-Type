@@ -85,6 +85,7 @@ void NetworkManager::register_default_handlers() {
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::PLAYER_SHOOT),
         [this](const char* payload, size_t size) {
             std::vector<char> data(payload, payload + size);
+            std::cout << "[NetworkManager] Received PLAYER_SHOOT message" << std::endl;
             this->post_to_main([this, data = std::move(data)]() mutable {
                 player_handler_.on_player_shoot(data.data(), data.size());
             });
@@ -94,6 +95,7 @@ void NetworkManager::register_default_handlers() {
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::PLAYER_UNSHOOT),
         [this](const char* payload, size_t size) {
             std::vector<char> data(payload, payload + size);
+            std::cout << "[NetworkManager] Received PLAYER_UNSHOOT message" << std::endl;
             this->post_to_main([this, data = std::move(data)]() mutable {
                 player_handler_.on_player_unshoot(data.data(), data.size());
             });
