@@ -9,8 +9,8 @@
 void InGameExitState::enter()
 {
     std::cout << "[InGameExit] Entering state" << std::endl;
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    _systemLoader->load_components("build/lib/libECS" + ext, _registry);
+    _systemLoader->load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();
 
@@ -120,6 +120,6 @@ void InGameExitState::update(float delta_time)
     if (!_initialized)
         return;
 
-    _systemLoader.update_all_systems(_registry, delta_time, DLLoader::LogicSystem);
+    _systemLoader->update_all_systems(_registry, delta_time, ILoader::LogicSystem);
 }
 

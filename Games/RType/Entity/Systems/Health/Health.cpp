@@ -15,10 +15,18 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 #include "Constants.hpp"
 
-void HealthSys::update(registry& r, float dt __attribute_maybe_unused__) {
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
+
+void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
 }
@@ -90,7 +98,7 @@ void HealthSys::checkAndKillPlayer(registry &r)
     }
 }
 
-void HealthSys::addScore(registry &r)
+void HealthSys::addScore(registry &r, int amount)
 {
     // find existing Score entity or create one
     auto *scoreArr = r.get_if<Score>();
@@ -111,13 +119,21 @@ void HealthSys::addScore(registry &r)
     // increment the score by 1
     scoreArr = r.get_if<Score>();
     if (scoreArr && scoreArr->has(static_cast<size_t>(scoreEnt))) {
-        scoreArr->get(static_cast<size_t>(scoreEnt))._score += 1;
-        std::cout << "SCORE: " << scoreArr->get(static_cast<size_t>(scoreEnt))._score << std::endl;
+        scoreArr->get(static_cast<size_t>(scoreEnt))._score += amount;
+        Event scoreEvent("SCORE_INCREASED");
+        scoreEvent.set("amount", amount);
+        MessagingManager::instance().get_event_bus().emit(scoreEvent);
     }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<HealthSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new HealthSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

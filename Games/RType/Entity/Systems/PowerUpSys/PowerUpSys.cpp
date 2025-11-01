@@ -233,10 +233,14 @@ int PowerUpSys::getWave(registry &r)
     return 0;
 }
 
-
-
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<PowerUpSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new PowerUpSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

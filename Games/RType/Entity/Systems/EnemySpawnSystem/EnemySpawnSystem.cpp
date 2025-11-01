@@ -151,6 +151,14 @@ int EnemySpawnSystem::getWave(registry &r)
     return 0;
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<EnemySpawnSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new EnemySpawnSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

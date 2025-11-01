@@ -22,14 +22,14 @@
 #include <raylib.h>
 #include <optional>
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/ComponentFactory.hpp"
 #include "Entity/Components/Player/Player.hpp"
 
 class InGameScene : public IScene
 {
     public:
-        InGameScene(registry& reg, DLLoader& systemLoader, IComponentFactory* factory);
+        InGameScene(registry& reg, ILoader& systemLoader, IComponentFactory* factory);
         ~InGameScene() override = default;
 
         void init(float dt) override;
@@ -39,7 +39,7 @@ class InGameScene : public IScene
 
     private:
         registry& _reg;
-        DLLoader& _systemLoader;
+        ILoader& _systemLoader;
         IComponentFactory* _componentFactory;
         bool _initialized;
         Texture2D _cloudTexture;

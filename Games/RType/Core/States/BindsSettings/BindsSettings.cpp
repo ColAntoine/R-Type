@@ -9,13 +9,28 @@
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
 #include "Core/Config/Config.hpp"
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
+
 void BindsSettingsState::enter()
 {
     std::cout << "[BindsSettingsState] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
 
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
+    
     setup_ui();
     subscribe_to_ui_event();
 
@@ -60,7 +75,7 @@ void BindsSettingsState::applyBinding(entity buttonEntity, const std::string &ac
 {
     auto &eventBus = MessagingManager::instance().get_event_bus();
     // Another event to prevent the user from modifying two keys at the same time
-    _mouseButtonCallbackId = eventBus.subscribe(EventTypes::MOUSE_PRESSED, [this, buttonEntity](__attribute_maybe_unused__ const Event &event) {
+    _mouseButtonCallbackId = eventBus.subscribe(EventTypes::MOUSE_PRESSED, [this, buttonEntity](ATTR_MAYBE_UNUSED const Event &event) {
         setTextToButton(buttonEntity, _currentText);
         _currentText = "";
 

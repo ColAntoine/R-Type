@@ -53,16 +53,22 @@ void Core::loadSystems()
 {
     if (_systemsLoaded) return;
 
+    #ifdef _WIN32
+        const std::string ext = ".dll";
+    #else
+        const std::string ext = ".so";
+    #endif
+
     std::cout << "Loading game systems dynamically..." << std::endl;
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot.so", DLLoader::LogicSystem);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner.so", DLLoader::LogicSystem);
-    std::cout << "Loaded " << _systemLoader.get_system_count(DLLoader::LogicSystem) << " systems total." << std::endl;
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Gravity" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_BallSys" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Controlable" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_InvincibilitySys" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Render" + ext, ILoader::RenderSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Shoot" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_BallSpawner" + ext, ILoader::LogicSystem);
+    std::cout << "Loaded " << _systemLoader.get_system_count(ILoader::LogicSystem) << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
     _systemsLoaded = true;

@@ -76,6 +76,14 @@ void LifetimeSystem::update(registry& r, float dt) {
     }
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<LifetimeSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new LifetimeSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

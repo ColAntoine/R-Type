@@ -112,8 +112,14 @@ void StarBg::render_stars() const
 }
 
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<StarBg>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new StarBg();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

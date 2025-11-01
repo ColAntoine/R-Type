@@ -8,12 +8,26 @@
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
 void Lobby::enter()
 {
     std::cout << "[Lobby] Entering state" << std::endl;
 
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
+
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     setup_ui();
     subscribe_to_ui_event();
@@ -62,7 +76,7 @@ void Lobby::resume()
     std::cout << "[Lobby] Resuming state" << std::endl;
 }
 
-void Lobby::update(__attribute_maybe_unused__ float delta_time)
+void Lobby::update(ATTR_MAYBE_UNUSED float delta_time)
 {
     if (game_start_ && _stateManager) {
         _stateManager->pop_state();

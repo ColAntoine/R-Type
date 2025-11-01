@@ -15,7 +15,7 @@
 class InGameState : public AGameState {
     public:
         InGameState() = default;
-        InGameState(registry* shared_registry, DLLoader* shared_loader)
+        InGameState(registry* shared_registry, ILoader* shared_loader)
             : AGameState(shared_registry, shared_loader) {}
         ~InGameState() override = default;
 

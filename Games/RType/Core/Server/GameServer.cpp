@@ -96,26 +96,13 @@ bool GameServer::init()
         this->start_game();
     });
 
-    server_ecs_->init("lib/libECS.so");
+    server_ecs_->init("build/lib/libECS" + ext);
 
-    // Load logic systems (they won't run until game starts)
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
-    server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
 
     if (display_) {
+        // Initialize rendering for server UI (lobby). Game render systems are
+        // also loaded when the game actually starts.
         RenderManager::instance().init("R-Type Server", scale_, !windowed_);
-        // Load render systems for display
-        server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
-        server_ecs_->GetDLLoader().load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
-        
         // Register and setup lobby state
         register_states();
         state_manager_.push_state("ServerLobby");
@@ -156,18 +143,18 @@ void GameServer::run_tick_loop()
 
         if (display_) {
             RenderManager::instance().begin_frame();
-            
+
             // Update state manager (handles lobby UI)
             state_manager_.update(0.033f);
-            
+
             // Render state manager (lobby or game UI)
             state_manager_.render();
-            
+
             // If game started, also render game entities
             if (game_started_) {
-                server_ecs_->GetDLLoader().update_all_systems(server_ecs_->GetRegistry(), 0.033f, DLLoader::RenderSystem);
+                server_ecs_->GetILoader().update_all_systems(server_ecs_->GetRegistry(), 0.033f, ILoader::RenderSystem);
             }
-            
+
             RenderManager::instance().end_frame();
             if (WindowShouldClose()) {
                 running_ = false;
@@ -245,7 +232,7 @@ void GameServer::shutdown()
 void GameServer::register_states()
 {
     std::cout << "[GameServer] Registering states..." << std::endl;
-    
+
     // Create lobby state with UDP server reference
     auto server = network_manager_->get_server();
     state_manager_.register_state_with_factory("ServerLobby", [this, server]() -> std::shared_ptr<IGameState> {
@@ -258,8 +245,44 @@ void GameServer::start_game()
 {
     std::cout << "[GameServer] Starting game! Transitioning from lobby..." << std::endl;
 
+    // Guard: ensure we only transition once and load systems once
+    if (game_started_) {
+        std::cout << "[GameServer] start_game() called but game already started - ignoring." << std::endl;
+        return;
+    }
+
+    // Load server logic and render systems now that we are entering InGame
+    if (server_ecs_ && !systems_loaded_) {
+        auto &loader = server_ecs_->GetILoader();
+        // Logic systems
+        loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+
+        // Render systems (only if display mode)
+        if (display_) {
+            loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
+            loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
+        }
+
+        systems_loaded_ = true;
+        std::cout << "[GameServer] ECS systems loaded for InGame phase." << std::endl;
+    }
+
+    // Mark game as started and inform ServerECS so it can reject new clients
+
     game_started_ = true;
-    
+    if (server_ecs_) {
+        server_ecs_->set_game_started(true);
+    }
+
     // Generate and set random seed for deterministic gameplay
     std::random_device rd;
     unsigned int game_seed = rd();
@@ -272,27 +295,27 @@ void GameServer::start_game()
     if (server) {
         RType::Protocol::GameSeed seed_msg;
         seed_msg.seed = game_seed;
-        
+
         auto packet = RType::Protocol::create_packet(
             static_cast<uint8_t>(RType::Protocol::GameMessage::GAME_SEED),
             seed_msg
         );
-        
+
         server->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
         std::cout << "[GameServer] Game seed broadcasted to all clients" << std::endl;
     }
-    
-    // Spawn all players (was previously done in Multiplayer callback that got overwritten)
-    if (server_ecs_->GetMultiplayer()) {
+
+    // Spawn all players (Multiplayer is responsible for creating entities)
+    if (server_ecs_ && server_ecs_->GetMultiplayer()) {
         server_ecs_->GetMultiplayer()->spawn_all_players();
     }
-    
+
     // Mark lobby as game started (for clients to know)
     if (lobby_state_) {
         lobby_state_->set_game_started(true);
     }
-    
-    // Clear lobby UI if in display mode
+
+    // Clear lobby UI if in display mode (render systems already loaded above)
     if (display_) {
         state_manager_.clear_states();
     }
