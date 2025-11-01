@@ -5,6 +5,7 @@
 #include "ECS/Renderer/RenderManager.hpp"
 #include "UI/Components/GlitchButton.hpp"
 #include "UI/ThemeManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 void MainMenuState::enter()
 {
@@ -14,6 +15,25 @@ void MainMenuState::enter()
     this->_systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();
+
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            auto& musicCache = audioManager.get_music().getMusicCache();
+            if (musicCache.find("menu_theme") == musicCache.end()) {
+                std::string menuMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Menu.mp3";
+                audioManager.get_music().load("menu_theme", menuMusicPath);
+                audioManager.get_music().play("menu_theme", 0.5f);
+                std::cout << "[MainMenu] Playing menu music" << std::endl;
+            } else {
+                audioManager.get_music().play("menu_theme", 0.5f);
+                std::cout << "[MainMenu] Resumed menu music" << std::endl;
+            }
+        } catch (const std::exception& ex) {
+            std::cerr << "[MainMenu] Error playing music: " << ex.what() << std::endl;
+        }
+    }
 
     this->setup_ui();
     subscribe_to_ui_event();
@@ -44,6 +64,9 @@ void MainMenuState::update(__attribute_maybe_unused__ float delta_time)
 void MainMenuState::play_solo()
 {
     if (this->_stateManager) {
+        auto& audioManager = AudioManager::instance();
+        audioManager.get_music().stopAll();
+
         this->_stateManager->pop_state();
         this->_stateManager->push_state("InGame");
         this->_stateManager->push_state("InGameHud");
@@ -54,6 +77,9 @@ void MainMenuState::play_solo()
 void MainMenuState::play_coop()
 {
     if (this->_stateManager) {
+        auto& audioManager = AudioManager::instance();
+        audioManager.get_music().stopAll();
+
         this->_stateManager->pop_state();
         this->_stateManager->push_state("SettingsPanel");
         this->_stateManager->push_state("Connection");

@@ -9,6 +9,7 @@
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include <string>
 #include <random>
@@ -110,6 +111,13 @@ void InGameState::exit()
 {
     auto &eventBus = MessagingManager::instance().get_event_bus();
     eventBus.unsubscribe(_keyPressedCallbackId);
+
+    auto& audioManager = AudioManager::instance();
+    if (audioManager.is_initialized()) {
+        audioManager.get_music().stopAll();
+        audioManager.get_music().clear();
+    }
+
     _initialized = false;
 }
 

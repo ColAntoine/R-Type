@@ -97,7 +97,7 @@ void BossSys::spawn(registry &r)
         float scale_y = (frame_h > 0.0f) ? (bossH / frame_h) : 1.0f;
         r.emplace_component<animation>(entity(bossEnt), RTYPE_PATH_ASSETS + "bossSheet.png", frame_w, frame_h, scale_x, scale_y, 0, false);
     }
-
+    startBossMusic(r);
 }
 
 void BossSys::move(registry &r)
@@ -190,6 +190,21 @@ void BossSys::increaseWave(registry &r)
 
     for (auto [wave, ent]: zipper(*waveArr)) {
         wave._currentWave += 1;
+    }
+}
+
+void BossSys::startBossMusic(registry &r)
+{
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            std::string menuMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Boss.mp3";
+            audioManager.get_music().load("boss_theme", menuMusicPath);
+            audioManager.get_music().play("boss_theme", 0.5f);
+        } catch (const std::exception& ex) {
+            std::cerr << "[MainMenu] Error playing music: " << ex.what() << std::endl;
+        }
     }
 }
 

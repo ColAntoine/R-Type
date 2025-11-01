@@ -4,6 +4,7 @@
 #include "ECS/Entity.hpp"
 #include "ECS/Components.hpp"
 
+#include "ECS/Audio/AudioManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Zipper.hpp"
 

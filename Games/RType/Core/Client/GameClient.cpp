@@ -161,6 +161,7 @@ void GameClient::run()
         keyBindingManager.checkAndEmitKeyEvents();
         keyBindingManager.checkAndEmitMouseEvents();
         messageManager.update();
+        AudioManager::instance().update();
 
         // Render via RenderManager (centralized begin/end, camera and SpriteBatch)
         auto &render_mgr = RenderManager::instance();

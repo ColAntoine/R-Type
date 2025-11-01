@@ -28,7 +28,7 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
-
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Constants.hpp"
 
@@ -70,6 +70,7 @@ private:
     bool isPlayerClose(registry &r);
     int getWave(registry &r);
     void increaseWave(registry &r);
+    void startBossMusic(registry &r);
 
     // * weapons depending on wave for now
     // * the map use the wave as index and a vector of string to set the weapons
