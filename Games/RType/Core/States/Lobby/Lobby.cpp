@@ -8,6 +8,9 @@
 #include "Core/Client/Network/NetworkService.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 
+#include "UI/ThemeManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
+
 #if defined(_MSC_VER)
   #define ATTR_MAYBE_UNUSED [[maybe_unused]]
 #else
@@ -92,11 +95,13 @@ void Lobby::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     // Create bar to split the panel
     auto bar = PanelBuilder()
         .at(renderManager.scalePosX(40), renderManager.scalePosY(5))
         .size(20, renderManager.scaleSizeH(90))
-        .border(20, WHITE)
+        .border(20, theme.panelBorderColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto barEntity = _registry.spawn_entity();
@@ -105,7 +110,7 @@ void Lobby::setup_ui()
     auto playersPlaceHolder = TextBuilder()
         .at(renderManager.scalePosX(7), renderManager.scalePosY(6))
         .text("Players:")
-        .textColor(Color({255, 255, 0, 255}))
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(3))
     .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -116,49 +121,51 @@ void Lobby::setup_ui()
     _registry.register_component<PlayerListContainerTag>();
     _registry.add_component<PlayerListContainerTag>(playersPlaceHolderEntity, PlayerListContainerTag());
 
-    auto readyButton = ButtonBuilder()
+    auto readyButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(23), renderManager.scalePosY(85))
         .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
         .text("READY")
-        .green()
-        .textColor(WHITE)
+        .color(theme.secondaryButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.secondaryButtonColors.border)
+        .neonColors(theme.secondaryButtonColors.neonColor, theme.secondaryButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             toggle_ready_state();
         })
-    .build(winInfos.getWidth(), winInfos.getHeight());
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
     ready_button_entity_ = _registry.spawn_entity();
     _registry.add_component(ready_button_entity_, UI::UIComponent(readyButton));
 
-    auto backButton = ButtonBuilder()
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(7), renderManager.scalePosY(85))
         .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
         .text("BACK")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->on_back_clicked();
         })
-    .build(winInfos.getWidth(), winInfos.getHeight());
+        .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto backButtonEntity = _registry.spawn_entity();
     _registry.add_component(backButtonEntity, UI::UIComponent(backButton));
 
     auto gameStatus = TextBuilder()
         .at(renderManager.scalePosX(45), renderManager.scalePosY(50))
+        .textColor(theme.textColor)
         .text("Waiting for the players to be ready...")
         .fontSize(renderManager.scaleSizeW(3))
-        .red()
     .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto gameStatusEntity = _registry.spawn_entity();
     _registry.add_component(gameStatusEntity, UI::UIComponent(gameStatus));
-
-
 }
 
 void Lobby::update_player_list(const std::vector<RType::Protocol::PlayerInfo>& players) {
@@ -169,6 +176,8 @@ void Lobby::update_player_list(const std::vector<RType::Protocol::PlayerInfo>& p
 void Lobby::rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& players) {
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
+
+    auto &theme = ThemeManager::instance().getTheme();
 
     // Clear existing player entry UI elements
     auto* ui_comps = _registry.get_if<UI::UIComponent>();
@@ -196,7 +205,7 @@ void Lobby::rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& pl
         const auto& player = players[i];
         std::string name(player.name, strnlen(player.name, sizeof(player.name)));
         std::string ready_status = player.ready_state ? "(Ready)" : "(Not Ready)";
-        Color name_color = player.ready_state ? GREEN : WHITE;
+        Color name_color = player.ready_state ? theme.lobbyStateColors.ready : theme.lobbyStateColors.notReady;
 
         // Player name text
         auto playerNameText = TextBuilder()
@@ -215,7 +224,7 @@ void Lobby::rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& pl
             .at(renderManager.scalePosX(20 + name.length() * 0.6f), renderManager.scalePosY(startY + i * spacing))
             .text(" " + ready_status)
             .fontSize(renderManager.scaleSizeW(1.5))
-            .textColor(LIGHTGRAY)
+            .textColor(theme.secondaryTextColor)
             .build(winInfos.getWidth(), winInfos.getHeight());
 
         auto playerStatusEntity = _registry.spawn_entity();
@@ -269,6 +278,7 @@ void Lobby::toggle_ready_state() {
 }
 
 void Lobby::update_ready_button() {
+    auto& theme = ThemeManager::instance().getTheme();
     auto* ui_comps = _registry.get_if<UI::UIComponent>();
     if (!ui_comps || !ui_comps->has(ready_button_entity_)) {
         std::cerr << "[Lobby] Failed to get ready button UI component" << std::endl;
@@ -285,12 +295,12 @@ void Lobby::update_ready_button() {
     // Update button text and color based on ready state
     if (is_ready_) {
         button->setText("UNREADY");
-        button->getStyle().setNormalColor(RED);  // Red when ready (to indicate clicking will unready)
-        button->getStyle().setHoveredColor(Color{200, 0, 0, 255});  // Darker red on hover
+        button->getStyle().setNormalColor(theme.exitButtonColors.normal);
+        button->getStyle().setHoveredColor(ColorCalculator::lighter(theme.exitButtonColors.normal, 20));
     } else {
         button->setText("READY");
-        button->getStyle().setNormalColor(GREEN);  // Green when not ready (to indicate clicking will ready)
-        button->getStyle().setHoveredColor(Color{0, 200, 0, 255});  // Darker green on hover
+        button->getStyle().setNormalColor(theme.secondaryButtonColors.normal);
+        button->getStyle().setHoveredColor(ColorCalculator::lighter(theme.secondaryButtonColors.normal, 20));
     }
 }
 
@@ -305,24 +315,9 @@ void Lobby::on_back_clicked() {
         }
         client->disconnect();
     }
-    // Go back to MainMenu, popping all states until we reach a menu state
     if (_stateManager) {
         // Pop current state (Lobby)
         _stateManager->pop_state();
-        
-        // Keep popping until we reach a main menu state or empty
-        while (!_stateManager->is_empty()) {
-            std::string current = _stateManager->get_current_state_name();
-            if (current == "MainMenu" || current == "Settings" || current == "Credits" || current == "MenusBackground") {
-                // We're back at a main menu, stop here
-                break;
-            }
-            _stateManager->pop_state();
-        }
-        
-        // If we popped everything, push MainMenu
-        if (_stateManager->is_empty()) {
-            _stateManager->push_state("MainMenu");
-        }
+        _stateManager->push_state("Connection");
     }
 }

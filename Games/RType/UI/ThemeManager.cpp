@@ -24,6 +24,11 @@ void ThemeManager::setColorBlindMode(ColorBlindMode mode)
     _current = applyColorBlindPalette(_original, _mode);
 }
 
+ColorBlindMode ThemeManager::getColorBlindMode() const
+{
+    return _mode;
+}
+
 Color ThemeManager::applyColorFilter(const Color& c, ColorBlindMode mode) {
     float r = c.r;
     float g = c.g;
@@ -101,6 +106,11 @@ ColorPalette ThemeManager::applyColorBlindPalette(const ColorPalette& palette, C
     result.buttonColors.neonColor = applyColorFilter(result.buttonColors.neonColor, mode);
     result.buttonColors.neonGlowColor = applyColorFilter(result.buttonColors.neonGlowColor, mode);
 
+    result.secondaryButtonColors.normal = applyColorFilter(result.secondaryButtonColors.normal, mode);
+    result.secondaryButtonColors.border = applyColorFilter(result.secondaryButtonColors.border, mode);
+    result.secondaryButtonColors.neonColor = applyColorFilter(result.secondaryButtonColors.neonColor, mode);
+    result.secondaryButtonColors.neonGlowColor = applyColorFilter(result.secondaryButtonColors.neonGlowColor, mode);
+
     result.exitButtonColors.normal = applyColorFilter(result.exitButtonColors.normal, mode);
     result.exitButtonColors.border = applyColorFilter(result.exitButtonColors.border, mode);
     result.exitButtonColors.neonColor = applyColorFilter(result.exitButtonColors.neonColor, mode);
@@ -112,6 +122,13 @@ ColorPalette ThemeManager::applyColorBlindPalette(const ColorPalette& palette, C
     result.gameColors.info = applyColorFilter(result.gameColors.info, mode);
     result.gameColors.primary = applyColorFilter(result.gameColors.primary, mode);
     result.gameColors.secondary = applyColorFilter(result.gameColors.secondary, mode);
+
+    result.lobbyStateColors.ready = applyColorFilter(result.lobbyStateColors.ready, mode);
+    result.lobbyStateColors.notReady = applyColorFilter(result.lobbyStateColors.notReady, mode);
+
+    result.inputFieldColors.background = applyColorFilter(result.inputFieldColors.background, mode);
+    result.inputFieldColors.placeholder = applyColorFilter(result.inputFieldColors.placeholder, mode);
+    result.inputFieldColors.border = applyColorFilter(result.inputFieldColors.border, mode);
 
     return result;
 }

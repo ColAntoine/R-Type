@@ -28,6 +28,7 @@ void VideoSettingsState::enter()
 
     filter_available_resolutions(renderManager.get_monitor_width(), renderManager.get_monitor_height());
     set_current_resolution_index(winInfos.getWidth(), winInfos.getHeight());
+    get_color_mode_from_theme();
     setup_ui();
     subscribe_to_ui_event();
     _initialized = true;
@@ -57,6 +58,20 @@ void VideoSettingsState::set_current_resolution_index(int currentWidth, int curr
     } else {
         _availableResolution.push_back(currentRes);
         _resolutionIndex = _availableResolution.size() - 1;
+    }
+}
+
+void VideoSettingsState::get_color_mode_from_theme()
+{
+    ColorBlindMode mode = ThemeManager::instance().getColorBlindMode();
+    for (size_t i = 0; i < _availableColorModes.size(); ++i) {
+        if (std::get<2>(_availableColorModes[i]) == mode) {
+            _colorModeIndex = i;
+            break;
+        }
+    }
+    if (_colorModeIndex == 0 || _colorModeIndex >= _availableColorModes.size()) {
+        _colorModeIndex = 0;
     }
 }
 
