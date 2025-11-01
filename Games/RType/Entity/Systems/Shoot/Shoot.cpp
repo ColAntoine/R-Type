@@ -113,7 +113,7 @@ void Shoot::spawnProjectiles(registry &r, float dt)
             try {
                 std::string laserSoundPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Laser.mp3";
                 _audioManager.get_sfx().load("laser_shot", laserSoundPath);
-                _audioManager.get_sfx().play("laser_shot", 0.7f);
+                _audioManager.get_sfx().play("laser_shot", _audioManager.get_sfx_volume());
                 _lastLaserSoundTime = _laserSoundCooldown;
             } catch (const std::exception& ex) {
                 std::cerr << "[Shoot] Error playing laser sound: " << ex.what() << std::endl;
@@ -166,7 +166,7 @@ void Shoot::checkEnnemyHits(registry &r)
                         std::string deathSoundPath = std::string(RTYPE_PATH_ASSETS) + "Audio/EnemyDeath.mp3";
                         std::string soundId = "enemy_death_" + std::to_string(std::time(nullptr)) + "_" + std::to_string(static_cast<size_t>(targetEntity));
                         _audioManager.get_sfx().load(soundId, deathSoundPath);
-                        _audioManager.get_sfx().play(soundId, 0.8f);
+                        _audioManager.get_sfx().play(soundId, _audioManager.get_sfx_volume());
                     } catch (const std::exception& ex) {
                         std::cerr << "[Shoot] Error playing enemy death sound: " << ex.what() << std::endl;
                     }
@@ -386,7 +386,7 @@ void Shoot::update(registry& r, float dt) {
     if (_lastLaserSoundTime > 0.0f) {
         _lastLaserSoundTime -= dt;
     }
-    
+
     /* Player Shooting*/
     checkShootIntention(r);
     spawnProjectiles(r, dt);

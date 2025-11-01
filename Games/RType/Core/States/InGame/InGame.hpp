@@ -35,6 +35,7 @@ class InGameState : public AGameState {
     private:
         // InGame specific members
         void createPlayer();
+        void startMusic();
 
         entity _playerEntity;
         EventBus::CallbackId _keyPressedCallbackId;  // Callback ID for key pressed event

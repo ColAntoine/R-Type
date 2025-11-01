@@ -104,6 +104,7 @@ void InGameState::enter()
         });
 
     setup_ui();
+    startMusic();
     _initialized = true;
 }
 
@@ -228,4 +229,20 @@ void InGameState::createPlayer()
 
     auto currentWave = reg.spawn_entity();
     reg.emplace_component<CurrentWave>(currentWave, 0);
+}
+
+void InGameState::startMusic()
+{
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
+            audioManager.get_music().load("game_theme", gameMusicPath);
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+            std::cout << "[InGame] Playing game music" << std::endl;
+        } catch (const std::exception& ex) {
+            std::cerr << "[InGame] Error playing game music: " << ex.what() << std::endl;
+        }
+    }
 }
