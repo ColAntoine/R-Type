@@ -17,6 +17,8 @@ enum powerUpType {
     WEAPON_FIRERATE,
     WAEPON_COOLDOWN,
     WEAPON_NEW,
+    HEALTH_UP,
+    WEAPON_DAMAGE,
 };
 
 struct PowerUp : public IComponent {

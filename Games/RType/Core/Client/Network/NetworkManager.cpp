@@ -1,7 +1,7 @@
 #include "NetworkManager.hpp"
 #include <iostream>
 
-NetworkManager::NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, DLLoader& loader)
+NetworkManager::NetworkManager(std::shared_ptr<UdpClient> client, registry& registry, ILoader& loader)
     : client_(client), registry_(registry), loader_(loader), player_handler_(registry, loader), enemy_handler_(registry, loader)
 {
 }
@@ -81,6 +81,25 @@ void NetworkManager::register_default_handlers() {
         }
     );
 
+    // other player's shooting visuals
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::PLAYER_SHOOT),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_player_shoot(data.data(), data.size());
+            });
+        }
+    );
+
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::PLAYER_UNSHOOT),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_player_unshoot(data.data(), data.size());
+            });
+        }
+    );
+
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::ENTITY_CREATE),
         [this](const char* payload, size_t size) {
             if (!payload || size < sizeof(RType::Protocol::EntityCreate)) return;
@@ -121,14 +140,34 @@ void NetworkManager::register_default_handlers() {
         }
     );
 
+    // Instance created (server informs client about instance port to reconnect to)
+    dispatcher_.register_handler(static_cast<uint8_t>(SystemMessage::INSTANCE_CREATED),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_instance_created(data.data(), data.size());
+            });
+        }
+    );
+
+    // Instance list (server broadcasts available instances)
+    dispatcher_.register_handler(static_cast<uint8_t>(SystemMessage::INSTANCE_LIST),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_instance_list(data.data(), data.size());
+            });
+        }
+    );
+
     // game seed (for deterministic gameplay)
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::GAME_SEED),
         [this](const char* payload, size_t size) {
             if (!payload || size < sizeof(RType::Protocol::GameSeed)) return;
-            
+
             RType::Protocol::GameSeed seed_msg;
             memcpy(&seed_msg, payload, sizeof(seed_msg));
-            
+
             // Set the seed in the registry on the main thread
             this->post_to_main([this, seed = seed_msg.seed]() {
                 registry_.set_random_seed(seed);
@@ -173,4 +212,7 @@ void NetworkManager::process_pending() {
             }
         }
     }
+
+    // Update player handler (reapply remote shooting intents each frame)
+    try { player_handler_.update(); } catch(...) {}
 }

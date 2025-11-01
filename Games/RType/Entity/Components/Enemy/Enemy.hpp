@@ -17,7 +17,8 @@ public:
         SINE_WAVE = 2,
         FAST = 3,
         ZIGZAG = 4,
-        TURRET = 5
+        TURRET = 5,
+        BOSS = 6
     };
 
     EnemyAIType enemy_type{BASIC};

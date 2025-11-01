@@ -8,7 +8,13 @@
 #pragma once
 
 #include "ECS/Systems/ISystem.hpp"
+
+#include "ECS/Components/Animation.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Entity.hpp"
+
 #include <unordered_map>
+#include <vector>
 #include <string>
 #include <raylib.h>
 
@@ -28,10 +34,18 @@ class AnimationSystem : public ISystem {
         std::unordered_map<std::size_t, AnimState> states_;
         // Texture cache to avoid reloading
         std::unordered_map<std::string, Texture2D> texture_cache_;
-        
+
         Texture2D load_texture(const std::string& path);
+        bool shouldAdvance(animation &anim, entity ent, registry &r);
+        void updateAnim(animation &anim, float dt, std::vector<entity> &entToKill, entity ent);
+        void renderAnim(animation &anim, position &pos);
 };
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system();
-}
+#if defined(_WIN32)
+  #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+  #define DLL_EXPORT extern "C"
+#endif
+
+DLL_EXPORT ISystem* create_system();
+DLL_EXPORT void     destroy_system(ISystem* ptr);

@@ -20,6 +20,12 @@ namespace EventTypes {
 // Forward declarations
 class GameStateManager;
 
+#ifdef _WIN32
+    const std::string ext = ".dll";
+#else
+    const std::string ext = ".so";
+#endif
+
 // Base interface for all game states
 class IGameState {
 public:
@@ -37,7 +43,9 @@ public:
         Lobby,
         AudioSettings,
         VideoSettings,
-        BindingsSettings
+        BindingsSettings,
+        LoadingVideo,
+        InGameExit
     };
 
     virtual ~IGameState() = default;

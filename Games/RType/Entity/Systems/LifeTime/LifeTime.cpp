@@ -27,6 +27,7 @@ void LifetimeSystem::update(registry& r, float dt) {
 
     auto& renderManager = RenderManager::instance();
     int window_width = renderManager.get_screen_infos().getWidth();
+    int window_height = renderManager.get_screen_infos().getHeight();
 
     std::vector<entity> entities_to_remove;
 
@@ -35,7 +36,6 @@ void LifetimeSystem::update(registry& r, float dt) {
 
         bool should_destroy = false;
 
-        // Check if lifetime expired
         if (life_comp.current_time >= life_comp.max_lifetime) {
             should_destroy = true;
         }
@@ -45,6 +45,9 @@ void LifetimeSystem::update(registry& r, float dt) {
             if (pos_comp.x < -100 || pos_comp.x > window_width + 100) {
                 should_destroy = true;
             }
+            // if (pos_comp.y < -300 || pos_comp.y > window_height + 500) {
+            //     should_destroy = true;
+            // }
         }
 
         if (should_destroy) {
@@ -73,6 +76,14 @@ void LifetimeSystem::update(registry& r, float dt) {
     }
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<LifetimeSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new LifetimeSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

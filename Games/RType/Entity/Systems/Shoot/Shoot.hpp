@@ -17,25 +17,34 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Gravity/Gravity.hpp"
 #include "Entity/Components/Parabol/Parabol.hpp"
+#include "Entity/Components/Following/Following.hpp"
+#include "Entity/Components/Wave/Wave.hpp"
 
 #include "ECS/Systems/ISystem.hpp"
 
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 #include "Constants.hpp"
 #include <map>
 #include <functional>
 
+namespace EventTypes {
+    const std::string PLAYER_CLOSE = "PLAYER_CLOSE";
+}
+
 struct ProjectileContext {
     registry& r;
     entity owner_entity;
-    const Weapon& weapon;
+    Weapon& weapon;
     float spawn_x;
     float spawn_y;
     float dir_x;
     float dir_y;
+    bool _shouldShootSpecial{false};
 };
 
 class Shoot : public ISystem {
@@ -46,6 +55,10 @@ public:
     const char* get_name() const override { return "Shoot"; }
 
 private:
+    AudioManager& _audioManager = AudioManager::instance();
+    float _lastLaserSoundTime = 0.0f;
+    const float _laserSoundCooldown = 0.05f;  // 50ms minimum between laser sounds
+    
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);
@@ -59,9 +72,22 @@ private:
     void shootParabolBullets(const ProjectileContext& ctx);
     void shootEnemyBullets(const ProjectileContext& ctx);
 
+    /* Boss shoots */
+    void shootDropBullets(const ProjectileContext& ctx);
+    void shootFollowingBullets(const ProjectileContext& ctx);
+    void shootWaveBullets(const ProjectileContext& ctx);
+    void shootExplosionBullets(const ProjectileContext& ctx);
+
     std::map<std::string, std::function<void(const ProjectileContext&)>> _shootType;
+    EventBus::CallbackId _playerCloseCallBackId;
 };
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system();
-}
+
+#if defined(_WIN32)
+  #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+  #define DLL_EXPORT extern "C"
+#endif
+
+DLL_EXPORT ISystem* create_system();
+DLL_EXPORT void     destroy_system(ISystem* ptr);

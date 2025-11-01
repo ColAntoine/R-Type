@@ -28,6 +28,7 @@ Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
         UnloadImage(img);
     } else {
         std::cout << "Loaded texture: " << path << " (ID: " << texture.id << ")" << std::endl;
+        SetTextureFilter(texture, TEXTURE_FILTER_POINT);
     }
 
     texture_cache_[path] = texture;
@@ -86,6 +87,7 @@ void SpriteRenderSystem::update(registry& r, float dt) {
         // layer = 0 by default (can be extended with a sprite.layer field later)
         batch.draw(texture, source, dest, origin, s.rotation, WHITE, 0);
     }
+    batch.flush();
 }
 
 SpriteRenderSystem::~SpriteRenderSystem() {
@@ -94,7 +96,15 @@ SpriteRenderSystem::~SpriteRenderSystem() {
     texture_cache_.clear();
 }
 
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<SpriteRenderSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new SpriteRenderSystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }
 

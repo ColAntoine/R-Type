@@ -119,6 +119,14 @@ namespace UI {
 } // namespace UI
 
 // Factory function for dynamic loading (outside namespace)
-std::unique_ptr<ISystem> create_system() {
-    return std::make_unique<UI::UISystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new UI::UISystem();
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

@@ -42,8 +42,14 @@ void KeyInputSystem::update(registry& r, float dt) {
     }
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<KeyInputSystem>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new KeyInputSystem();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include <memory>
 
 #include "Protocol/Protocol.hpp"
 #include "ECS/Entity.hpp"
@@ -12,6 +13,8 @@
 namespace RType::Network {
 
 class ServerECS; // forward
+class Lobby;
+class InGame;
 
 /**
  * Multiplayer - encapsulates network message handling for the server ECS.
@@ -23,7 +26,7 @@ class ServerECS; // forward
  */
 class Multiplayer {
     public:
-        Multiplayer(ServerECS &ecs);
+        Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 2);
         ~Multiplayer();
 
         // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts
@@ -32,30 +35,22 @@ class Multiplayer {
         // Handle a raw received packet (first byte is message_type; payload after)
         void handle_packet(const std::string &session_id, const std::vector<char> &data);
 
-        // Spawn all connected players when game starts
+        // Spawn all connected players when game starts (forwarded to InGame)
         void spawn_all_players();
-    // Broadcast position updates for all player entities (called after position system runs)
-    void broadcast_positions();
-
-    // Broadcast enemy spawn to all clients
+        // Broadcast position updates for all player entities (called after position system runs)
+        void broadcast_loop();
+        // Broadcast enemy spawn to all clients
         void broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y);
 
     private:
         ServerECS &ecs_;
         UdpServer* udp_server_{nullptr};
+        int max_lobbies_{0};
+        int max_players_{2};
 
-        // Internal helpers, extracted from previous monolithic implementation
-        void handle_client_connect(const std::string &session_id, const std::vector<char> &payload);
-        void handle_client_disconnect(const std::string &session_id, const std::vector<char> &payload);
-        void handle_client_ready(const std::string &session_id, const std::vector<char> &payload);
-        void handle_client_unready(const std::string &session_id, const std::vector<char> &payload);
-        void handle_game_message(const std::string &session_id, uint8_t msg_type, const std::vector<char> &payload);
-    void handle_player_input(const std::string &session_id, const std::vector<char> &payload);
-        // Smaller helper functions to simplify connect handling
-        std::pair<float,float> choose_spawn_position();
-        entity spawn_player_entity(float x, float y);
-        void send_server_accept(const std::string &session_id, uint32_t token, float x, float y);
-        void broadcast_new_player_spawn(const std::string &session_id, uint32_t token, entity player_ent, float x, float y);
-    };
+    // Split lobby / in-game handlers (forward-declared above in namespace)
+    std::unique_ptr<Lobby> lobby_;
+    std::unique_ptr<InGame> ingame_;
+};
 
 } // namespace RType::Network

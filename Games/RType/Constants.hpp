@@ -19,6 +19,7 @@
     #define INCLUDED_CONSTANTS_HPP
 
 #include <iostream>
+#include <string>
 
 // ====================================WIN======================================
 #define SCREEN_WIDTH        1920
@@ -43,12 +44,29 @@
 #define PLAYER_SPAWN_Y      200.f
 // =============================================================================
 
+// ==================================REPO ROOT==================================
+#ifndef REPO_ROOT
+    #define REPO_ROOT "/home/sum/Documents/TEK3/RTYPE/RTYPE"
+#endif
+#define RTYPE_REPO_ROOT REPO_ROOT
+// =============================================================================
+
+// ===================================LibECS====================================
+#define LIBECS_PATH        (std::string(RTYPE_REPO_ROOT) + "/ECS/build/lib/libECS.so")
+// =============================================================================
+
 // ====================================Assets===================================
-#define RTYPE_PATH_ASSETS   "Games/RType/Assets/"
+#define RTYPE_PATH_ASSETS   (std::string(RTYPE_REPO_ROOT) + "/Games/RType/Assets/")
+// =============================================================================
+
+// ====================================Assets===================================
+#define BOSS_BASE_FIRERATE      1.f
+#define BOSS_BASE_DAMAGE        5.f
+#define BOSS_BASE_PROJ_SPEED    300.f
 // =============================================================================
 
 // ====================================Config===================================
-#define RTYPE_PATH_FILE_CONFIG   "Games/RType/.rtype/GameConfig.cfg"
+#define RTYPE_PATH_FILE_CONFIG   (std::string(RTYPE_REPO_ROOT) + "/Games/RType/.rtype/GameConfig.cfg")
 // =============================================================================
 #endif
 

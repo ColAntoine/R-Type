@@ -11,6 +11,8 @@
 
 #include "Components/Health/Health.hpp"
 #include "Components/Score/Score.hpp"
+#include "Components/Controllable/Controllable.hpp"
+#include "Components/Player/Player.hpp"
 
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
@@ -23,9 +25,15 @@ public:
 private:
     void checkAndKillEnemy(registry &r);
     void checkAndKillPlayer(registry &r);
-    void addScore(registry &r);
+    void addScore(registry &r, int amount = 1);
 };
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system();
-}
+
+#if defined(_WIN32)
+  #define DLL_EXPORT extern "C" __declspec(dllexport)
+#else
+  #define DLL_EXPORT extern "C"
+#endif
+
+DLL_EXPORT ISystem* create_system();
+DLL_EXPORT void     destroy_system(ISystem* ptr);

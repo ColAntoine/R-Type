@@ -10,7 +10,7 @@
 #include "ECS/Components/Collider.hpp"
 #include "Constants.hpp"
 
-PlayerHandler::PlayerHandler(registry& registry, DLLoader& loader)
+PlayerHandler::PlayerHandler(registry& registry, ILoader& loader)
     : registry_(registry), loader_(loader)
 {
 }
@@ -46,49 +46,17 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
         float y = ec.y;
         auto factory = loader_.get_factory();
         auto* pos_arr = registry_.get_if<position>();
+        auto* vel_arr = registry_.get_if<velocity>();
         if (factory) {
             if (!(pos_arr && pos_arr->has(ent))) factory->create_component<position>(registry_, ent, x, y);
-            else { (*pos_arr)[ent] = position{x, y}; }
-            auto* vel_arr = registry_.get_if<velocity>();
             if (!(vel_arr && vel_arr->has(ent))) factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
             return;
-        }
-        if (!(pos_arr && pos_arr->has(ent))) {
-            registry_.emplace_component<position>(ent, x, y);
-        } else {
-            (*pos_arr)[ent] = position{ec.x, ec.y};
-        }
-        return;
-    }
-
-    // Before spawning, check if a local Player entity already exists (created by InGame::createPlayer)
-    // If so, map this server entity id to that existing entity and update its position/velocity
-    auto *playerArr = registry_.get_if<Player>();
-    if (playerArr && playerArr->size() > 0) {
-        entity existing = entity(playerArr->entity_at(0));
-        remote_player_map_[server_ent_id] = existing;
-        float nx = ec.x;
-        float ny = ec.y;
-        auto* pos_arr = registry_.get_if<position>();
-        if (pos_arr) {
-            if (!pos_arr->has(existing)) registry_.emplace_component<position>(existing, nx, ny);
-            else (*pos_arr)[existing] = position{nx, ny};
-        } else {
-            registry_.emplace_component<position>(existing, nx, ny);
-        }
-        auto* vel_arr = registry_.get_if<velocity>();
-        if (vel_arr) {
-            if (!vel_arr->has(existing)) registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
-            else (*vel_arr)[existing] = velocity{0.0f, 0.0f};
-        } else {
-            registry_.emplace_component<velocity>(existing, 0.0f, 0.0f);
         }
         return;
     }
 
     // spawn a local entity and attach components according to server description
     auto ent = registry_.spawn_entity();
-    // Map by server entity id so future updates can find it
     remote_player_map_[server_ent_id] = ent;
 
     float x = ec.x;
@@ -101,7 +69,6 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
         return;
     }
-    registry_.emplace_component<position>(ent, x, y);
 }
 
 void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
@@ -181,7 +148,7 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<controllable>(registry_, ent, 300.0f);
         factory->create_component<Weapon>(registry_, ent);
-        factory->create_component<collider>(registry_, ent, 100.f, 100.f, -50.f, -50.f);
+        factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         factory->create_component<Score>(registry_, ent);
         factory->create_component<Health>(registry_, ent);
         factory->create_component<Player>(registry_, ent);
@@ -225,6 +192,10 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
+        factory->create_component<Weapon>(registry_, ent);
+        // factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
+        // factory->create_component<Health>(registry_, ent);
+        // factory->create_component<Player>(registry_, ent);
         return;
     }
     registry_.emplace_component<position>(ent, x, y);
@@ -313,6 +284,36 @@ void PlayerHandler::set_game_start_callback(GameStartCallback callback) {
     game_start_callback_ = callback;
 }
 
+void PlayerHandler::set_instance_created_callback(std::function<void(uint16_t)> cb) {
+    instance_created_callback_ = std::move(cb);
+}
+
+void PlayerHandler::on_instance_created(const char* payload, size_t size) {
+    if (!payload || size < sizeof(RType::Protocol::InstanceCreated)) return;
+    RType::Protocol::InstanceCreated ic;
+    memcpy(&ic, payload, sizeof(ic));
+    uint16_t port = ic.port;
+    if (instance_created_callback_) instance_created_callback_(port);
+}
+
+void PlayerHandler::set_instance_list_callback(InstanceListCallback cb) {
+    instance_list_callback_ = std::move(cb);
+    // If we already have a last known list, invoke immediately
+    if (instance_list_callback_ && !last_instance_list_.empty()) instance_list_callback_(last_instance_list_);
+}
+
+void PlayerHandler::on_instance_list(const char* payload, size_t size) {
+    if (!payload || size < sizeof(RType::Protocol::InstanceList)) return;
+    RType::Protocol::InstanceList il;
+    memcpy(&il, payload, sizeof(RType::Protocol::InstanceList));
+    std::vector<RType::Protocol::InstanceInfo> list;
+    for (uint8_t i = 0; i < il.instance_count && i < 8; ++i) {
+        list.push_back(il.instances[i]);
+    }
+    last_instance_list_ = list;
+    if (instance_list_callback_) instance_list_callback_(list);
+}
+
 void PlayerHandler::on_game_start(const char* payload, size_t size) {
     (void)payload; // unused
     (void)size;    // unused
@@ -358,5 +359,44 @@ void PlayerHandler::on_position_update(const char* payload, size_t size) {
         velocity& vel = (*vel_arr)[ent];
         vel.vx = pu.vx;
         vel.vy = pu.vy;
+    }
+}
+
+void PlayerHandler::on_player_shoot(const char* payload, size_t size) {
+    using RType::Protocol::PlayerShoot;
+    if (!payload || size < sizeof(PlayerShoot)) return;
+
+    PlayerShoot ps;
+    memcpy(&ps, payload, sizeof(ps));
+
+    remote_is_shooting_[ps.player_id] = true;
+}
+
+void PlayerHandler::on_player_unshoot(const char* payload, size_t size) {
+    using RType::Protocol::PlayerShoot;
+    if (!payload || size < sizeof(PlayerShoot)) return;
+    PlayerShoot ps;
+    memcpy(&ps, payload, sizeof(ps));
+
+    remote_is_shooting_[ps.player_id] = false;
+}
+
+void PlayerHandler::update()
+{
+    // Reapply Weapon._wantsToFire based on remote_is_shooting_ map each frame
+    auto &reg = registry_;
+    auto* weapons = reg.get_if<Weapon>();
+    for (const auto &kv : remote_is_shooting_) {
+        uint32_t player_token = kv.first;
+        bool shooting = kv.second;
+        auto it = remote_player_map_.find(player_token);
+        if (it == remote_player_map_.end()) continue;
+        entity ent = it->second;
+        if (!weapons) continue;
+        if (!weapons->has(ent)) continue;
+        auto &w = (*weapons)[ent];
+        w._ownerId = static_cast<int>(ent);
+        // Reapply wantsToFire when shooting; clear when not
+        w._wantsToFire = shooting;
     }
 }

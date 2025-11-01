@@ -17,6 +17,12 @@
 template <typename Set>
 using set_ref_t = typename Set::reference_type;
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
 // Variadic zipper for N sparse_sets
 template <typename FirstSet, typename... OtherSets>
 class ZipperN {
@@ -48,7 +54,7 @@ class ZipperN {
                 }
 
                 template <std::size_t... Is>
-                bool has_all(__attribute_maybe_unused__ entity_type entity, std::index_sequence<Is...>) const {
+                bool has_all(ATTR_MAYBE_UNUSED entity_type entity, std::index_sequence<Is...>) const {
                     return (... && (std::get<Is>(otherSets).has(entity)));
                 }
 

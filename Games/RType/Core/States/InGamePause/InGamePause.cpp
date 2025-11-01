@@ -4,9 +4,16 @@
 
 void InGamePauseState::enter()
 {
-    _systemLoader.load_components_from_so("build/lib/libECS.so", _registry);
-    _systemLoader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    #ifdef _WIN32
+        const std::string ecsLib = "build/lib/libECS.dll";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.dll";
+    #else
+        const std::string ecsLib = "build/lib/libECS.so";
+        const std::string uiSys = "build/lib/systems/librender_UISystem.so";
+    #endif
 
+    _systemLoader->load_components(ecsLib, _registry);
+    _systemLoader->load_system(uiSys, ILoader::RenderSystem);
 
     this->_registry.register_component<UI::UIButton>();
 

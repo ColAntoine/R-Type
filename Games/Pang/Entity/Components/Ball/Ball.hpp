@@ -9,7 +9,7 @@
 
 #include <raylib.h>
 
-#include "ECS/DLLoader.hpp"
+#include "ECS/ILoader.hpp"
 #include "Constants.hpp"
 #include "ECS/Components/Position.hpp"
 
@@ -22,7 +22,7 @@ enum ballType {
 
 struct Ball {
     float _radius{2.f};
-    Color _color{Color(255, 255, 255, 255)};
+    Color _color{255, 255, 255, 255};
     bool _isActive{true};
     ballType _type{MEDIUM};
     bool _isHit{false};

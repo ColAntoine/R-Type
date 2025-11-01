@@ -14,6 +14,7 @@
 class InGameHudState : public AGameState {
 
     struct FPSText {}; // Tag struct for quick access to FPS text
+    struct ScoreText {}; // Tag struct for quick access to Score text
 
     public:
         InGameHudState() = default;
@@ -46,4 +47,9 @@ class InGameHudState : public AGameState {
             }
             return nullptr;
         }
+
+        void set_score_text();
+
+        int _score = 0;
+        entity _scoreTextEntity;
 };

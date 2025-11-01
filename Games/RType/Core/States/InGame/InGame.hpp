@@ -8,13 +8,14 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 #include "Constants.hpp"
 
 class InGameState : public AGameState {
     public:
         InGameState() = default;
-        InGameState(registry* shared_registry, DLLoader* shared_loader)
+        InGameState(registry* shared_registry, ILoader* shared_loader)
             : AGameState(shared_registry, shared_loader) {}
         ~InGameState() override = default;
 
@@ -34,6 +35,8 @@ class InGameState : public AGameState {
     private:
         // InGame specific members
         void createPlayer();
+        void startMusic();
 
         entity _playerEntity;
+        EventBus::CallbackId _keyPressedCallbackId;  // Callback ID for key pressed event
 };

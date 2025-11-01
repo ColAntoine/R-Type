@@ -9,9 +9,17 @@
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
+#include "ECS/Audio/AudioManager.hpp"
+#include "UI/ThemeManager.hpp"
 
 #include <string>
 #include <random>
+
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
 
 void InGameState::enter()
 {
@@ -19,7 +27,7 @@ void InGameState::enter()
 
     // Use shared registry if available (for multiplayer), otherwise use local registry
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
 
     if (_shared_registry) {
         std::cout << "[InGame] Using SHARED registry (multiplayer mode)" << std::endl;
@@ -33,31 +41,44 @@ void InGameState::enter()
         std::cout << "[InGame] Generated solo game seed: " << solo_seed << std::endl;
     }
 
+    #ifdef _WIN32
+        const std::string ext = ".dll";
+    #else
+        const std::string ext = ".so";
+    #endif
+
     // Load components first (needed for both solo and multiplayer)
-    loader.load_components_from_so("build/lib/libECS.so", reg);
+    loader.load_components("build/lib/libECS" + ext, reg);
 
     // Load render systems
-    loader.load_system_from_so("build/lib/systems/libanimation_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Draw.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libsprite_system.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PUpAnimationSys.so", DLLoader::RenderSystem);
-    loader.load_system_from_so("build/lib/systems/librender_UISystem.so", DLLoader::RenderSystem);
+    loader.load_components("build/lib/libECS" + ext, _registry);
+    loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/libgame_PUpAnimationSys" + ext, ILoader::RenderSystem);
+    loader.load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
 
-    // Load logic systems
-    loader.load_system_from_so("build/lib/systems/libposition_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libcollision_system.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_KeyInput.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Control.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Shoot.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_GravitySys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyCleanup.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemyAI.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_LifeTime.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_Health.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_EnemySpawnSystem.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_ParabolSys.so", DLLoader::LogicSystem);
-    loader.load_system_from_so("build/lib/systems/libgame_PowerUpSys.so", DLLoader::LogicSystem);
+    loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
 
+    // ! unload the enemy for boss testing
+    loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
+
+    loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
+
+    loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+    loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
@@ -73,18 +94,46 @@ void InGameState::enter()
 
     auto &eventBus = MessagingManager::instance().get_event_bus();
     Event event(EventTypes::SET_KEY_BINDINGS);
-
     const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
-
     event.set("keyBindings", keyBinds);
     eventBus.emit(event);
 
+    // Subscribe to KEY_PRESSED event and check if it's the ESCAPE key
+    _keyPressedCallbackId = eventBus.subscribe(EventTypes::KEY_PRESSED,
+        [this](ATTR_MAYBE_UNUSED const Event& e) {
+            try {
+                std::string key = e.get<std::string>("key");
+
+                if (key == "ESCAPE") {
+                    if (_stateManager) {
+                        _stateManager->push_state("InGameExit", true);
+                    }
+                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[InGame] Error in key pressed handler: " << ex.what() << std::endl;
+            }
+        });
+    auto &theme = ThemeManager::instance().getTheme();
+    Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
+    themeEvent.set("palette", theme);
+    eventBus.emit(themeEvent);
+
     setup_ui();
+    startMusic();
     _initialized = true;
 }
 
 void InGameState::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_keyPressedCallbackId);
+
+    auto& audioManager = AudioManager::instance();
+    if (audioManager.is_initialized()) {
+        audioManager.get_music().stopAll();
+        audioManager.get_music().clear();
+    }
+
     _initialized = false;
 }
 
@@ -104,15 +153,15 @@ void InGameState::update(float delta_time)
         return;
 
     // Use shared loader and registry if available (for multiplayer)
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     registry& reg = _shared_registry ? *_shared_registry : _registry;
 
     // Send input to server if connected
     handle_input();
 
     // Update both logic and render systems with the correct registry
-    loader.update_all_systems(reg, delta_time, DLLoader::LogicSystem);
-    loader.update_all_systems(reg, delta_time, DLLoader::RenderSystem);
+    loader.update_all_systems(reg, delta_time, ILoader::LogicSystem);
+    loader.update_all_systems(reg, delta_time, ILoader::RenderSystem);
 }
 
 void InGameState::handle_input()
@@ -122,14 +171,14 @@ void InGameState::handle_input()
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
+        // if (IsKeyDown(KEY_UP))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
+        // if (IsKeyDown(KEY_DOWN))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
+        // if (IsKeyDown(KEY_LEFT))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
+        // if (IsKeyDown(KEY_RIGHT))
+        //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
         static uint8_t last_input_state = 0;
@@ -156,6 +205,35 @@ void InGameState::handle_input()
             }
             last_input_state = input_state;
         }
+        // Handle shooting (space) -- send start/stop events to server when state changes
+        static bool last_shoot_state = false;
+        bool shoot_down = IsKeyDown(KEY_V);
+        if (shoot_down != last_shoot_state) {
+            auto client = RType::Network::get_client();
+            if (client) {
+                uint32_t player_token = client->get_session_token();
+                if (player_token != 0) {
+                    RType::Protocol::PlayerShoot ps{};
+                    ps.player_id = player_token;
+                    ps.start_x = 0.0f; ps.start_y = 0.0f;
+                    ps.dir_x = 1.0f; ps.dir_y = 0.0f; // default rightwards
+                    if (shoot_down) {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_SHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    } else {
+                        auto packet = RType::Protocol::create_packet(
+                            static_cast<uint8_t>(RType::Protocol::GameMessage::PLAYER_UNSHOOT),
+                            ps
+                        );
+                        client->send_packet(reinterpret_cast<const char*>(packet.data()), packet.size());
+                    }
+                }
+            }
+            last_shoot_state = shoot_down;
+        }
     }
 }
 
@@ -170,7 +248,7 @@ void InGameState::createPlayer()
 
     // Use shared registry/loader if available (for multiplayer), otherwise use local
     registry& reg = _shared_registry ? *_shared_registry : _registry;
-    DLLoader& loader = _shared_loader ? *_shared_loader : _systemLoader;
+    ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     auto componentFactory = loader.get_factory();
 
     if (!componentFactory) {
@@ -187,10 +265,28 @@ void InGameState::createPlayer()
         componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
         componentFactory->create_component<Input>(reg, _playerEntity);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
-        componentFactory->create_component<collider>(reg, _playerEntity, 100.f, 100.f, -50.f, -50.f);
+        componentFactory->create_component<collider>(reg, _playerEntity, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         componentFactory->create_component<Score>(reg, _playerEntity);
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
     }
+
+    auto currentWave = reg.spawn_entity();
+    reg.emplace_component<CurrentWave>(currentWave, 0);
 }
 
+void InGameState::startMusic()
+{
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
+            audioManager.get_music().load("game_theme", gameMusicPath);
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+            std::cout << "[InGame] Playing game music" << std::endl;
+        } catch (const std::exception& ex) {
+            std::cerr << "[InGame] Error playing game music: " << ex.what() << std::endl;
+        }
+    }
+}

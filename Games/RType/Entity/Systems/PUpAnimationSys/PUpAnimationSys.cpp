@@ -10,6 +10,27 @@
 #include <iostream>
 
 #include "PUpAnimationSys.hpp"
+#include "UI/ThemeManager.hpp"
+
+PUpAnimationSys::PUpAnimationSys()
+{
+    _isDone = true;
+    _arrowEnt = entity(0);
+    _textEnt = entity(0);
+
+    _themeChangedCallbackId = MessagingManager::instance().get_event_bus().subscribe("SCREEN_PARAMETERS_CHANGED",
+        [this](const Event& event) {
+            if (event.has("palette")) {
+                std::cout << "[PUpAnimationSys] Theme changed, updating colors." << std::endl;
+                ThemeManager::instance().setTheme(event.get<ColorPalette>("palette"));
+            }
+        });
+}
+
+PUpAnimationSys::~PUpAnimationSys()
+{
+    MessagingManager::instance().get_event_bus().unsubscribe(_themeChangedCallbackId);
+}
 
 void PUpAnimationSys::update(registry& r, float dt)
 {
@@ -120,11 +141,13 @@ void PUpAnimationSys::createText(registry &r)
     float screen_w = renderManager.get_screen_infos().getWidth();
     float screen_h = renderManager.get_screen_infos().getHeight();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     auto uiText = TextBuilder()
         .at(textX, textY)
         .text(_current._text)
         .fontSize(static_cast<int>(renderManager.scaleSizeW(2.0f)))
-        .textColor(WHITE)
+        .textColor(theme.gameColors.primary)
     .build(screen_w, screen_h);
 
     uiText->setCustomRender([](const UI::UIText& text) {
@@ -132,7 +155,8 @@ void PUpAnimationSys::createText(registry &r)
         Vector2 pos = text.getPosition();
         int font_size = text.getStyle().getFontSize();
         double t = GetTime();
-        Color color = (fmod(t, 0.5) < 0.25) ? RED : WHITE;
+        auto &theme = ThemeManager::instance().getTheme();
+        Color color = (fmod(t, 0.5) < 0.25) ? theme.gameColors.secondary : theme.gameColors.primary;
         renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), font_size, color);
     });
 
@@ -141,8 +165,14 @@ void PUpAnimationSys::createText(registry &r)
     r.emplace_component<animationText>(textEnt);
 }
 
-extern "C" {
-    std::unique_ptr<ISystem> create_system() {
-        return std::make_unique<PUpAnimationSys>();
+DLL_EXPORT ISystem* create_system() {
+    try {
+        return new PUpAnimationSys();
+    } catch (...) {
+        return nullptr;
     }
+}
+
+DLL_EXPORT void destroy_system(ISystem* ptr) {
+    delete ptr;
 }

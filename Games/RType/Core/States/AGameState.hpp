@@ -1,16 +1,20 @@
 #pragma once
 
 #include "IGameState.hpp"
+#include "ECS/ILoader.hpp"
 #include "ECS/Registry.hpp"
-#include "ECS/DLLoader.hpp"
 #include "ECS/Systems/UISystem.hpp"
 #include "ECS/Components/UIComponent.hpp"
 #include "ECS/UI/Components/Button.hpp"
 #include "ECS/UI/Components/Panel.hpp"
 #include "ECS/UI/Components/Text.hpp"
-#include <memory>
+
 
 #include "Core/States/GameStateManager.hpp"
+
+namespace EventTypes {
+    const std::string SCORE_INCREASED = "SCORE_INCREASED";
+}
 class AGameState : public IGameState {
     public:
         enum MoveDirection {
@@ -19,7 +23,7 @@ class AGameState : public IGameState {
         };
 
         AGameState();
-        AGameState(registry* shared_registry, DLLoader* shared_loader);
+        AGameState(registry* shared_registry, ILoader* shared_loader);
         virtual ~AGameState() override;
 
         void render() override;
@@ -35,11 +39,11 @@ class AGameState : public IGameState {
     protected:
         GameStateManager* _stateManager;
         registry _registry;
-        DLLoader _systemLoader;
+        std::unique_ptr<ILoader> _systemLoader;
         
         // Optional pointers to shared registry/loader (for states that need to share ECS)
         registry* _shared_registry{nullptr};
-        DLLoader* _shared_loader{nullptr};
+        ILoader* _shared_loader{nullptr};
 
         bool _initialized{false};
 
@@ -59,13 +63,14 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::InGameHud: return "InGameHud";
         case IGameState::GameStateType::InGameBackground: return "InGameBackground";
         case IGameState::GameStateType::InGamePause: return "InGamePause";
-
         case IGameState::GameStateType::Connection: return "Connection";
         case IGameState::GameStateType::Credits: return "Credits";
         case IGameState::GameStateType::Lobby: return "Lobby";
         case IGameState::GameStateType::AudioSettings: return "AudioSettings";
         case IGameState::GameStateType::VideoSettings: return "VideoSettings";
-        case IGameState::GameStateType::BindingsSettings: return "BindsSettings";
+        case IGameState::GameStateType::BindingsSettings: return "BindingsSettings";
+        case IGameState::GameStateType::LoadingVideo: return "LoadingVideo";
+        case IGameState::GameStateType::InGameExit: return "InGameExit";
         default: return "Unknown";
     }
 }
