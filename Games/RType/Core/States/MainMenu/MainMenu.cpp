@@ -38,10 +38,10 @@ void MainMenuState::enter()
             if (musicCache.find("menu_theme") == musicCache.end()) {
                 std::string menuMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Menu.mp3";
                 audioManager.get_music().load("menu_theme", menuMusicPath);
-                audioManager.get_music().play("menu_theme", 0.5f);
+                audioManager.get_music().play("menu_theme", audioManager.get_music_volume());
                 std::cout << "[MainMenu] Playing menu music" << std::endl;
             } else {
-                audioManager.get_music().play("menu_theme", 0.5f);
+                audioManager.get_music().play("menu_theme", audioManager.get_music_volume());
                 std::cout << "[MainMenu] Resumed menu music" << std::endl;
             }
         } catch (const std::exception& ex) {

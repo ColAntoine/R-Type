@@ -71,6 +71,7 @@ private:
     int getWave(registry &r);
     void increaseWave(registry &r);
     void startBossMusic(registry &r);
+    void stopBossMusic(registry &r);
 
     // * weapons depending on wave for now
     // * the map use the wave as index and a vector of string to set the weapons

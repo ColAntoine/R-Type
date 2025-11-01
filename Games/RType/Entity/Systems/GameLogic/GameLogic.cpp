@@ -22,7 +22,7 @@ void GameLogic::updateScore(registry &r)
     if (!scoreArr) return;
 
     for (auto [score, ent]: zipper(*scoreArr)) {
-        // score._score = score._score < 48 ? 48 : score._score;
+        score._score = score._score < 48 ? 48 : score._score;
         // std::cout << score._score << std::endl;
         _gameScore = score;
         return;

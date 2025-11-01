@@ -31,10 +31,22 @@ void BossSys::update(registry& r, float dt)
     bool spe = isPlayerClose(r);
     auto weaponArr = r.get_if<Weapon>();
     auto bossArr = r.get_if<Boss>();
+    auto healthArr = r.get_if<Health>();
 
     if (weaponArr && bossArr) {
         for (auto [w, b, ent]: zipper(*weaponArr, *bossArr)) {
             w._shouldShootSpecial = spe;
+        }
+    }
+    
+    // Check if boss is dead
+    if (healthArr && bossArr) {
+        for (auto [health, boss, ent]: zipper(*healthArr, *bossArr)) {
+            if (health._health <= 0) {
+                std::cout << "[BossSys] Boss defeated! Health: " << health._health << std::endl;
+                stopBossMusic(r);
+                return;  // Boss is dead, skip further updates
+            }
         }
     }
 }
@@ -51,6 +63,7 @@ bool BossSys::shouldSpawn(registry &r, float dt)
         if (boss._shouldSpawn) {
             boss._shouldSpawn = false;
             increaseWave(r);
+            startBossMusic(r);
             return true;
         }
         else{
@@ -97,7 +110,6 @@ void BossSys::spawn(registry &r)
         float scale_y = (frame_h > 0.0f) ? (bossH / frame_h) : 1.0f;
         r.emplace_component<animation>(entity(bossEnt), RTYPE_PATH_ASSETS + "bossSheet.png", frame_w, frame_h, scale_x, scale_y, 0, false);
     }
-    startBossMusic(r);
 }
 
 void BossSys::move(registry &r)
@@ -201,9 +213,29 @@ void BossSys::startBossMusic(registry &r)
         try {
             std::string menuMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Boss.mp3";
             audioManager.get_music().load("boss_theme", menuMusicPath);
-            audioManager.get_music().play("boss_theme", 0.5f);
+            audioManager.get_music().play("boss_theme", audioManager.get_music_volume());
         } catch (const std::exception& ex) {
-            std::cerr << "[MainMenu] Error playing music: " << ex.what() << std::endl;
+            std::cerr << "[BossSys] Error playing music: " << ex.what() << std::endl;
+        }
+    }
+}
+
+void BossSys::stopBossMusic(registry &r)
+{
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            audioManager.get_music().stopAll();
+            audioManager.get_music().clear();
+
+            std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
+            audioManager.get_music().load("game_theme", gameMusicPath);
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+
+            std::cout << "[BossSys] Boss music stopped, game audio resumed" << std::endl;
+        } catch (const std::exception& ex) {
+            std::cerr << "[BossSys] Error stopping boss music: " << ex.what() << std::endl;
         }
     }
 }
