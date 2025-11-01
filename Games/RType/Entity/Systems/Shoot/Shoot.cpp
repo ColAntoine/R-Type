@@ -160,6 +160,17 @@ void Shoot::checkEnnemyHits(registry &r)
             if (dist2 <= pr * pr) {
                 hlt._health -= pdmg;
                 entityToKill.push_back(entity(projEntity));
+
+                if (hlt._health <= 0 && _audioManager.is_initialized()) {
+                    try {
+                        std::string deathSoundPath = std::string(RTYPE_PATH_ASSETS) + "Audio/EnemyDeath.mp3";
+                        std::string soundId = "enemy_death_" + std::to_string(std::time(nullptr)) + "_" + std::to_string(static_cast<size_t>(targetEntity));
+                        _audioManager.get_sfx().load(soundId, deathSoundPath);
+                        _audioManager.get_sfx().play(soundId, 0.8f);
+                    } catch (const std::exception& ex) {
+                        std::cerr << "[Shoot] Error playing enemy death sound: " << ex.what() << std::endl;
+                    }
+                }
                 break;
             }
         }
