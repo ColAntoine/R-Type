@@ -63,6 +63,11 @@ void Lobby::handle_client_connect(const std::string &session_id, const std::vect
 
     // reply and broadcast: send SERVER_ACCEPT then broadcast the CLIENT_LIST to all clients
     send_server_accept(session_id, token, spawn_x, spawn_y);
+    // If the front server provided a callback to send the current instance list to a specific session,
+    // invoke it so newly connected clients immediately receive the up-to-date instance list.
+    if (ecs_.instance_list_request_cb_) {
+        ecs_.instance_list_request_cb_(session_id);
+    }
     if (udp_server_) {
         udp_server_->send_player_list_to_client(session_id);
         udp_server_->broadcast_player_list();
@@ -206,6 +211,9 @@ void Lobby::send_server_accept(const std::string &session_id, uint32_t token, fl
     sa.session_id = token;
     sa.spawn_x = x;
     sa.spawn_y = y;
+    // multi_instance: non-zero when this server is the front/lobby server
+    // Front server runs with max_lobbies_ > 0; instances (machine-made) are created with max_lobbies_ == 0
+    sa.multi_instance = static_cast<uint8_t>(ecs_.max_lobbies_ > 0 ? 1 : 0);
     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT), sa, RType::Protocol::PacketFlags::RELIABLE);
     ecs_.send_callback_(session_id, packet);
 }

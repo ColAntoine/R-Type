@@ -271,6 +271,8 @@ void GameServer::start_game()
         loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+
 
         // Render systems (only if display mode)
         if (display_) {

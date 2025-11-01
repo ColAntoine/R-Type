@@ -41,7 +41,7 @@ void InGameState::enter()
 
     // Load components first (needed for both solo and multiplayer)
     loader.load_components("build/lib/libECS" + ext, reg);
-    
+
     // Load render systems
     loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
@@ -172,7 +172,7 @@ void InGameState::handle_input()
         }
         // Handle shooting (space) -- send start/stop events to server when state changes
         static bool last_shoot_state = false;
-        bool shoot_down = IsKeyDown(KEY_V);
+        bool shoot_down = IsKeyDown(KEY_SPACE);
         if (shoot_down != last_shoot_state) {
             auto client = RType::Network::get_client();
             if (client) {
