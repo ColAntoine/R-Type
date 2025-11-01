@@ -8,9 +8,11 @@
 #include "Core/Server/Protocol/Protocol.hpp"
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
 #include "ECS/Audio/AudioManager.hpp"
 #include "UI/ThemeManager.hpp"
+#include "Constants.hpp"
 
 #include <string>
 #include <random>
@@ -259,13 +261,24 @@ void InGameState::createPlayer()
     _playerEntity = reg.spawn_entity();
     std::cout << "[InGame] Spawned player entity: " << static_cast<size_t>(_playerEntity) << std::endl;
 
+    auto winInfos = RenderManager::instance().get_screen_infos();
     if (componentFactory) {
         componentFactory->create_component<position>(reg, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
-        componentFactory->create_component<animation>(reg, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
-        componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
+        componentFactory->create_component<animation>(reg, _playerEntity,
+            std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png",
+            400, 400,
+            GET_SCALE_X(0.25, winInfos.getWidth()), GET_SCALE_Y(0.25, winInfos.getHeight()),
+            0, true
+        );
+        componentFactory->create_component<controllable>(reg, _playerEntity, GET_SCALED_SPEED(300.0f, winInfos.getWidth(), winInfos.getHeight()));
         componentFactory->create_component<Input>(reg, _playerEntity);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
-        componentFactory->create_component<collider>(reg, _playerEntity, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
+        componentFactory->create_component<collider>(reg, _playerEntity,
+            GET_SCALE_X(COLLISION_WIDTH, winInfos.getWidth()),
+            GET_SCALE_Y(COLLISION_HEIGHT, winInfos.getHeight()),
+            -GET_SCALE_X(COLLISION_WIDTH / 2, winInfos.getWidth()),
+            -GET_SCALE_Y(COLLISION_HEIGHT / 2, winInfos.getHeight())
+        );
         componentFactory->create_component<Score>(reg, _playerEntity);
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
