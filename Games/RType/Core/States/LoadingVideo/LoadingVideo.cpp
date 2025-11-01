@@ -11,6 +11,7 @@
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
 #include "UI/ThemeManager.hpp"
 #include "ECS/UI/UIBuilder.hpp"
+#include "ECS/Audio/AudioManager.hpp"
 
 void LoadingVideoState::enter()
 {
@@ -39,6 +40,24 @@ void LoadingVideoState::enter()
             MessagingManager::instance().get_event_bus().unsubscribe_deferred(_skipEventCallbackId);
         }
     });
+
+    auto& audioManager = AudioManager::instance();
+
+    if (audioManager.is_initialized()) {
+        try {
+            auto& musicCache = audioManager.get_music().getMusicCache();
+            if (musicCache.find("loading_theme") == musicCache.end()) {
+                std::string menuMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Loading.mp3";
+                audioManager.get_music().load("loading_theme", menuMusicPath);
+                audioManager.get_music().play("loading_theme", audioManager.get_music_volume());
+            } else {
+                audioManager.get_music().play("loading_theme", audioManager.get_music_volume());
+            }
+        } catch (const std::exception& ex) {
+            std::cerr << "[LoadingVideoState] Error playing music: " << ex.what() << std::endl;
+        }
+    }
+
     _initialized = true;
 }
 
@@ -48,6 +67,16 @@ void LoadingVideoState::exit()
     _imagesPaths.clear();
     MessagingManager::instance().get_event_bus().unsubscribe_deferred(_skipEventCallbackId);
     _initialized = false;
+
+    auto& audioManager = AudioManager::instance();
+    if (audioManager.is_initialized()) {
+        try {
+            audioManager.get_music().stopAll();
+            audioManager.get_music().clear();
+        } catch (const std::exception& ex) {
+            std::cerr << "[LoadingVideoState] Error stopping music: " << ex.what() << std::endl;
+        }
+    }
 }
 
 void LoadingVideoState::pause()

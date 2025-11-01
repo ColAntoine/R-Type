@@ -18,6 +18,8 @@
 #include "Entity/Components/PowerUp/PowerUp.hpp"
 #include "Entity/Components/Drawable/Drawable.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/CurrentWave/CurrentWave.hpp"
 #include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/PUpAnimation/PUpAnimation.hpp"
 
@@ -38,7 +40,8 @@ public:
 private:
     void spawnPowerUps(registry &r, float dt);
     void colisionPowerUps(registry &r, float dt);
-    void applyPowerUps(Weapon &weapon, velocity *vel, PowerUp &pUp);
+    void applyPowerUps(Weapon &weapon, velocity *vel, Health *health, PowerUp &pUp, int wave);
+    int getWave(registry &r);
 
     std::map<powerUpType, std::function<void(registry &)>> _pFunc;
     std::map<powerUpType, std::string> _pUpText;

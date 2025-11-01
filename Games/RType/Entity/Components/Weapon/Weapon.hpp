@@ -13,7 +13,7 @@
 
 struct Weapon : public IComponent {
     int _ownerId{-1};                        // entity id that owns the weapon (optional)
-    std::vector<std::string> _projectileType{"bullet"};   // identifier for which projectile to spawn
+    std::vector<std::string> _projectileType{"hardBullet"};   // identifier for which projectile to spawn
     float _fireRate{2.f};                   // shots per second
     float _cooldown{0.0f};                   // seconds until next shot (runtime)
     int _damage{10};                          // base damage applied to projectile
@@ -22,7 +22,11 @@ struct Weapon : public IComponent {
     bool _automatic{false};                  // hold to fire
     bool _wantsToFire{false};                // request to fire set by input/system
     bool _justFired{false};                  // transient flag set when projectile actually spawned
+    bool _shouldShootSpecial{false};         // special weapons trigger
 
     Weapon() = default;
-    Weapon(int owner, const std::string &projType, float rate, int dmg, float projSpeed, int am = -1, bool autoFire = false);
+    Weapon(int owner, const std::string &projType, float rate, int dmg,
+        float projSpeed, int am = -1, bool autoFire = false);
+    Weapon(int owner, std::vector<std::string> &projType, float rate, int dmg,
+        float projSpeed, int am = -1, bool autoFire = false);
 };

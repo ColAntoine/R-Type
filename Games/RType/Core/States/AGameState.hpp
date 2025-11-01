@@ -11,6 +11,10 @@
 
 
 #include "Core/States/GameStateManager.hpp"
+
+namespace EventTypes {
+    const std::string SCORE_INCREASED = "SCORE_INCREASED";
+}
 class AGameState : public IGameState {
     public:
         enum MoveDirection {
@@ -66,6 +70,7 @@ inline std::string state_type_to_string(IGameState::GameStateType type) {
         case IGameState::GameStateType::VideoSettings: return "VideoSettings";
         case IGameState::GameStateType::BindingsSettings: return "BindingsSettings";
         case IGameState::GameStateType::LoadingVideo: return "LoadingVideo";
+        case IGameState::GameStateType::InGameExit: return "InGameExit";
         default: return "Unknown";
     }
 }

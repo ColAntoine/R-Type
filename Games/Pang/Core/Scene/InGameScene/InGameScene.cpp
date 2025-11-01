@@ -22,6 +22,7 @@
 #include "Entity/Components/Rope/Rope.hpp"
 #include "ECS/Components/Position.hpp"
 #include "ECS/Zipper.hpp"
+#include "ECS/ILoader.hpp"
 
 InGameScene::InGameScene(registry& reg, ILoader& systemLoader, IComponentFactory* factory)
 : _reg(reg), _systemLoader(systemLoader), _componentFactory(factory), _initialized(false)
@@ -51,7 +52,8 @@ std::optional<GameState> InGameScene::update(float dt)
         }
     }
 
-    _systemLoader.update_all_systems(_reg, dt);
+    _systemLoader.update_all_systems(_reg, dt, ILoader::LogicSystem);
+    _systemLoader.update_all_systems(_reg, dt, ILoader::RenderSystem);
 
     auto *playerArr = _reg.get_if<Player>();
     if (playerArr) {

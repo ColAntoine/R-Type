@@ -60,15 +60,15 @@ void Core::loadSystems()
     #endif
 
     std::cout << "Loading game systems dynamically..." << std::endl;
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Gravity" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libposition_system" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSys" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Controlable" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_InvincibilitySys" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Render" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_Shoot" + ext);
-    _systemLoader.load_system_from_so("Games/Pang/build/lib/systems/libpang_BallSpawner" + ext);
-    std::cout << "Loaded " << _systemLoader.get_system_count() << " systems total." << std::endl;
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Gravity" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_BallSys" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Controlable" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_InvincibilitySys" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Render" + ext, ILoader::RenderSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_Shoot" + ext, ILoader::LogicSystem);
+    _systemLoader.load_system("Games/Pang/build/lib/systems/libpang_BallSpawner" + ext, ILoader::LogicSystem);
+    std::cout << "Loaded " << _systemLoader.get_system_count(ILoader::LogicSystem) << " systems total." << std::endl;
 
     _componentFactory = _systemLoader.get_factory();
     _systemsLoaded = true;

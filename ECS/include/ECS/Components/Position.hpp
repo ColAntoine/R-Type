@@ -10,8 +10,8 @@
 #include "ECS/Components/IComponent.hpp"
 
 struct position : public IComponent {
-    float x{};
-    float y{};
+    float x{0.f};
+    float y{0.f};
 
     position();
     position(float nx, float ny);

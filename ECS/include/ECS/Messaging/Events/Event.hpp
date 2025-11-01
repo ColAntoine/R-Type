@@ -19,6 +19,11 @@ namespace EventTypes {
     const std::string COLLISION_ENTER = "COLLISION_ENTER";
     const std::string COLLISION_EXIT = "COLLISION_EXIT";
     const std::string SET_KEY_BINDINGS = "SET_KEY_BINDINGS";
+    const std::string KEY_PRESSED = "KEY_PRESSED";
+    const std::string KEY_RELEASED = "KEY_RELEASED";
+    const std::string ESCAPE_KEY_PRESSED = "ESCAPE_KEY_PRESSED";
+    const std::string MOUSE_PRESSED = "MOUSE_PRESSED";
+    const std::string MOUSE_RELEASED = "MOUSE_RELEASED";
 }
 struct Event {
     std::string type;
