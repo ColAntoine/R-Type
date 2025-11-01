@@ -31,7 +31,7 @@ void GameLogic::updateScore(registry &r)
 
 void GameLogic::updateState(registry  &r)
 {
-    if (_gameScore._score % 50 == 0) {
+    if ((_gameScore._score + 1) % 50 == 0) {
         killAllEnemy(r);
         _gameScore._score += 1;
         spawnBoss(r);
