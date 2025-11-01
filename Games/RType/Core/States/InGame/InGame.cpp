@@ -15,6 +15,12 @@
 #include <string>
 #include <random>
 
+#if defined(_MSC_VER)
+  #define ATTR_MAYBE_UNUSED [[maybe_unused]]
+#else
+  #define ATTR_MAYBE_UNUSED __attribute__((unused))
+#endif
+
 void InGameState::enter()
 {
     std::cout << "[InGame] Entering state" << std::endl;
@@ -94,7 +100,7 @@ void InGameState::enter()
 
     // Subscribe to KEY_PRESSED event and check if it's the ESCAPE key
     _keyPressedCallbackId = eventBus.subscribe(EventTypes::KEY_PRESSED,
-        [this](__attribute_maybe_unused__ const Event& e) {
+        [this](ATTR_MAYBE_UNUSED const Event& e) {
             try {
                 std::string key = e.get<std::string>("key");
 
@@ -165,21 +171,13 @@ void InGameState::handle_input()
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
         // Check for arrow key input
         uint8_t input_state = 0;
-        if (IsKeyDown(KEY_UP))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        if (IsKeyDown(KEY_DOWN))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        if (IsKeyDown(KEY_LEFT))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        if (IsKeyDown(KEY_RIGHT))
-            input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
-        // if (keyBinds.count("move_up") && IsKeyDown(keyBinds.at("move_up")))
+        // if (IsKeyDown(KEY_UP))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
-        // if (keyBinds.count("move_down") && IsKeyDown(keyBinds.at("move_down")))
+        // if (IsKeyDown(KEY_DOWN))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::DOWN);
-        // if (keyBinds.count("move_left") && IsKeyDown(keyBinds.at("move_left")))
+        // if (IsKeyDown(KEY_LEFT))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::LEFT);
-        // if (keyBinds.count("move_right") && IsKeyDown(keyBinds.at("move_right")))
+        // if (IsKeyDown(KEY_RIGHT))
         //     input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::RIGHT);
 
         // Only send if input state changed
