@@ -86,12 +86,30 @@ void InGameState::enter()
     event.set("keyBindings", keyBinds);
     eventBus.emit(event);
 
+    // Subscribe to KEY_PRESSED event and check if it's the ESCAPE key
+    _keyPressedCallbackId = eventBus.subscribe(EventTypes::KEY_PRESSED,
+        [this](__attribute_maybe_unused__ const Event& e) {
+            try {
+                std::string key = e.get<std::string>("key");
+
+                if (key == "ESCAPE") {
+                    if (_stateManager) {
+                        _stateManager->push_state("InGameExit", true);
+                    }
+                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[InGame] Error in key pressed handler: " << ex.what() << std::endl;
+            }
+        });
+
     setup_ui();
     _initialized = true;
 }
 
 void InGameState::exit()
 {
+    auto &eventBus = MessagingManager::instance().get_event_bus();
+    eventBus.unsubscribe(_keyPressedCallbackId);
     _initialized = false;
 }
 

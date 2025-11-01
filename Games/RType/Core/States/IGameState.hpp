@@ -38,7 +38,8 @@ public:
         AudioSettings,
         VideoSettings,
         BindingsSettings,
-        LoadingVideo
+        LoadingVideo,
+        InGameExit
     };
 
     virtual ~IGameState() = default;

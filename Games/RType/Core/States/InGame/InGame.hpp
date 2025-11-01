@@ -37,4 +37,5 @@ class InGameState : public AGameState {
         void createPlayer();
 
         entity _playerEntity;
+        EventBus::CallbackId _keyPressedCallbackId;  // Callback ID for key pressed event
 };

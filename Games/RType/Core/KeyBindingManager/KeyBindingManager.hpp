@@ -1,15 +1,9 @@
 #pragma once
 
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Messaging/Events/Event.hpp"
 #include <string>
 #include <map>
-
-namespace EventTypes {
-    const std::string KEY_PRESSED = "KEY_PRESSED";
-    const std::string KEY_RELEASED = "KEY_RELEASED";
-    const std::string MOUSE_PRESSED = "MOUSE_PRESSED";
-    const std::string MOUSE_RELEASED = "MOUSE_RELEASED";
-}
 
 class KeyBindingManager {
     public:

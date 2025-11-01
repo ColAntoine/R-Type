@@ -13,6 +13,7 @@
 #include "Core/States/InGameHud/InGameHud.hpp"
 #include "Core/States/InGameBackground/InGameBackground.hpp"
 #include "Core/States/InGamePause/InGamePause.hpp"
+#include "Core/States/InGameExit/InGameExit.hpp"
 #include "Core/States/MenusBG/MenusBG.hpp"
 #include "Core/States/Connection/Connection.hpp"
 #include "Core/States/Settings/Settings.hpp"
@@ -83,6 +84,7 @@ void GameClient::register_states() {
     _stateManager.register_state<InGamePauseState>("InGamePause");
     _stateManager.register_state<Browser>("Browser");
     _stateManager.register_state<LoadingVideoState>("LoadingVideo");
+    _stateManager.register_state<InGameExitState>("InGameExit");
 }
 
 bool GameClient::init()
