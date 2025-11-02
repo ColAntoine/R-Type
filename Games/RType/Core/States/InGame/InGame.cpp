@@ -59,30 +59,25 @@ void InGameState::enter()
     loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_PUpAnimationSys" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
-
     loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
-
-    // ! unload the enemy for boss testing
     loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
-
     loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
-    loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
-
     loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+
+    // GameLogic must run BEFORE BossSys to detect score changes and spawn boss
     loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
-    // Debug: Check how many entities exist in the registry
-    std::cout << "[InGame] Registry has entities at startup" << std::endl;
+    loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
 
     // Create player
     // In solo mode: create immediately
