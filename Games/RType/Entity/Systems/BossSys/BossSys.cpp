@@ -38,7 +38,7 @@ void BossSys::update(registry& r, float dt)
             w._shouldShootSpecial = spe;
         }
     }
-    
+
     // Check if boss is dead
     if (healthArr && bossArr) {
         for (auto [health, boss, ent]: zipper(*healthArr, *bossArr)) {
@@ -84,7 +84,7 @@ void BossSys::spawn(registry &r)
 
     for (auto [boss, bossEnt]: zipper(*bossArr)) {
         r.emplace_component<position>(entity(bossEnt), _renderManager.get_screen_infos().getWidth() + 300.f, _renderManager.get_screen_infos().getHeight() / 2.f);
-        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r)));
+        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r) ? getWave(r) == 0 : 1));
         r.emplace_component<velocity>(entity(bossEnt), -300.f, 0.f);
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
@@ -118,7 +118,6 @@ void BossSys::move(registry &r)
     auto *velArr = r.get_if<velocity>();
     auto *bossArr = r.get_if<Boss>();
     auto *weaponArr = r.get_if<Weapon>();
-    static bool up = false;
 
     if (!posArr || !velArr || !bossArr || !weaponArr) return;
 
@@ -127,16 +126,16 @@ void BossSys::move(registry &r)
             int screenH = _renderManager.get_screen_infos().getHeight();
             int margin = _renderManager.scaleSizeH(30);
 
-            if (!up) {
+            if (!boss._movingUp) {
                 vel.vy = -200.f;
                 if (pos.y <= static_cast<float>(margin)) {
-                    up = true;
+                    boss._movingUp = true;
                 }
             }
             else {
                 vel.vy = 200.f;
                 if (pos.y >= static_cast<float>(screenH - margin)) {
-                    up = false;
+                    boss._movingUp = false;
                 }
             }
         }
@@ -158,17 +157,37 @@ bool BossSys::isPlayerClose(registry &r)
 {
     auto posArr = r.get_if<position>();
     auto playerArr = r.get_if<Player>();
+    auto remoteArr = r.get_if<remote_player>();
     auto bossArr = r.get_if<Boss>();
 
     position posPlayer;
     position posBoss;
+    bool foundPlayer = false;
 
-    if (!posArr || !playerArr || !bossArr) return false;
+    if (!posArr || !bossArr) return false;
 
-    for (auto [player, pos, ent] : zipper(*playerArr, *posArr)) {
-        posPlayer = pos;
-        break;
+    // First, try to find a local Player position
+    if (playerArr) {
+        for (auto [player, pos, ent] : zipper(*playerArr, *posArr)) {
+            posPlayer = pos;
+            foundPlayer = true;
+            break;
+        }
     }
+
+    // If no local Player found, try to find a remote_player position
+    if (!foundPlayer && remoteArr) {
+        for (auto [remote, pos, ent] : zipper(*remoteArr, *posArr)) {
+            posPlayer = pos;
+            foundPlayer = true;
+            break;
+        }
+    }
+
+    // If no player found at all, return false
+    if (!foundPlayer) return false;
+
+    // Get boss position
     for (auto [boss, pos, ent] : zipper(*bossArr, *posArr)) {
         posBoss = pos;
         break;

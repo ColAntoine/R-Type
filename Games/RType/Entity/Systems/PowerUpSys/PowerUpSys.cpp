@@ -242,8 +242,8 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, Po
         case WEAPON_NEW:
             {
                 std::array<std::string, 4> bulletTypes = {"hardBullet", "bullet", "bigBullet", "parabol"};
-                std::uniform_int_distribution<> bullet_dist(0, bulletTypes.size() - 1);
-                std::string selectedBullet = bulletTypes[bullet_dist(_rng)];
+                size_t bulletIndex = _rng() % bulletTypes.size();
+                std::string selectedBullet = bulletTypes[bulletIndex];
 
                 auto it = std::find(weapon._projectileType.begin(), weapon._projectileType.end(), selectedBullet);
                 if (it == weapon._projectileType.end()) {

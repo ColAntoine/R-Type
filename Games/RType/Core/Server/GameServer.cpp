@@ -266,8 +266,13 @@ void GameServer::start_game()
         loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
+
 
 
         // Render systems (only if display mode)
@@ -279,22 +284,22 @@ void GameServer::start_game()
 
         systems_loaded_ = true;
         std::cout << "[GameServer] ECS systems loaded for InGame phase." << std::endl;
-        
+
         // TODO: Set up broadcast callbacks for enemy spawn and entity destruction
         // These are currently not working due to dynamic loading issues
         // if (server_ecs_ && server_ecs_->GetMultiplayer()) {
         //     auto* multiplayer = server_ecs_->GetMultiplayer();
-        //     
+        //
         //     // Set up enemy spawn callback
         //     set_global_enemy_spawn_callback([multiplayer](entity ent, uint8_t enemy_type, float x, float y) {
         //         multiplayer->broadcast_enemy_spawn(ent, enemy_type, x, y);
         //     });
-        //     
+        //
         //     // Set up entity destroy callback
         //     set_global_entity_destroy_callback([multiplayer](entity ent, uint8_t reason) {
         //         multiplayer->broadcast_entity_destroy(ent, reason);
         //     });
-        //     
+        //
         //     std::cout << "[GameServer] Network broadcast callbacks configured." << std::endl;
         // }
     }

@@ -34,9 +34,6 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     std::vector<char> payload;
     if (data.size() > 1) payload.insert(payload.end(), data.begin() + 1, data.end());
 
-    std::cout << "[Multiplayer] Pkt type=" << int(msg_type) << " from " << session_id
-              << " payload=" << payload.size() << std::endl;
-
     using RType::Protocol::SystemMessage;
 
     // Route to lobby or in-game handlers depending on current server state

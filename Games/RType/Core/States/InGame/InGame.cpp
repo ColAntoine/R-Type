@@ -69,6 +69,7 @@ void InGameState::enter()
     loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
 
+    loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
 
@@ -78,7 +79,6 @@ void InGameState::enter()
     loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
-    loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 

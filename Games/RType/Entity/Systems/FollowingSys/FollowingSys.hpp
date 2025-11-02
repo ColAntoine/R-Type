@@ -14,6 +14,7 @@
 
 #include "Entity/Components/Following/Following.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/RemotePlayer/RemotePlayer.hpp"
 
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"

@@ -260,6 +260,7 @@ void InGame::spawn_all_players() {
             ecs_.get_factory()->create_component<collider>(ecs_.GetRegistry(), player_ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
             ecs_.get_factory()->create_component<Weapon>(ecs_.GetRegistry(), player_ent);
             ecs_.get_factory()->create_component<Health>(ecs_.GetRegistry(), player_ent);
+            ecs_.get_factory()->create_component<Score>(ecs_.GetRegistry(), player_ent);
             ecs_.get_factory()->create_component<Player>(ecs_.GetRegistry(), player_ent);
         }
         ecs_.session_entity_map_[session_id] = player_ent;

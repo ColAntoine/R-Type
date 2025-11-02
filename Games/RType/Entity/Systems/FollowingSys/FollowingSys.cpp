@@ -20,12 +20,24 @@ void FollowingSys::updatePlayerPos(registry &r)
 {
     auto posArr = r.get_if<position>();
     auto playerArr = r.get_if<Player>();
+    auto remoteArr = r.get_if<remote_player>();
 
-    if (!posArr || !playerArr) return;
+    if (!posArr) return;
 
-    for (auto [pos, player, ent]: zipper(*posArr, *playerArr)) {
-        _playerPos = pos;
-        return;
+    // First, try to find a local Player position
+    if (playerArr) {
+        for (auto [pos, player, ent]: zipper(*posArr, *playerArr)) {
+            _playerPos = pos;
+            return;
+        }
+    }
+
+    // If no local Player found, try to find a remote_player position
+    if (remoteArr) {
+        for (auto [pos, remote, ent]: zipper(*posArr, *remoteArr)) {
+            _playerPos = pos;
+            return;
+        }
     }
 }
 

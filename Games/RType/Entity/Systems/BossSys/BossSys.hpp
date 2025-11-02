@@ -19,6 +19,7 @@
 #include "Entity/Components/Boss/Boss.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/RemotePlayer/RemotePlayer.hpp"
 #include "Entity/Components/CurrentWave/CurrentWave.hpp"
 
 // TODO: the draw is temporary until we find some sprites
