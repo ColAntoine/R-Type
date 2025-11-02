@@ -2,7 +2,18 @@
 
 A modern C++ implementation of the classic R-Type space shooter game with real-time multiplayer networking capabilities. Built with a clean, modular architecture featuring an Entity Component System, service-oriented client, and high-performance asynchronous server.
 
-## 🎮 Features
+## � Gameplay Video
+
+https://github.com/ColAntoine/R-Type/assets/Video/VideoBossRtype.mp4
+
+<video width="100%" controls>
+  <source src="Video/VideoBossRtype.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+---
+
+## �🎮 Features
 
 ### Core Gameplay
 - **Real-time multiplayer**: Multiple players can connect and play simultaneously
@@ -235,7 +246,52 @@ Key message types:
 - **SHOOT_REQUEST** (0x11): Player shoots
 - **DISCONNECT_REQUEST** (0x04): Client disconnects
 
-## � Project Requirements
+## 📚 Documentation
+
+Complete documentation is available throughout the project:
+
+### Core Components
+
+| Documentation | Path | Purpose |
+|---|---|---|
+| **ECS Framework** | [ECS/README.md](ECS/README.md) | Entity-Component-System architecture and usage |
+| **ECS Features** | [ECS/FEATURES.md](ECS/FEATURES.md) | Detailed feature list and capabilities |
+| **UI System** | [ECS/include/ECS/UI/README.md](ECS/include/ECS/UI/README.md) | UI components and systems guide |
+| **UIBuilder Guide** | [ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md) | Complete UIBuilder API reference with examples |
+
+### Game Development
+
+| Documentation | Path | Purpose |
+|---|---|---|
+| **Games Overview** | [Games/README.md](Games/README.md) | Multi-game framework and extensibility |
+| **R-Type Client** | [Games/RType/README.md](Games/RType/README.md) | Client architecture and gameplay systems |
+| **Pang Game** | [Games/Pang/README.md](Games/Pang/README.md) | Example game implementation using R-Type framework |
+
+### Networking & Protocol
+
+| Documentation | Path | Purpose |
+|---|---|---|
+| **Protocol Specification** | [Protocol.md](Protocol.md) | KPN v1.0 binary protocol complete reference |
+| **Networking Guide** | [Games/RType/Networking.md](Games/RType/Networking.md) | Client-server networking architecture |
+
+### Project Details
+
+| Documentation | Path | Purpose |
+|---|---|---|
+| **Project Subject** | [subject.md](subject.md) | EPITECH project requirements and specifications |
+
+---
+
+### Quick Links to Key Documentation
+
+- 🏗️ **Want to understand the architecture?** Start with [ECS/README.md](ECS/README.md)
+- 🎮 **Building a new game?** Read [Games/README.md](Games/README.md)
+- 🛠️ **Creating UI elements?** Check [ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md)
+- 🌐 **Implementing networking?** See [Games/RType/Networking.md](Games/RType/Networking.md)
+- 📡 **Understanding the protocol?** Review [Protocol.md](Protocol.md)
+- 🎯 **Game development?** Explore [Games/RType/README.md](Games/RType/README.md)
+
+## 📋 Project Requirements
 
 This project implements the EPITECH R-Type requirements:
 - ✅ **Modern Architecture**: ECS library + Service-Oriented client + Async server
