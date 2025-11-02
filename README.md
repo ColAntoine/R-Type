@@ -2,17 +2,6 @@
 
 A modern C++ implementation of the classic R-Type space shooter game with real-time multiplayer networking capabilities. Built with a clean, modular architecture featuring an Entity Component System, service-oriented client, and high-performance asynchronous server.
 
-## � Gameplay Video
-
-https://github.com/ColAntoine/R-Type/assets/Video/VideoBossRtype.mp4
-
-<video width="100%" controls>
-  <source src="Video/VideoBossRtype.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
----
-
 ## �🎮 Features
 
 ### Core Gameplay
