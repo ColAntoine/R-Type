@@ -7,6 +7,8 @@
 #include "ECS/UI/Components/InputField.hpp"
 #include "Core/Client/Network/ClientService.hpp"
 #include "ECS/Zipper.hpp"
+#include "UI/ThemeManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
 
 void Connection::enter()
 {
@@ -52,11 +54,13 @@ void Connection::setup_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
+    auto &theme = ThemeManager::instance().getTheme();
+
     // Create bar to split the panel
     auto bar = PanelBuilder()
         .centered(renderManager.scalePosY(0))
         .size(20, renderManager.scaleSizeH(90))
-        .border(20, WHITE)
+        .border(20, theme.panelBorderColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto barEntity = _registry.spawn_entity();
@@ -68,7 +72,7 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(10), renderManager.scalePosY(13))
         .text("IP Address:")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto ipLabelEntity = _registry.spawn_entity();
@@ -79,11 +83,13 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(10), renderManager.scalePosY(18))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter IP address")
-        .backgroundColor(Color{50, 50, 50, 255})
+        .backgroundColor(theme.inputFieldColors.background)
         .text("127.0.0.1")
-        .textColor(WHITE)
-        .placeholderColor(Color{150, 150, 150, 255})
-        .border(2, Color{200, 200, 200, 255})
+        .textColor(theme.secondaryTextColor)
+        .placeholderColor(theme.inputFieldColors.placeholder)
+        .focusedColor(theme.inputFieldColors.focused)
+        .focusedBorderColor(theme.inputFieldColors.focusedBorder)
+        .border(2, theme.inputFieldColors.border)
         .fontSize(renderManager.scaleSizeW(2))
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -98,7 +104,7 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(10), renderManager.scalePosY(28))
         .text("Port:")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto portLabelEntity = _registry.spawn_entity();
@@ -110,10 +116,12 @@ void Connection::setup_ui()
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter port")
         .text("8080")
-        .backgroundColor(Color{50, 50, 50, 255})
-        .textColor(WHITE)
-        .placeholderColor(Color{150, 150, 150, 255})
-        .border(2, Color{200, 200, 200, 255})
+        .backgroundColor(theme.inputFieldColors.background)
+        .textColor(theme.secondaryTextColor)
+        .placeholderColor(theme.inputFieldColors.placeholder)
+        .focusedColor(theme.inputFieldColors.focused)
+        .focusedBorderColor(theme.inputFieldColors.focusedBorder)
+        .border(2, theme.inputFieldColors.border)
         .fontSize(renderManager.scaleSizeW(2))
         .build(winInfos.getWidth(), winInfos.getHeight());
 
@@ -123,17 +131,17 @@ void Connection::setup_ui()
     _registry.add_component<Connection::PortFieldTag>(portInputEntity, Connection::PortFieldTag());
 
     // Back Button (Red)
-    auto backButton = ButtonBuilder()
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(63), renderManager.scalePosY(85))
         .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
         .text("BACK")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
-            // ? THIS IS PRINTED 2 times ?
-            std::cout << "++++++++TEST++++++++++" << std::endl;
             if (this->_stateManager) {
                 this->_stateManager->pop_state();
                 this->_stateManager->pop_state();
@@ -146,14 +154,16 @@ void Connection::setup_ui()
     _registry.add_component(backButtonEntity, UI::UIComponent(backButton));
 
     // Connection Button (Green)
-    auto connectButton = ButtonBuilder()
+    auto connectButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(79), renderManager.scalePosY(85))
         .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(8))
         .text("CONNECT")
-        .green()
-        .textColor(WHITE)
+        .color(theme.secondaryButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.secondaryButtonColors.border)
+        .neonColors(theme.secondaryButtonColors.neonColor, theme.secondaryButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .onClick([this]() {
             this->connection_callback();
         })
@@ -168,7 +178,7 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(60), renderManager.scalePosY(13))
         .text("Name:")
         .fontSize(renderManager.scaleSizeW(3))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto nameLabelEntity = _registry.spawn_entity();
@@ -179,10 +189,12 @@ void Connection::setup_ui()
         .at(renderManager.scalePosX(60), renderManager.scalePosY(18))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(6))
         .placeholder("Enter your name")
-        .backgroundColor(Color{50, 50, 50, 255})
-        .textColor(WHITE)
-        .placeholderColor(Color{150, 150, 150, 255})
-        .border(2, Color{200, 200, 200, 255})
+        .placeholderColor(theme.inputFieldColors.placeholder)
+        .backgroundColor(theme.inputFieldColors.background)
+        .textColor(theme.secondaryTextColor)
+        .border(2, theme.inputFieldColors.border)
+        .focusedColor(theme.inputFieldColors.focused)
+        .focusedBorderColor(theme.inputFieldColors.focusedBorder)
         .fontSize(renderManager.scaleSizeW(2))
         .build(winInfos.getWidth(), winInfos.getHeight());
 

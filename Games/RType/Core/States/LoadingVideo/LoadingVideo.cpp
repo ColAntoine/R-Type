@@ -65,6 +65,7 @@ void LoadingVideoState::exit()
 {
     std::cout << "[LoadingVideoState] Exiting state" << std::endl;
     _imagesPaths.clear();
+    MessagingManager::instance().get_event_bus().unsubscribe_deferred(_skipEventCallbackId);
     _initialized = false;
 
     auto& audioManager = AudioManager::instance();

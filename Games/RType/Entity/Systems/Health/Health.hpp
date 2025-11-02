@@ -18,16 +18,32 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Components.hpp"
 
+#include <functional>
+
+// Callback type for broadcasting entity destruction to clients
+using EntityDestroyCallback = std::function<void(entity, uint8_t reason)>;
+
 class HealthSys : public ISystem {
 public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "Health"; }
+    
+    // Set callback for when entities are destroyed (for server broadcasting)
+    void set_destroy_callback(EntityDestroyCallback callback) {
+        destroy_callback_ = std::move(callback);
+    }
+
 private:
     void checkAndKillEnemy(registry &r);
     void checkAndKillPlayer(registry &r);
     void addScore(registry &r, int amount = 1);
     void emitPlayerHealthStats(registry &r);
+    
+    EntityDestroyCallback destroy_callback_;
 };
+
+// Global function to set entity destroy callback (for server broadcasting)
+void set_global_entity_destroy_callback(EntityDestroyCallback callback);
 
 
 #if defined(_WIN32)

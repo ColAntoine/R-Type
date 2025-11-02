@@ -204,7 +204,7 @@ void InGameState::handle_input()
         }
         // Handle shooting (space) -- send start/stop events to server when state changes
         static bool last_shoot_state = false;
-        bool shoot_down = IsKeyDown(KEY_V);
+        bool shoot_down = IsKeyDown(keyBinds.at("shoot"));
         if (shoot_down != last_shoot_state) {
             auto client = RType::Network::get_client();
             if (client) {

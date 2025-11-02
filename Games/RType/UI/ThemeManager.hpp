@@ -27,6 +27,7 @@ public:
     const std::string getThemeName() const;
 
     void setColorBlindMode(ColorBlindMode mode);
+    ColorBlindMode getColorBlindMode() const;
 
 private:
     ThemeManager() = default;

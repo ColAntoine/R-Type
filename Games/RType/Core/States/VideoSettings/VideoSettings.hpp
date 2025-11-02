@@ -35,6 +35,7 @@ class VideoSettingsState : public AGameState {
         void applyColorChange(MoveDirection);
         void filter_available_resolutions(int monitorWidth, int monitorHeight);
         void set_current_resolution_index(int currentWidth, int currentHeight);
+        void get_color_mode_from_theme();
 
         size_t _resolutionIndex;
         std::vector<Resolution> _availableResolution = {
