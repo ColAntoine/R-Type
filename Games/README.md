@@ -1,215 +1,413 @@
-# Game Development Guide
+# Game Prototype Development Guide
 
 ## Overview
 
-This guide explains how to create a game using the architecture patterns demonstrated in the **R-Type** project. The framework combines a service-oriented architecture, an Entity Component System (ECS), a state machine, and an event-driven design to create scalable, maintainable games.
+**Build a complete game prototype from scratch using the R-Type ECS engine.**
 
-**Target Audience**: Developers familiar with C++ who want to build games with a clean, modular architecture.
+This guide walks you through creating a playable game in under 2 hours. You'll learn how to integrate the ECS engine, create entities, implement gameplay systems, and build a complete game loop.
 
-**What You'll Learn**:
-- How to structure a game project
-- How to use the ECS for game entities
-- How to implement game states and UI
-- How to handle input, rendering, and networking
-- Best practices for game architecture
+**Target Audience**: 
+- **Developers**: C++ programmers wanting to build games with data-oriented architecture
+- **Users**: Game designers prototyping gameplay ideas
 
----
+**What You'll Build**:
+A simple space shooter with:
+- Player-controlled ship
+- Enemies that spawn and move
+- Shooting mechanics
+- Collision detection
+- Score tracking
+- Simple UI
 
-## Architecture Overview
+**Prerequisites**:
+- C++17 compiler
+- CMake 3.21+
+- Raylib library
+- Basic C++ knowledge
 
-The framework is built on four main pillars:
-
-### 1. **Entity Component System (ECS)**
-- **Purpose**: Manages game entities (players, enemies, projectiles)
-- **Location**: `../ECS/` library
-- **Documentation**: See `../ECS/README.md`
-- **Key Concepts**:
-  - **Entities**: Unique IDs representing game objects
-  - **Components**: Data attached to entities (position, health, sprite)
-  - **Systems**: Logic that operates on entities with specific components
-
-### 2. **Service-Oriented Architecture**
-- **Purpose**: Manages cross-cutting concerns (input, rendering, networking)
-- **Pattern**: Dependency injection with lifecycle management
-- **Key Services**:
-  - **Input Service**: Captures player input
-  - **Render Service**: Handles rendering and window management
-  - **Network Service**: Manages client-server communication (optional)
-
-### 3. **State Machine**
-- **Purpose**: Manages game flow (menu → gameplay → game over)
-- **Pattern**: Stack-based state management
-- **Benefits**:
-  - Clean separation of game phases
-  - Easy state transitions
-  - State pause/resume support
-
-### 4. **Event-Driven Communication**
-- **Purpose**: Decouples systems through message passing
-- **Pattern**: Publisher-subscriber with typed events
-- **Benefits**:
-  - Reduced coupling between systems
-  - Easy to extend with new behaviors
-  - Supports immediate and queued processing
+**Time to Complete**: ~2 hours
 
 ---
 
-## Project Structure Template
+## Quick Architecture Overview
 
-Here's a recommended folder structure for a new game:
+Your game will have **3 main layers**:
 
+### 1. **ECS Layer** (Entities, Components, Systems)
+- **What it does**: Manages all game objects (player, enemies, bullets)
+- **Documentation**: See [`../ECS/README.md`](../ECS/README.md) for full ECS documentation
+- **You'll use**: `registry`, components (`position`, `velocity`, `sprite`), systems
+
+### 2. **Game State Layer** (Menu, Gameplay, Game Over)
+- **What it does**: Controls game flow and transitions
+- **Pattern**: Stack-based state machine
+- **You'll create**: `InGame` state with gameplay logic
+
+### 3. **Manager Layer** (Rendering, Audio, Input)
+- **What it does**: Handles cross-cutting concerns
+- **Documentation**: See [`../ECS/FEATURES.md`](../ECS/FEATURES.md) for manager details
+- **You'll use**: `RenderManager`, `AssetManager`, `MessagingManager`
+
+**Data Flow:**
 ```
-YourGame/
-├── CMakeLists.txt              # Build configuration
-├── main.cpp                    # Entry point
-├── Application.hpp/cpp         # Main application orchestrator
-├── README.md                   # Game-specific documentation
-│
-├── Core/                       # Core framework components
-│   ├── EventManager.hpp/cpp    # Event system
-│   ├── Events.hpp              # Game event definitions
-│   │
-│   ├── Services/               # Service layer
-│   │   ├── ServiceManager.hpp/cpp
-│   │   ├── Input/              # Input service
-│   │   ├── Render/             # Rendering service
-│   │   └── Network/            # Network service (optional)
-│   │
-│   ├── States/                 # State machine
-│   │   ├── GameState.hpp       # State interface
-│   │   ├── GameStateManager.hpp/cpp
-│   │   ├── MainMenu/           # Menu state
-│   │   ├── InGame/             # Gameplay state
-│   │   └── GameOver/           # End state
-│   │
-│   └── Window/                 # Window management (optional)
-│       └── GameWindow.hpp/cpp
-│
-├── Entity/                     # Game-specific ECS extensions
-│   ├── Components/             # Custom components
-│   │   ├── Player/
-│   │   ├── Enemy/
-│   │   └── ...
-│   │
-│   └── Systems/                # Custom systems
-│       ├── Movement/
-│       ├── Combat/
-│       └── ...
-│
-└── UI/                         # User interface
-    ├── UIManager.hpp/cpp       # UI coordinator
-    ├── UIComponent.hpp         # UI base interface
-    └── Components/             # UI widgets
-        ├── UIButton.hpp/cpp
-        ├── UIText.hpp/cpp
-        └── ...
+Input → Systems → Components → Rendering
+  ↓
+Events (for communication between systems)
 ```
 
 ---
 
-## Step-by-Step: Creating a Basic Game
+## Step 0: Setup Your Project (5 minutes)
 
-### Step 1: Set Up Your Project
-
-**1.1 Create Project Structure**
+### Create Project Structure
 ```bash
-mkdir MyGame && cd MyGame
-mkdir -p Core/Services/{Input,Render} Core/States/{MainMenu,InGame,GameOver}
+mkdir SpaceShooter && cd SpaceShooter
+mkdir -p Core/States/InGame
 mkdir -p Entity/{Components,Systems}
-mkdir -p UI/Components
+mkdir -p Assets
+touch main.cpp CMakeLists.txt
 ```
 
-**1.2 Create CMakeLists.txt**
-```cmake
-cmake_minimum_required(VERSION 3.10)
-project(MyGame VERSION 1.0 LANGUAGES CXX)
+### Final Structure
+```
+SpaceShooter/
+├── CMakeLists.txt          # Build configuration
+├── main.cpp                # Entry point
+├── Core/
+│   └── States/
+│       ├── IGameState.hpp  # State interface
+│       └── InGame/
+│           ├── InGame.hpp
+│           └── InGame.cpp  # Main gameplay
+├── Entity/
+│   ├── Components/         # Custom components
+│   │   ├── Player.hpp
+│   │   ├── Enemy.hpp
+│   │   └── Bullet.hpp
+│   └── Systems/            # Custom systems
+│       ├── PlayerSystem.cpp
+│       ├── EnemySystem.cpp
+│       └── BulletSystem.cpp
+└── Assets/                 # Textures, sounds
+```
 
-set(CMAKE_CXX_STANDARD 20)
+### Create CMakeLists.txt
+```cmake
+cmake_minimum_required(VERSION 3.21)
+project(SpaceShooter VERSION 1.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Include ECS library
+# Link to ECS library
 include_directories(../ECS/include)
-link_directories(../ECS/build)
+link_directories(../ECS/build/lib)
 
-# Find dependencies
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(RAYLIB REQUIRED raylib)
+# Find Raylib
+find_package(raylib REQUIRED)
 
-# Source files
-file(GLOB_RECURSE SOURCES "*.cpp")
+# Collect source files
+file(GLOB_RECURSE SOURCES 
+    "main.cpp"
+    "Core/**/*.cpp"
+    "Entity/**/*.cpp"
+)
 
-# Executable
-add_executable(my_game ${SOURCES})
-target_link_libraries(my_game ECS ${RAYLIB_LIBRARIES} dl)
+# Create executable
+add_executable(space_shooter ${SOURCES})
+target_link_libraries(space_shooter PRIVATE 
+    ECS 
+    raylib
+    dl
+)
+
+# Copy assets
+file(COPY Assets DESTINATION ${CMAKE_BINARY_DIR})
 ```
 
 ---
 
-### Step 2: Implement Core Framework
+## Step 1: Define Your Game Components (10 minutes)
 
-**2.1 Create Event System (`Core/EventManager.hpp/cpp`)**
+Components are pure data structures. See [`../ECS/README.md#components`](../ECS/README.md) for core components.
 
-See `RType/Core/EventManager.hpp` for reference implementation.
-
-Key features:
-- Template-based type-safe event subscription
-- Support for immediate and queued event processing
-- Multiple handlers per event type
-
-**2.2 Define Your Events (`Core/Events.hpp`)**
+### Player Component (`Entity/Components/Player.hpp`)
 ```cpp
 #pragma once
-#include "EventManager.hpp"
+#include "ECS/Components/IComponent.hpp"
 
-// Input Events
-struct KeyPressEvent : Event {
-    int key;
-    KeyPressEvent(int k) : key(k) {}
+struct Player : public IComponent {
+    float speed{300.0f};
+    int lives{3};
+    int score{0};
+    float shoot_cooldown{0.5f};
+    float current_cooldown{0.0f};
+    
+    Player() = default;
+    Player(float spd, int lv, int sc) 
+        : speed(spd), lives(lv), score(sc) {}
 };
-
-// Game Events
-struct PlayerSpawnEvent : Event {
-    int player_id;
-    float x, y;
-    PlayerSpawnEvent(int id, float x_, float y_) 
-        : player_id(id), x(x_), y(y_) {}
-};
-
-struct GameOverEvent : Event {
-    int final_score;
-    GameOverEvent(int score) : final_score(score) {}
-};
-
-// Add more events as needed...
 ```
 
-**2.3 Create Service Manager (`Core/Services/ServiceManager.hpp/cpp`)**
+### Enemy Component (`Entity/Components/Enemy.hpp`)
+```cpp
+#pragma once
+#include "ECS/Components/IComponent.hpp"
 
-See `RType/Core/Services/ServiceManager.hpp` for reference.
+struct Enemy : public IComponent {
+    int type{0};          // 0=basic, 1=fast, 2=tank
+    float health{100.0f};
+    int score_value{10};
+    
+    Enemy() = default;
+    Enemy(int t, float hp, int score) 
+        : type(t), health(hp), score_value(score) {}
+};
+```
 
-Key features:
-- Service registration with dependency injection
-- Type-safe service retrieval
-- Automatic lifecycle management (initialize, update, shutdown)
+### Bullet Component (`Entity/Components/Bullet.hpp`)
+```cpp
+#pragma once
+#include "ECS/Components/IComponent.hpp"
 
-**2.4 Implement Basic Services**
+struct Bullet : public IComponent {
+    float damage{25.0f};
+    int owner_id{-1};     // -1=player, else=enemy_id
+    float lifetime{5.0f};
+    float age{0.0f};
+    
+    Bullet() = default;
+    Bullet(float dmg, int owner, float life) 
+        : damage(dmg), owner_id(owner), lifetime(life) {}
+};
+```
 
-**Input Service** (`Core/Services/Input/Input.hpp/cpp`):
-- Captures keyboard/mouse input
-- Emits input events
-- See `RType/Core/Services/Input/` for reference
+**Note**: You'll also use core ECS components:
+- `position` (x, y coordinates)
+- `velocity` (vx, vy speed)
+- `sprite` (texture rendering)
+- `collider` (collision box)
 
-**Render Service** (`Core/Services/Render/Render.hpp/cpp`):
-- Window management
-- Frame rendering
-- Camera control
-- See `RType/Core/Services/Render/` for reference
+See [`../ECS/README.md#components`](../ECS/README.md) for details.
 
 ---
 
-### Step 3: Implement State Machine
+## Step 2: Create Game Systems (30 minutes)
 
-**3.1 Create State Interface (`Core/States/GameState.hpp`)**
+Systems contain game logic. See [`../ECS/README.md#systems`](../ECS/README.md) for system patterns
+
+### Player System (`Entity/Systems/PlayerSystem.cpp`)
+Handles player input and movement.
+
+```cpp
+#include "ECS/Systems/ISystem.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "Entity/Components/Player.hpp"
+#include "Entity/Components/Bullet.hpp"
+#include "ECS/Zipper.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
+#include <raylib.h>
+
+class PlayerSystem : public ISystem {
+public:
+    void update(registry& reg, float dt) override {
+        auto* positions = reg.get_if<position>();
+        auto* velocities = reg.get_if<velocity>();
+        auto* players = reg.get_if<Player>();
+        
+        if (!positions || !velocities || !players) return;
+        
+        for (auto [pos, vel, player, idx] : zipper(*positions, *velocities, *players)) {
+            // Update cooldown
+            if (player.current_cooldown > 0.0f) {
+                player.current_cooldown -= dt;
+            }
+            
+            // Input handling
+            vel.vx = 0;
+            vel.vy = 0;
+            
+            if (IsKeyDown(KEY_LEFT))  vel.vx = -player.speed;
+            if (IsKeyDown(KEY_RIGHT)) vel.vx = player.speed;
+            if (IsKeyDown(KEY_UP))    vel.vy = -player.speed;
+            if (IsKeyDown(KEY_DOWN))  vel.vy = player.speed;
+            
+            // Shooting
+            if (IsKeyPressed(KEY_SPACE) && player.current_cooldown <= 0.0f) {
+                spawn_bullet(reg, pos.x, pos.y, static_cast<int>(idx));
+                player.current_cooldown = player.shoot_cooldown;
+            }
+            
+            // Boundary check
+            auto screen = RenderManager::instance().get_screen_infos();
+            pos.x = std::clamp(pos.x, 0.0f, (float)screen.getWidth());
+            pos.y = std::clamp(pos.y, 0.0f, (float)screen.getHeight());
+        }
+    }
+    
+    const char* get_name() const override { return "PlayerSystem"; }
+
+private:
+    void spawn_bullet(registry& reg, float x, float y, int owner_id) {
+        entity bullet = reg.spawn_entity();
+        reg.emplace_component<position>(bullet, x, y - 20.0f);
+        reg.emplace_component<velocity>(bullet, 0.0f, -500.0f);  // Move up
+        reg.emplace_component<Bullet>(bullet, 25.0f, owner_id, 5.0f);
+        reg.emplace_component<sprite>(bullet, "Assets/bullet.png", 8.0f, 16.0f);
+        reg.emplace_component<collider>(bullet, 8.0f, 16.0f);
+    }
+};
+
+// Export for dynamic loading
+extern "C" {
+    ISystem* create_system() { return new PlayerSystem(); }
+    void destroy_system(ISystem* sys) { delete sys; }
+}
+```
+
+### Enemy System (`Entity/Systems/EnemySystem.cpp`)
+Spawns and updates enemies.
+
+```cpp
+#include "ECS/Systems/ISystem.hpp"
+#include "Entity/Components/Enemy.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "ECS/Zipper.hpp"
+#include <random>
+
+class EnemySystem : public ISystem {
+private:
+    float spawn_timer_{0.0f};
+    float spawn_interval_{2.0f};
+    std::mt19937 rng_{std::random_device{}()};
+
+public:
+    void update(registry& reg, float dt) override {
+        // Spawn enemies periodically
+        spawn_timer_ += dt;
+        if (spawn_timer_ >= spawn_interval_) {
+            spawn_enemy(reg);
+            spawn_timer_ = 0.0f;
+        }
+        
+        // Move enemies down
+        auto* positions = reg.get_if<position>();
+        auto* velocities = reg.get_if<velocity>();
+        auto* enemies = reg.get_if<Enemy>();
+        
+        if (!positions || !velocities || !enemies) return;
+        
+        std::vector<entity> to_remove;
+        for (auto [pos, vel, enemy, idx] : zipper(*positions, *velocities, *enemies)) {
+            // Remove if off-screen
+            if (pos.y > 1080.0f) {
+                to_remove.push_back(static_cast<entity>(idx));
+            }
+        }
+        
+        for (auto e : to_remove) {
+            reg.kill_entity(e);
+        }
+    }
+    
+    const char* get_name() const override { return "EnemySystem"; }
+
+private:
+    void spawn_enemy(registry& reg) {
+        std::uniform_real_distribution<float> x_dist(50.0f, 1870.0f);
+        float x = x_dist(rng_);
+        
+        entity enemy = reg.spawn_entity();
+        reg.emplace_component<position>(enemy, x, -50.0f);
+        reg.emplace_component<velocity>(enemy, 0.0f, 150.0f);  // Move down
+        reg.emplace_component<Enemy>(enemy, 0, 100.0f, 10);
+        reg.emplace_component<sprite>(enemy, "Assets/enemy.png", 64.0f, 64.0f);
+        reg.emplace_component<collider>(enemy, 64.0f, 64.0f);
+    }
+};
+
+extern "C" {
+    ISystem* create_system() { return new EnemySystem(); }
+    void destroy_system(ISystem* sys) { delete sys; }
+}
+```
+
+### Bullet System (`Entity/Systems/BulletSystem.cpp`)
+Updates bullets and removes old ones.
+
+```cpp
+#include "ECS/Systems/ISystem.hpp"
+#include "Entity/Components/Bullet.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Zipper.hpp"
+
+class BulletSystem : public ISystem {
+public:
+    void update(registry& reg, float dt) override {
+        auto* bullets = reg.get_if<Bullet>();
+        auto* positions = reg.get_if<position>();
+        
+        if (!bullets || !positions) return;
+        
+        std::vector<entity> to_remove;
+        for (auto [bullet, pos, idx] : zipper(*bullets, *positions)) {
+            bullet.age += dt;
+            
+            // Remove if too old or off-screen
+            if (bullet.age >= bullet.lifetime || 
+                pos.y < -50.0f || pos.y > 1130.0f) {
+                to_remove.push_back(static_cast<entity>(idx));
+            }
+        }
+        
+        for (auto e : to_remove) {
+            reg.kill_entity(e);
+        }
+    }
+    
+    const char* get_name() const override { return "BulletSystem"; }
+};
+
+extern "C" {
+    ISystem* create_system() { return new BulletSystem(); }
+    void destroy_system(ISystem* sys) { delete sys; }
+}
+```
+
+### Collision System (Use ECS built-in or custom)
+For collision detection, you have two options:
+
+**Option A**: Use ECS PhysicsManager (recommended, O(n) performance)
+```cpp
+// See ../ECS/FEATURES.md#feature-3-physics--collision
+auto& physics = PhysicsManager::instance();
+physics.init(64.0f);
+// Update entities and get collision pairs
+```
+
+**Option B**: Simple O(n²) collision (quick prototype)
+```cpp
+// Check all bullets against all enemies
+for (auto [bullet_pos, bullet_col, bullet_data] : /* bullet entities */) {
+    for (auto [enemy_pos, enemy_col, enemy_data] : /* enemy entities */) {
+        if (check_aabb_collision(bullet_pos, bullet_col, enemy_pos, enemy_col)) {
+            // Handle collision
+        }
+    }
+}
+```
+
+See [`../ECS/FEATURES.md#feature-3-physics--collision`](../ECS/FEATURES.md) for detailed physics documentation
+
+---
+
+## Step 3: Create Game State (20 minutes)
+
+States control game flow. We'll create a simple InGame state.
+
+### State Interface (`Core/States/IGameState.hpp`)
 ```cpp
 #pragma once
 
@@ -217,387 +415,877 @@ class IGameState {
 public:
     virtual ~IGameState() = default;
     
-    virtual void on_enter() = 0;    // Called when state becomes active
-    virtual void on_exit() = 0;     // Called when state is removed
-    virtual void on_pause() = 0;    // Called when another state is pushed
-    virtual void on_resume() = 0;   // Called when top state is popped
-    
+    virtual void enter() = 0;      // Called when state starts
+    virtual void exit() = 0;       // Called when state ends
     virtual void update(float dt) = 0;  // Called every frame
-    virtual void render() = 0;          // Called for rendering
+    
+    virtual std::string get_name() const = 0;
 };
 ```
 
-**3.2 Create State Manager (`Core/States/GameStateManager.hpp/cpp`)**
-
-See `RType/Core/States/GameStateManager.hpp` for reference implementation.
-
-Key features:
-- Stack-based state management
-- Safe state transitions (push, pop, change)
-- State factory pattern for easy registration
-
-**3.3 Implement Game States**
-
-**MainMenu State** (`Core/States/MainMenu/MainMenu.hpp/cpp`):
+### InGame State (`Core/States/InGame/InGame.hpp`)
 ```cpp
-class MainMenu : public IGameState {
-private:
-    UIManager ui_manager_;
-    ServiceManager& services_;
-    GameStateManager& _stateManager;
+#pragma once
+#include "Core/States/IGameState.hpp"
+#include "ECS/Registry.hpp"
+#include "ECS/ILoader.hpp"
+#include "ECS/LinuxLoader.hpp"
+#include "Entity/Components/Player.hpp"
+#include <memory>
 
-public:
-    MainMenu(ServiceManager& services, GameStateManager& states)
-        : services_(services), _stateManager(states) {}
-    
-    void on_enter() override {
-        // Create UI buttons
-        auto play_btn = std::make_shared<UIButton>(
-            "Play", 300, 200, 200, 50
-        );
-        play_btn->set_callback([this]() {
-            _stateManager.change_state("InGame");
-        });
-        ui_manager_.add_component("play_button", play_btn);
-    }
-    
-    void on_exit() override {
-        ui_manager_.clear_components();
-    }
-    
-    void update(float dt) override {
-        ui_manager_.update(dt);
-    }
-    
-    void render() override {
-        ui_manager_.render();
-    }
-    
-    void on_pause() override {}
-    void on_resume() override {}
-};
-```
-
-**InGame State** (`Core/States/InGame/InGame.hpp/cpp`):
-```cpp
-class InGame : public IGameState {
+class InGameState : public IGameState {
 private:
-    registry& ecs_registry_;
-    ServiceManager& services_;
-    EventManager& events_;
+    registry registry_;
+    PlatformLoader loader_;
     entity player_entity_;
+    int score_{0};
 
 public:
-    InGame(registry& ecs, ServiceManager& services, EventManager& events)
-        : ecs_registry_(ecs), services_(services), events_(events) {}
-    
-    void on_enter() override {
-        // Create player entity
-        player_entity_ = ecs_registry_.spawn_entity();
-        ecs_registry_.emplace_component<position>(player_entity_, 400, 300);
-        ecs_registry_.emplace_component<velocity>(player_entity_, 0, 0);
-        ecs_registry_.emplace_component<sprite>(
-            player_entity_, "assets/player.png", 64, 64
-        );
-        
-        // Subscribe to game events
-        events_.subscribe<GameOverEvent>([this](const GameOverEvent& e) {
-            // Handle game over
-        });
-    }
-    
-    void on_exit() override {
-        // Cleanup entities
-        ecs_registry_.kill_entity(player_entity_);
-    }
-    
-    void update(float dt) override {
-        // Update ECS systems
-        // (systems handle movement, collision, etc.)
-    }
-    
-    void render() override {
-        // Systems handle rendering
-    }
-    
-    void on_pause() override {}
-    void on_resume() override {}
-};
-```
+    void enter() override;
+    void exit() override;
+    void update(float dt) override;
+    std::string get_name() const override { return "InGame"; }
 
----
-
-### Step 4: Create Game-Specific Components and Systems
-
-**4.1 Define Custom Components (`Entity/Components/`)**
-
-Example: Player Component
-```cpp
-// Entity/Components/Player/Player.hpp
-#pragma once
-#include "ECS/Components/IComponent.hpp"
-
-struct player : public IComponent {
-    int lives{3};
-    int score{0};
-    float speed{200.0f};
-    
-    player() = default;
-    player(int l, int s, float sp) : lives(l), score(s), speed(sp) {}
-};
-```
-
-Example: Enemy Component
-```cpp
-// Entity/Components/Enemy/Enemy.hpp
-#pragma once
-#include "ECS/Components/IComponent.hpp"
-
-struct enemy : public IComponent {
-    int enemy_type{0};
-    float health{100.0f};
-    float damage{10.0f};
-    
-    enemy() = default;
-    enemy(int type, float hp, float dmg) 
-        : enemy_type(type), health(hp), damage(dmg) {}
-};
-```
-
-**4.2 Implement Custom Systems (`Entity/Systems/`)**
-
-Example: Player Control System
-```cpp
-// Entity/Systems/PlayerControl/PlayerControl.hpp
-#pragma once
-#include "ECS/Systems/ISystem.hpp"
-
-class PlayerControlSystem : public ISystem {
-public:
-    void update(registry& reg, float dt) override {
-        auto& positions = reg.get<position>();
-        auto& velocities = reg.get<velocity>();
-        auto& players = reg.get<player>();
-        
-        // Iterate over player entities
-        for (size_t i = 0; i < positions.size(); ++i) {
-            if (!players[i].has_value()) continue;
-            
-            auto& pos = positions[i].value();
-            auto& vel = velocities[i].value();
-            auto& plr = players[i].value();
-            
-            // Handle input
-            vel.vx = 0;
-            vel.vy = 0;
-            
-            if (IsKeyDown(KEY_LEFT))  vel.vx = -plr.speed;
-            if (IsKeyDown(KEY_RIGHT)) vel.vx = plr.speed;
-            if (IsKeyDown(KEY_UP))    vel.vy = -plr.speed;
-            if (IsKeyDown(KEY_DOWN))  vel.vy = plr.speed;
-            
-            // Update position
-            pos.x += vel.vx * dt;
-            pos.y += vel.vy * dt;
-        }
-    }
-    
-    const char* get_name() const override { 
-        return "PlayerControlSystem"; 
-    }
-};
-```
-
----
-
-### Step 5: Create Application Class
-
-**5.1 Main Application (`Application.hpp/cpp`)**
-
-See `RType/Application.hpp` for full reference.
-
-Key responsibilities:
-```cpp
-class Application {
 private:
-    EventManager event_manager_;
-    ServiceManager service_manager_;
-    GameStateManager _stateManager;
-    registry ecs_registry_;
-    bool running_{false};
-
-public:
-    bool initialize() {
-        // 1. Load ECS library
-        ILoader loader;
-        loader.load_components("../ECS/build/libECS.so", ecs_registry_);
-        
-        // 2. Register services
-        service_manager_.register_service<InputService>(event_manager_);
-        service_manager_.register_service<RenderService>();
-        service_manager_.initialize_all();
-        
-        // 3. Register game states
-        _stateManager.register_state<MainMenu>("MainMenu");
-        _stateManager.register_state<InGame>("InGame");
-        _stateManager.register_state<GameOver>("GameOver");
-        
-        // 4. Start with main menu
-        _stateManager.push_state("MainMenu");
-        
-        running_ = true;
-        return true;
-    }
-    
-    void run() {
-        while (running_ && !WindowShouldClose()) {
-            float dt = GetFrameTime();
-            
-            // 1. Update services
-            service_manager_.update_all(dt);
-            
-            // 2. Process events
-            event_manager_.process_queue();
-            
-            // 3. Update active state
-            _stateManager.update(dt);
-            
-            // 4. Update ECS systems
-            // (called by active state or here)
-            
-            // 5. Render
-            BeginDrawing();
-            ClearBackground(BLACK);
-            _stateManager.render();
-            EndDrawing();
-        }
-    }
-    
-    void shutdown() {
-        _stateManager.clear();
-        service_manager_.shutdown_all();
-        running_ = false;
-    }
+    void setup_ecs();
+    void create_player();
+    void update_ui();
 };
 ```
 
-**5.2 Main Entry Point (`main.cpp`)**
+### InGame State Implementation (`Core/States/InGame/InGame.cpp`)
 ```cpp
-#include "Application.hpp"
+#include "InGame.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Velocity.hpp"
+#include "ECS/Components/Sprite.hpp"
+#include "ECS/Components/Collider.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
+#include "ECS/AssetManager/AssetManager.hpp"
 #include <iostream>
 
-int main(int argc, char* argv[]) {
-    std::cout << "=== My Game ===" << std::endl;
+void InGameState::enter() {
+    std::cout << "[InGame] Entering state" << std::endl;
     
-    Application app;
+    // Initialize managers
+    AssetManager::instance().init();
+    RenderManager::instance().init("Space Shooter");
+    
+    // Setup ECS
+    setup_ecs();
+    
+    // Create player
+    create_player();
+}
+
+void InGameState::exit() {
+    std::cout << "[InGame] Exiting state" << std::endl;
+    
+    // Cleanup
+    AssetManager::instance().shutdown();
+}
+
+void InGameState::setup_ecs() {
+    // Load ECS library
+    if (!loader_.load_components("../ECS/build/lib/libECS.so", registry_)) {
+        throw std::runtime_error("Failed to load ECS components");
+    }
+    
+    // Load systems
+    loader_.load_system("../ECS/build/lib/systems/libposition_system.so", 
+                       ILoader::LogicSystem);
+    loader_.load_system("../ECS/build/lib/systems/libsprite_system.so", 
+                       ILoader::RenderSystem);
+    
+    // Load custom systems
+    loader_.load_system("./build/libplayer_system.so", ILoader::LogicSystem);
+    loader_.load_system("./build/libenemy_system.so", ILoader::LogicSystem);
+    loader_.load_system("./build/libbullet_system.so", ILoader::LogicSystem);
+}
+
+void InGameState::create_player() {
+    auto factory = loader_.get_factory();
+    
+    player_entity_ = registry_.spawn_entity();
+    
+    // Use factory to create components
+    factory->create_component<position>(registry_, player_entity_, 960.0f, 900.0f);
+    factory->create_component<velocity>(registry_, player_entity_, 0.0f, 0.0f);
+    factory->create_component<Player>(registry_, player_entity_, 300.0f, 3, 0);
+    factory->create_component<sprite>(registry_, player_entity_, 
+                                     "Assets/player.png", 64.0f, 64.0f);
+    factory->create_component<collider>(registry_, player_entity_, 
+                                       64.0f, 64.0f, -32.0f, -32.0f);
+}
+
+void InGameState::update(float dt) {
+    // Update ECS systems
+    loader_.update_all_systems(registry_, dt, ILoader::LogicSystem);
+    
+    // Render
+    auto& renderer = RenderManager::instance();
+    renderer.begin_frame();
+        loader_.update_all_systems(registry_, dt, ILoader::RenderSystem);
+        update_ui();
+    renderer.end_frame();
+    
+    // Check game over
+    auto* players = registry_.get_if<Player>();
+    if (players) {
+        for (auto [player, idx] : zipper(*players)) {
+            score_ = player.score;
+            if (player.lives <= 0) {
+                std::cout << "Game Over! Final Score: " << score_ << std::endl;
+                // Transition to game over state
+            }
+        }
+    }
+}
+
+void InGameState::update_ui() {
+    // Draw score
+    DrawText(TextFormat("Score: %d", score_), 10, 10, 32, WHITE);
+    
+    // Draw lives
+    auto* players = registry_.get_if<Player>();
+    if (players) {
+        for (auto [player, idx] : zipper(*players)) {
+            DrawText(TextFormat("Lives: %d", player.lives), 10, 50, 32, WHITE);
+        }
+    }
+}
+```
+
+---
+
+## Step 4: Create Main Entry Point (10 minutes)
+
+### Main File (`main.cpp`)
+```cpp
+#include "Core/States/InGame/InGame.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
+#include <iostream>
+#include <raylib.h>
+
+int main(int argc, char* argv[]) {
+    std::cout << "=== Space Shooter ===" << std::endl;
     
     try {
-        if (!app.initialize()) {
-            std::cerr << "Failed to initialize" << std::endl;
-            return 1;
+        // Create game state
+        InGameState game;
+        
+        // Enter game
+        game.enter();
+        
+        // Game loop
+        while (!RenderManager::instance().should_close()) {
+            float dt = GetFrameTime();
+            game.update(dt);
         }
         
-        app.run();
-        app.shutdown();
+        // Cleanup
+        game.exit();
         
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
     
+    std::cout << "Game closed successfully" << std::endl;
     return 0;
 }
 ```
 
+### Build Systems as Shared Libraries
+
+Update `CMakeLists.txt` to build your systems:
+```cmake
+# ... existing config ...
+
+# Build custom systems as shared libraries
+add_library(player_system SHARED Entity/Systems/PlayerSystem.cpp)
+target_link_libraries(player_system PRIVATE ECS raylib)
+
+add_library(enemy_system SHARED Entity/Systems/EnemySystem.cpp)
+target_link_libraries(enemy_system PRIVATE ECS raylib)
+
+add_library(bullet_system SHARED Entity/Systems/BulletSystem.cpp)
+target_link_libraries(bullet_system PRIVATE ECS raylib)
+```
+
 ---
 
-## UI System
+## Step 5: Build and Run (5 minutes)
 
-### Creating UI Components
-
-The UI system uses a component-based architecture similar to the ECS.
-
-**Base UI Interface** (`UI/UIComponent.hpp`):
-```cpp
-class IUIComponent {
-public:
-    virtual ~IUIComponent() = default;
-    
-    virtual void update(float dt) = 0;
-    virtual void render() = 0;
-    virtual bool handle_input() = 0;  // Returns true if input consumed
-    virtual bool is_mouse_over(float x, float y) = 0;
-    
-    virtual void set_visible(bool visible) = 0;
-    virtual void set_enabled(bool enabled) = 0;
-    virtual bool is_visible() const = 0;
-    virtual bool is_enabled() const = 0;
-};
+### Build the Game
+```bash
+cd SpaceShooter
+mkdir build && cd build
+cmake ..
+make -j4
 ```
 
-**Example: Button Component** (`UI/Components/UIButton.hpp/cpp`):
+### Run the Game
+```bash
+./space_shooter
+```
+
+### Verify It Works
+You should see:
+- ✅ Window opens (1920x1080)
+- ✅ Player ship at bottom center
+- ✅ Arrow keys move the player
+- ✅ Space bar shoots bullets upward
+- ✅ Enemies spawn from top and move down
+- ✅ Score displayed top-left
+- ✅ Lives displayed below score
+
+**Troubleshooting:**
+
+| Problem | Solution |
+|---------|----------|
+| "Failed to load ECS components" | Check path to `libECS.so` |
+| "Texture not found" | Create `Assets/` folder with placeholder images |
+| Segfault on startup | Ensure all systems are properly exported with `extern "C"` |
+| Systems not updating | Check system is loaded with correct `SystemType` |
+
+---
+
+## Step 6: Add Collision Detection (15 minutes)
+
+### Simple Collision System (`Entity/Systems/CollisionSystem.cpp`)
 ```cpp
-class UIButton : public IUIComponent {
+#include "ECS/Systems/ISystem.hpp"
+#include "Entity/Components/Player.hpp"
+#include "Entity/Components/Enemy.hpp"
+#include "Entity/Components/Bullet.hpp"
+#include "ECS/Components/Position.hpp"
+#include "ECS/Components/Collider.hpp"
+#include "ECS/Zipper.hpp"
+
+class CollisionSystem : public ISystem {
+public:
+    void update(registry& reg, float dt) override {
+        check_bullet_enemy_collision(reg);
+        check_player_enemy_collision(reg);
+    }
+    
+    const char* get_name() const override { return "CollisionSystem"; }
+
 private:
-    std::string text_;
-    Rectangle bounds_;
-    std::function<void()> callback_;
-    bool hovered_{false};
-    bool pressed_{false};
-    bool visible_{true};
-    bool enabled_{true};
+    void check_bullet_enemy_collision(registry& reg) {
+        auto* bullet_positions = reg.get_if<position>();
+        auto* bullet_colliders = reg.get_if<collider>();
+        auto* bullets = reg.get_if<Bullet>();
+        
+        auto* enemy_positions = reg.get_if<position>();
+        auto* enemy_colliders = reg.get_if<collider>();
+        auto* enemies = reg.get_if<Enemy>();
+        auto* players = reg.get_if<Player>();
+        
+        if (!bullet_positions || !bullets || !enemy_positions || !enemies) return;
+        
+        std::vector<entity> bullets_to_remove;
+        std::vector<entity> enemies_to_remove;
+        
+        for (auto [b_pos, b_col, bullet, b_idx] : 
+             zipper(*bullet_positions, *bullet_colliders, *bullets)) {
+            
+            for (auto [e_pos, e_col, enemy, e_idx] : 
+                 zipper(*enemy_positions, *enemy_colliders, *enemies)) {
+                
+                if (check_aabb(b_pos, b_col, e_pos, e_col)) {
+                    // Bullet hit enemy
+                    enemy.health -= bullet.damage;
+                    bullets_to_remove.push_back(static_cast<entity>(b_idx));
+                    
+                    if (enemy.health <= 0) {
+                        enemies_to_remove.push_back(static_cast<entity>(e_idx));
+                        
+                        // Add score to player
+                        if (players) {
+                            for (auto [player, p_idx] : zipper(*players)) {
+                                player.score += enemy.score_value;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Remove dead entities
+        for (auto e : bullets_to_remove) reg.kill_entity(e);
+        for (auto e : enemies_to_remove) reg.kill_entity(e);
+    }
+    
+    void check_player_enemy_collision(registry& reg) {
+        auto* player_positions = reg.get_if<position>();
+        auto* player_colliders = reg.get_if<collider>();
+        auto* players = reg.get_if<Player>();
+        
+        auto* enemy_positions = reg.get_if<position>();
+        auto* enemy_colliders = reg.get_if<collider>();
+        auto* enemies = reg.get_if<Enemy>();
+        
+        if (!player_positions || !players || !enemy_positions || !enemies) return;
+        
+        std::vector<entity> enemies_to_remove;
+        
+        for (auto [p_pos, p_col, player, p_idx] : 
+             zipper(*player_positions, *player_colliders, *players)) {
+            
+            for (auto [e_pos, e_col, enemy, e_idx] : 
+                 zipper(*enemy_positions, *enemy_colliders, *enemies)) {
+                
+                if (check_aabb(p_pos, p_col, e_pos, e_col)) {
+                    // Enemy hit player
+                    player.lives--;
+                    enemies_to_remove.push_back(static_cast<entity>(e_idx));
+                }
+            }
+        }
+        
+        for (auto e : enemies_to_remove) reg.kill_entity(e);
+    }
+    
+    bool check_aabb(const position& p1, const collider& c1,
+                    const position& p2, const collider& c2) {
+        return (p1.x < p2.x + c2.w && p1.x + c1.w > p2.x &&
+                p1.y < p2.y + c2.h && p1.y + c1.h > p2.y);
+    }
+};
+
+extern "C" {
+    ISystem* create_system() { return new CollisionSystem(); }
+    void destroy_system(ISystem* sys) { delete sys; }
+}
+```
+
+### Add to CMakeLists.txt
+```cmake
+add_library(collision_system SHARED Entity/Systems/CollisionSystem.cpp)
+target_link_libraries(collision_system PRIVATE ECS)
+```
+
+### Load in InGame State
+```cpp
+// In InGameState::setup_ecs()
+loader_.load_system("./build/libcollision_system.so", ILoader::LogicSystem);
+```
+
+**For better performance with many entities**, use `PhysicsManager`:  
+See [`../ECS/FEATURES.md#feature-3-physics--collision`](../ECS/FEATURES.md)
+
+---
+
+## Step 7: Polish Your Game (20 minutes)
+
+### Add Audio
+Using AudioManager from ECS. See [`../ECS/FEATURES.md#feature-4-audio-system`](../ECS/FEATURES.md).
+
+```cpp
+// In InGameState::enter()
+auto& audio = AudioManager::instance();
+audio.init();
+
+auto& music = audio.get_music();
+music.load("bgm", "Assets/music.ogg");
+music.play("bgm", true);  // Loop
+
+auto& sfx = audio.get_sfx();
+sfx.load("shoot", "Assets/shoot.wav");
+sfx.load("explosion", "Assets/explosion.wav");
+
+// In PlayerSystem when shooting
+AudioManager::instance().get_sfx().play("shoot", 0.7f);
+
+// In CollisionSystem when enemy dies
+AudioManager::instance().get_sfx().play("explosion", 0.8f);
+```
+
+### Add Particle Effects (Optional)
+Create an explosion animation when enemies die:
+
+```cpp
+// In CollisionSystem when enemy health <= 0
+entity explosion = reg.spawn_entity();
+reg.emplace_component<position>(explosion, e_pos.x, e_pos.y);
+reg.emplace_component<animation>(explosion, 
+    "Assets/explosion.png", 64.0f, 64.0f, 1.0f, 1.0f, 8, false);
+// Animation system will remove it when done
+```
+
+### Add Menu State (Optional)
+Create a main menu before gameplay:
+
+```cpp
+class MenuState : public IGameState {
+private:
+    std::shared_ptr<UI::UIButton> play_button_;
 
 public:
-    UIButton(const std::string& text, float x, float y, float w, float h)
-        : text_(text), bounds_{x, y, w, h} {}
-    
-    void set_callback(std::function<void()> cb) { callback_ = cb; }
+    void enter() override {
+        auto screen = RenderManager::instance().get_screen_infos();
+        
+        play_button_ = std::make_shared<UI::UIButton>(
+            "PLAY", screen.getWidth()/2 - 100, screen.getHeight()/2, 200, 50
+        );
+        play_button_->set_callback([this]() {
+            // Transition to InGame
+        });
+    }
     
     void update(float dt) override {
-        if (!visible_ || !enabled_) return;
+        play_button_->update(dt);
         
-        Vector2 mouse = GetMousePosition();
-        hovered_ = CheckCollisionPointRec(mouse, bounds_);
-    }
-    
-    void render() override {
-        if (!visible_) return;
-        
-        Color bg_color = enabled_ 
-            ? (hovered_ ? DARKGRAY : GRAY)
-            : LIGHTGRAY;
-        
-        DrawRectangleRec(bounds_, bg_color);
-        DrawRectangleLinesEx(bounds_, 2, BLACK);
-        
-        int text_width = MeasureText(text_.c_str(), 20);
-        DrawText(text_.c_str(),
-                 bounds_.x + (bounds_.width - text_width) / 2,
-                 bounds_.y + (bounds_.height - 20) / 2,
-                 20, BLACK);
-    }
-    
-    bool handle_input() override {
-        if (!visible_ || !enabled_ || !hovered_) return false;
-        
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (callback_) callback_();
-            return true;  // Input consumed
+        if (play_button_->is_clicked()) {
+            // Switch to InGame state
         }
-        return false;
     }
-    
-    bool is_mouse_over(float x, float y) override {
-        return CheckCollisionPointRec({x, y}, bounds_);
-    }
-    
-    // Getters/setters...
 };
 ```
 
-**UI Manager** (`UI/UIManager.hpp/cpp`):
+See [`RType/Core/States/MainMenu/`](RType/Core/States/MainMenu/) for full menu implementation.
 
-See `RType/UI/UIManager.hpp` for reference implementation.
+### Improve Visuals
+- **Background parallax**: Multiple scrolling layers
+- **Better sprites**: Replace placeholder PNGs with proper art
+- **Screen shake**: When player is hit
+- **Trail effects**: Behind bullets
+
+---
+
+## Advanced Features
+
+### Feature 1: Enemy AI Patterns
+Different enemy types with unique behaviors:
+
+```cpp
+// In EnemySystem
+void update_enemy_ai(Enemy& enemy, position& pos, velocity& vel, float dt) {
+    switch (enemy.type) {
+        case 0:  // Straight down
+            vel.vy = 150.0f;
+            break;
+        case 1:  // Zigzag
+            vel.vx = std::sin(GetTime() * 2.0f) * 100.0f;
+            vel.vy = 150.0f;
+            break;
+        case 2:  // Circular
+            float angle = GetTime() * 3.0f;
+            vel.vx = std::cos(angle) * 200.0f;
+            vel.vy = std::sin(angle) * 200.0f + 100.0f;
+            break;
+    }
+}
+```
+
+### Feature 2: Power-Ups
+Collectible items that enhance player:
+
+```cpp
+struct PowerUp : public IComponent {
+    enum Type { SPEED, WEAPON, SHIELD } type;
+    PowerUp(Type t) : type(t) {}
+};
+
+// Spawn power-up when enemy dies (10% chance)
+if (rand() % 10 == 0) {
+    entity powerup = reg.spawn_entity();
+    reg.emplace_component<position>(powerup, e_pos.x, e_pos.y);
+    reg.emplace_component<PowerUp>(powerup, PowerUp::WEAPON);
+    // ... sprite, collider
+}
+```
+
+### Feature 3: Wave System
+Progressive difficulty:
+
+```cpp
+struct WaveManager : public IComponent {
+    int current_wave{1};
+    int enemies_per_wave{5};
+    int enemies_spawned{0};
+    float spawn_rate{2.0f};
+    
+    void next_wave() {
+        current_wave++;
+        enemies_per_wave += 3;
+        spawn_rate *= 0.9f;  // Spawn faster
+        enemies_spawned = 0;
+    }
+};
+```
+
+### Feature 4: High Score System
+Save best scores to file:
+
+```cpp
+void save_high_score(int score) {
+    std::ofstream file("highscore.txt");
+    file << score;
+}
+
+int load_high_score() {
+    std::ifstream file("highscore.txt");
+    int score = 0;
+    file >> score;
+    return score;
+}
+```
+
+### Feature 5: Multiplayer (Network)
+For multiplayer, see:
+- [`RType/Core/Client/Network/`](RType/Core/Client/Network/) - Client networking
+- [`RType/Core/Server/`](RType/Core/Server/) - Server implementation
+- [`RType/Core/Server/Protocol/README.md`](RType/Core/Server/Protocol/README.md) - Protocol documentation
+
+---
+
+## Common Patterns & Best Practices
+
+### Pattern 1: Entity Factory
+Centralize entity creation:
+
+```cpp
+class EntityFactory {
+public:
+    static entity create_player(registry& reg, IComponentFactory* factory, 
+                                float x, float y) {
+        entity player = reg.spawn_entity();
+        factory->create_component<position>(reg, player, x, y);
+        factory->create_component<velocity>(reg, player, 0.0f, 0.0f);
+        factory->create_component<Player>(reg, player, 300.0f, 3, 0);
+        factory->create_component<sprite>(reg, player, "Assets/player.png", 64.0f, 64.0f);
+        factory->create_component<collider>(reg, player, 64.0f, 64.0f, -32.0f, -32.0f);
+        return player;
+    }
+    
+    static entity create_enemy(registry& reg, IComponentFactory* factory,
+                               float x, float y, int type) {
+        entity enemy = reg.spawn_entity();
+        factory->create_component<position>(reg, enemy, x, y);
+        factory->create_component<velocity>(reg, enemy, 0.0f, 150.0f);
+        factory->create_component<Enemy>(reg, enemy, type, 100.0f, 10);
+        factory->create_component<sprite>(reg, enemy, "Assets/enemy.png", 64.0f, 64.0f);
+        factory->create_component<collider>(reg, enemy, 64.0f, 64.0f);
+        return enemy;
+    }
+};
+```
+
+### Pattern 2: Event-Driven Communication
+Use MessagingManager for decoupled systems. See [`../ECS/FEATURES.md#feature-5-messaging-system`](../ECS/FEATURES.md).
+
+```cpp
+// System A: Emit event
+Event enemy_died("ENEMY_DIED");
+enemy_died.set("position_x", enemy_pos.x);
+enemy_died.set("position_y", enemy_pos.y);
+enemy_died.set("score", enemy.score_value);
+MessagingManager::instance().get_event_bus().emit(enemy_died);
+
+// System B: Listen
+MessagingManager::instance().get_event_bus().subscribe("ENEMY_DIED", 
+    [](const Event& e) {
+        float x = e.get<float>("position_x");
+        float y = e.get<float>("position_y");
+        // Spawn explosion effect at (x, y)
+    });
+```
+
+### Pattern 3: Object Pooling
+Reuse entities instead of spawning/destroying:
+
+```cpp
+class BulletPool {
+private:
+    std::vector<entity> inactive_bullets_;
+    
+public:
+    entity get_bullet(registry& reg, IComponentFactory* factory) {
+        if (inactive_bullets_.empty()) {
+            return create_new_bullet(reg, factory);
+        } else {
+            entity bullet = inactive_bullets_.back();
+            inactive_bullets_.pop_back();
+            // Reset bullet components
+            return bullet;
+        }
+    }
+    
+    void return_bullet(entity bullet) {
+        // Disable bullet components
+        inactive_bullets_.push_back(bullet);
+    }
+};
+```
+
+### Pattern 4: Screen Scaling
+Make game resolution-independent:
+
+```cpp
+// In Constants.hpp
+#define BASE_WIDTH 1920.0f
+#define BASE_HEIGHT 1080.0f
+
+#define SCALE_X(value) \
+    (value * (RenderManager::instance().get_screen_infos().getWidth() / BASE_WIDTH))
+
+#define SCALE_Y(value) \
+    (value * (RenderManager::instance().get_screen_infos().getHeight() / BASE_HEIGHT))
+
+// Usage:
+float player_speed = SCALE_X(300.0f);  // Scales with resolution
+```
+
+See [`RType/Constants.hpp`](RType/Constants.hpp) for complete scaling system.
+
+---
+
+## Best Practices
+
+### Component Design
+- **Keep components data-only**: No logic in components (except constructors/getters)
+- **Use plain types**: Prefer `float`, `int`, `std::string` over complex objects
+- **Minimize dependencies**: Components shouldn't reference other components
+- **Name clearly**: `velocity` not `vel`, `Player` not `P`
+
+**Good Component:**
+```cpp
+struct velocity {
+    float x, y;
+};
+```
+
+**Bad Component:**
+```cpp
+struct velocity {
+    float x, y;
+    void apply_to(position& pos, float dt) {  // ❌ Logic in component
+        pos.x += x * dt;
+        pos.y += y * dt;
+    }
+};
+```
+
+### System Design
+- **Single responsibility**: Each system does ONE thing well
+- **Iterate components, not entities**: Use registry zippers
+- **Avoid frame order dependencies**: Systems should be independent when possible
+- **Check entity validity**: Use `reg.has_component<T>(entity)` before access
+
+**System Ordering Tips:**
+```cpp
+// Run in this order:
+// 1. Input systems (PlayerInputSystem)
+// 2. Logic systems (AISystem, BulletSystem)
+// 3. Physics systems (MovementSystem, CollisionSystem)
+// 4. Cleanup systems (CleanupSystem)
+// 5. Render systems (RenderSystem)
+```
+
+### Performance Tips
+- **Use sparse arrays**: Registry already optimizes component storage
+- **Batch operations**: Load all assets at once, not per-frame
+- **Profile first**: Don't optimize without measuring
+- **Use spatial hashing**: For collision detection with many entities (see [`../ECS/FEATURES.md#feature-3-physics--collision`](../ECS/FEATURES.md))
+
+**Performance Comparison:**
+```cpp
+// ❌ Slow: Check all vs all (O(n²))
+for (auto [e1, c1] : reg.view<collider>()) {
+    for (auto [e2, c2] : reg.view<collider>()) {
+        if (check_collision(c1, c2)) { /* ... */ }
+    }
+}
+
+// ✅ Fast: Use PhysicsManager (O(n) with spatial hash)
+PhysicsManager::instance().check_collisions(reg, [](entity a, entity b) {
+    // Handle collision
+});
+```
+
+### Code Organization
+```
+MyGame/
+├── CMakeLists.txt              # Build configuration
+├── Assets/                     # Game assets
+│   ├── Sprites/
+│   ├── Audio/
+│   └── Fonts/
+├── Entity/                     # Components
+│   ├── Player.hpp
+│   ├── Enemy.hpp
+│   └── Projectile.hpp
+├── Core/
+│   ├── Systems/                # Systems (as .cpp for dynamic loading)
+│   │   ├── PlayerSystem.cpp
+│   │   ├── EnemySystem.cpp
+│   │   └── CollisionSystem.cpp
+│   └── States/                 # Game states
+│       ├── IGameState.hpp
+│       ├── Menu.hpp/cpp
+│       └── InGame.hpp/cpp
+├── Utilities/                  # Helpers
+│   ├── EntityFactory.hpp
+│   └── Constants.hpp
+└── main.cpp                    # Entry point
+```
+
+---
+
+## Debugging Tips
+
+### Common Issues
+
+| Problem | Solution |
+|---------|----------|
+| System not running | Check `extern "C"` export and `reg.add_system()` call |
+| Component not found | Verify `factory->create_component<T>()` was called |
+| Crash on entity access | Use `reg.has_component<T>(entity)` before accessing |
+| Assets not loading | Check file paths are relative to executable location |
+| Low FPS | Profile with `SetTargetFPS(60)` and check collision algorithms |
+| Memory leak | Ensure `reg.kill_entity()` is called for unused entities |
+
+### Debug Logging Pattern
+```cpp
+// In system update:
+#ifdef DEBUG_MODE
+    std::cout << "[PlayerSystem] Active players: " 
+              << reg.view<Player>().size() << "\n";
+#endif
+```
+
+Compile with debug symbols:
+```bash
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+```
+
+### Entity Inspector
+Add a debug system to visualize entities:
+
+```cpp
+class DebugSystem : public ISystem {
+public:
+    void update(registry& reg, IComponentFactory* factory, float dt) override {
+        if (IsKeyPressed(KEY_F3)) {
+            std::cout << "=== Entity Inspector ===\n";
+            for (auto [e, pos] : reg.view<position>().each()) {
+                std::cout << "Entity " << e << " at (" << pos.x << ", " << pos.y << ")\n";
+                if (reg.has_component<Player>(e)) std::cout << "  [Player]\n";
+                if (reg.has_component<Enemy>(e)) std::cout << "  [Enemy]\n";
+                if (reg.has_component<Bullet>(e)) std::cout << "  [Bullet]\n";
+            }
+        }
+    }
+};
+```
+
+---
+
+## Reference Projects
+
+### Complexity Comparison
+
+| Feature | Simple (Pong) | Medium (Space Shooter) | Full (R-Type) |
+|---------|---------------|------------------------|---------------|
+| **Components** | 4 (position, velocity, sprite, paddle) | 8-10 | 15+ |
+| **Systems** | 3 (input, movement, collision) | 6-8 | 12+ |
+| **States** | 2 (menu, game) | 3-4 | 5+ (connection, lobby, game, pause, game over) |
+| **Lines of Code** | ~500 | ~1500 | ~5000+ |
+| **Development Time** | 2-4 hours | 1-2 days | 1-2 weeks |
+| **Multiplayer** | Local only | None | Network (UDP) |
+| **Assets** | Minimal (rectangles) | Sprites, audio | Full sprite sheets, animations, SFX |
+
+### Example Projects
+
+1. **Pong** (`Games/Pang/`): Simple physics-based game
+   - Best for: Learning ECS basics
+   - Features: Paddle movement, ball physics, scoring
+
+2. **Space Shooter** (This tutorial): Medium complexity
+   - Best for: Understanding system interactions
+   - Features: Player, enemies, bullets, collisions, score
+
+3. **R-Type** (`Games/RType/`): Full multiplayer game
+   - Best for: Production reference
+   - Features: Networking, state machine, lobby system, advanced UI
+   - See: [`RType/README.md`](RType/README.md), [`RType/Networking.md`](RType/Networking.md)
+
+---
+
+## Quick Start Checklist
+
+**For New Game Prototype:**
+- [ ] Copy `MyGame/` template structure
+- [ ] Update `CMakeLists.txt` with game name
+- [ ] Define components in `Entity/*.hpp`
+- [ ] Create systems in `Core/Systems/*.cpp` with `extern "C"` exports
+- [ ] Implement `IGameState` for each state
+- [ ] Create `main.cpp` with game loop
+- [ ] Load systems with `PlatformLoader`
+- [ ] Add assets to `Assets/` directory
+- [ ] Compile with `cmake .. && make`
+- [ ] Test and iterate
+
+**For Adding Feature:**
+- [ ] Identify required components (data)
+- [ ] Create system that processes those components (logic)
+- [ ] Compile system as shared library
+- [ ] Load in game state with `reg.add_system()`
+- [ ] Test with entity inspector (`F3` key)
+
+**For Debugging:**
+- [ ] Check console for system load errors
+- [ ] Verify component registration with `has_component<T>()`
+- [ ] Add debug logging in systems
+- [ ] Use `DEBUG_MODE` preprocessor flag
+- [ ] Profile with frame time monitoring
+
+---
+
+## Additional Resources
+
+### Documentation
+- **ECS Engine**: [`../ECS/README.md`](../ECS/README.md) - Core architecture
+- **ECS Features**: [`../ECS/FEATURES.md`](../ECS/FEATURES.md) - Deep-dive on managers and systems
+- **R-Type Networking**: [`RType/Networking.md`](RType/Networking.md) - Multiplayer implementation
+
+### Code Examples
+- **Pang Game**: `Games/Pang/` - Simple physics game
+- **R-Type**: `Games/RType/` - Full multiplayer implementation
+- **ECS Tests**: `ECS/test/` - Unit tests showing API usage
+
+### External References
+- [Raylib Cheatsheet](https://www.raylib.com/cheatsheet/cheatsheet.html) - Rendering API
+- [EnTT Documentation](https://github.com/skypjack/entt/wiki) - Registry inspiration
+- [Game Programming Patterns](https://gameprogrammingpatterns.com/) - Design patterns
+
+---
+
+## Contributing
+
+Found an issue or want to improve the documentation? 
+
+1. Check existing examples in `Games/RType/` and `Games/Pang/`
+2. Test your changes by creating a new prototype following this guide
+3. Ensure code examples compile and run
+4. Update both code and documentation together
+
+---
+
+## License
+
+This ECS engine and documentation are part of the R-Type project.  
+See root `README.md` for license information.
+
+---
+
+**Happy Game Development! 🎮**
+
+*Estimated completion time for this tutorial: 2-3 hours*  
+*Questions? Check [`../ECS/README.md`](../ECS/README.md) or reference the R-Type implementation.*
 
 ---
 
