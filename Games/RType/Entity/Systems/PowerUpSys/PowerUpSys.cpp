@@ -77,8 +77,8 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
         powerUpType type = static_cast<powerUpType>(_powerup_type_dist(_rng));
 
         auto ent = r.spawn_entity();
-        float pup_width = GET_SCALE_X(5.0f, screen_width);
-        float pup_height = GET_SCALE_Y(5.0f, screen_height);
+        float pup_width = GET_SCALE_X(30.0f, screen_width);
+        float pup_height = GET_SCALE_Y(30.0f, screen_height);
         float pup_offset_x = -pup_width / 2.0f;
         float pup_offset_y = -pup_height / 2.0f;
 

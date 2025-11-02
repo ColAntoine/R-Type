@@ -83,20 +83,20 @@ void BossSys::spawn(registry &r)
 
     for (auto [boss, bossEnt]: zipper(*bossArr)) {
         r.emplace_component<position>(entity(bossEnt), _renderManager.get_screen_infos().getWidth() + 300.f, _renderManager.get_screen_infos().getHeight() / 2.f);
-        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r) ? getWave(r) == 0 : 1));
+        int wave = getWave(r);
+        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(wave == 0 ? 1 : wave));
         r.emplace_component<velocity>(entity(bossEnt), -300.f, 0.f);
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
-        int wave = getWave(r);
 
         std::cout << "wave: " << wave << std::endl;
         Weapon w(
             entity(bossEnt),
             // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
-            BOSS_BASE_FIRERATE * static_cast<float>(wave),
-            BOSS_BASE_DAMAGE * static_cast<float>(wave),
-            BOSS_BASE_PROJ_SPEED * static_cast<float>(wave),
+            BOSS_BASE_FIRERATE * 0.5f,  // Reduced fire rate (was wave-scaled)
+            BOSS_BASE_DAMAGE,            // Base damage only (was wave-scaled)
+            BOSS_BASE_PROJ_SPEED,        // Base projectile speed (was wave-scaled)
             -1,
             true
         );
