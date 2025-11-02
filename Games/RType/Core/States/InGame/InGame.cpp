@@ -154,11 +154,26 @@ void InGameState::update(float delta_time)
     ILoader& loader = _shared_loader ? *_shared_loader : *_systemLoader;
     registry& reg = _shared_registry ? *_shared_registry : _registry;
 
-    // Send input to server if connected
-    handle_input();
-
-    // Update both logic and render systems with the correct registry
-    loader.update_all_systems(reg, delta_time, ILoader::LogicSystem);
+    // Accumulate time and update with fixed timestep for deterministic physics
+    _accumulator += delta_time;
+    
+    // Cap accumulator to prevent spiral of death
+    if (_accumulator > 0.2f) {
+        _accumulator = 0.2f;
+    }
+    
+    // Update with fixed timestep (match server at 30Hz)
+    while (_accumulator >= FIXED_DT) {
+        // Send input to server if connected
+        handle_input();
+        
+        // Update both logic and render systems with fixed timestep
+        loader.update_all_systems(reg, FIXED_DT, ILoader::LogicSystem);
+        
+        _accumulator -= FIXED_DT;
+    }
+    
+    // Always update render systems (can use interpolated positions later if needed)
     loader.update_all_systems(reg, delta_time, ILoader::RenderSystem);
 }
 

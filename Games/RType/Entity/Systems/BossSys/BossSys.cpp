@@ -94,9 +94,9 @@ void BossSys::spawn(registry &r)
             entity(bossEnt),
             // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
-            BOSS_BASE_FIRERATE * 0.5f,  // Reduced fire rate (was wave-scaled)
-            BOSS_BASE_DAMAGE,            // Base damage only (was wave-scaled)
-            BOSS_BASE_PROJ_SPEED,        // Base projectile speed (was wave-scaled)
+            BOSS_BASE_FIRERATE * static_cast<float>(wave),
+            BOSS_BASE_DAMAGE * static_cast<float>(wave),
+            BOSS_BASE_PROJ_SPEED * static_cast<float>(wave),
             -1,
             true
         );
