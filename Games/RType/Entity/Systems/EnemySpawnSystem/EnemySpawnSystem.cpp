@@ -46,10 +46,10 @@ void EnemySpawnSystem::update(registry& r, float dt) {
     initialize_if_needed(r);
 
     int wave = getWave(r);
-    float base_interval = 3.0f;
+    float base_interval = 1.5f;
     size_t base_max = 10;
-    spawn_interval_ = base_interval / (1.0f + wave * 0.1f);
-    max_enemies_ = base_max + static_cast<size_t>(wave * 2);
+    spawn_interval_ = base_interval / (1.0f + wave * 0.15f);
+    max_enemies_ = base_max + static_cast<size_t>(wave * 3);
 
     auto* enemies = r.get_if<Enemy>();
     size_t current_count = enemies ? enemies->size() : 0;
@@ -77,9 +77,15 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
     r.emplace_component<position>(e, x, y);
     r.emplace_component<collider>(e, scale_x, scale_y, -scale_x / 2.0f, -scale_y / 2.0f, false);
     r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
-    r.emplace_component<Health>(e, 50 * (wave + 1));
+
+    int base_health = 50;
+    int health = base_health * (wave + 1);
+    r.emplace_component<Health>(e, health);
 
     float speed_scale = 1.0f + wave * 0.1f;
+
+    std::cout << "[EnemySpawnSystem] Spawning Wave " << wave << " Enemy Type " << (int)enemy_type 
+              << " - Health: " << health << ", Speed Scale: " << speed_scale << std::endl;
 
     switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
         case Enemy::EnemyAIType::BASIC:

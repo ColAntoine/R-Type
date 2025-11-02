@@ -89,14 +89,11 @@ void BossSys::spawn(registry &r)
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
 
-        std::cout << "wave: " << wave << std::endl;
-        Weapon w(
+       Weapon w(
             entity(bossEnt),
-            // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
             BOSS_BASE_FIRERATE * static_cast<float>(wave),
-            // BOSS_BASE_DAMAGE * static_cast<float>(wave),
-            100.f,
+            BOSS_BASE_DAMAGE * static_cast<float>(wave),
             BOSS_BASE_PROJ_SPEED * static_cast<float>(wave),
             -1,
             true

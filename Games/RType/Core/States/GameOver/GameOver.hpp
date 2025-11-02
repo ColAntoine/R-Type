@@ -35,6 +35,6 @@ class GameOverState : public AGameState {
     private:
         int _finalScore{0};
         EventBus::CallbackId _gameOverEventCallbackId;
-        
+
         void go_back_to_menu();
 };
