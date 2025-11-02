@@ -24,6 +24,7 @@ namespace RType::Network {
             void handle_client_disconnect(const std::string &session_id, const std::vector<char> &payload);
             void handle_client_ready(const std::string &session_id, const std::vector<char> &payload);
             void handle_client_unready(const std::string &session_id, const std::vector<char> &payload);
+            void handle_client_chat(const std::string &session_id, const std::vector<char> &payload);
 
         private:
             ServerECS &ecs_;

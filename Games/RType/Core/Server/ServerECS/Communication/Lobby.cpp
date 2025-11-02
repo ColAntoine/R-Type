@@ -218,4 +218,46 @@ void Lobby::send_server_accept(const std::string &session_id, uint32_t token, fl
     ecs_.send_callback_(session_id, packet);
 }
 
+void Lobby::handle_client_chat(const std::string &session_id, const std::vector<char> &payload) {
+    if (payload.size() < sizeof(RType::Protocol::ChatMessage)) {
+        std::cerr << "[Lobby] Invalid CLIENT_CHAT payload size" << std::endl;
+        return;
+    }
+
+    RType::Protocol::ChatMessage chat_msg;
+    memcpy(&chat_msg, payload.data(), sizeof(RType::Protocol::ChatMessage));
+
+    // Validate and broadcast the chat message to all connected clients
+    if (!ecs_.send_callback_) {
+        std::cerr << "[Lobby] No send callback available for broadcasting chat" << std::endl;
+        return;
+    }
+
+    // Create SERVER_CHAT packet with the same message
+    auto packet = RType::Protocol::create_packet(
+        static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_CHAT),
+        chat_msg,
+        RType::Protocol::PacketFlags::NONE
+    );
+
+    // Broadcast to all connected clients
+    for (const auto &kv : ecs_.session_token_map_) {
+        const auto &client_session = kv.first;
+        ecs_.send_callback_(client_session, packet);
+    }
+
+    // Extract player name for logging
+    std::string player_name = "Unknown";
+    if (udp_server_) {
+        auto session = udp_server_->get_session(session_id);
+        if (session) {
+            player_name = session->get_player_name();
+        }
+    }
+
+    std::string message(chat_msg.message, strnlen(chat_msg.message, sizeof(chat_msg.message)));
+    std::cout << "[Lobby] Chat from " << player_name << " (ID: " << chat_msg.player_id << "): " << message << std::endl;
+}
+
 } // namespace RType::Network
+

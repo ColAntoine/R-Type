@@ -104,7 +104,7 @@ bool GameServer::init()
     if (display_) {
         // Initialize rendering for server UI (lobby) with FIXED 1920x1080 resolution
         // Force scale to 1.0 to ignore actual screen size and use base resolution
-        RenderManager::instance().init("R-Type Server", 1.0f, !windowed_);
+        RenderManager::instance().init("R-Type Server", scale_, !windowed_);
         // Register and setup lobby state
         register_states();
         state_manager_.push_state("ServerLobby");

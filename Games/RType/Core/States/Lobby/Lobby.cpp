@@ -51,6 +51,13 @@ void Lobby::enter()
                 this->game_start_ = true;
             }
         );
+
+        // Register callback for chat messages
+        net_mgr->get_chat_handler().set_chat_callback(
+            [this](const std::vector<ChatEntry>& messages) {
+                this->on_chat_message(messages);
+            }
+        );
     }
 
     _initialized = true;
@@ -65,6 +72,7 @@ void Lobby::exit()
     if (net_mgr) {
         net_mgr->get_player_handler().set_client_list_callback(nullptr);
         net_mgr->get_player_handler().set_game_start_callback(nullptr);
+        net_mgr->get_chat_handler().set_chat_callback(nullptr);
     }
     _initialized = false;
 }
@@ -167,6 +175,56 @@ void Lobby::setup_ui()
 
     auto gameStatusEntity = _registry.spawn_entity();
     _registry.add_component(gameStatusEntity, UI::UIComponent(gameStatus));
+
+    // Chat Panel
+    auto chatPanel = PanelBuilder()
+        .at(renderManager.scalePosX(45), renderManager.scalePosY(10))
+        .size(renderManager.scaleSizeW(50), renderManager.scaleSizeH(35))
+        .border(2, theme.panelBorderColor)
+        .backgroundColor(Color{30, 30, 40, 200})
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto chatPanelEntity = _registry.spawn_entity();
+    _registry.add_component(chatPanelEntity, UI::UIComponent(chatPanel));
+    _registry.register_component<ChatMessageTag>();
+
+    // Chat title
+    auto chatTitle = TextBuilder()
+        .at(renderManager.scalePosX(46), renderManager.scalePosY(11))
+        .text("Chat")
+        .textColor(theme.textColor)
+        .fontSize(renderManager.scaleSizeW(2))
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    auto chatTitleEntity = _registry.spawn_entity();
+    _registry.add_component(chatTitleEntity, UI::UIComponent(chatTitle));
+
+    // Chat input field
+    auto chatInput = UIBuilder<UI::UIInputField>()
+        .at(renderManager.scalePosX(46), renderManager.scalePosY(42))
+        .size(renderManager.scaleSizeW(48), renderManager.scaleSizeH(3))
+        .placeholder("Type a message...")
+        .textColor(theme.textColor)
+        .placeholderColor(theme.secondaryTextColor)
+        .fontSize(renderManager.scaleSizeW(1.5))
+        .build(winInfos.getWidth(), winInfos.getHeight());
+
+    chat_input_entity_ = _registry.spawn_entity();
+    _registry.add_component(chat_input_entity_, UI::UIComponent(chatInput));
+    _registry.register_component<ChatInputTag>();
+    _registry.add_component<ChatInputTag>(chat_input_entity_, ChatInputTag());
+
+    // Set up input field callback
+    if (auto ui_comps = _registry.get_if<UI::UIComponent>(); ui_comps && ui_comps->has(chat_input_entity_)) {
+        auto& ui_comp = (*ui_comps)[chat_input_entity_];
+        if (auto* input_field = dynamic_cast<UI::UIInputField*>(ui_comp._ui_element.get())) {
+            input_field->setOnEnterPressed([this](const std::string& text) {
+                if (!text.empty()) {
+                    this->send_chat_message(text);
+                }
+            });
+        }
+    }
 }
 
 void Lobby::update_player_list(const std::vector<RType::Protocol::PlayerInfo>& players) {
@@ -320,5 +378,131 @@ void Lobby::on_back_clicked() {
         // Pop current state (Lobby)
         _stateManager->pop_state();
         _stateManager->push_state("Connection");
+    }
+}
+
+std::string Lobby::get_player_name(uint32_t player_id) const {
+    for (const auto& player : current_players_) {
+        if (player.player_id == player_id) {
+            return std::string(player.name, strnlen(player.name, sizeof(player.name)));
+        }
+    }
+    return "Player " + std::to_string(player_id);
+}
+
+void Lobby::on_chat_message(const std::vector<ChatEntry>& messages) {
+    // Resolve player names from the player list and update entries
+    std::vector<ChatEntry> resolved_messages = messages;
+    for (auto& entry : resolved_messages) {
+        // Update player name from player list if available
+        std::string actual_name = get_player_name(entry.player_id);
+        if (actual_name != entry.player_name) {
+            entry.player_name = actual_name;
+        }
+    }
+    current_chat_messages_ = resolved_messages;
+    rebuild_chat_ui(resolved_messages);
+}
+
+void Lobby::rebuild_chat_ui(const std::vector<ChatEntry>& messages) {
+    auto &renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+    auto &theme = ThemeManager::instance().getTheme();
+
+    // Clear existing chat message entities
+    auto* ui_comps = _registry.get_if<UI::UIComponent>();
+    auto* chat_tags = _registry.get_if<ChatMessageTag>();
+    if (ui_comps && chat_tags) {
+        std::vector<entity> to_remove;
+        for (auto [ui_comp, tag, idx] : zipper(*ui_comps, *chat_tags)) {
+            to_remove.push_back(static_cast<entity>(idx));
+        }
+        for (auto ent : to_remove) {
+            _registry.kill_entity(ent);
+        }
+    }
+
+    // Register component if not already done
+    if (!chat_tags) {
+        _registry.register_component<ChatMessageTag>();
+    }
+
+    // Display chat messages from bottom to top
+    float startY = 42.5f;  // Start lower, within the visible chat panel area
+    float spacing = 2.3f;
+    int displayed_count = 0;
+    const int max_display = 12;
+
+    // Display from end of messages (most recent last)
+    size_t start_idx = messages.size() > max_display ? messages.size() - max_display : 0;
+    
+    for (size_t i = start_idx; i < messages.size(); ++i) {
+        const auto& msg = messages[i];
+        if (displayed_count >= max_display) break;
+
+        float y_pos = startY - (max_display - displayed_count - 1) * spacing;
+
+        // Format: "PlayerName: message"
+        std::string formatted = msg.player_name + ": " + msg.message;
+
+        auto chatMessageText = TextBuilder()
+            .at(renderManager.scalePosX(46.5f), renderManager.scalePosY(y_pos))
+            .text(formatted)
+            .fontSize(renderManager.scaleSizeW(1.3))
+            .textColor(theme.textColor)
+            .build(winInfos.getWidth(), winInfos.getHeight());
+
+        auto chatMessageEntity = _registry.spawn_entity();
+        _registry.add_component(chatMessageEntity, UI::UIComponent(chatMessageText));
+        _registry.add_component<ChatMessageTag>(chatMessageEntity, ChatMessageTag());
+
+        displayed_count++;
+    }
+}
+
+void Lobby::send_chat_message(const std::string& message) {
+    // Get the client and player ID
+    auto client = RType::Network::get_client();
+    if (!client) {
+        std::cerr << "[Lobby] Client not available for sending chat" << std::endl;
+        return;
+    }
+
+    uint32_t player_id = client->get_session_token();
+    if (player_id == 0) {
+        if (!current_players_.empty()) player_id = current_players_[0].player_id;
+        if (player_id == 0) {
+            std::cerr << "[Lobby] Cannot determine player ID for chat" << std::endl;
+            return;
+        }
+    }
+
+    // Create and send CLIENT_CHAT message
+    try {
+        RType::Protocol::ChatMessage chat_msg;
+        chat_msg.player_id = player_id;
+        strncpy(chat_msg.message, message.c_str(), sizeof(chat_msg.message) - 1);
+        chat_msg.message[sizeof(chat_msg.message) - 1] = '\0';
+
+        RType::Protocol::PacketBuilder builder;
+        builder.begin_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::CLIENT_CHAT));
+        builder.add_struct(chat_msg);
+        auto buf = builder.finalize();
+
+        client->send_packet(reinterpret_cast<const char*>(buf.data()), buf.size());
+
+        // Clear the input field
+        if (auto ui_comps = _registry.get_if<UI::UIComponent>(); ui_comps && ui_comps->has(chat_input_entity_)) {
+            auto& ui_comp = (*ui_comps)[chat_input_entity_];
+            if (auto* input_field = dynamic_cast<UI::UIInputField*>(ui_comp._ui_element.get())) {
+                input_field->setText("");
+            }
+        }
+
+        // Message will appear when server broadcasts it back to all clients
+        std::cout << "[Lobby] Sent chat message: " << message << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "[Lobby] Error sending chat message: " << e.what() << std::endl;
     }
 }

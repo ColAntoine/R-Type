@@ -26,7 +26,7 @@ class InGame;
  */
 class Multiplayer {
     public:
-        Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 2);
+        Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 4);
         ~Multiplayer();
 
         // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts

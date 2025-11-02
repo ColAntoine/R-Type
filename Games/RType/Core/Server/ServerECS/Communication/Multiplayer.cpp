@@ -55,6 +55,11 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
             if (lobby_) lobby_->handle_client_unready(session_id, payload);
             return;
         }
+        // Handle chat messages during lobby phase
+        if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_CHAT)) {
+            if (lobby_) lobby_->handle_client_chat(session_id, payload);
+            return;
+        }
         // Handle instance requests during lobby phase (clients ask front server to spawn instances)
         if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
             std::cout << "[Multiplayer] REQUEST_INSTANCE (lobby) from " << session_id << std::endl;
@@ -81,6 +86,10 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
     }
     if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_UNREADY)) {
         lobby_->handle_client_unready(session_id, payload);
+        return;
+    }
+    if (msg_type == static_cast<uint8_t>(SystemMessage::CLIENT_CHAT)) {
+        lobby_->handle_client_chat(session_id, payload);
         return;
     }
 

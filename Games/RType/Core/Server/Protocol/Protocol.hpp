@@ -80,6 +80,10 @@ namespace RType::Protocol {
         REQUEST_INSTANCE  = 0x13, // Client requests a new instance (lobby+game)
         INSTANCE_CREATED  = 0x14, // Server informs client that instance was created (port)
         INSTANCE_LIST     = 0x15, // Server sends list of instances
+
+        // Chat
+        CLIENT_CHAT       = 0x20, // Client sends chat message
+        SERVER_CHAT       = 0x21, // Server broadcasts chat message
     };
 
     /**
@@ -181,6 +185,14 @@ namespace RType::Protocol {
     struct ClientListUpdate {
         uint8_t player_count;    ///< Number of players in the list
         PlayerInfo players[8];   ///< Array of player info (max 8 players)
+    } PACKED;
+
+    /**
+     * @brief Chat message (client -> server and server -> clients)
+     */
+    struct ChatMessage {
+        uint32_t player_id;      ///< ID of the player sending the message
+        char message[128];       ///< Chat message content (null-terminated)
     } PACKED;
     
     /**
