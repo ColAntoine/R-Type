@@ -1,6 +1,10 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+// Must be before raylib.h to avoid Windows GDI conflicts
+#define NOGDI
+#define NOMINMAX
+
 #ifdef ENABLE_AUDIO_TESTS
 
 #include "ECS/AssetManager/Sound/SoundManager.hpp"
