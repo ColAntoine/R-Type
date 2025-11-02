@@ -187,6 +187,16 @@ void NetworkManager::register_default_handlers() {
             });
         }
     );
+
+    // Server chat message
+    dispatcher_.register_handler(static_cast<uint8_t>(SystemMessage::SERVER_CHAT),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                chat_handler_.on_server_chat(data.data(), data.size());
+            });
+        }
+    );
 }
 
 void NetworkManager::post_to_main(std::function<void()> job) {

@@ -19,7 +19,7 @@ class UdpServer;
 
 class ServerECS {
     public:
-        ServerECS(int maxLobbies = 0, int maxPlayers = 2);
+        ServerECS(int maxLobbies = 0, int maxPlayers = 4);
         ~ServerECS();
 
         // Initialize components/systems from shared object (optional)

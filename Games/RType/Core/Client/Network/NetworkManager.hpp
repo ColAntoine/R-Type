@@ -8,6 +8,7 @@
 #include "ECS/ILoader.hpp"
 #include "Handlers/PlayerHandler.hpp"
 #include "Handlers/EnemyHandler.hpp"
+#include "Handlers/ChatHandler.hpp"
 
 #include <mutex>
 #include <deque>
@@ -34,6 +35,7 @@ class NetworkManager {
 
         // Access to handlers for state-specific callbacks
         PlayerHandler& get_player_handler() { return player_handler_; }
+        ChatHandler& get_chat_handler() { return chat_handler_; }
 
     private:
         std::shared_ptr<UdpClient> client_;
@@ -42,6 +44,7 @@ class NetworkManager {
         ILoader& loader_;
         PlayerHandler player_handler_;
         EnemyHandler enemy_handler_;
+        ChatHandler chat_handler_;
         // pending ENTITY_CREATE messages received before we know our session token
         std::mutex pending_entity_mutex_;
         std::vector<std::vector<char>> pending_entity_creates_;

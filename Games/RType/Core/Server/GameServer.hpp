@@ -21,7 +21,7 @@ class ServerLobby;
 
 class GameServer : public AGameCore {
 public:
-    GameServer(bool display = false, bool windowed = false, float scale = 1.0f, int maxLobbies = 0, int maxPlayers = 2, bool is_machine_made = false);
+    GameServer(bool display = false, bool windowed = false, float scale = 1.0f, int maxLobbies = 0, int maxPlayers = 4, bool is_machine_made = false);
     ~GameServer();
 
     bool init() override;
