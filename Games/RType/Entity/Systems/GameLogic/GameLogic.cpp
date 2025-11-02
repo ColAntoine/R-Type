@@ -23,7 +23,6 @@ void GameLogic::updateScore(registry &r)
 
     for (auto [score, ent]: zipper(*scoreArr)) {
         score._score = score._score < 50 ? 50 : score._score;
-        // std::cout << score._score << std::endl;
         _gameScore = score;
         return;
     }
@@ -55,7 +54,7 @@ void GameLogic::spawnBoss(registry &r)
 {
     Boss b;
     b._shouldSpawn = true;
-
+    std::cout << "[GameLogic] Spawning Boss!" << std::endl;
     auto bossEnt = r.spawn_entity();
     r.emplace_component<Boss>(bossEnt, b);
 }

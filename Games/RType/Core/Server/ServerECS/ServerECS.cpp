@@ -53,7 +53,6 @@ namespace RType::Network {
         for (auto &pkt : packets) {
             if (pkt.data.empty()) continue;
             if (multiplayer_) {
-                std::cout << "[ServerECS] Processing pkt from " << pkt.session_id << " on port=" << pkt.server_port << " size=" << pkt.data.size() << std::endl;
                 multiplayer_->handle_packet(pkt.session_id, pkt.data);
             }
         }

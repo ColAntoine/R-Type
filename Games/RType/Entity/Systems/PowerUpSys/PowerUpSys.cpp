@@ -77,8 +77,8 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
         powerUpType type = static_cast<powerUpType>(_powerup_type_dist(_rng));
 
         auto ent = r.spawn_entity();
-        float pup_width = GET_SCALE_X(5.0f, screen_width);
-        float pup_height = GET_SCALE_Y(5.0f, screen_height);
+        float pup_width = GET_SCALE_X(30.0f, screen_width);
+        float pup_height = GET_SCALE_Y(30.0f, screen_height);
         float pup_offset_x = -pup_width / 2.0f;
         float pup_offset_y = -pup_height / 2.0f;
 
@@ -228,8 +228,8 @@ void PowerUpSys::initPowerUpHandlers()
 void PowerUpSys::handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave)
 {
     if (vel) {
-        vel->vx *= 1.5f;
-        vel->vy *= 1.5f;
+        vel->vx += 1.17f * static_cast<float>(wave);
+        vel->vy += 1.17f * static_cast<float>(wave);
     }
     if (ctrl) {
         ctrl->speed *= 1.17f;
@@ -244,7 +244,7 @@ void PowerUpSys::handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health
 
 void PowerUpSys::handleWeaponFirerate(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave)
 {
-    weapon._fireRate *= 1.2f * static_cast<float>(wave + 1);
+    weapon._fireRate += 1.2f * static_cast<float>(wave + 1);
     std::cout << "Applied WEAPON_FIRERATE powerup\n";
     Event statsEvent("PLAYER_STATS_CHANGED");
     statsEvent.set("speed", static_cast<int>(ctrl->speed));
@@ -256,8 +256,8 @@ void PowerUpSys::handleWeaponFirerate(Weapon &weapon, velocity *vel, Health *hea
 void PowerUpSys::handleWeaponNew(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave)
 {
     std::array<std::string, 4> bulletTypes = {"hardBullet", "bullet", "bigBullet", "parabol"};
-    std::uniform_int_distribution<> bullet_dist(0, bulletTypes.size() - 1);
-    std::string selectedBullet = bulletTypes[bullet_dist(_rng)];
+    size_t bulletIndex = _rng() % bulletTypes.size();
+    std::string selectedBullet = bulletTypes[bulletIndex];
 
     auto it = std::find(weapon._projectileType.begin(), weapon._projectileType.end(), selectedBullet);
     if (it == weapon._projectileType.end()) {

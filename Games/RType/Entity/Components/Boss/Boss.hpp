@@ -17,6 +17,7 @@ struct Boss : public IComponent {
     std::string _bulletSpritePath{""};
     bool _shouldSpawn{false};
     bool _doneMoving{false};
+    bool _movingUp{false};
 
     Boss();
     Boss(std::string armPath, std::string bodyPath, std::string bulletPath);
