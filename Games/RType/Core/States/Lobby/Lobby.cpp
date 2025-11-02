@@ -80,7 +80,7 @@ void Lobby::update(ATTR_MAYBE_UNUSED float delta_time)
 {
     if (game_start_ && _stateManager) {
         _stateManager->pop_state();
-        _stateManager->push_state("InGame");
+        _stateManager->push_state("InGameMultiplayer");
         _stateManager->push_state("InGameHud");
     }
 }
@@ -309,7 +309,7 @@ void Lobby::on_back_clicked() {
     if (_stateManager) {
         // Pop current state (Lobby)
         _stateManager->pop_state();
-        
+
         // Keep popping until we reach a main menu state or empty
         while (!_stateManager->is_empty()) {
             std::string current = _stateManager->get_current_state_name();
@@ -319,7 +319,7 @@ void Lobby::on_back_clicked() {
             }
             _stateManager->pop_state();
         }
-        
+
         // If we popped everything, push MainMenu
         if (_stateManager->is_empty()) {
             _stateManager->push_state("MainMenu");

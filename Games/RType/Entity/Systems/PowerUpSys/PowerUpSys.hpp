@@ -35,6 +35,7 @@ public:
     const char* get_name() const override { return "PowerUpSys"; }
 
     PowerUpSys();
+    void seed_from_registry(registry& r);
 
 private:
     void spawnPowerUps(registry &r, float dt);
@@ -50,7 +51,8 @@ private:
     std::uniform_real_distribution<> _y_dist;
     std::uniform_int_distribution<> _powerup_type_dist;
     float _spawn_timer{0.0f};
-    float _spawn_interval{25.0f};
+    float _spawn_interval{10.0f};
+    bool _seeded{false};
 };
 
 

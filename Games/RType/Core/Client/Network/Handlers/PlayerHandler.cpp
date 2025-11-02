@@ -7,6 +7,8 @@
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Input/Input.hpp"
+#include "Entity/Components/RemotePlayer/RemotePlayer.hpp"
 #include "ECS/Components/Collider.hpp"
 #include "Constants.hpp"
 
@@ -148,6 +150,7 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<controllable>(registry_, ent, 300.0f);
         factory->create_component<Weapon>(registry_, ent);
+        factory->create_component<Input>(registry_, ent);
         factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
         factory->create_component<Score>(registry_, ent);
         factory->create_component<Health>(registry_, ent);
@@ -193,9 +196,9 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
         factory->create_component<Weapon>(registry_, ent);
-        // factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
-        // factory->create_component<Health>(registry_, ent);
-        // factory->create_component<Player>(registry_, ent);
+        factory->create_component<collider>(registry_, ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
+        factory->create_component<Health>(registry_, ent);
+        factory->create_component<remote_player>(registry_, ent, std::string("remote_") + std::to_string(ps.player_token));
         return;
     }
     registry_.emplace_component<position>(ent, x, y);
@@ -241,6 +244,31 @@ void PlayerHandler::on_player_quit(const char* payload, size_t size) {
         last_player_list_.erase(player_it);
         if (client_list_callback_)
             client_list_callback_(last_player_list_);
+    }
+}
+
+void PlayerHandler::on_entity_destroy(const char* payload, size_t size) {
+    using RType::Protocol::EntityDestroy;
+    if (!payload || size < sizeof(EntityDestroy)) {
+        std::cerr << "[PlayerMsg] Invalid ENTITY_DESTROY payload" << std::endl;
+        return;
+    }
+    
+    EntityDestroy ed;
+    memcpy(&ed, payload, sizeof(ed));
+    
+    std::cout << "[PlayerMsg] Received ENTITY_DESTROY entity_id=" << ed.entity_id << " reason=" << (int)ed.reason << std::endl;
+    
+    // Find the entity in our remote_player_map (could be an enemy or other entity)
+    auto it = remote_player_map_.find(ed.entity_id);
+    if (it != remote_player_map_.end()) {
+        entity ent = it->second;
+        std::cout << "[PlayerMsg] Destroying entity " << ent << " (server_id=" << ed.entity_id << ")" << std::endl;
+        registry_.kill_entity(ent);
+        remote_player_map_.erase(it);
+    } else {
+        // Entity might not be in our map (could have already been destroyed locally)
+        std::cout << "[PlayerMsg] ENTITY_DESTROY for unknown entity server_id=" << ed.entity_id << std::endl;
     }
 }
 

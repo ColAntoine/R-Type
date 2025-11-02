@@ -25,6 +25,13 @@
   #define ATTR_MAYBE_UNUSED __attribute__((unused))
 #endif
 
+// Global callback for entity destruction broadcasting
+static EntityDestroyCallback g_entity_destroy_callback = nullptr;
+
+void set_global_entity_destroy_callback(EntityDestroyCallback callback) {
+    g_entity_destroy_callback = std::move(callback);
+}
+
 
 void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
@@ -59,6 +66,16 @@ void HealthSys::checkAndKillEnemy(registry &r)
         for (auto ent : entToKill) {
             if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
                 addScore(r);
+
+                std::cout << "[HealthSys] Killing enemy entity=" << ent << std::endl;
+
+                // Notify server to broadcast entity destruction
+                if (destroy_callback_) {
+                    destroy_callback_(ent, 0); // reason 0 = killed by damage
+                } else if (g_entity_destroy_callback) {
+                    g_entity_destroy_callback(ent, 0);
+                }
+
                 r.kill_entity(ent);
             }
         }
