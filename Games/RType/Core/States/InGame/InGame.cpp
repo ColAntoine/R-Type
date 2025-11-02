@@ -111,6 +111,19 @@ void InGameState::enter()
                 std::cerr << "[InGame] Error in key pressed handler: " << ex.what() << std::endl;
             }
         });
+
+    _gameOverCallbackId = eventBus.subscribe("GAME_OVER",
+        [this](ATTR_MAYBE_UNUSED const Event& e) {
+            try {
+                std::cout << "[InGame] GAME_OVER event received, transitioning to GameOver state" << std::endl;
+                if (_stateManager) {
+                    _stateManager->push_state("GameOver", true);
+                }
+            } catch (const std::exception& ex) {
+                std::cerr << "[InGame] Error in game over handler: " << ex.what() << std::endl;
+            }
+        });
+
     auto &theme = ThemeManager::instance().getTheme();
     Event themeEvent(EventTypes::SCREEN_PARAMETERS_CHANGED);
     themeEvent.set("palette", theme);
@@ -125,6 +138,7 @@ void InGameState::exit()
 {
     auto &eventBus = MessagingManager::instance().get_event_bus();
     eventBus.unsubscribe(_keyPressedCallbackId);
+    eventBus.unsubscribe(_gameOverCallbackId);
 
     auto& audioManager = AudioManager::instance();
     if (audioManager.is_initialized()) {

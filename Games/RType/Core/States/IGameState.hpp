@@ -45,7 +45,8 @@ public:
         VideoSettings,
         BindingsSettings,
         LoadingVideo,
-        InGameExit
+        InGameExit,
+        GameOver
     };
 
     virtual ~IGameState() = default;

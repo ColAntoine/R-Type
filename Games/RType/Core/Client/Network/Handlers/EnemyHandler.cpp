@@ -72,6 +72,8 @@ void EnemyHandler::on_enemy_spawn(const char* payload, size_t size) {
                     65.0f, 132.0f, 1.f, 1.f, 8, false);
                 factory->create_component<velocity>(registry_, ent, -80.0f, 0.0f);
             break;
+            default:
+            break;
         }
 
         std::cout << "[EnemyHandler] Enemy spawned successfully with animation" << std::endl;

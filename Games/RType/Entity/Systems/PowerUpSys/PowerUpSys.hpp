@@ -44,17 +44,17 @@ private:
     void applyPowerUps(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, PowerUp &pUp, int wave);
     int getWave(registry &r);
     void initPowerUpHandlers();
-    
+
     // Power-up handler methods
     void handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave);
     void handleWeaponFirerate(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave);
     void handleWeaponNew(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave);
     void handleHealthUp(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave);
     void handleWeaponDamage(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave);
-    
+
     // Sprite emplacement utility
-    void emplacePowerUpSprite(registry &r, entity ent, powerUpType type, const std::string &texturePath, 
-                             float origWidth, float origHeight, float screenWidth, float screenHeight);
+    void emplacePowerUpSprite(registry &r, entity ent, powerUpType type, const std::string &texturePath,
+        float origWidth, float origHeight, float screenWidth, float screenHeight);
 
     std::map<powerUpType, std::function<void(registry &)>> _pFunc;
     std::map<powerUpType, std::string> _pUpText;
@@ -65,7 +65,7 @@ private:
     std::uniform_real_distribution<> _y_dist;
     std::uniform_int_distribution<> _powerup_type_dist;
     float _spawn_timer{0.0f};
-    float _spawn_interval{10.0f};
+    float _spawn_interval{30.0f};
     bool _seeded{false};
 };
 

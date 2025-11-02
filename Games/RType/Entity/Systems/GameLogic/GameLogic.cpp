@@ -8,11 +8,13 @@
 #include <memory>
 
 #include "GameLogic.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 
 void GameLogic::update(registry& r, float dt)
 {
     updateScore(r);
     updateState(r);
+    checkPlayerDeath(r);
 }
 
 void GameLogic::updateScore(registry &r)
@@ -22,7 +24,8 @@ void GameLogic::updateScore(registry &r)
     if (!scoreArr) return;
 
     for (auto [score, ent]: zipper(*scoreArr)) {
-        score._score = score._score < 50 ? 50 : score._score;
+        // * Uncomment if you want to debug boss
+        // score._score = score._score < 50 ? 50 : score._score;
         _gameScore = score;
         return;
     }
@@ -30,11 +33,38 @@ void GameLogic::updateScore(registry &r)
 
 void GameLogic::updateState(registry  &r)
 {
-    if (_gameScore._score != 0 && _gameScore._score % 50 == 0 && _lastBossSpawnScore != _gameScore._score) {
+    if (_gameScore._score != 0 && _gameScore._score % 25 == 0 && _lastBossSpawnScore != _gameScore._score) {
         _lastBossSpawnScore = _gameScore._score;
         killAllEnemy(r);
         _gameScore._score += 1;
         spawnBoss(r);
+    }
+}
+
+void GameLogic::checkPlayerDeath(registry &r)
+{
+    auto playerArr = r.get_if<Player>();
+    auto healthArr = r.get_if<Health>();
+
+    if (!playerArr || !healthArr) return;
+
+    bool allPlayersDead = true;
+
+    // Check if all players (local and remote) are dead
+    for (auto [player, health, ent]: zipper(*playerArr, *healthArr)) {
+        if (health._health > 0) {
+            allPlayersDead = false;
+            break;
+        }
+    }
+
+    // Emit game over event if all players are dead
+    if (allPlayersDead && !_gameOverEmitted) {
+        _gameOverEmitted = true;
+        Event gameOverEvent("GAME_OVER");
+        gameOverEvent.set("score", _gameScore._score);
+        MessagingManager::instance().get_event_bus().emit(gameOverEvent);
+        std::cout << "[GameLogic] GAME OVER! Final Score: " << _gameScore._score << std::endl;
     }
 }
 

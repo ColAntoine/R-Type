@@ -37,6 +37,7 @@
 #include "Core/States/BindsSettings/BindsSettings.hpp"
 #include "Core/States/Browser/Browser.hpp"
 #include "Core/States/LoadingVideo/LoadingVideo.hpp"
+#include "Core/States/GameOver/GameOver.hpp"
 
 #include "Constants.hpp"
 
@@ -98,6 +99,7 @@ void GameClient::register_states() {
     _stateManager.register_state<Browser>("Browser");
     _stateManager.register_state<LoadingVideoState>("LoadingVideo");
     _stateManager.register_state<InGameExitState>("InGameExit");
+    _stateManager.register_state<GameOverState>("GameOver");
 }
 
 bool GameClient::init()

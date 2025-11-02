@@ -39,6 +39,7 @@ class InGameState : public AGameState {
 
         entity _playerEntity;
         EventBus::CallbackId _keyPressedCallbackId;  // Callback ID for key pressed event
+        EventBus::CallbackId _gameOverCallbackId;    // Callback ID for game over event
 
         // Fixed timestep for deterministic physics (match server at 30Hz)
         static constexpr float FIXED_DT = 0.033f;  // 33ms = ~30 FPS
