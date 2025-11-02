@@ -95,12 +95,6 @@ namespace RType::Network {
                 if (size >= sizeof(RType::Protocol::PacketHeader)) {
                     RType::Protocol::PacketHeader hdr;
                     memcpy(&hdr, data, sizeof(hdr));
-                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
-                              << " msg_type=" << int(hdr.message_type) << " payload=" << hdr.payload_size
-                              << " len=" << size << std::endl;
-                } else {
-                    std::cout << "[UdpServer broadcast] port=" << port_ << " -> " << id
-                              << " raw_len=" << size << std::endl;
                 }
                 connection->send(data, size);
             }
@@ -243,7 +237,7 @@ namespace RType::Network {
         }
 
         // Need at least 2 players and all connected players must be ready
-        if (connected_players > 1 && ready_players == connected_players) {
+        if (connected_players >= 1 && ready_players == connected_players) {
             // Create START_GAME message
             Protocol::StartGame start_game;
             start_game.timestamp = static_cast<uint32_t>(std::time(nullptr));

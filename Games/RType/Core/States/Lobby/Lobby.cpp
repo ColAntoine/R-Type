@@ -83,8 +83,7 @@ void Lobby::update(ATTR_MAYBE_UNUSED float delta_time)
 {
     if (game_start_ && _stateManager) {
         _stateManager->pop_state();
-        _stateManager->pop_state();
-        _stateManager->push_state("InGame");
+        _stateManager->push_state("InGameMultiplayer");
         _stateManager->push_state("InGameHud");
         _stateManager->push_state("InGameBackground");
     }

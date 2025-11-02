@@ -58,6 +58,16 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
             if (lobby_) lobby_->handle_client_unready(session_id, payload);
             return;
         }
+        // Handle instance requests during lobby phase (clients ask front server to spawn instances)
+        if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
+            std::cout << "[Multiplayer] REQUEST_INSTANCE (lobby) from " << session_id << std::endl;
+            if (ecs_.instance_request_cb_) {
+                ecs_.instance_request_cb_(session_id);
+            } else {
+                std::cout << "[Multiplayer] Instance requests not supported on this server" << std::endl;
+            }
+            return;
+        }
         // Other messages during lobby are ignored or queued by ServerECS
         return;
     }
@@ -119,6 +129,10 @@ void Multiplayer::broadcast_loop() {
 
 void Multiplayer::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y) {
     if (ingame_) ingame_->broadcast_enemy_spawn(ent, enemy_type, x, y);
+}
+
+void Multiplayer::broadcast_entity_destroy(entity ent, uint8_t reason) {
+    if (ingame_) ingame_->broadcast_entity_destroy(ent, reason);
 }
 
 } // namespace RType::Network

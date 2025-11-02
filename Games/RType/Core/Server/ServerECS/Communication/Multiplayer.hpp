@@ -41,6 +41,8 @@ class Multiplayer {
         void broadcast_loop();
         // Broadcast enemy spawn to all clients
         void broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y);
+        // Broadcast entity destruction to all clients
+        void broadcast_entity_destroy(entity ent, uint8_t reason = 0);
 
     private:
         ServerECS &ecs_;
