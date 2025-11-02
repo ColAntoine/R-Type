@@ -186,7 +186,7 @@ void PowerUpSys::handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health
         vel->vy *= 1.5f;
     }
     if (ctrl) {
-        ctrl->speed *= 1.17f * static_cast<float>(wave + 1);
+        ctrl->speed *= 1.17f;
     }
     std::cout << "Applied PLAYER_SPEED powerup\n";
     Event statsEvent("PLAYER_STATS_CHANGED");
@@ -225,7 +225,7 @@ void PowerUpSys::handleWeaponNew(Weapon &weapon, velocity *vel, Health *health, 
 void PowerUpSys::handleHealthUp(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave)
 {
     if (health) {
-        int increase = 20 * (wave + 1);
+        int increase = 30 * (wave + 1);
         health->_health += increase;
         std::cout << "Applied HEALTH_UP powerup: +" << increase << " health\n";
         Event healthEvent("PLAYER_HEALTH_CHANGED");
