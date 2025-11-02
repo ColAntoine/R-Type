@@ -45,6 +45,9 @@ struct ProjectileContext {
     float dir_x;
     float dir_y;
     bool _shouldShootSpecial{false};
+    float speed_scale{1.0f};
+    float frame_width{220.0f};
+    float frame_height{220.0f};
 };
 
 class Shoot : public ISystem {
@@ -58,7 +61,7 @@ private:
     AudioManager& _audioManager = AudioManager::instance();
     float _lastLaserSoundTime = 0.0f;
     const float _laserSoundCooldown = 0.05f;  // 50ms minimum between laser sounds
-    
+
     void spawnProjectiles(registry &r, float dt);
     void checkShootIntention(registry & r);
     void checkEnnemyHits(registry & r);

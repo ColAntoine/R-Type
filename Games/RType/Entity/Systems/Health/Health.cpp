@@ -13,9 +13,12 @@
 
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 #include "Constants.hpp"
 
@@ -36,6 +39,7 @@ void set_global_entity_destroy_callback(EntityDestroyCallback callback) {
 void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
+    emitPlayerHealthStats(r);
 }
 
 void HealthSys::checkAndKillEnemy(registry &r)
@@ -43,18 +47,22 @@ void HealthSys::checkAndKillEnemy(registry &r)
     auto *healthArr = r.get_if<Health>();
     auto *posArr = r.get_if<position>();
     auto *enemyArr = r.get_if<Enemy>();
+    auto *colArr = r.get_if<collider>();
     std::vector<entity> entToKill;
 
-    if (!healthArr || !enemyArr) return;
+    if (!healthArr || !enemyArr || !colArr) return;
 
-    for (auto [healthEnt, enemyComp, pos, ent] : zipper(*healthArr, *enemyArr, *posArr)) {
+    for (auto [healthEnt, enemyComp, pos, col, ent] : zipper(*healthArr, *enemyArr, *posArr, *colArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
 
             entity anim = r.spawn_entity();
-            float frame_w = 105.0f;
-            float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            float frame_w = DEATH_ANIM_FRAME_W;
+            float frame_h = DEATH_ANIM_FRAME_H;
+            float screen_w = RenderManager::instance().get_screen_infos().getWidth();
+            float scale = GET_SCALE_X(col.w / frame_w, screen_w);
+
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, scale, scale, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
@@ -87,17 +95,21 @@ void HealthSys::checkAndKillPlayer(registry &r)
     auto *healthArr = r.get_if<Health>();
     auto *playerArr = r.get_if<Player>();
     auto *posArr = r.get_if<position>();
+    auto *colArr = r.get_if<collider>();
     std::vector<entity> entToKill;
 
-    if (!healthArr || !playerArr || !posArr) return;
+    if (!healthArr || !playerArr || !posArr || !colArr) return;
 
-    for (auto [healthEnt, player, pos, ent] : zipper(*healthArr, *playerArr, *posArr)) {
+    for (auto [healthEnt, player, pos, col, ent] : zipper(*healthArr, *playerArr, *posArr, *colArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
             entity anim = r.spawn_entity();
-            float frame_w = 105.0f;
-            float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            float frame_w = DEATH_ANIM_FRAME_W;
+            float frame_h = DEATH_ANIM_FRAME_H;
+            float screen_w = RenderManager::instance().get_screen_infos().getWidth();
+            float scale = GET_SCALE_X(col.w / frame_w, screen_w);
+
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, scale, scale, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
@@ -140,6 +152,31 @@ void HealthSys::addScore(registry &r, int amount)
         Event scoreEvent("SCORE_INCREASED");
         scoreEvent.set("amount", amount);
         MessagingManager::instance().get_event_bus().emit(scoreEvent);
+    }
+}
+
+void HealthSys::emitPlayerHealthStats(registry &r)
+{
+    auto *playerArr = r.get_if<Player>();
+    auto *healthArr = r.get_if<Health>();
+    auto *weaponArr = r.get_if<Weapon>();
+    auto *ctrlArr = r.get_if<controllable>();
+
+    if (!playerArr || !healthArr || !weaponArr || !ctrlArr) return;
+
+    for (auto [player, health, weapon, ctrl, ent] : zipper(*playerArr, *healthArr, *weaponArr, *ctrlArr)) {
+        // Emit health change
+        Event healthEvent("PLAYER_HEALTH_CHANGED");
+        healthEvent.set("health", static_cast<int>(health._health));
+        MessagingManager::instance().get_event_bus().emit(healthEvent);
+
+        // Emit stats change
+        Event statsEvent("PLAYER_STATS_CHANGED");
+        statsEvent.set("speed", static_cast<int>(ctrl.speed));
+        statsEvent.set("firerate", static_cast<int>(weapon._fireRate * 100));
+        statsEvent.set("damage", static_cast<int>(weapon._damage));
+        MessagingManager::instance().get_event_bus().emit(statsEvent);
+        return;
     }
 }
 

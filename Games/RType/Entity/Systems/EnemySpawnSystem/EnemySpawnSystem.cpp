@@ -7,9 +7,9 @@
 
 #include "EnemySpawnSystem.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
+#include "Constants.hpp"
 #include <iostream>
 
-// Global callback for broadcasting enemy spawns (set by server)
 static EnemySpawnCallback g_enemy_spawn_callback = nullptr;
 
 void set_global_enemy_spawn_callback(EnemySpawnCallback callback) {
@@ -17,7 +17,7 @@ void set_global_enemy_spawn_callback(EnemySpawnCallback callback) {
 }
 
 EnemySpawnSystem::EnemySpawnSystem()
-    : rng_(std::random_device{}()),  // Default initialization, will be re-seeded from registry
+    : rng_(std::random_device{}()),
       type_dist_(1, 5),
       y_dist_(50.0f, 700.0f)
 {
@@ -33,12 +33,10 @@ void EnemySpawnSystem::seed_from_registry(registry& r) {
 void EnemySpawnSystem::initialize_if_needed(registry& r) {
     if (initialized_) return;
 
-    // Initialize y_dist_ with actual screen height from RenderManager
     auto& renderManager = RenderManager::instance();
     float screen_height = renderManager.get_screen_infos().getHeight();
     y_dist_ = std::uniform_real_distribution<>(50.0f, screen_height - 50.0f);
 
-    // Seed from registry if available
     seed_from_registry(r);
 
     initialized_ = true;
@@ -58,8 +56,6 @@ void EnemySpawnSystem::update(registry& r, float dt) {
 
     spawn_timer_ += dt;
 
-    // Automatic spawning is disabled on clients — server is authoritative for enemy spawning.
-    // Keep the logic here commented so it can be re-enabled easily if needed.
     if (spawn_timer_ >= spawn_interval_ && current_count < max_enemies_) {
         spawn_random_enemy(r);
         spawn_timer_ = 0.0f;
@@ -70,37 +66,44 @@ entity EnemySpawnSystem::spawn_enemy(registry& r, uint8_t enemy_type, float x, f
     entity e = r.spawn_entity();
     uint32_t net_id = next_network_id_++;
 
+    auto& renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+
+    float enemy_width = 65.0f;
+    float enemy_height = 132.0f;
+    float scale_x = GET_SCALE_X(enemy_width, winInfos.getWidth());
+    float scale_y = GET_SCALE_Y(enemy_height, winInfos.getHeight());
+
     r.emplace_component<position>(e, x, y);
-    r.emplace_component<collider>(e, 65.0f, 132.0f, -32.5f, -66.0f, false);
+    r.emplace_component<collider>(e, scale_x, scale_y, -scale_x / 2.0f, -scale_y / 2.0f, false);
     r.emplace_component<Enemy>(e, static_cast<Enemy::EnemyAIType>(enemy_type));
-    r.emplace_component<Health>(e, 50 * (wave + 1)); // DEFAULT VALUE, TO CHANGE LATER
+    r.emplace_component<Health>(e, 50 * (wave + 1));
 
     float speed_scale = 1.0f + wave * 0.1f;
 
     switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
         case Enemy::EnemyAIType::BASIC:
-            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", enemy_width, enemy_height, scale_x / enemy_width, scale_y / enemy_height, 8, false);
             r.emplace_component<velocity>(e, -80.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::SINE_WAVE:
-            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", enemy_width, enemy_height, scale_x / enemy_width, scale_y / enemy_height, 8, false);
             r.emplace_component<velocity>(e, -60.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::FAST:
-            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", enemy_width, enemy_height, scale_x / enemy_width, scale_y / enemy_height, 8, false);
             r.emplace_component<velocity>(e, -120.0f * speed_scale, 0.0f);
             break;
         case Enemy::EnemyAIType::ZIGZAG:
-            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", enemy_width, enemy_height, scale_x / enemy_width, scale_y / enemy_height, 8, false);
             r.emplace_component<velocity>(e, -70.0f * speed_scale, 50.0f * speed_scale);
             break;
         case Enemy::EnemyAIType::TURRET:
-            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", 65.0f, 132.0f, 1.f, 1.f, 8, false);
+            r.emplace_component<animation>(e, std::string(RTYPE_PATH_ASSETS) + "enemy.gif", enemy_width, enemy_height, scale_x / enemy_width, scale_y / enemy_height, 8, false);
             r.emplace_component<velocity>(e, -80.0f * speed_scale, 0.0f);
             break;
     }
 
-    // Notify callback if set (for server to broadcast enemy spawn)
     if (spawn_callback_) {
         spawn_callback_(e, enemy_type, x, y);
     } else if (g_enemy_spawn_callback) {
@@ -126,9 +129,6 @@ void EnemySpawnSystem::spawn_random_enemy(registry& r) {
 }
 
 void EnemySpawnSystem::set_world_bounds(float width, float height) {
-    // World bounds are now managed by RenderManager
-    // This method is kept for backward compatibility but is no longer used
-    // Y distribution is updated based on screen height from RenderManager
     y_dist_ = std::uniform_real_distribution<>(50.0f, std::max(height - 50.0f, 100.0f));
 }
 

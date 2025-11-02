@@ -22,16 +22,12 @@
 #include <string>
 
 // ====================================WIN======================================
-#define SCREEN_WIDTH        1920
-#define SCREEN_HEIGHT       1080
+#define SCREEN_WIDTH        1920.0f
+#define SCREEN_HEIGHT       1080.0f
 // =============================================================================
 
 // ==================================GRAVITY====================================
 #define GRAVITY             500.f
-// =============================================================================
-
-// ===================================BALLS=====================================
-#define MAX_BALLS           3
 // =============================================================================
 
 // ===================================COLLISION=================================
@@ -43,6 +39,15 @@
 #define PLAYER_SPAWN_X      100.f
 #define PLAYER_SPAWN_Y      200.f
 // =============================================================================
+
+// ================================DEATH ANIMATION==============================
+#define DEATH_ANIM_FRAME_W  105.0f
+#define DEATH_ANIM_FRAME_H  107.0f
+// ====================================SCALE====================================
+#define GET_SCALE_X(ratio, width)    (ratio * (width / SCREEN_WIDTH))
+#define GET_SCALE_Y(ratio, height)   (ratio * (height / SCREEN_HEIGHT))
+#define GET_SCALED_SPEED(base_speed, width, height) \
+    (base_speed * ((width / SCREEN_WIDTH + height / SCREEN_HEIGHT) / 2.0f))
 
 // ==================================REPO ROOT==================================
 #ifndef REPO_ROOT

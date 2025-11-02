@@ -38,14 +38,13 @@ void BossSys::update(registry& r, float dt)
             w._shouldShootSpecial = spe;
         }
     }
-    
-    // Check if boss is dead
+
     if (healthArr && bossArr) {
         for (auto [health, boss, ent]: zipper(*healthArr, *bossArr)) {
             if (health._health <= 0) {
                 std::cout << "[BossSys] Boss defeated! Health: " << health._health << std::endl;
                 stopBossMusic(r);
-                return;  // Boss is dead, skip further updates
+                return;
             }
         }
     }
@@ -84,7 +83,7 @@ void BossSys::spawn(registry &r)
 
     for (auto [boss, bossEnt]: zipper(*bossArr)) {
         r.emplace_component<position>(entity(bossEnt), _renderManager.get_screen_infos().getWidth() + 300.f, _renderManager.get_screen_infos().getHeight() / 2.f);
-        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r)));
+        r.emplace_component<Health>(entity(bossEnt), 1000.f * static_cast<float>(getWave(r) == 0 ? 1 : getWave(r)));
         r.emplace_component<velocity>(entity(bossEnt), -300.f, 0.f);
         r.emplace_component<Enemy>(entity(bossEnt), Enemy::EnemyAIType::BOSS);
         r.emplace_component<collider>(entity(bossEnt), bossW, bossH, -(bossW / 2.f), -(bossH / 2.f));
@@ -93,6 +92,7 @@ void BossSys::spawn(registry &r)
         std::cout << "wave: " << wave << std::endl;
         Weapon w(
             entity(bossEnt),
+            // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
             BOSS_BASE_FIRERATE * static_cast<float>(wave),
             BOSS_BASE_DAMAGE * static_cast<float>(wave),

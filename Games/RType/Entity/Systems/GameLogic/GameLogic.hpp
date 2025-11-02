@@ -32,6 +32,7 @@ private:
     void spawnBoss(registry &r);
 
     Score _gameScore{0};
+    int _lastBossSpawnScore = -1;
 };
 
 #if defined(_WIN32)
