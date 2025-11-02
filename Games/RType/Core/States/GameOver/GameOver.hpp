@@ -27,7 +27,7 @@ class GameOverState : public AGameState {
 
         void update(float delta_time) override;
 
-        std::string get_name() const override { return "InGameExit"; }
+        std::string get_name() const override { return "GameOver"; }
 
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }
