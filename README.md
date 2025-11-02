@@ -150,7 +150,7 @@ For complete technical guides and architecture details:
 - **[ECS/README.md](ECS/README.md)** - ECS library API and usage
 - **[Games/RType/README.md](Games/RType/README.md)** - Client architecture (Services, States, Events)
 - **[Network/README.md](Network/README.md)** - Server architecture (Asio, Threading, Handlers)
-- **[Network/Protocol.md](Network/Protocol.md)** - Complete protocol specification (KPN v1.0)
+- **[protocol.md](protocol.md)** - Complete protocol specification (KPN v1.0)
 - **[Games/README.md](Games/README.md)** - Game development guide (create your own game)
 
 3. **Build the project**
@@ -226,7 +226,7 @@ Refer to **[Games/RType/README.md](Games/RType/README.md)** for detailed client 
 
 ### Network Protocol
 
-The server uses the **Keller Protocol Networking Standard (KPN v1.0)**, a custom binary protocol over UDP. See **[Network/Protocol.md](Network/Protocol.md)** for complete specification.
+The server uses the **Keller Protocol Networking Standard (KPN v1.0)**, a custom binary protocol over UDP. See **[Protocol.md](Protocol.md)** for complete specification.
 
 Key message types:
 - **CONNECTION_REQUEST** (0x01): Client connects

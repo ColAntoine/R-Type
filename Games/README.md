@@ -759,7 +759,7 @@ If you want multiplayer, add:
 - **Network System**: Serializes/deserializes game state
 - **NetworkSync Component**: Marks entities that sync over network
 
-See `RType/Core/Services/Network/` and `../Network/Protocol.md` for reference.
+See `RType/Core/Services/Network/` and `RType/Core/Server/Protocol/README.md` for reference.
 
 ### Asset Management
 For larger games, consider:
@@ -867,7 +867,7 @@ See `RType/` folder for full implementation.
 
 - **ECS Documentation**: `../ECS/README.md`
 - **R-Type Client**: `RType/README.md` (full example)
-- **Network Protocol**: `../Network/Protocol.md` (if using networking)
+- **Network Protocol**: `RType/Core/Server/Protocol/README.md` (if using networking)
 - **Raylib Documentation**: https://www.raylib.com/
 
 ---
