@@ -100,7 +100,8 @@ The **R-Type Client** is a networked multiplayer game client built on a modern s
   - Receives and processes server updates
   - Handles network events (connection, disconnection, errors)
 - **Protocol**: Uses UDP for low-latency communication
-- **Server Reference**: See `../../../Network/Protocol.md` for protocol details
+ - **Protocol**: Uses UDP for low-latency communication
+ - **Server Reference**: See `../../../Protocol.md` for protocol details
 
 ---
 
@@ -350,7 +351,7 @@ Client Action (e.g., Player moves)
   → Updates local entity (client-side prediction)
   → Emit PlayerMoveEvent
   → Network System serializes event
-  → Send packet to server (see Network/Protocol.md)
+  → Send packet to server (see ../../../protocol.md)
   
 Server Update Received
   → Network Service receives packet
@@ -375,7 +376,7 @@ In short:
 
 ## Network Protocol
 
-The client communicates with the server using a UDP-based protocol. For detailed protocol specification, see `../../../Network/Protocol.md`.
+The client communicates with the server using a UDP-based protocol. For detailed protocol specification, see `../../../protocol.md`.
 
 ### Key Message Types
 
@@ -708,7 +709,7 @@ Contributions are welcome! Please follow these guidelines:
 ## Related Documentation
 
 - **ECS Library**: `../../ECS/README.md` - Core entity management system
-- **Network Protocol**: `../../../Network/Protocol.md` - Client-server communication spec
+- **Network Protocol**: `../../../protocol.md` - Client-server communication spec
 - **Server Architecture**: `../../../Network/README_NEW_ARCHITECTURE.md` - Server implementation
 - **Build System**: `../../README.md` - Project-wide build instructions
 
