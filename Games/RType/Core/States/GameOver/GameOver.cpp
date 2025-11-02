@@ -8,7 +8,7 @@
 
 void GameOverState::enter()
 {
-    std::cout << "[InGameExit] Entering state" << std::endl;
+    std::cout << "[GameOverState] Entering state" << std::endl;
     _systemLoader->load_components("build/lib/libECS" + ext, _registry);
     _systemLoader->load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
 
