@@ -12,6 +12,9 @@
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "ECS/Messaging/Events/Event.hpp"
 
+#include "UI/ThemeManager.hpp"
+#include "UI/Components/GlitchButton.hpp"
+
 void Browser::enter()
 {
     std::cout << "[Browser] Entering state" << std::endl;
@@ -135,6 +138,7 @@ void Browser::resume()
 void Browser::setup_ui()
 {
     std::cout << "[Browser] Setting up UI" << std::endl;
+    auto &theme = ThemeManager::instance().getTheme();
 
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
@@ -144,25 +148,27 @@ void Browser::setup_ui()
         .at(renderManager.scalePosX(40), renderManager.scalePosY(10))
         .text("SERVER BROWSER")
         .fontSize(renderManager.scaleSizeW(4))
-        .textColor(WHITE)
+        .textColor(theme.textColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto titleEntity = _registry.spawn_entity();
     _registry.add_component(titleEntity, UI::UIComponent(title));
 
     // Create instance button
-    auto createButton = ButtonBuilder()
+    auto createButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(20), renderManager.scalePosY(25))
         .size(renderManager.scaleSizeW(25), renderManager.scaleSizeH(10))
         .text("CREATE INSTANCE")
-        .green()
-        .textColor(WHITE)
+        .color(theme.secondaryButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.secondaryButtonColors.border)
         .onClick([this]() {
             // Reuse join_room_callback to send REQUEST_INSTANCE (create-on-demand)
             this->join_room_callback();
         })
+        .neonColors(theme.secondaryButtonColors.neonColor, theme.secondaryButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto createButtonEntity = _registry.spawn_entity();
@@ -173,7 +179,7 @@ void Browser::setup_ui()
         .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
         .text("No open instances. Create one or wait for others to create.")
         .fontSize(renderManager.scaleSizeW(2))
-        .textColor(WHITE)
+        .textColor(theme.secondaryTextColor)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto infoEntity = _registry.spawn_entity();
@@ -181,14 +187,14 @@ void Browser::setup_ui()
     _instanceEntities.push_back(infoEntity);
 
     // Back Button
-    auto backButton = ButtonBuilder()
+    auto backButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(40), renderManager.scalePosY(85))
         .size(renderManager.scaleSizeW(20), renderManager.scaleSizeH(8))
         .text("BACK")
-        .red()
-        .textColor(WHITE)
+        .color(theme.exitButtonColors.normal)
+        .textColor(theme.textColor)
         .fontSize(renderManager.scaleSizeW(2))
-        .border(2, WHITE)
+        .border(2, theme.exitButtonColors.border)
         .onClick([this]() {
             // Disconnect before going back
             auto client = RType::Network::get_client();
@@ -205,6 +211,8 @@ void Browser::setup_ui()
                 this->_stateManager->push_state("Connection"); // go back to Connection tab
             }
         })
+        .neonColors(theme.exitButtonColors.neonColor, theme.exitButtonColors.neonGlowColor)
+        .glitchParams(2.0f, 8.0f, true)
         .build(winInfos.getWidth(), winInfos.getHeight());
 
     auto backButtonEntity = _registry.spawn_entity();
@@ -235,13 +243,14 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
 
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
+    auto &theme = ThemeManager::instance().getTheme();
 
     if (list.empty()) {
         auto infoLabel = TextBuilder()
             .at(renderManager.scalePosX(20), renderManager.scalePosY(40))
             .text("No open instances. Create one or wait for others to create.")
             .fontSize(renderManager.scaleSizeW(2))
-            .textColor(WHITE)
+            .textColor(theme.secondaryTextColor)
             .build(winInfos.getWidth(), winInfos.getHeight());
         auto infoEntity = _registry.spawn_entity();
         _registry.add_component(infoEntity, UI::UIComponent(infoLabel));
@@ -257,7 +266,7 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
             .at(renderManager.scalePosX(20), renderManager.scalePosY(40 + i*10))
             .text(labelText.c_str())
             .fontSize(renderManager.scaleSizeW(2))
-            .textColor(WHITE)
+            .textColor(theme.secondaryTextColor)
             .build(winInfos.getWidth(), winInfos.getHeight());
         auto labelEntity = _registry.spawn_entity();
         _registry.add_component(labelEntity, UI::UIComponent(label));
@@ -266,14 +275,14 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
         // Join button
             // Capture state manager pointer, avoid capturing `this` to prevent dangling access in callback
             auto *stateMgrJoin = this->_stateManager;
-            auto joinButton = ButtonBuilder()
+            auto joinButton = GlitchButtonBuilder()
             .at(renderManager.scalePosX(60), renderManager.scalePosY(40 + i*10))
             .size(renderManager.scaleSizeW(15), renderManager.scaleSizeH(6))
             .text("JOIN")
-            .green()
-            .textColor(WHITE)
+            .color(theme.secondaryButtonColors.normal)
+            .textColor(theme.textColor)
             .fontSize(renderManager.scaleSizeW(2))
-            .border(2, WHITE)
+            .border(2, theme.secondaryButtonColors.border)
             .onClick([port = inst.port, stateMgrJoin]() {
                 // Connect directly to instance. First, gracefully leave the front server so
                 // we do not receive front-server broadcasts while connected to the instance.
@@ -303,6 +312,8 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
                     bus.emit_deferred(ev);
                 }
             })
+            .neonColors(theme.secondaryButtonColors.neonColor, theme.secondaryButtonColors.neonGlowColor)
+            .glitchParams(2.0f, 8.0f, true)
             .build(winInfos.getWidth(), winInfos.getHeight());
         auto btnEntity = _registry.spawn_entity();
         _registry.add_component(btnEntity, UI::UIComponent(joinButton));
