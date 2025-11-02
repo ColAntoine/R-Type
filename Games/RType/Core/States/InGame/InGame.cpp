@@ -296,7 +296,7 @@ void InGameState::startMusic()
         try {
             std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
             audioManager.get_music().load("game_theme", gameMusicPath);
-            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume() * 1.5f);
             std::cout << "[InGame] Playing game music" << std::endl;
         } catch (const std::exception& ex) {
             std::cerr << "[InGame] Error playing game music: " << ex.what() << std::endl;
