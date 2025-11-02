@@ -17,6 +17,7 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "ECS/Messaging/MessagingManager.hpp"
 #include "Constants.hpp"
 
 PowerUpSys::PowerUpSys()
@@ -180,10 +181,24 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, co
                 ctrl->speed *= 1.5f;
             }
             std::cout << "Applied PLAYER_SPEED powerup\n";
+            {
+                Event statsEvent("PLAYER_STATS_CHANGED");
+                statsEvent.set("speed", static_cast<int>(ctrl->speed));
+                statsEvent.set("firerate", static_cast<int>(weapon._fireRate * 100));
+                statsEvent.set("damage", static_cast<int>(weapon._damage));
+                MessagingManager::instance().get_event_bus().emit(statsEvent);
+            }
             break;
         case WEAPON_FIRERATE:
             weapon._fireRate *= 1.5f;
             std::cout << "Applied WEAPON_FIRERATE powerup\n";
+            {
+                Event statsEvent("PLAYER_STATS_CHANGED");
+                statsEvent.set("speed", static_cast<int>(ctrl->speed));
+                statsEvent.set("firerate", static_cast<int>(weapon._fireRate * 100));
+                statsEvent.set("damage", static_cast<int>(weapon._damage));
+                MessagingManager::instance().get_event_bus().emit(statsEvent);
+            }
             break;
         case WEAPON_NEW:
             {
@@ -205,6 +220,9 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, co
                 int increase = 20 * (wave + 1);
                 health->_health += increase;
                 std::cout << "Applied HEALTH_UP powerup: +" << increase << " health\n";
+                Event healthEvent("PLAYER_HEALTH_CHANGED");
+                healthEvent.set("health", static_cast<int>(health->_health));
+                MessagingManager::instance().get_event_bus().emit(healthEvent);
             }
             break;
         case WEAPON_DAMAGE:
@@ -212,6 +230,11 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, co
                 int increase = 5 * (wave + 1);
                 weapon._damage += increase;
                 std::cout << "Applied WEAPON_DAMAGE powerup: +" << increase << " damage\n";
+                Event statsEvent("PLAYER_STATS_CHANGED");
+                statsEvent.set("speed", static_cast<int>(ctrl->speed));
+                statsEvent.set("firerate", static_cast<int>(weapon._fireRate * 100));
+                statsEvent.set("damage", static_cast<int>(weapon._damage));
+                MessagingManager::instance().get_event_bus().emit(statsEvent);
             }
             break;
     }

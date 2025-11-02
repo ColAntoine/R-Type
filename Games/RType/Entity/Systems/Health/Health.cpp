@@ -13,6 +13,8 @@
 
 #include "Entity/Components/Score/Score.hpp"
 #include "Entity/Components/Enemy/Enemy.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
@@ -30,6 +32,7 @@
 void HealthSys::update(registry& r, float dt ATTR_MAYBE_UNUSED) {
     checkAndKillEnemy(r);
     checkAndKillPlayer(r);
+    emitPlayerHealthStats(r);
 }
 
 void HealthSys::checkAndKillEnemy(registry &r)
@@ -132,6 +135,31 @@ void HealthSys::addScore(registry &r, int amount)
         Event scoreEvent("SCORE_INCREASED");
         scoreEvent.set("amount", amount);
         MessagingManager::instance().get_event_bus().emit(scoreEvent);
+    }
+}
+
+void HealthSys::emitPlayerHealthStats(registry &r)
+{
+    auto *playerArr = r.get_if<Player>();
+    auto *healthArr = r.get_if<Health>();
+    auto *weaponArr = r.get_if<Weapon>();
+    auto *ctrlArr = r.get_if<controllable>();
+
+    if (!playerArr || !healthArr || !weaponArr || !ctrlArr) return;
+
+    for (auto [player, health, weapon, ctrl, ent] : zipper(*playerArr, *healthArr, *weaponArr, *ctrlArr)) {
+        // Emit health change
+        Event healthEvent("PLAYER_HEALTH_CHANGED");
+        healthEvent.set("health", static_cast<int>(health._health));
+        MessagingManager::instance().get_event_bus().emit(healthEvent);
+
+        // Emit stats change
+        Event statsEvent("PLAYER_STATS_CHANGED");
+        statsEvent.set("speed", static_cast<int>(ctrl.speed));
+        statsEvent.set("firerate", static_cast<int>(weapon._fireRate * 100));
+        statsEvent.set("damage", static_cast<int>(weapon._damage));
+        MessagingManager::instance().get_event_bus().emit(statsEvent);
+        return;
     }
 }
 
