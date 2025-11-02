@@ -15,6 +15,7 @@
 
 #include <cmath>
 #include "ECS/Renderer/RenderManager.hpp"
+#include "Constants.hpp"
 
 Shoot::Shoot()
 : _shootType()
@@ -71,6 +72,9 @@ void Shoot::spawnProjectiles(registry &r, float dt)
 
     if (!weaponArr || !posArr) return;
 
+    auto& renderManager = RenderManager::instance();
+    auto winInfos = renderManager.get_screen_infos();
+
     for (auto [weapon, pos, entityId]: zipper(*weaponArr, *posArr)) {
         if (weapon._cooldown > 0.0f) {
             weapon._cooldown = std::max(0.0f, weapon._cooldown - dt);
@@ -100,8 +104,10 @@ void Shoot::spawnProjectiles(registry &r, float dt)
             spawnY = pos.y + col.offset_y + col.h / 2.0f;
         }
 
+        float speed_scale = GET_SCALED_SPEED(1.0f, winInfos.getWidth(), winInfos.getHeight());
+
         for (const auto& projType : weapon._projectileType) {
-            ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY, weapon._shouldShootSpecial};
+            ProjectileContext ctx{r, entity(entityId), weapon, spawnX, spawnY, dirX, dirY, weapon._shouldShootSpecial, speed_scale};
 
             auto it = _shootType.find(projType);
             if (it != _shootType.end()) {
@@ -223,10 +229,10 @@ void Shoot::shootBaseBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", ctx.frame_width, ctx.frame_height, 0.3f * ctx.speed_scale, 0.3f * ctx.speed_scale, 0, false);
     ctx.r.emplace_component<lifetime>(projectile);
     ctx.r.emplace_component<Gravity>(projectile, 100.0f);
 }
@@ -235,10 +241,10 @@ void Shoot::shootHardBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", 220, 220, 0.1f, 0.1f, 0, false);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", ctx.frame_width, ctx.frame_height, 0.3f * ctx.speed_scale, 0.3f * ctx.speed_scale, 0, false);
     ctx.r.emplace_component<lifetime>(projectile);
 }
 
@@ -246,10 +252,10 @@ void Shoot::shootBigBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage * 2, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 110.0f, true));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage * 2, ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_x, ctx.dir_y, 5.0f, 110.0f, true));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", 220, 220, 1.0f, 1.0f, 0, false);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/Binary_bullet-Sheet.png", ctx.frame_width, ctx.frame_height, 0.5f * ctx.speed_scale, 0.5f * ctx.speed_scale, 0, false);
     ctx.r.emplace_component<lifetime>(projectile);
 }
 
@@ -257,20 +263,20 @@ void Shoot::shootParabolBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
+    ctx.r.emplace_component<velocity>(projectile, ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.2f * ctx.speed_scale, 1.2f * ctx.speed_scale, 3, false);
     ctx.r.emplace_component<lifetime>(projectile);
     ctx.r.emplace_component<Gravity>(projectile, 500.0f);
     ctx.r.emplace_component<Parabol>(projectile, ctx.spawn_x, ctx.spawn_y, 200.0f, false);
 
     auto projectile2 = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile2, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
+    ctx.r.emplace_component<Projectile>(projectile2, Projectile(ctx.owner_entity, ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_x, ctx.dir_y, 5.0f, 4.0f, true));
     ctx.r.emplace_component<position>(projectile2, ctx.spawn_x, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile2, ctx.dir_x * ctx.weapon._projectileSpeed, ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile2, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
+    ctx.r.emplace_component<velocity>(projectile2, ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale, ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile2, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.2f * ctx.speed_scale, 1.2f * ctx.speed_scale, 3, false);
     ctx.r.emplace_component<lifetime>(projectile2);
     ctx.r.emplace_component<Gravity>(projectile2, -500.0f);
     ctx.r.emplace_component<Parabol>(projectile2, ctx.spawn_x, ctx.spawn_y, 200.0f, true);
@@ -280,10 +286,10 @@ void Shoot::shootEnemyBullets(const ProjectileContext& ctx)
 {
     auto projectile = ctx.r.spawn_entity();
 
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 4.0f, false));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, -1.0f, 0.0f, 5.0f, 4.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/enemyBullet.png", 24, 24, 3.0f, 3.0f, 8, false);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale), ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/enemyBullet.png", 24, 24, 3.0f * ctx.speed_scale, 3.0f * ctx.speed_scale, 8, false);
     ctx.r.emplace_component<lifetime>(projectile, 30.f);
 }
 
@@ -293,15 +299,15 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
 
     RenderManager &renderManager = RenderManager::instance();
     float spawnY = renderManager.scalePosY(-100.f);
-    float velY = (ctx.dir_x * ctx.weapon._projectileSpeed);
+    float velY = (ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale);
     float velX = 0.f;
 
     for (int i = 0; i < 5; ++i) {
         auto proj = ctx.r.spawn_entity();
-        ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * 2.0f, -1.0f, 0.0f, 5.0f, 10.0f, false));
+        ctx.r.emplace_component<Projectile>(proj, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * 2.0f * ctx.speed_scale, -1.0f, 0.0f, 5.0f, 10.0f, false));
         ctx.r.emplace_component<position>(proj, ctx.spawn_x - (i * renderManager.scaleSizeW(5)), -200.f - (i * renderManager.scaleSizeW(3)));
         ctx.r.emplace_component<velocity>(proj, velX, velY);
-        ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
+        ctx.r.emplace_component<animation>(proj, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f * ctx.speed_scale, 0.50f * ctx.speed_scale, 0, false);
         ctx.r.emplace_component<lifetime>(proj, 30.f);
     }
 }
@@ -309,10 +315,10 @@ void Shoot::shootDropBullets(const ProjectileContext& ctx)
 void Shoot::shootFollowingBullets(const ProjectileContext &ctx)
 {
     auto projectile = ctx.r.spawn_entity();
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, -1.0f, 0.0f, 5.0f, 5.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/followingShoot.gif", 17.08f, 18, 5.0f, 5.0f, 12, false);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale), ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/followingShoot.gif", 17.08f, 18, 5.0f * ctx.speed_scale, 5.0f * ctx.speed_scale, 12, false);
     ctx.r.emplace_component<lifetime>(projectile, 10.f);
     ctx.r.emplace_component<Following>(projectile);
 }
@@ -326,16 +332,16 @@ void Shoot::shootWaveBullets(const ProjectileContext &ctx)
         {"explode"},
         1.f,
         10.f,
-        600.f,
+        600.f * ctx.speed_scale,
         -1,
         true
     );
     w._wantsToFire = false;
     w._automatic = false;
-    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed, -1.0f, 0.0f, 5.0f, 5.0f, false));
+    ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, ctx.weapon._projectileSpeed * ctx.speed_scale, -1.0f, 0.0f, 5.0f, 5.0f, false));
     ctx.r.emplace_component<position>(projectile, ctx.spawn_x - 10.0f, ctx.spawn_y);
-    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed), ctx.dir_y * ctx.weapon._projectileSpeed);
-    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f, 0.50f, 0, false);
+    ctx.r.emplace_component<velocity>(projectile, -(ctx.dir_x * ctx.weapon._projectileSpeed * ctx.speed_scale), ctx.dir_y * ctx.weapon._projectileSpeed * ctx.speed_scale);
+    ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/rocket.png", 400, 400, 0.50f * ctx.speed_scale, 0.50f * ctx.speed_scale, 0, false);
     ctx.r.emplace_component<Following>(projectile);
     ctx.r.emplace_component<WaveShoot>(projectile);
     ctx.r.emplace_component<Weapon>(projectile, w);
@@ -345,7 +351,7 @@ void Shoot::shootExplosionBullets(const ProjectileContext &ctx)
 {
     int count = 10;
     float TWO_PI = 6.283185307179586f;
-    float speed = ctx.weapon._projectileSpeed > 0 ? ctx.weapon._projectileSpeed : 300.f;
+    float speed = ctx.weapon._projectileSpeed > 0 ? ctx.weapon._projectileSpeed * ctx.speed_scale : 300.f * ctx.speed_scale;
 
     for (int i = 0; i < count; ++i) {
         float angle = (TWO_PI * static_cast<float>(i)) / static_cast<float>(count);
@@ -356,7 +362,7 @@ void Shoot::shootExplosionBullets(const ProjectileContext &ctx)
         ctx.r.emplace_component<Projectile>(projectile, Projectile(static_cast<int>(ctx.owner_entity), ctx.weapon._damage, speed, vx, vy, 5.0f, 5.0f, false));
         ctx.r.emplace_component<position>(projectile, ctx.spawn_x, ctx.spawn_y);
         ctx.r.emplace_component<velocity>(projectile, vx, vy);
-        ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f, 1.0f, 3, false);
+        ctx.r.emplace_component<animation>(projectile, std::string(RTYPE_PATH_ASSETS) + "Shoots/pbShoot.gif", 34, 34, 1.0f * ctx.speed_scale, 1.0f * ctx.speed_scale, 3, false);
         ctx.r.emplace_component<lifetime>(projectile, 5.f);
     }
 }

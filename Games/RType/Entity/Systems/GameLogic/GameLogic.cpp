@@ -30,8 +30,8 @@ void GameLogic::updateScore(registry &r)
 
 void GameLogic::updateState(registry  &r)
 {
-    if (_gameScore._score != 0 && _gameScore._score % 50 == 0) {
-        std::cout << "[GameLogic] Score reached " << _gameScore._score << ", spawning boss." << std::endl;
+    if (_gameScore._score != 0 && _gameScore._score % 50 == 0 && _lastBossSpawnScore != _gameScore._score) {
+        _lastBossSpawnScore = _gameScore._score;
         killAllEnemy(r);
         _gameScore._score += 1;
         spawnBoss(r);

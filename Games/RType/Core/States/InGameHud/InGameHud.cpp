@@ -2,6 +2,10 @@
 #include "ECS/UI/UIBuilder.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "UI/ThemeManager.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Weapon/Weapon.hpp"
+#include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
 
 #include "ECS/Messaging/MessagingManager.hpp"
 
@@ -24,10 +28,27 @@ void InGameHudState::enter()
     setup_ui();
     subscribe_to_ui_event();
 
-    MessagingManager::instance().get_event_bus().subscribe(EventTypes::SCORE_INCREASED, [this](const Event& event) {
+    auto& eventBus = MessagingManager::instance().get_event_bus();
+
+    eventBus.subscribe(EventTypes::SCORE_INCREASED, [this](const Event& event) {
         _score += event.get<int>("amount");
         set_score_text();
     });
+
+    _healthCallbackId = eventBus.subscribe("PLAYER_HEALTH_CHANGED", [this](const Event& event) {
+        if (event.has("health")) {
+            _health = event.get<int>("health");
+            set_health_text(_health);
+        }
+    });
+
+    _statsCallbackId = eventBus.subscribe("PLAYER_STATS_CHANGED", [this](const Event& event) {
+        if (event.has("speed")) _speed = event.get<int>("speed");
+        if (event.has("firerate")) _firerate = event.get<int>("firerate");
+        if (event.has("damage")) _damage = event.get<int>("damage");
+        set_stats_text(_speed, _firerate, _damage);
+    });
+
     _initialized = true;
 }
 
@@ -35,6 +56,8 @@ void InGameHudState::exit()
 {
     auto &eventBus = MessagingManager::instance().get_event_bus();
     eventBus.unsubscribe(_uiEventCallbackId);
+    if (_healthCallbackId != -1) eventBus.unsubscribe(_healthCallbackId);
+    if (_statsCallbackId != -1) eventBus.unsubscribe(_statsCallbackId);
     _initialized = false;
 }
 
@@ -77,6 +100,30 @@ void InGameHudState::setup_ui()
     _registry.add_component<UI::UIComponent>(_scoreTextEntity, UI::UIComponent(scoreText));
     _registry.add_component<ScoreText>(_scoreTextEntity, ScoreText());    // ? Tag to access it quickly
 
+    // Health text - displayed in bottom left
+    auto healthText = TextBuilder()
+        .at(renderManager.scalePosX(1), renderManager.scalePosY(95))
+        .text("Health: 100")
+        .textColor(theme.gameColors.primary)
+        .fontSize(renderManager.scaleSizeW(2.5f))
+    .build(winInfos.getWidth(), winInfos.getWidth());
+
+    _healthTextEntity = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(_healthTextEntity, UI::UIComponent(healthText));
+    _registry.add_component<HealthText>(_healthTextEntity, HealthText());
+
+    // Stats text - displayed in bottom center
+    auto statsText = TextBuilder()
+        .at(renderManager.scalePosX(40), renderManager.scalePosY(95))
+        .text("Speed: 0 | Firerate: 0 | Dmg: 0")
+        .textColor(theme.gameColors.secondary)
+        .fontSize(renderManager.scaleSizeW(2.5f))
+    .build(winInfos.getWidth(), winInfos.getWidth());
+
+    _statsTextEntity = _registry.spawn_entity();
+    _registry.add_component<UI::UIComponent>(_statsTextEntity, UI::UIComponent(statsText));
+    _registry.add_component<StatsText>(_statsTextEntity, StatsText());
+
     auto fpsText = TextBuilder()
         .at(renderManager.scalePosX(99), renderManager.scalePosY(1))
         .text("FPS: " + std::to_string(GetFPS()))
@@ -103,3 +150,21 @@ void InGameHudState::update(float delta_time)
     _systemLoader->update_all_systems(_registry, delta_time, ILoader::LogicSystem);
 }
 
+void InGameHudState::set_health_text(int health)
+{
+    auto health_text = get_health_text();
+    if (health_text) {
+        health_text->setText("Health: " + std::to_string(health));
+    }
+}
+
+void InGameHudState::set_stats_text(int speed, int firerate, int damage)
+{
+    auto stats_text = get_stats_text();
+    if (stats_text) {
+        std::string stats_str = "Speed: " + std::to_string(speed) + 
+                               " | Firerate: " + std::to_string(firerate) + 
+                               " | Dmg: " + std::to_string(damage);
+        stats_text->setText(stats_str);
+    }
+}

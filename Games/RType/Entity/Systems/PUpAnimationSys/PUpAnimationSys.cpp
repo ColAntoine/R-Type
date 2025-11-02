@@ -11,6 +11,7 @@
 
 #include "PUpAnimationSys.hpp"
 #include "UI/ThemeManager.hpp"
+#include "Constants.hpp"
 
 PUpAnimationSys::PUpAnimationSys()
 {
@@ -120,8 +121,8 @@ void PUpAnimationSys::createArrow(registry &r)
     float screen_h = renderManager.get_screen_infos().getHeight();
     float target_w = screen_w * 0.05f;
     float target_h = screen_h * 0.10f;
-    float sx = target_w / orig_w;
-    float sy = target_h / orig_h;
+    float sx = GET_SCALE_X(target_w / orig_w, screen_w);
+    float sy = GET_SCALE_Y(target_h / orig_h, screen_h);
     auto &sp = r.emplace_component<sprite>(_arrowEnt, std::string(RTYPE_PATH_ASSETS) + "pUpArrow.gif", orig_w, orig_h, sx, sy);
     sp.rotation = _current._up ? 180.f : 0.f;
     r.emplace_component<animationArrow>(_arrowEnt);
@@ -136,10 +137,11 @@ void PUpAnimationSys::createText(registry &r)
 {
     RenderManager &renderManager = RenderManager::instance();
 
-    float textX = renderManager.scalePosX(44);
-    float textY = renderManager.scalePosY(65);
     float screen_w = renderManager.get_screen_infos().getWidth();
     float screen_h = renderManager.get_screen_infos().getHeight();
+
+    float textX = renderManager.scalePosX(45);
+    float textY = renderManager.scalePosY(55);
 
     auto &theme = ThemeManager::instance().getTheme();
 
@@ -153,11 +155,13 @@ void PUpAnimationSys::createText(registry &r)
     uiText->setCustomRender([](const UI::UIText& text) {
         auto &renderer = RenderManager::instance();
         Vector2 pos = text.getPosition();
-        int font_size = text.getStyle().getFontSize();
+        int base_font_size = text.getStyle().getFontSize();
+        float screen_w = renderer.get_screen_infos().getWidth();
+        float scaled_font_size = GET_SCALE_X(base_font_size, screen_w);
         double t = GetTime();
         auto &theme = ThemeManager::instance().getTheme();
         Color color = (fmod(t, 0.5) < 0.25) ? theme.gameColors.secondary : theme.gameColors.primary;
-        renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), font_size, color);
+        renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), static_cast<int>(scaled_font_size), color);
     });
 
     auto textEnt = r.spawn_entity();

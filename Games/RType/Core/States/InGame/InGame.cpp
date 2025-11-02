@@ -8,9 +8,11 @@
 #include "Core/Server/Protocol/Protocol.hpp"
 #include "Core/Config/Config.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include "Core/KeyBindingManager/KeyBindingManager.hpp"
 #include "ECS/Audio/AudioManager.hpp"
 #include "UI/ThemeManager.hpp"
+#include "Constants.hpp"
 
 #include <string>
 #include <random>
@@ -57,22 +59,18 @@ void InGameState::enter()
     loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_PUpAnimationSys" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/librender_UISystem" + ext, ILoader::RenderSystem);
-
     loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_KeyInput" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Shoot" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
-
-    // ! unload the enemy for boss testing
     loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
 
     loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
-
     loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
     loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
@@ -259,13 +257,24 @@ void InGameState::createPlayer()
     _playerEntity = reg.spawn_entity();
     std::cout << "[InGame] Spawned player entity: " << static_cast<size_t>(_playerEntity) << std::endl;
 
+    auto winInfos = RenderManager::instance().get_screen_infos();
     if (componentFactory) {
         componentFactory->create_component<position>(reg, _playerEntity, PLAYER_SPAWN_X, PLAYER_SPAWN_Y);
-        componentFactory->create_component<animation>(reg, _playerEntity,  std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400, 400, 0.25, 0.25, 0, true);
-        componentFactory->create_component<controllable>(reg, _playerEntity, 300.f);
+        componentFactory->create_component<animation>(reg, _playerEntity,
+            std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png",
+            400, 400,
+            GET_SCALE_X(0.25, winInfos.getWidth()), GET_SCALE_Y(0.25, winInfos.getHeight()),
+            0, true
+        );
+        componentFactory->create_component<controllable>(reg, _playerEntity, GET_SCALED_SPEED(300.0f, winInfos.getWidth(), winInfos.getHeight()));
         componentFactory->create_component<Input>(reg, _playerEntity);
         componentFactory->create_component<Weapon>(reg, _playerEntity);
-        componentFactory->create_component<collider>(reg, _playerEntity, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
+        componentFactory->create_component<collider>(reg, _playerEntity,
+            GET_SCALE_X(COLLISION_WIDTH, winInfos.getWidth()),
+            GET_SCALE_Y(COLLISION_HEIGHT, winInfos.getHeight()),
+            -GET_SCALE_X(COLLISION_WIDTH / 2, winInfos.getWidth()),
+            -GET_SCALE_Y(COLLISION_HEIGHT / 2, winInfos.getHeight())
+        );
         componentFactory->create_component<Score>(reg, _playerEntity);
         componentFactory->create_component<Health>(reg, _playerEntity);
         componentFactory->create_component<Player>(reg, _playerEntity);
@@ -283,7 +292,7 @@ void InGameState::startMusic()
         try {
             std::string gameMusicPath = std::string(RTYPE_PATH_ASSETS) + "Audio/Game.mp3";
             audioManager.get_music().load("game_theme", gameMusicPath);
-            audioManager.get_music().play("game_theme", audioManager.get_music_volume());
+            audioManager.get_music().play("game_theme", audioManager.get_music_volume() * 1.5f);
             std::cout << "[InGame] Playing game music" << std::endl;
         } catch (const std::exception& ex) {
             std::cerr << "[InGame] Error playing game music: " << ex.what() << std::endl;

@@ -37,6 +37,7 @@ private:
     void checkAndKillEnemy(registry &r);
     void checkAndKillPlayer(registry &r);
     void addScore(registry &r, int amount = 1);
+    void emitPlayerHealthStats(registry &r);
     
     EntityDestroyCallback destroy_callback_;
 };

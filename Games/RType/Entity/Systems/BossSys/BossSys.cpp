@@ -39,13 +39,12 @@ void BossSys::update(registry& r, float dt)
         }
     }
 
-    // Check if boss is dead
     if (healthArr && bossArr) {
         for (auto [health, boss, ent]: zipper(*healthArr, *bossArr)) {
             if (health._health <= 0) {
                 std::cout << "[BossSys] Boss defeated! Health: " << health._health << std::endl;
                 stopBossMusic(r);
-                return;  // Boss is dead, skip further updates
+                return;
             }
         }
     }
@@ -93,6 +92,7 @@ void BossSys::spawn(registry &r)
         std::cout << "wave: " << wave << std::endl;
         Weapon w(
             entity(bossEnt),
+            // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
             BOSS_BASE_FIRERATE * static_cast<float>(wave),
             BOSS_BASE_DAMAGE * static_cast<float>(wave),
