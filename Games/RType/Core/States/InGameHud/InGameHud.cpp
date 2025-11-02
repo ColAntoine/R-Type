@@ -29,29 +29,26 @@ void InGameHudState::enter()
     subscribe_to_ui_event();
 
     auto& eventBus = MessagingManager::instance().get_event_bus();
-    
-    // Subscribe to score changes
+
     eventBus.subscribe(EventTypes::SCORE_INCREASED, [this](const Event& event) {
         _score += event.get<int>("amount");
         set_score_text();
     });
-    
-    // Subscribe to health changes
+
     _healthCallbackId = eventBus.subscribe("PLAYER_HEALTH_CHANGED", [this](const Event& event) {
         if (event.has("health")) {
             _health = event.get<int>("health");
             set_health_text(_health);
         }
     });
-    
-    // Subscribe to stats changes
+
     _statsCallbackId = eventBus.subscribe("PLAYER_STATS_CHANGED", [this](const Event& event) {
         if (event.has("speed")) _speed = event.get<int>("speed");
         if (event.has("firerate")) _firerate = event.get<int>("firerate");
         if (event.has("damage")) _damage = event.get<int>("damage");
         set_stats_text(_speed, _firerate, _damage);
     });
-    
+
     _initialized = true;
 }
 
@@ -117,8 +114,8 @@ void InGameHudState::setup_ui()
 
     // Stats text - displayed in bottom center
     auto statsText = TextBuilder()
-        .at(renderManager.scalePosX(35), renderManager.scalePosY(95))
-        .text("Speed: 0 | Fire: 0 | Dmg: 0")
+        .at(renderManager.scalePosX(40), renderManager.scalePosY(95))
+        .text("Speed: 0 | Firerate: 0 | Dmg: 0")
         .textColor(theme.gameColors.secondary)
         .fontSize(renderManager.scaleSizeW(2.5f))
     .build(winInfos.getWidth(), winInfos.getWidth());
@@ -166,7 +163,7 @@ void InGameHudState::set_stats_text(int speed, int firerate, int damage)
     auto stats_text = get_stats_text();
     if (stats_text) {
         std::string stats_str = "Speed: " + std::to_string(speed) + 
-                               " | Fire: " + std::to_string(firerate) + 
+                               " | Firerate: " + std::to_string(firerate) + 
                                " | Dmg: " + std::to_string(damage);
         stats_text->setText(stats_str);
     }

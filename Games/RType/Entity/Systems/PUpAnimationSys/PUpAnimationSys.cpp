@@ -140,8 +140,8 @@ void PUpAnimationSys::createText(registry &r)
     float screen_w = renderManager.get_screen_infos().getWidth();
     float screen_h = renderManager.get_screen_infos().getHeight();
 
-    float textX = renderManager.scalePosX(65);
-    float textY = renderManager.scalePosY(70);
+    float textX = renderManager.scalePosX(45);
+    float textY = renderManager.scalePosY(55);
 
     auto &theme = ThemeManager::instance().getTheme();
 
@@ -155,11 +155,13 @@ void PUpAnimationSys::createText(registry &r)
     uiText->setCustomRender([](const UI::UIText& text) {
         auto &renderer = RenderManager::instance();
         Vector2 pos = text.getPosition();
-        int font_size = text.getStyle().getFontSize();
+        int base_font_size = text.getStyle().getFontSize();
+        float screen_w = renderer.get_screen_infos().getWidth();
+        float scaled_font_size = GET_SCALE_X(base_font_size, screen_w);
         double t = GetTime();
         auto &theme = ThemeManager::instance().getTheme();
         Color color = (fmod(t, 0.5) < 0.25) ? theme.gameColors.secondary : theme.gameColors.primary;
-        renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), font_size, color);
+        renderer.draw_text(text.getText().c_str(), static_cast<int>(pos.x), static_cast<int>(pos.y), static_cast<int>(scaled_font_size), color);
     });
 
     auto textEnt = r.spawn_entity();
