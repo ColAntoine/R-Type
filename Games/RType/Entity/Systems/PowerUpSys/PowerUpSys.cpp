@@ -132,47 +132,52 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
         float p_top = pPos.y + pCol.offset_y;
         float p_bottom = pPos.y + pCol.offset_y + pCol.h;
 
+        bool powerup_collected = false;
+
+        // Check collision with local Player entities
         for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerCtrl, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr, *ctrlArr)) {
-          bool powerup_collected = false;
+            if (pEntity == playerEntity) continue;
 
-          // Check collision with local Player entities
-          if (playerArr) {
-              for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
-                  if (pEntity == playerEntity) continue;
+            float pl_left = playerPos.x + playerCol.offset_x;
+            float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
+            float pl_top = playerPos.y + playerCol.offset_y;
+            float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
 
-                  float pl_left = playerPos.x + playerCol.offset_x;
-                  float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
-                  float pl_top = playerPos.y + playerCol.offset_y;
-                  float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
-
-                  bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
-
-                  if (overlap) {
-                      int wave = getWave(r);
-                      applyPowerUps(playerWeapon, &playerVel, &playerHealth, pUp, wave);
-                      entitiesToKill.push_back(static_cast<size_t>(pEntity));
-                      auto animEnt = r.spawn_entity();
-                      r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
-                      powerup_collected = true;
-                      break;
-                  }
-              }
-        }
-
-        // If not collected yet, check collision with remote_player entities
-        if (!powerup_collected && remoteArr) {
-            for (auto [remote, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*remoteArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
-                if (pEntity == playerEntity) continue;
+            bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
 
             if (overlap) {
                 int wave = getWave(r);
                 applyPowerUps(playerWeapon, &playerVel, &playerHealth, &playerCtrl, pUp, wave);
                 entitiesToKill.push_back(static_cast<size_t>(pEntity));
                 auto animEnt = r.spawn_entity();
-                if (_pUpText.find(pUp._pwType) != _pUpText.end()) {
-                    r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
-                }
+                r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                powerup_collected = true;
                 break;
+            }
+        }
+
+        // If not collected yet, check collision with remote_player entities
+        if (!powerup_collected && remoteArr) {
+            for (auto [remote, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerCtrl, playerEntity] : zipper(*remoteArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr, *ctrlArr)) {
+                if (pEntity == playerEntity) continue;
+
+                float pl_left = playerPos.x + playerCol.offset_x;
+                float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
+                float pl_top = playerPos.y + playerCol.offset_y;
+                float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
+
+                bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
+
+                if (overlap) {
+                    int wave = getWave(r);
+                    applyPowerUps(playerWeapon, &playerVel, &playerHealth, &playerCtrl, pUp, wave);
+                    entitiesToKill.push_back(static_cast<size_t>(pEntity));
+                    auto animEnt = r.spawn_entity();
+                    if (_pUpText.find(pUp._pwType) != _pUpText.end()) {
+                        r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                    }
+                    break;
+                }
             }
         }
     }
