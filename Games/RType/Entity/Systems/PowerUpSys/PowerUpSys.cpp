@@ -186,7 +186,7 @@ void PowerUpSys::handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health
         vel->vy *= 1.5f;
     }
     if (ctrl) {
-        ctrl->speed *= 1.5f;
+        ctrl->speed *= 1.17f * static_cast<float>(wave);
     }
     std::cout << "Applied PLAYER_SPEED powerup\n";
     Event statsEvent("PLAYER_STATS_CHANGED");
@@ -198,7 +198,7 @@ void PowerUpSys::handlePlayerSpeed(Weapon &weapon, velocity *vel, Health *health
 
 void PowerUpSys::handleWeaponFirerate(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, int wave)
 {
-    weapon._fireRate *= 1.5f;
+    weapon._fireRate *= 1.2f * static_cast<float>(wave);
     std::cout << "Applied WEAPON_FIRERATE powerup\n";
     Event statsEvent("PLAYER_STATS_CHANGED");
     statsEvent.set("speed", static_cast<int>(ctrl->speed));
