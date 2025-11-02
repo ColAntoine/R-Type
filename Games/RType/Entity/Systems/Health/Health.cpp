@@ -16,6 +16,7 @@
 #include "ECS/Zipper.hpp"
 #include "ECS/Registry.hpp"
 #include "ECS/Messaging/MessagingManager.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 
 #include "Constants.hpp"
 
@@ -36,18 +37,22 @@ void HealthSys::checkAndKillEnemy(registry &r)
     auto *healthArr = r.get_if<Health>();
     auto *posArr = r.get_if<position>();
     auto *enemyArr = r.get_if<Enemy>();
+    auto *colArr = r.get_if<collider>();
     std::vector<entity> entToKill;
 
-    if (!healthArr || !enemyArr) return;
+    if (!healthArr || !enemyArr || !colArr) return;
 
-    for (auto [healthEnt, enemyComp, pos, ent] : zipper(*healthArr, *enemyArr, *posArr)) {
+    for (auto [healthEnt, enemyComp, pos, col, ent] : zipper(*healthArr, *enemyArr, *posArr, *colArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
 
             entity anim = r.spawn_entity();
-            float frame_w = 105.0f;
-            float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            float frame_w = DEATH_ANIM_FRAME_W;
+            float frame_h = DEATH_ANIM_FRAME_H;
+            float screen_w = RenderManager::instance().get_screen_infos().getWidth();
+            float scale = GET_SCALE_X(col.w / frame_w, screen_w);
+
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, scale, scale, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }
@@ -70,17 +75,21 @@ void HealthSys::checkAndKillPlayer(registry &r)
     auto *healthArr = r.get_if<Health>();
     auto *playerArr = r.get_if<Player>();
     auto *posArr = r.get_if<position>();
+    auto *colArr = r.get_if<collider>();
     std::vector<entity> entToKill;
 
-    if (!healthArr || !playerArr || !posArr) return;
+    if (!healthArr || !playerArr || !posArr || !colArr) return;
 
-    for (auto [healthEnt, player, pos, ent] : zipper(*healthArr, *playerArr, *posArr)) {
+    for (auto [healthEnt, player, pos, col, ent] : zipper(*healthArr, *playerArr, *posArr, *colArr)) {
         if (healthEnt._health <= 0) {
             entToKill.push_back(entity(ent));
             entity anim = r.spawn_entity();
-            float frame_w = 105.0f;
-            float frame_h = 107.0f;
-            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, 1.2f, 1.2f, 10, false, true);
+            float frame_w = DEATH_ANIM_FRAME_W;
+            float frame_h = DEATH_ANIM_FRAME_H;
+            float screen_w = RenderManager::instance().get_screen_infos().getWidth();
+            float scale = GET_SCALE_X(col.w / frame_w, screen_w);
+
+            r.emplace_component<animation>(anim, RTYPE_PATH_ASSETS + "EnemyDeath.png", frame_w, frame_h, scale, scale, 10, false, true);
             r.emplace_component<position>(anim, pos.x, pos.y);
         }
     }

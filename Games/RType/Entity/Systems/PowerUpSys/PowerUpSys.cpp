@@ -17,14 +17,14 @@
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "ECS/Components/Velocity.hpp"
 #include "Entity/Components/Health/Health.hpp"
+#include "Constants.hpp"
 
 PowerUpSys::PowerUpSys()
 : _rng(std::random_device{}()),
     _x_dist(0.0f, 800.0f),
-    _powerup_type_dist(0, 5)
+    _powerup_type_dist(0, 4)
 {
     _pUpText[WEAPON_FIRERATE] = "Firerate increased!";
-    _pUpText[WAEPON_COOLDOWN] = "Cooldown decreased!";
     _pUpText[PLAYER_SPEED] = "Player speed increased!";
     _pUpText[WEAPON_NEW] = "New weapon unlocked";
     _pUpText[HEALTH_UP] = "Health increased!";
@@ -46,7 +46,8 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
         float screen_width = renderManager.get_screen_infos().getWidth();
         float screen_height = renderManager.get_screen_infos().getHeight();
 
-        _x_dist = std::uniform_real_distribution<>(0.0f, screen_width);
+        float left_third = screen_width / 3.0f;
+        _x_dist = std::uniform_real_distribution<>(0.0f, left_third);
         _y_dist = std::uniform_real_distribution<>(-50.0f, 0.0f);
 
         float spawn_x = _x_dist(_rng);
@@ -55,63 +56,56 @@ void PowerUpSys::spawnPowerUps(registry &r, float dt)
         powerUpType type = static_cast<powerUpType>(_powerup_type_dist(_rng));
 
         auto ent = r.spawn_entity();
-        r.emplace_component<PowerUp>(ent, type, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f), -renderManager.scaleSizeW(2.5f), -renderManager.scaleSizeH(2.5f));
+        float pup_width = GET_SCALE_X(5.0f, screen_width);
+        float pup_height = GET_SCALE_Y(5.0f, screen_height);
+        float pup_offset_x = -pup_width / 2.0f;
+        float pup_offset_y = -pup_height / 2.0f;
+
+        r.emplace_component<PowerUp>(ent, type, pup_width, pup_height, pup_offset_x, pup_offset_y);
         r.emplace_component<position>(ent, spawn_x, spawn_y);
-        r.emplace_component<collider>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f), -renderManager.scaleSizeW(2.5f), -renderManager.scaleSizeH(2.5f));
+        r.emplace_component<collider>(ent, pup_width, pup_height, pup_offset_x, pup_offset_y);
         r.emplace_component<velocity>(ent, 0.0f, fall_speed);
 
-        float screen_w = screen_width;
-        float screen_h = screen_height;
-        float target_w = screen_w * 0.03f;
-        float target_h = screen_h * 0.03f;
+        float target_w = screen_width * 0.03f;
+        float target_h = screen_height * 0.03f;
 
         switch (type)
         {
-        case WAEPON_COOLDOWN: {
-            float orig_w = 360.f, orig_h = 360.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
-            r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/cooldown.png", orig_w, orig_h, sx, sy);
-            break;
-        }
         case WEAPON_FIRERATE: {
             float orig_w = 512.f, orig_h = 512.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
+            float sx = GET_SCALE_X(target_w / orig_w, screen_width);
+            float sy = GET_SCALE_Y(target_h / orig_h, screen_height);
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/firerate.png", orig_w, orig_h, sx, sy);
             break;
         }
         case WEAPON_NEW: {
             float orig_w = 315.f, orig_h = 250.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
+            float sx = GET_SCALE_X(target_w / orig_w, screen_width);
+            float sy = GET_SCALE_Y(target_h / orig_h, screen_height);
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/gun.png", orig_w, orig_h, sx, sy);
             break;
         }
         case PLAYER_SPEED: {
             float orig_w = 512.f, orig_h = 512.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
+            float sx = GET_SCALE_X(target_w / orig_w, screen_width);
+            float sy = GET_SCALE_Y(target_h / orig_h, screen_height);
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/speed.png", orig_w, orig_h, sx, sy);
             break;
         }
         case HEALTH_UP: {
             float orig_w = 254.f, orig_h = 254.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
+            float sx = GET_SCALE_X(target_w / orig_w, screen_width);
+            float sy = GET_SCALE_Y(target_h / orig_h, screen_height);
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/health.png", orig_w, orig_h, sx, sy);
             break;
         }
         case WEAPON_DAMAGE: {
             float orig_w = 1024.f, orig_h = 1024.f;
-            float sx = target_w / orig_w;
-            float sy = target_h / orig_h;
+            float sx = GET_SCALE_X(target_w / orig_w, screen_width);
+            float sy = GET_SCALE_Y(target_h / orig_h, screen_height);
             r.emplace_component<sprite>(ent, std::string(RTYPE_PATH_ASSETS) + "PowerUps/damage.png", orig_w, orig_h, sx, sy);
             break;
         }
-        default:
-            r.emplace_component<drawable>(ent, renderManager.scaleSizeW(5.0f), renderManager.scaleSizeH(5.0f));
-            break;
         }
 
         _spawn_timer = 0.0f;
@@ -127,8 +121,9 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     auto weaponArr = r.get_if<Weapon>();
     auto velArr = r.get_if<velocity>();
     auto healthArr = r.get_if<Health>();
+    auto ctrlArr = r.get_if<controllable>();
 
-    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr || !velArr || !healthArr) return;
+    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr || !velArr || !healthArr || !ctrlArr) return;
 
     std::vector<size_t> entitiesToKill;
 
@@ -138,7 +133,7 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
         float p_top = pPos.y + pCol.offset_y;
         float p_bottom = pPos.y + pCol.offset_y + pCol.h;
 
-        for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
+        for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerCtrl, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr, *ctrlArr)) {
             if (pEntity == playerEntity) continue;
 
             float pl_left = playerPos.x + playerCol.offset_x;
@@ -150,10 +145,12 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
 
             if (overlap) {
                 int wave = getWave(r);
-                applyPowerUps(playerWeapon, &playerVel, &playerHealth, pUp, wave);
+                applyPowerUps(playerWeapon, &playerVel, &playerHealth, &playerCtrl, pUp, wave);
                 entitiesToKill.push_back(static_cast<size_t>(pEntity));
                 auto animEnt = r.spawn_entity();
-                r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                if (_pUpText.find(pUp._pwType) != _pUpText.end()) {
+                    r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                }
                 break;
             }
         }
@@ -171,7 +168,7 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     }
 }
 
-void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, PowerUp &pUp, int wave)
+void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, PowerUp &pUp, int wave)
 {
     switch (pUp._pwType) {
         case PLAYER_SPEED:
@@ -179,15 +176,14 @@ void PowerUpSys::applyPowerUps(Weapon &weapon, velocity *vel, Health *health, Po
                 vel->vx *= 1.5f;
                 vel->vy *= 1.5f;
             }
+            if (ctrl) {
+                ctrl->speed *= 1.5f;
+            }
             std::cout << "Applied PLAYER_SPEED powerup\n";
             break;
         case WEAPON_FIRERATE:
             weapon._fireRate *= 1.5f;
             std::cout << "Applied WEAPON_FIRERATE powerup\n";
-            break;
-        case WAEPON_COOLDOWN:
-            weapon._cooldown *= 0.5f;
-            std::cout << "Applied WAEPON_COOLDOWN powerup\n";
             break;
         case WEAPON_NEW:
             {

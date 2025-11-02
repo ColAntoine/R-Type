@@ -40,7 +40,10 @@
 #define PLAYER_SPAWN_Y      200.f
 // =============================================================================
 
-// ==================================SCALE=====================================
+// ================================DEATH ANIMATION==============================
+#define DEATH_ANIM_FRAME_W  105.0f
+#define DEATH_ANIM_FRAME_H  107.0f
+// ====================================SCALE====================================
 #define GET_SCALE_X(ratio, width)    (ratio * (width / SCREEN_WIDTH))
 #define GET_SCALE_Y(ratio, height)   (ratio * (height / SCREEN_HEIGHT))
 #define GET_SCALED_SPEED(base_speed, width, height) \

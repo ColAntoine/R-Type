@@ -11,6 +11,7 @@
 
 #include "PUpAnimationSys.hpp"
 #include "UI/ThemeManager.hpp"
+#include "Constants.hpp"
 
 PUpAnimationSys::PUpAnimationSys()
 {
@@ -120,8 +121,8 @@ void PUpAnimationSys::createArrow(registry &r)
     float screen_h = renderManager.get_screen_infos().getHeight();
     float target_w = screen_w * 0.05f;
     float target_h = screen_h * 0.10f;
-    float sx = target_w / orig_w;
-    float sy = target_h / orig_h;
+    float sx = GET_SCALE_X(target_w / orig_w, screen_w);
+    float sy = GET_SCALE_Y(target_h / orig_h, screen_h);
     auto &sp = r.emplace_component<sprite>(_arrowEnt, std::string(RTYPE_PATH_ASSETS) + "pUpArrow.gif", orig_w, orig_h, sx, sy);
     sp.rotation = _current._up ? 180.f : 0.f;
     r.emplace_component<animationArrow>(_arrowEnt);
@@ -136,10 +137,11 @@ void PUpAnimationSys::createText(registry &r)
 {
     RenderManager &renderManager = RenderManager::instance();
 
-    float textX = renderManager.scalePosX(44);
-    float textY = renderManager.scalePosY(65);
     float screen_w = renderManager.get_screen_infos().getWidth();
     float screen_h = renderManager.get_screen_infos().getHeight();
+
+    float textX = renderManager.scalePosX(65);
+    float textY = renderManager.scalePosY(70);
 
     auto &theme = ThemeManager::instance().getTheme();
 

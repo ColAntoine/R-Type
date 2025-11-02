@@ -22,6 +22,7 @@
 #include "Entity/Components/CurrentWave/CurrentWave.hpp"
 #include "Entity/Components/Player/Player.hpp"
 #include "Entity/Components/PUpAnimation/PUpAnimation.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
 
 #include "Constants.hpp"
 
@@ -39,7 +40,7 @@ public:
 private:
     void spawnPowerUps(registry &r, float dt);
     void colisionPowerUps(registry &r, float dt);
-    void applyPowerUps(Weapon &weapon, velocity *vel, Health *health, PowerUp &pUp, int wave);
+    void applyPowerUps(Weapon &weapon, velocity *vel, Health *health, controllable *ctrl, PowerUp &pUp, int wave);
     int getWave(registry &r);
 
     std::map<powerUpType, std::function<void(registry &)>> _pFunc;
