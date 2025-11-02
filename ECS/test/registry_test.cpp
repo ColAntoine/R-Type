@@ -27,7 +27,6 @@ TEST_CASE("kill_entity() puis spawn_entity() réutilise l'ID libéré (LIFO)")
     auto e2 = r.spawn_entity();
     auto e3 = r.spawn_entity();
 
-    // On libère e2 puis e3 -> la réutilisation doit se faire dans l'ordre inverse (LIFO)
     r.kill_entity(e2);
     r.kill_entity(e3);
 

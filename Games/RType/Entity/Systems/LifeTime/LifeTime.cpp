@@ -40,7 +40,6 @@ void LifetimeSystem::update(registry& r, float dt) {
             should_destroy = true;
         }
 
-        // Check if entity is offscreen and should be destroyed
         if (life_comp.destroy_offscreen) {
             if (pos_comp.x < -100 || pos_comp.x > window_width + 100) {
                 should_destroy = true;
@@ -57,7 +56,6 @@ void LifetimeSystem::update(registry& r, float dt) {
 
     // Remove expired entities and update spawner counts
     for (entity ent : entities_to_remove) {
-        // Check if entity still exists before removing
         auto *health_check = r.get_if<lifetime>();
         if (!health_check || !health_check->has(static_cast<size_t>(ent))) {
             continue; // Entity already removed, skip

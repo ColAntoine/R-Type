@@ -19,7 +19,6 @@ void AGameCore::run()
     std::cout << "AGameCore::run" << std::endl;
     onRun();
 
-    // Simple loop example: call update at ~60hz until shutdown is requested.
     bool running = true;
     const float dt = 1.0f / 60.0f;
     while (running) {

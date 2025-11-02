@@ -23,7 +23,6 @@ int KeyBindingManager::stringToKeyCode(const std::string& keyStr) const
 
 std::string KeyBindingManager::getValueAssociatedToKeyCode(int keyCode) const
 {
-    // Assume that the first found is the one we search because there is no duplicata in the map
     for (const auto &[key, val] : _stringToKeyMap) {
         if (val == keyCode)
             return key;

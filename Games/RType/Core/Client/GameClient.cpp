@@ -70,16 +70,13 @@ void GameClient::set_bindings()
 void GameClient::register_states() {
     std::cout << "[GameClient] Registering game states..." << std::endl;
 
-    // Register all available states
     _stateManager.register_state<MenusBackgroundState>("MenusBackground");
     _stateManager.register_state<MainMenuState>("MainMenu");
 
-    // Register InGame state with shared registry for multiplayer
     _stateManager.register_state_with_factory("InGame", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(nullptr, nullptr);
     });
 
-    // Register InGame for MULTIPLAYER mode (with shared registry)
     _stateManager.register_state_with_factory("InGameMultiplayer", [this]() -> std::shared_ptr<IGameState> {
         return std::make_shared<InGameState>(&this->ecs_registry_, &this->ecs_loader_);
     });
@@ -120,27 +117,22 @@ bool GameClient::init()
     messageManager.init();
     audioManager.init();
 
-    // Register states
     register_states();
 
     // Start with loading screen
     _stateManager.push_state("LoadingVideo");
 
     // Load components into shared registry BEFORE starting network manager
-    // This ensures components are registered when PLAYER_SPAWN messages arrive
     std::cout << "[GameClient] Loading components into shared registry..." << std::endl;
     ecs_loader_.load_components("build/lib/libECS.so", ecs_registry_);
 
-    // Create shared client service for in-game/network states
     auto client = std::make_shared<UdpClient>();
     RType::Network::set_client(client);
 
-    // Create and start the network manager which encapsulates receive loop and dispatching
     network_manager_ = std::make_unique<NetworkManager>(client, ecs_registry_, ecs_loader_);
     network_manager_->register_default_handlers();
     network_manager_->start();
 
-    // Set network manager in service for states to access
     RType::Network::set_network_manager(network_manager_.get());
 
     if (!config.openConfigFile(RTYPE_PATH_FILE_CONFIG)) {
@@ -163,7 +155,6 @@ void GameClient::run()
     double last_frame_time = 0.0f;
 
     while (_running && !renderManager.window_should_close() && !_stateManager.is_empty()) {
-        // Calculate delta time
         double current_time = GetTime();
         double delta_time = current_time - last_frame_time;
         last_frame_time = current_time;
@@ -184,7 +175,6 @@ void GameClient::run()
         _stateManager.render();
         renderManager.end_frame();
 
-        // Handle input
         _stateManager.handle_input();
     }
 }

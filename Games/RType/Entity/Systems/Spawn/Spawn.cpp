@@ -10,7 +10,6 @@
 #include "ECS/Components.hpp"
 
 void SpawnSystem::update(registry& r, float dt) {
-    // This function is disabled for multiplayer synchronization
     // Enemies are now managed by the server and sent to clients via ENTITY_UPDATE messages
     return;
 }

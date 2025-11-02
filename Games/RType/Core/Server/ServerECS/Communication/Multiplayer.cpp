@@ -20,7 +20,6 @@ void Multiplayer::set_udp_server(UdpServer* server) {
     if (lobby_) lobby_->set_udp_server(server);
     if (ingame_) ingame_->set_udp_server(server);
 
-    // Register game start callback to spawn all players when game starts
     if (udp_server_) {
         udp_server_->set_game_start_callback([this]() {
             if (ingame_) ingame_->spawn_all_players();
@@ -55,7 +54,6 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
             if (lobby_) lobby_->handle_client_unready(session_id, payload);
             return;
         }
-        // Handle instance requests during lobby phase (clients ask front server to spawn instances)
         if (msg_type == static_cast<uint8_t>(SystemMessage::REQUEST_INSTANCE)) {
             std::cout << "[Multiplayer] REQUEST_INSTANCE (lobby) from " << session_id << std::endl;
             if (ecs_.instance_request_cb_) {
@@ -95,7 +93,6 @@ void Multiplayer::handle_packet(const std::string &session_id, const std::vector
         return;
     }
 
-    // Check for PLAYER_INPUT game message
     using RType::Protocol::GameMessage;
     if (msg_type == static_cast<uint8_t>(GameMessage::PLAYER_INPUT)) {
         if (ingame_) ingame_->handle_player_input(session_id, payload);

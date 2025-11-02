@@ -56,7 +56,6 @@ void RenderManager::init(const char *title, float scale, bool fullscreen)
             std::cout << "RenderManager: Using X11/GLX backend" << std::endl;
         }
 
-        // Initialize window with fullscreen and resizable flags
         SetConfigFlags(FLAG_WINDOW_RESIZABLE);
         InitWindow(100, 100, title);
 

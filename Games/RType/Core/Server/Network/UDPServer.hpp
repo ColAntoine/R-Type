@@ -54,7 +54,6 @@ namespace RType::Network {
             message_handler_ = std::move(handler);
         }
 
-        // Set a message queue to which parsed packets will be enqueued.
         void set_message_queue(class RType::Network::MessageQueue* queue) { message_queue_ = queue; }
 
         /**

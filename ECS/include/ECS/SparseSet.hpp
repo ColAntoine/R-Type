@@ -92,12 +92,10 @@ class sparse_set {
             _packed_entities.pop_back();
         }
 
-        // Check if entity has a component
         bool has(size_type entity_id) const {
             return entity_id < _sparse.size() && _sparse[entity_id] != npos;
         }
 
-        // Get component for entity (nullptr if not present)
         reference_type get(size_type entity_id) {
         if (!has(entity_id)) throw std::out_of_range("sparse_set::get: entity has no component");
             return _packed[_sparse[entity_id]];
@@ -107,7 +105,6 @@ class sparse_set {
             return _packed[_sparse[entity_id]];
         }
 
-        // Get entity ID for packed index
         size_type entity_at(size_type idx) const {
             return _packed_entities[idx];
         }

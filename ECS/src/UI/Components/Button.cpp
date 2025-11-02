@@ -16,7 +16,6 @@ namespace UI {
         UIState previous_state = _state;
         update_state();
 
-        // Track state changes for callbacks
         bool is_hovered = (_state == UIState::Hovered || _state == UIState::Pressed);
         bool is_pressed = (_state == UIState::Pressed);
 
@@ -41,7 +40,6 @@ namespace UI {
     void UIButton::render() {
         if (!_visible) return;
 
-        // If custom render function is set, use it instead
         if (_customRender) {
             _customRender(*this);
             return;
@@ -102,7 +100,6 @@ namespace UI {
 
         Color text_color = getCurrentTextColor();
 
-        // Calculate text position to center it in the button
         Vector2 textSize = MeasureTextEx(renderManager.get_font(), _text.c_str(), _style.getFontSize(), 1.0f);
         float textX = _position.x + (_size.x - textSize.x) / 2.0f;
         float textY = _position.y + (_size.y - textSize.y) / 2.0f;

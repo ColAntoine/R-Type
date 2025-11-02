@@ -194,13 +194,11 @@ namespace RType::Network {
     void UdpServer::broadcast_player_list() {
         auto client_list = generate_player_list();
 
-        // Create packet using utility function
         auto packet = Protocol::create_packet(
             static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_LIST),
             client_list
         );
 
-        // Broadcast to all clients
         broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
     }
 
@@ -212,7 +210,6 @@ namespace RType::Network {
 
         auto client_list = generate_player_list();
 
-        // Create packet using utility function
         auto packet = Protocol::create_packet(
             static_cast<uint8_t>(Protocol::SystemMessage::CLIENT_LIST),
             client_list
@@ -238,7 +235,6 @@ namespace RType::Network {
 
         // Need at least 2 players and all connected players must be ready
         if (connected_players >= 1 && ready_players == connected_players) {
-            // Create START_GAME message
             Protocol::StartGame start_game;
             start_game.timestamp = static_cast<uint32_t>(std::time(nullptr));
 
@@ -247,7 +243,6 @@ namespace RType::Network {
                 start_game
             );
 
-            // Broadcast to all connected clients
             broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
 
             std::cout << "[UdpServer] " << "START_GAME broadcasted to all clients" << std::endl;
@@ -340,19 +335,16 @@ namespace RType::Network {
                     const RType::Protocol::PacketHeader* header =
                         reinterpret_cast<const RType::Protocol::PacketHeader*>(receive_buffer_.data());
 
-                    // Calculate payload start and size
                     const char* payload = receive_buffer_.data() + sizeof(RType::Protocol::PacketHeader);
                     size_t actual_payload_size = bytes_received - sizeof(RType::Protocol::PacketHeader);
 
                     // Verify payload size matches header
                     if (actual_payload_size >= header->payload_size) {
-                        // Build dispatcher_data: message_type + payload
                         std::vector<char> dispatcher_data;
                         dispatcher_data.reserve(1 + header->payload_size);
                         dispatcher_data.push_back(header->message_type);
                         dispatcher_data.insert(dispatcher_data.end(), payload, payload + header->payload_size);
 
-                        // If a message_queue_ is set, enqueue the packet for the server ECS
                         if (message_queue_) {
                             ReceivedPacket pkt;
                             pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
@@ -364,14 +356,12 @@ namespace RType::Network {
                             message_handler_(session, dispatcher_data.data(), dispatcher_data.size());
                         }
                     } else {
-                        // Check if this might be a disconnect scenario (payload size 0)
                         if (actual_payload_size == 0) {
                             std::cout << "Client " << remote_endpoint_.address().to_string()
                                       << ":" << remote_endpoint_.port() << " appears to have disconnected (zero payload)" << std::endl;
                             if (session) {
                                 session->disconnect();
                             }
-                            // Inform server ECS via message queue that this session disconnected
                             if (message_queue_) {
                                 ReceivedPacket pkt;
                                 pkt.session_id = remote_endpoint_.address().to_string() + ":" + std::to_string(remote_endpoint_.port());
@@ -398,21 +388,17 @@ namespace RType::Network {
     }
 
     std::shared_ptr<Session> UdpServer::get_or_create_session(const asio::ip::udp::endpoint& endpoint) {
-        // Create connection ID from endpoint
         std::string connection_id = endpoint.address().to_string() + ":" + std::to_string(endpoint.port());
 
-        // Check if session already exists
         auto session_it = sessions_.find(connection_id);
         if (session_it != sessions_.end()) {
             return session_it->second;
         }
 
-        // Create new connection and session
         auto socket_ptr = std::shared_ptr<asio::ip::udp::socket>(&socket_, [](asio::ip::udp::socket*){});
         auto connection = std::make_shared<Connection>(endpoint, socket_ptr);
         auto session = std::make_shared<Session>(connection);
 
-        // Store connection and session
         connections_[connection_id] = connection;
         sessions_[connection_id] = session;
 

@@ -23,7 +23,6 @@ class registry {
         registry& operator=(registry const&) = delete;
 
         // Adds a new component array for Component if absent, returns reference.
-        // Also registers an "eraser" function that will remove the component when killing an entity.
         template<typename Component>
         sparse_set<Component>& register_component() {
             auto key = std::type_index(typeid(Component));
@@ -32,7 +31,6 @@ class registry {
                 auto [ins_it, ok] = _components_arrays.emplace(key, std::any(sparse_set<Component>{}));
                 it = ins_it;
 
-                // register eraser for this component type
                 _erasers.emplace_back([this](entity const& e) {
                     auto *arr = this->get_if<Component>();
                     if (!arr) return;
@@ -43,7 +41,6 @@ class registry {
             return std::any_cast<sparse_set<Component>&>(it->second);
         }
 
-        // Retrieve the component array for Component. Throws std::out_of_range if not registered.
         template<typename Component>
         sparse_set<Component>& get_components() {
             auto key = std::type_index(typeid(Component));
@@ -120,8 +117,6 @@ class registry {
             return std::any_cast<sparse_set<Component>>(&it->second);
         }
 
-        // Systems: register callable systems that will be invoked by run_systems().
-        // The callable should accept (registry&, sparse_set<Component>&...) as parameters.
         template<class... Components, typename Function>
         void add_system(Function&& f) {
             using Fn = std::decay_t<Function>;

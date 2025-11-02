@@ -22,7 +22,6 @@ Texture2D SpriteRenderSystem::load_texture(const std::string& path) {
     Texture2D texture = LoadTexture(path.c_str());
     if (texture.id == 0) {
         std::cerr << "Failed to load texture: " << path << std::endl;
-        // Create a default 1x1 white texture for missing textures
         Image img = GenImageColor(1, 1, WHITE);
         texture = LoadTextureFromImage(img);
         UnloadImage(img);
@@ -84,7 +83,6 @@ void SpriteRenderSystem::update(registry& r, float dt) {
         }
 
         // Use SpriteBatch instead of direct DrawTexturePro
-        // layer = 0 by default (can be extended with a sprite.layer field later)
         batch.draw(texture, source, dest, origin, s.rotation, WHITE, 0);
     }
     batch.flush();
@@ -92,7 +90,6 @@ void SpriteRenderSystem::update(registry& r, float dt) {
 
 SpriteRenderSystem::~SpriteRenderSystem() {
     // Clear the texture cache without unloading textures
-    // Raylib will handle texture cleanup when the graphics context is destroyed
     texture_cache_.clear();
 }
 

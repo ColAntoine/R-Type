@@ -12,7 +12,6 @@ class NetworkDispatcher {
     public:
         using Handler = std::function<void(const char*, size_t)>;
 
-        // Register a handler for a specific message type (overwrites existing)
         void register_handler(uint8_t message_type, Handler h) {
             std::unique_lock lock(mutex_);
             handlers_[message_type] = std::move(h);

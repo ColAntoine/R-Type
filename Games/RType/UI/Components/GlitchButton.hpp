@@ -21,7 +21,6 @@ namespace RType {
             _hover_seed = rand() % 1000;
         }
 
-        // Class variables (static) - shared across all GlitchButton instances
         static Color default_neon_color;
         static Color default_neon_glow_color;
         static float default_jitter_amplitude;

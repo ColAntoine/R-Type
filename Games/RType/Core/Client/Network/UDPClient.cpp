@@ -24,7 +24,6 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
             asio::ip::udp::endpoint local_ep(asio::ip::udp::v4(), 0);
             socket_.bind(local_ep);
         } else {
-            // If socket is open but not bound, bind to an ephemeral port so we can receive replies.
             asio::error_code ec_local;
             auto local_ep = socket_.local_endpoint(ec_local);
             if (!ec_local) {
@@ -60,7 +59,6 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
             std::cerr << "[UDPClient] send_to error: " << send_ec.message() << std::endl;
         }
 
-    // Wait for response with timeout. Use a local 'from' endpoint so we can log sender.
     // Put socket in non-blocking mode while we poll for the SERVER_ACCEPT.
     socket_.non_blocking(true);
         auto start = std::chrono::steady_clock::now();
@@ -95,7 +93,6 @@ std::optional<RType::Protocol::ServerAccept> UdpClient::connect(const std::strin
                             RType::Protocol::ServerAccept sa;
                             memcpy(&sa, recvbuf.data() + RType::Protocol::HEADER_SIZE, sizeof(sa));
                             set_session_token(sa.session_id);
-                            // If a receive handler is registered, ensure the async receive loop is running
                             if (recv_handler_) start_receive_loop(recv_handler_);
                             return sa;
                         } else {
@@ -171,10 +168,8 @@ void UdpClient::start_receive_loop(std::function<void(uint8_t,const char*,size_t
     recv_running_.store(true);
     recv_handler_ = handler;
 
-    // Ensure socket is open before configuring non-blocking mode. If it's not open, attempt to open and bind
     asio::error_code ec;
     if (!socket_.is_open()) {
-        // Try to open and bind an ephemeral port so the receive loop can operate
         socket_.open(asio::ip::udp::v4(), ec);
         if (ec) {
             std::cerr << "[UDPClient] could not open socket for recv loop: " << ec.message() << std::endl;

@@ -35,7 +35,6 @@ void Lobby::enter()
     setup_ui();
     subscribe_to_ui_event();
 
-    // Register callback to update player list when CLIENT_LIST is received
     auto* net_mgr = RType::Network::get_network_manager();
     if (net_mgr) {
         net_mgr->get_player_handler().set_client_list_callback(
@@ -44,7 +43,6 @@ void Lobby::enter()
             }
         );
 
-        // Register callback to detect game start
         net_mgr->get_player_handler().set_game_start_callback(
             [this]() {
                 std::cout << "[Lobby] Game starting! Setting flag..." << std::endl;
@@ -98,7 +96,6 @@ void Lobby::setup_ui()
 
     auto &theme = ThemeManager::instance().getTheme();
 
-    // Create bar to split the panel
     auto bar = PanelBuilder()
         .at(renderManager.scalePosX(40), renderManager.scalePosY(5))
         .size(20, renderManager.scaleSizeH(90))
@@ -180,7 +177,6 @@ void Lobby::rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& pl
 
     auto &theme = ThemeManager::instance().getTheme();
 
-    // Clear existing player entry UI elements
     auto* ui_comps = _registry.get_if<UI::UIComponent>();
     auto* player_tags = _registry.get_if<PlayerEntryTag>();
     if (ui_comps && player_tags) {
@@ -193,7 +189,6 @@ void Lobby::rebuild_player_ui(const std::vector<RType::Protocol::PlayerInfo>& pl
         }
     }
 
-    // Register component if not already done
     if (!player_tags) {
         _registry.register_component<PlayerEntryTag>();
     }
@@ -254,7 +249,6 @@ void Lobby::toggle_ready_state() {
         if (player_id == 0) std::cerr << "[Lobby] Warning: player_id is 0, cannot send ready state" << std::endl;
     }
 
-    // Create ClientReady message
     RType::Protocol::ClientReady ready_msg;
     ready_msg.player_id = player_id;
     ready_msg.ready_state = is_ready_ ? 1 : 0;
@@ -264,7 +258,6 @@ void Lobby::toggle_ready_state() {
         ? RType::Protocol::SystemMessage::CLIENT_READY
         : RType::Protocol::SystemMessage::CLIENT_UNREADY;
 
-    // Create and send packet
     try {
         RType::Protocol::PacketBuilder builder;
         builder.begin_packet(static_cast<uint8_t>(msg_type));
@@ -293,7 +286,6 @@ void Lobby::update_ready_button() {
         return;
     }
 
-    // Update button text and color based on ready state
     if (is_ready_) {
         button->setText("UNREADY");
         button->getStyle().setNormalColor(theme.exitButtonColors.normal);

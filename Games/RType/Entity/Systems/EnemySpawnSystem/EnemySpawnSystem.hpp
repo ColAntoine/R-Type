@@ -50,7 +50,6 @@ private:
 
     bool initialized_{false};
 
-    // Callback to notify when an enemy is spawned (for server to broadcast)
     EnemySpawnCallback spawn_callback_;
 
 public:
@@ -69,7 +68,6 @@ public:
     // Seed the RNG with the registry's seed (for deterministic gameplay)
     void seed_from_registry(registry& r);
 
-    // Set callback to be invoked when enemy spawns (for server broadcasting)
     void set_spawn_callback(EnemySpawnCallback callback) { spawn_callback_ = std::move(callback); }
 
     size_t get_max_enemies() const { return max_enemies_; }

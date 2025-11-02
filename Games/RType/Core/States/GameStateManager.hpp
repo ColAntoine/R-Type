@@ -54,7 +54,6 @@ class GameStateManager {
             };
         }
 
-        // Register state with custom factory function
         void register_state_with_factory(const std::string& name, std::function<std::shared_ptr<IGameState>()> factory) {
             state_factories_[name] = factory;
         }
@@ -65,7 +64,6 @@ class GameStateManager {
         void change_state(const std::string& state_name);
         void clear_states();
 
-        // Update and render
         void update(float delta_time);
         void render();
         void handle_input();

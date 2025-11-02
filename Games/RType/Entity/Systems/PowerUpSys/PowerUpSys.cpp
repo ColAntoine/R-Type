@@ -134,7 +134,6 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
 
         bool powerup_collected = false;
 
-        // Check collision with local Player entities
         for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerCtrl, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr, *ctrlArr)) {
             if (pEntity == playerEntity) continue;
 

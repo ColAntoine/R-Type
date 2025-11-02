@@ -92,11 +92,9 @@ void BallSys::computeBallPhysics(position &ballPos, position &playerPos, Ball &b
     if (std::abs(dx) > std::abs(dy)) {
         // Hit from side
         if (dx > 0) {
-            // Ball is on the right side of player
             ballPos.x = playerRight + ball._radius;
             ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : 100.0f; // Push right
         } else {
-            // Ball is on the left side of player
             ballPos.x = playerLeft - ball._radius;
             ballVel.vx = std::abs(playerVel.vx) > 0 ? playerVel.vx : -100.0f; // Push left
         }

@@ -28,7 +28,6 @@ public:
     void update(registry& r, float dt = 0.0f) override;
     const char* get_name() const override { return "Health"; }
     
-    // Set callback for when entities are destroyed (for server broadcasting)
     void set_destroy_callback(EntityDestroyCallback callback) {
         destroy_callback_ = std::move(callback);
     }

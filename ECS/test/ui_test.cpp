@@ -17,7 +17,6 @@
 // #include "ECS/Systems/UISystem.hpp"
 
 // // Custom button with glitch effect on hover
-// class GlitchButton : public UI::UIButton {
 // public:
 //     GlitchButton(float x, float y, float w, float h, const std::string& text)
 //         : UIButton(x, y, w, h, text) {
@@ -350,5 +349,4 @@
 //     }
 
 //     CloseWindow();
-//     return 0;
 // }

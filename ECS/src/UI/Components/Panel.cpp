@@ -16,7 +16,6 @@ namespace UI {
     void UIPanel::render() {
         if (!_visible) return;
 
-        // If custom render function is set, use it instead
         if (_customRender) {
             _customRender(*this);
             return;

@@ -71,7 +71,6 @@ namespace UI {
         }
 
     protected:
-        // Virtual methods that can be overridden for custom styling
         virtual void drawPanelBackground() const;
         virtual void drawPanelShadow() const;
         virtual void drawPanelBorder() const;

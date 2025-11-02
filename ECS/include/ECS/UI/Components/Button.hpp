@@ -95,7 +95,6 @@ namespace UI {
         UIState getCurrentState() const { return _state; }
 
     protected:
-        // Virtual methods that can be overridden for custom styling
         virtual Color getCurrentBackgroundColor() const;
         virtual Color getCurrentTextColor() const;
         virtual void drawButtonBackground() const;

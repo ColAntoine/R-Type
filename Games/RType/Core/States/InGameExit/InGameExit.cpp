@@ -43,7 +43,6 @@ void InGameExitState::setup_ui()
     float centerX = winInfos.getWidth() / 2.0f;
     float centerY = winInfos.getHeight() / 2.0f;
 
-    // Create styled dialog panel (like SettingsPanel)
     auto dialogPanel = PanelBuilder()
         .centered(renderManager.scalePosY(0))
         .size(renderManager.scaleSizeW(60), renderManager.scaleSizeH(50))

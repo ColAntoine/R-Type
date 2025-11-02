@@ -45,8 +45,6 @@ public:
 private:
     ServerECS &ecs_;
     UdpServer* udp_server_{nullptr};
-    // Tracks whether each connected session is currently holding the shoot input
-    // Keyed by session_id (string) -> bool (true while the client is holding fire)
     std::unordered_map<std::string, bool> is_shooting_;
 };
 

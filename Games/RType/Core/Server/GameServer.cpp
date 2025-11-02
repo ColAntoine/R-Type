@@ -42,7 +42,6 @@ bool GameServer::init()
 {
     std::cout << "[GameServer] Initializing..." << std::endl;
 
-    // Create io_context
     io_context_ = std::make_unique<asio::io_context>();
     network_manager_ = std::make_unique<RType::Network::NetworkManager>();
     if (!network_manager_->initialize(port_)) {
@@ -51,7 +50,6 @@ bool GameServer::init()
     }
     message_queue_ = std::make_unique<RType::Network::MessageQueue>();
 
-    // Attach message queue to server
     auto server = network_manager_->get_server();
     if (!server) {
         std::cerr << "[GameServer] No UDP server available" << std::endl;
@@ -60,29 +58,22 @@ bool GameServer::init()
     RType::Network::MessageQueue* msg_ptr = message_queue_.get();
     server->set_message_queue(msg_ptr);
 
-    // Create ServerECS (game logic)
     server_ecs_ = std::make_unique<RType::Network::ServerECS>(max_lobbies_, max_players_);
     server_ecs_->set_message_queue(msg_ptr);
-    // Provide a callback so ServerECS can send packets back to specific sessions
     server_ecs_->set_send_callback([server](const std::string& session_id, const std::vector<uint8_t>& packet) {
         if (!server) return;
         server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     });
 
-    // Provide the UDP server pointer to ServerECS/Multiplayer so it can trigger broadcasts directly
     server_ecs_->set_udp_server(server.get());
 
-    // Register instance-request callback so we can spawn instances on demand
     server_ecs_->set_instance_request_callback([this](const std::string &session_id){
         this->handle_instance_request(session_id);
     });
 
-    // Register instance-list request callback so ServerECS can ask the front server
-    // to send the current instance list to a newly connected session.
     server_ecs_->set_instance_list_request_callback([this](const std::string &session_id){
         auto server = network_manager_->get_server();
         if (!server) return;
-        // Build InstanceList and send to specific client
         RType::Protocol::InstanceList il{};
         il.instance_count = static_cast<uint8_t>(std::min<size_t>(instances_.size(), 8));
         for (size_t i = 0; i < il.instance_count; ++i) {
@@ -92,25 +83,18 @@ bool GameServer::init()
         server->send_to_client(session_id, reinterpret_cast<const char*>(packet.data()), packet.size());
     });
 
-    // Register game start callback with server (this will override the one in Multiplayer)
-    // We need to call both start_game() and ensure players are spawned
     server->set_game_start_callback([this]() {
         this->start_game();
     });
 
     server_ecs_->init("build/lib/libECS" + ext);
 
-
     if (display_) {
-        // Initialize rendering for server UI (lobby) with FIXED 1920x1080 resolution
-        // Force scale to 1.0 to ignore actual screen size and use base resolution
         RenderManager::instance().init("R-Type Server", 1.0f, !windowed_);
-        // Register and setup lobby state
         register_states();
         state_manager_.push_state("ServerLobby");
     }
 
-    // Start network with worker threads
     if (!network_manager_->start(2)) {
         std::cerr << "[GameServer] Failed to start NetworkManager" << std::endl;
         return false;
@@ -130,15 +114,13 @@ void GameServer::run()
 void GameServer::run_tick_loop()
 {
     std::cout << "[GameServer] Entering authoritative tick loop (30Hz)" << std::endl;
-    const std::chrono::milliseconds tick_duration(33); // ~30Hz
+    const std::chrono::milliseconds tick_duration(33);
 
     while (running_) {
         auto tick_start = std::chrono::steady_clock::now();
 
-        // Process incoming network packets and convert to ECS components
         server_ecs_->process_packets();
 
-        // Only run game systems if game has started
         if (game_started_) {
             server_ecs_->tick(0.033f);
         }
@@ -146,13 +128,9 @@ void GameServer::run_tick_loop()
         if (display_) {
             RenderManager::instance().begin_frame();
 
-            // Update state manager (handles lobby UI)
             state_manager_.update(0.033f);
-
-            // Render state manager (lobby or game UI)
             state_manager_.render();
 
-            // If game started, also render game entities
             if (game_started_) {
                 server_ecs_->GetILoader().update_all_systems(server_ecs_->GetRegistry(), 0.033f, ILoader::RenderSystem);
             }
@@ -163,15 +141,11 @@ void GameServer::run_tick_loop()
             }
         }
 
-        // Sleep until next tick
         auto elapsed = std::chrono::steady_clock::now() - tick_start;
         if (elapsed < tick_duration) {
             std::this_thread::sleep_for(tick_duration - elapsed);
         }
 
-        // If this server is a machine-made instance, auto-shutdown when all clients
-        // have disconnected and stayed disconnected for the grace period. This ensures
-        // instances don't linger when nobody is connected (applies both in lobby and
         // during/after a running game).
         if (is_machine_made_ && running_) {
             auto server = network_manager_->get_server();
@@ -235,7 +209,6 @@ void GameServer::register_states()
 {
     std::cout << "[GameServer] Registering states..." << std::endl;
 
-    // Create lobby state with UDP server reference
     auto server = network_manager_->get_server();
     state_manager_.register_state_with_factory("ServerLobby", [this, server]() -> std::shared_ptr<IGameState> {
         lobby_state_ = std::make_shared<ServerLobby>(server.get());
@@ -247,13 +220,11 @@ void GameServer::start_game()
 {
     std::cout << "[GameServer] Starting game! Transitioning from lobby..." << std::endl;
 
-    // Guard: ensure we only transition once and load systems once
     if (game_started_) {
         std::cout << "[GameServer] start_game() called but game already started - ignoring." << std::endl;
         return;
     }
 
-    // Load server logic and render systems now that we are entering InGame
     if (server_ecs_ && !systems_loaded_) {
         auto &loader = server_ecs_->GetILoader();
         // Logic systems - ORDER MATTERS! Must match client InGame.cpp
@@ -277,7 +248,6 @@ void GameServer::start_game()
 
         // GameLogic must run BEFORE BossSys
         loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
-        // BossSys runs after GameLogic so it can process newly spawned bosses
         loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
 
 
@@ -311,21 +281,18 @@ void GameServer::start_game()
         // }
     }
 
-    // Mark game as started and inform ServerECS so it can reject new clients
 
     game_started_ = true;
     if (server_ecs_) {
         server_ecs_->set_game_started(true);
     }
 
-    // Generate and set random seed for deterministic gameplay
     std::random_device rd;
     unsigned int game_seed = rd();
     server_ecs_->GetRegistry().set_random_seed(game_seed);
 
     std::cout << "[GameServer] Generated game seed: " << game_seed << std::endl;
 
-    // Broadcast the seed to all clients
     auto server = network_manager_->get_server();
     if (server) {
         RType::Protocol::GameSeed seed_msg;
@@ -340,17 +307,14 @@ void GameServer::start_game()
         std::cout << "[GameServer] Game seed broadcasted to all clients" << std::endl;
     }
 
-    // Spawn all players (Multiplayer is responsible for creating entities)
     if (server_ecs_ && server_ecs_->GetMultiplayer()) {
         server_ecs_->GetMultiplayer()->spawn_all_players();
     }
 
-    // Mark lobby as game started (for clients to know)
     if (lobby_state_) {
         lobby_state_->set_game_started(true);
     }
 
-    // Clear lobby UI if in display mode (render systems already loaded above)
     if (display_) {
         state_manager_.clear_states();
     }
@@ -371,8 +335,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         return;
     }
 
-    // Find next available UDP port starting from base port + 1.
-    // We'll probe ports until we find one that can be bound (and is not already in our instances_ list).
     const uint16_t start_port = static_cast<uint16_t>(port_ + 1);
     const uint16_t max_probe = 65535;
     uint16_t new_port = 0;
@@ -385,7 +347,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         }
         if (used) continue;
 
-        // Probe both UDP and TCP to avoid selecting a port already in use by either protocol.
         // We attempt to bind a UDP socket and a TCP acceptor on the candidate port. If both succeed,
         // consider the port free. Use error_code version to avoid exceptions and close handles on success.
         try {
@@ -409,7 +370,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
                 udp_sock.close();
                 continue;
             }
-            // Allow address reuse false to ensure exclusivity
             asio::ip::tcp::endpoint tcp_ep(asio::ip::tcp::v4(), cand);
             tcp_acc.bind(tcp_ep, ec_tcp);
             if (ec_tcp) {
@@ -439,10 +399,8 @@ void GameServer::handle_instance_request(const std::string &session_id) {
 
     std::cout << "[GameServer] Spawning new instance on port " << new_port << std::endl;
 
-    // Spawn instance in background thread
     std::thread t([this, new_port]() {
         try {
-            // Create a headless GameServer instance (no display)
             auto srv = std::make_shared<GameServer>(false, false, 1.0f, 0, max_players_, true);
             srv->set_port(new_port);
             if (!srv->init()) {
@@ -476,7 +434,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         if (tit != instance_threads_.end()) {
             instance_threads_.erase(tit);
         }
-        // Broadcast updated instance list to front clients
         try {
             broadcast_instance_list();
         } catch (...) {
@@ -484,7 +441,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
         }
     });
 
-    // Store thread and detach (we only need active_instances_ count)
     instance_threads_.emplace(new_port, std::move(t));
     instance_threads_[new_port].detach();
 
@@ -499,7 +455,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
     // Reply to the requesting client with instance port
     send_instance_created(session_id, new_port);
     // Proactively disconnect the requesting session from the front server so it stops
-    // receiving broadcasts from the front lobby. This avoids relying on the client's
     // unreliable UDP CLIENT_DISCONNECT reaching the front server in time.
     try {
         auto server_ptr = network_manager_->get_server();
@@ -511,7 +466,6 @@ void GameServer::handle_instance_request(const std::string &session_id) {
             }
         }
     } catch (...) {
-        // best-effort: don't crash the instance creation flow if this fails
     }
 }
 

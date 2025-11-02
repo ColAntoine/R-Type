@@ -68,7 +68,6 @@ private:
 
     // Allow caller to override the bind port before init()
     void set_port(uint16_t p) { port_ = p; }
-    // Handle client request to spawn instance
     void handle_instance_request(const std::string &session_id);
     void send_instance_created(const std::string &session_id, uint16_t port);
     void broadcast_instance_list();

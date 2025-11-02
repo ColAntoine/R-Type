@@ -14,7 +14,6 @@ namespace UI {
     void UISystem::update(registry& registry, float deltaTime) {
         if (!_enabled) return;
 
-        // Get UI components array
         auto* ui_components = registry.get_if<UI::UIComponent>();
         if (!ui_components)
             return;
@@ -38,7 +37,6 @@ namespace UI {
     void UISystem::render(registry& registry) {
         if (!_enabled) return;
 
-        // Get UI components array
         auto* ui_components = registry.get_if<UI::UIComponent>();
         if (!ui_components) return;
 
@@ -54,7 +52,6 @@ namespace UI {
         auto* ui_components = registry.get_if<UI::UIComponent>();
         if (!ui_components) return;
 
-        // Handle input for all UI components using zipper
         for (auto [ui_comp, entity_id] : zipper(*ui_components)) {
             if (ui_comp._ui_element &&
                 ui_comp._ui_element->isVisible() &&
@@ -63,7 +60,6 @@ namespace UI {
             }
         }
 
-        // Update focus on click
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             size_t clicked_entity = get_entity_at_position(registry, mouse_pos.x, mouse_pos.y);
             if (clicked_entity != static_cast<size_t>(-1)) {
@@ -86,7 +82,6 @@ namespace UI {
                 ui_comp._ui_element &&
                 ui_comp._ui_element->isEnabled()) {
                 // Keyboard handling for focused element
-                // This can be extended based on component type (e.g., text input)
                 break;
             }
         }
@@ -96,7 +91,6 @@ namespace UI {
         auto* ui_components = registry.get_if<UI::UIComponent>();
         if (!ui_components) return static_cast<size_t>(-1);
 
-        // Store all clickable entities with their z-index
         std::vector<std::pair<size_t, int>> clickable_entities;
 
         // Use zipper to find all components under the cursor
@@ -109,7 +103,6 @@ namespace UI {
             }
         }
 
-        // Return the last entity found (top-most in z-order)
         if (!clickable_entities.empty()) {
             return clickable_entities.back().first;
         }

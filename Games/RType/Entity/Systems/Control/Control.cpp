@@ -20,7 +20,6 @@ void ControlSystem::update(registry& r, float dt) {
     auto *ctrl_arr = r.get_if<controllable>();
     auto *input_arr = r.get_if<Input>();
     if (!ctrl_arr || !input_arr) return;
-    // If in multiplayer mode, input is sent to server instead of applied locally
     auto* network_manager = RType::Network::get_network_manager();
     if (network_manager) {
         return;

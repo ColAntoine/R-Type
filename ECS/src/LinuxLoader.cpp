@@ -11,7 +11,6 @@
 
 bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
     auto &systems = (type == LogicSystem) ? _logicSystems : _renderSystems;
-    // Check if file exists
     if (!std::filesystem::exists(so_path)) {
         std::cerr << "System library file does not exist: " << so_path << std::endl;
         return false;
@@ -27,7 +26,6 @@ bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
     // Clear any existing error
     dlerror();
 
-    // Get the create_system function
     using create_system_t  = ISystem* (*)();
     using destroy_system_t = void     (*)(ISystem*);
 
@@ -42,7 +40,6 @@ bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
         return false;
     }
 
-    // Create the system instance
     ISystem*raw = nullptr;
     try {
         raw = create_system();
@@ -63,7 +60,6 @@ bool LinuxLoader::load_system(const std::string &so_path, SystemType type) {
         if (p) destroy_system(p);
     });
 
-    // Store
     ALoader::LoadedSystem loaded_sys;
     loaded_sys.handle = reinterpret_cast<void*>(handle);
     loaded_sys.system = std::move(sys);
@@ -121,7 +117,6 @@ bool LinuxLoader::load_components(const std::string &so_path, registry &reg) {
         return false;
     }
 
-    // Register components and get factory
     try {
         register_components(reg);
         factory_ = get_factory();

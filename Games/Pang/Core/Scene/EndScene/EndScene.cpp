@@ -24,7 +24,6 @@ void EndScene::init(float dt)
     _shouldRestart = false;
     _shouldQuit = false;
 
-    // Create RESTART button using builder
     _restartButton = ButtonBuilder()
         .centered(50)
         .size(400, 100)
@@ -38,7 +37,6 @@ void EndScene::init(float dt)
         })
         .build(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // Create QUIT button using builder
     _quitButton = ButtonBuilder()
         .centered(200)
         .size(400, 100)

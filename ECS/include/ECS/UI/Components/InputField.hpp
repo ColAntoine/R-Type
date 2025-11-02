@@ -125,7 +125,6 @@ namespace UI {
         }
 
     protected:
-        // Virtual methods that can be overridden for custom styling
         virtual Color getCurrentBackgroundColor() const;
         virtual Color getCurrentBorderColor() const;
         virtual Color getCurrentTextColor() const;

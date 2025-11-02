@@ -19,7 +19,6 @@ void PacketBuilder::begin_packet(uint8_t message_type, PacketFlags flags) {
     buffer_.resize(HEADER_SIZE);
     header_offset_ = 0;
         
-    // Fill header (payload_size will be set in finalize())
     PacketHeader* header = reinterpret_cast<PacketHeader*>(buffer_.data());
     header->message_type = message_type;
     header->flags = static_cast<uint8_t>(flags);
@@ -36,7 +35,6 @@ void PacketBuilder::add_data(const void* data, size_t size) {
 }
 
 std::vector<uint8_t> PacketBuilder::finalize() {
-    // Update payload size in header
     size_t payload_size = buffer_.size() - HEADER_SIZE;
     if (payload_size > UINT16_MAX) {
         throw std::runtime_error("Payload size exceeds maximum");
@@ -72,7 +70,6 @@ PacketParser::PacketParser(const char* data, size_t size)
         return;
     }
 
-    // Set payload pointer
     payload_ = data + HEADER_SIZE;
     valid_ = true;
 }

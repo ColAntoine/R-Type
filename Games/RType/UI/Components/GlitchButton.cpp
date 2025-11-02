@@ -9,7 +9,6 @@
 #include "ECS/Renderer/RenderManager.hpp"
 
 namespace RType {
-    // Initialize static class variables with default values
     Color GlitchButton::default_neon_color{0, 229, 255, 255};
     Color GlitchButton::default_neon_glow_color{0, 229, 255, 100};
     float GlitchButton::default_jitter_amplitude = 2.0f;

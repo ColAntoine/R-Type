@@ -22,25 +22,19 @@ class ServerECS {
         ServerECS(int maxLobbies = 0, int maxPlayers = 2);
         ~ServerECS();
 
-        // Initialize components/systems from shared object (optional)
         bool init(const std::string& components_so = "build/lib/libECS.so");
 
-        // Attach the network message queue used by the UDP server
         void set_message_queue(MessageQueue* q);
 
-        // Process all pending network packets (drain queue and convert to net_input components)
         void process_packets();
 
         // Run ECS systems for one tick (dt in seconds)
         void tick(float dt);
 
         void set_send_callback(std::function<void(const std::string&, const std::vector<uint8_t>&)> cb) { send_callback_ = std::move(cb); }
-        // Install the server UDP instance into multiplayer so it can trigger broadcasts directly
         void set_udp_server(UdpServer* server);
 
-        // Register a callback invoked when a client requests a new instance (session_id)
         void set_instance_request_callback(std::function<void(const std::string&)> cb) { instance_request_cb_ = std::move(cb); }
-        // Register a callback invoked when the server wants to send the current instance list to a specific session
         void set_instance_list_request_callback(std::function<void(const std::string&)> cb) { instance_list_request_cb_ = std::move(cb); }
 
         IComponentFactory* get_factory() const { return factory_; }
@@ -82,12 +76,9 @@ class ServerECS {
         friend class InGame;
 
     private:
-        // Process buffered inputs for all players and apply to components
         void process_inputs();
-        // Build and send snapshots to connected clients
         void send_snapshots();
 
-        // Whether the game has started (no new clients should be accepted)
         bool game_started_{false};
 };
 

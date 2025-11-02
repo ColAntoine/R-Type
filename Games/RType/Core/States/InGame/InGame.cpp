@@ -36,7 +36,6 @@ void InGameState::enter()
     } else {
         std::cout << "[InGame] Using LOCAL registry (solo mode)" << std::endl;
 
-        // Generate random seed for solo play (deterministic for potential replay features)
         std::random_device rd;
         unsigned int solo_seed = rd();
         _registry.set_random_seed(solo_seed);
@@ -52,7 +51,6 @@ void InGameState::enter()
     // Load components first (needed for both solo and multiplayer)
     loader.load_components("build/lib/libECS" + ext, reg);
 
-    // Load render systems
     loader.load_components("build/lib/libECS" + ext, _registry);
     loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
     loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
@@ -80,7 +78,6 @@ void InGameState::enter()
     // Debug: Check how many entities exist in the registry
     std::cout << "[InGame] Registry has entities at startup" << std::endl;
 
-    // Create player
     // In solo mode: create immediately
     // In multiplayer mode: DON'T create here - let the network create it via on_player_spawn()
     if (!_shared_registry) {
@@ -162,18 +159,15 @@ void InGameState::update(float delta_time)
         _accumulator = 0.2f;
     }
     
-    // Update with fixed timestep (match server at 30Hz)
     while (_accumulator >= FIXED_DT) {
         // Send input to server if connected
         handle_input();
         
-        // Update both logic and render systems with fixed timestep
         loader.update_all_systems(reg, FIXED_DT, ILoader::LogicSystem);
         
         _accumulator -= FIXED_DT;
     }
     
-    // Always update render systems (can use interpolated positions later if needed)
     loader.update_all_systems(reg, delta_time, ILoader::RenderSystem);
 }
 
@@ -182,7 +176,6 @@ void InGameState::handle_input()
     auto* network_manager = RType::Network::get_network_manager();
     if (network_manager) {
         const auto &keyBinds = KeyBindingManager::instance().getKeyBindings();
-        // Check for arrow key input
         uint8_t input_state = 0;
         if (IsKeyDown(keyBinds.at("move_up")))
             input_state |= static_cast<uint8_t>(RType::Protocol::InputFlags::UP);
@@ -218,7 +211,6 @@ void InGameState::handle_input()
             }
             last_input_state = input_state;
         }
-        // Handle shooting (space) -- send start/stop events to server when state changes
         static bool last_shoot_state = false;
         bool shoot_down = IsKeyDown(keyBinds.at("shoot"));
         if (shoot_down != last_shoot_state) {

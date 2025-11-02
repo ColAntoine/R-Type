@@ -82,7 +82,6 @@ void GameStateManager::change_state(const std::string& state_name) {
         if (s) s->exit();
     }
 
-    // Push new state (will handle locking)
     push_state(state_name, false);
 }
 
@@ -119,20 +118,17 @@ void GameStateManager::update(float delta_time) {
 
     processing_states_.store(true);
 
-    // Update states from bottom to top, but respect blocking
     std::vector<std::shared_ptr<IGameState>> states_to_update;
     while (!temp_stack.empty()) {
         auto state = temp_stack.top();
         states_to_update.push_back(state);
         temp_stack.pop();
 
-        // If this state blocks updates, don't update states below it
         if (state->blocks_update()) {
             break;
         }
     }
 
-    // Update in reverse order (bottom to top)
     std::reverse(states_to_update.begin(), states_to_update.end());
     for (auto& state : states_to_update) {
         state->update(delta_time);
@@ -157,7 +153,6 @@ void GameStateManager::render() {
         states_to_render.push_back(state);
         temp_stack.pop();
 
-        // If this state blocks rendering, don't render states below it
         if (state->blocks_render()) {
             break;
         }

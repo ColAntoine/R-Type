@@ -12,13 +12,11 @@
 namespace UI {
     void UIText::update(float delta_time) {
         if (!_visible) return;
-        // Text is typically static, no update logic needed
     }
 
     void UIText::render() {
         if (!_visible) return;
         if (_text.empty()) return;
-        // If custom render function is set, use it instead
         if (_customRender) {
             _customRender(*this);
             return;
@@ -62,7 +60,6 @@ namespace UI {
                 break;
             case TextAlignment::Left:
             default:
-                // Position is already correct for left alignment
                 break;
         }
 

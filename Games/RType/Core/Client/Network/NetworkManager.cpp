@@ -180,7 +180,6 @@ void NetworkManager::register_default_handlers() {
             RType::Protocol::GameSeed seed_msg;
             memcpy(&seed_msg, payload, sizeof(seed_msg));
 
-            // Set the seed in the registry on the main thread
             this->post_to_main([this, seed = seed_msg.seed]() {
                 registry_.set_random_seed(seed);
                 std::cout << "[Client] Received game seed from server: " << seed << std::endl;
@@ -204,7 +203,6 @@ void NetworkManager::process_pending() {
         try { j(); } catch (...) {}
     }
 
-    // If we have acquired a session token during this tick, process any queued ENTITY_CREATE messages
     if (client_ && client_->get_session_token() != 0) {
         std::vector<std::vector<char>> pending;
         {
@@ -225,6 +223,5 @@ void NetworkManager::process_pending() {
         }
     }
 
-    // Update player handler (reapply remote shooting intents each frame)
     try { player_handler_.update(); } catch(...) {}
 }

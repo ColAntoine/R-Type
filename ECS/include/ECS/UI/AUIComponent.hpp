@@ -42,7 +42,6 @@ namespace UI {
         void setState(UIState state) override { _state = state; }
 
     protected:
-        // Update state based on mouse interaction
         void update_state() {
             if (!_enabled) {
                 _state = UIState::Disabled;
@@ -62,7 +61,6 @@ namespace UI {
             }
         }
 
-        // Member variables
         Vector2 _position{0.0f, 0.0f};
         Vector2 _size{100.0f, 40.0f};
         UIState _state{UIState::Normal};

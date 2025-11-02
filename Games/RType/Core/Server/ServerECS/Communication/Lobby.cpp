@@ -30,7 +30,6 @@ void Lobby::handle_client_connect(const std::string &session_id, const std::vect
         return;
     }
 
-    // If this session already has a token, reply with existing token and return
     auto existing_tok_it = ecs_.session_token_map_.find(session_id);
     if (existing_tok_it != ecs_.session_token_map_.end()) {
         uint32_t existing_token = existing_tok_it->second;
@@ -211,7 +210,6 @@ void Lobby::send_server_accept(const std::string &session_id, uint32_t token, fl
     sa.session_id = token;
     sa.spawn_x = x;
     sa.spawn_y = y;
-    // multi_instance: non-zero when this server is the front/lobby server
     // Front server runs with max_lobbies_ > 0; instances (machine-made) are created with max_lobbies_ == 0
     sa.multi_instance = static_cast<uint8_t>(ecs_.max_lobbies_ > 0 ? 1 : 0);
     auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::SystemMessage::SERVER_ACCEPT), sa, RType::Protocol::PacketFlags::RELIABLE);

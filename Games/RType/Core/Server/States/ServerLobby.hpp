@@ -32,7 +32,6 @@ class ServerLobby : public AGameState {
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }
 
-        // Update the player list display with new data
         void update_player_list();
 
         // Flag to track if game has started

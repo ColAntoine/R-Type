@@ -187,7 +187,6 @@ bool BossSys::isPlayerClose(registry &r)
     // If no player found at all, return false
     if (!foundPlayer) return false;
 
-    // Get boss position
     for (auto [boss, pos, ent] : zipper(*bossArr, *posArr)) {
         posBoss = pos;
         break;

@@ -21,10 +21,8 @@ bool NetworkManager::initialize(uint16_t port) {
     port_ = port;
 
     try {
-        // Create work guard to keep io_context alive
         work_guard_ = std::make_unique<asio::io_context::work>(io_context_);
 
-        // Create UDP server
         server_ = std::make_shared<UdpServer>(io_context_, port_);
 
         return true;

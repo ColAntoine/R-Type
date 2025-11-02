@@ -32,7 +32,6 @@ void Browser::enter()
 
     setup_ui();
     subscribe_to_ui_event();
-    // Register for instance-created notifications (sent by front server when an instance is spawned)
     auto* net_mgr = RType::Network::get_network_manager();
     if (net_mgr) {
         // INSTANCE_CREATED -> reconnect and enter lobby (creation flow)
@@ -63,7 +62,6 @@ void Browser::enter()
             // Fully close the current connection so we stop receiving front-server broadcasts
             client->disconnect();
 
-            // Now connect to the instance server (this will open a fresh socket)
             auto accept = client->connect(server_ip, port, player_name);
             if (accept) {
                 // Defer UI state changes to the main thread via the event bus
@@ -89,7 +87,6 @@ void Browser::enter()
     _instanceConnectedCallbackId = bus.subscribe("INSTANCE_CONNECTED_UI", [this](const Event& ev) {
         if (!this->_stateManager) return;
 
-        // If the connected server is a game instance (multi==0), enter its Lobby.
         // Otherwise (multi!=0) return to MainMenu.
         bool is_instance_server = true;
         try {
@@ -154,7 +151,6 @@ void Browser::setup_ui()
     auto titleEntity = _registry.spawn_entity();
     _registry.add_component(titleEntity, UI::UIComponent(title));
 
-    // Create instance button
     auto createButton = GlitchButtonBuilder()
         .at(renderManager.scalePosX(20), renderManager.scalePosY(25))
         .size(renderManager.scaleSizeW(25), renderManager.scaleSizeH(10))
@@ -222,7 +218,6 @@ void Browser::setup_ui()
 void Browser::join_room_callback()
 {
     std::cout << "[Browser] Join room clicked" << std::endl;
-    // Request the server to create a new instance (front server will reply with INSTANCE_CREATED)
     auto client = RType::Network::get_client();
     if (!client) {
         std::cerr << "[Browser] No client available to send instance request" << std::endl;
@@ -235,7 +230,6 @@ void Browser::join_room_callback()
 }
 
 void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInfo>& list) {
-    // Clear previous instance UI entities
     for (auto e : _instanceEntities) {
         _registry.kill_entity(e);
     }
@@ -258,7 +252,6 @@ void Browser::rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInf
         return;
     }
 
-    // Create a UI entry per instance with Join button
     for (size_t i = 0; i < list.size(); ++i) {
         const auto &inst = list[i];
         std::string labelText = "Instance " + std::to_string(i+1) + " - Port: " + std::to_string(inst.port);

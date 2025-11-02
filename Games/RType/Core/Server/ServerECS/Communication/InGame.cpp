@@ -119,7 +119,6 @@ void InGame::handle_player_shoot(const std::string &session_id, const std::vecto
 
     is_shooting_[session_id] = true;
 
-    // Build PlayerShoot to broadcast to other clients. Prefer payload from sender if present.
     PlayerShoot ps{};
     if (payload.size() >= sizeof(PlayerShoot)) {
         memcpy(&ps, payload.data(), sizeof(PlayerShoot));
@@ -131,7 +130,6 @@ void InGame::handle_player_shoot(const std::string &session_id, const std::vecto
         ps.start_x = 0.0f; ps.start_y = 0.0f; ps.dir_x = 1.0f; ps.dir_y = 0.0f; ps.weapon_type = 0;
     }
 
-    // Broadcast to all sessions except the shooter
     if (ecs_.send_callback_) {
         auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(GameMessage::PLAYER_SHOOT), ps, RType::Protocol::PacketFlags::NONE);
         for (const auto &kv : ecs_.session_token_map_) {
@@ -148,7 +146,6 @@ void InGame::handle_player_unshoot(const std::string &session_id, const std::vec
 
     is_shooting_[session_id] = false;
 
-    // Build PlayerShoot payload (reuse PlayerShoot structure) to notify others this player stopped shooting.
     PlayerShoot ps{};
     if (payload.size() >= sizeof(PlayerShoot)) {
         memcpy(&ps, payload.data(), sizeof(PlayerShoot));
@@ -207,7 +204,6 @@ void InGame::spawn_all_players() {
         const std::string& session_id = kv.first;
         uint32_t token = kv.second;
 
-        // Compute spawn position based on index so each player is placed under the previous one
         float spawn_x = base_x;
         float spawn_y = base_y + static_cast<float>(idx) * spacing_y;
 
@@ -229,7 +225,6 @@ void InGame::spawn_all_players() {
             }
 
             std::cout << "[InGame] Broadcasting spawn for player " << token << " at (" << spawn_x << ", " << spawn_y << ")" << std::endl;
-            // create and send packets
             if (ecs_.send_callback_) {
                 RType::Protocol::PlayerSpawn ps{};
                 ps.player_token = token;

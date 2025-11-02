@@ -13,7 +13,6 @@ namespace UI {
     void UIInputField::update(float delta_time) {
         if (!_visible) return;
 
-        // Update cursor blink timer
         if (_is_focused) {
             _cursor_blink_timer += delta_time;
             if (_cursor_blink_timer >= _style.getCursorBlinkSpeed()) {
@@ -22,7 +21,6 @@ namespace UI {
             }
         }
 
-        // Handle focus state changes
         if (_is_focused && !_was_focused_last_frame && _on_focus) {
             _on_focus();
         } else if (!_is_focused && _was_focused_last_frame && _on_focus_lost) {
@@ -35,7 +33,6 @@ namespace UI {
     void UIInputField::render() {
         if (!_visible) return;
 
-        // If custom render function is set, use it instead
         if (_customRender) {
             _customRender(*this);
             return;
@@ -56,19 +53,16 @@ namespace UI {
         Vector2 mouse_pos = GetMousePosition();
         bool is_hovered = isPointInside(mouse_pos.x, mouse_pos.y);
 
-        // Handle focus on click
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             _is_focused = is_hovered;
         }
 
-        // Process text input if focused
         if (_is_focused) {
             processTextInput();
         }
     }
 
     void UIInputField::processTextInput() {
-        // Handle backspace
         if (IsKeyPressed(KEY_BACKSPACE) && !_text.empty()) {
             _text.pop_back();
             if (_on_text_changed) {
@@ -76,12 +70,10 @@ namespace UI {
             }
         }
 
-        // Handle enter key
         if (IsKeyPressed(KEY_ENTER) && _on_enter_pressed) {
             _on_enter_pressed(_text);
         }
 
-        // Handle text input
         int key = GetCharPressed();
         while (key > 0) {
             // Only allow printable characters
@@ -142,7 +134,6 @@ namespace UI {
 
         if (display_text.empty()) return;
 
-        // Calculate text position with padding
         float text_x = _position.x + _style.getPadding();
         float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 
@@ -160,7 +151,6 @@ namespace UI {
         auto &renderManager = RenderManager::instance();
         std::string display_text = getDisplayText();
 
-        // Calculate cursor position
         float text_x = _position.x + _style.getPadding();
         float text_y = _position.y + (_size.y - _style.getFontSize()) / 2.0f;
 

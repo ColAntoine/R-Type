@@ -40,7 +40,6 @@ void PlayerHandler::on_entity_create(const char* payload, size_t size) {
 
     uint32_t server_ent_id = ec.entity_id;
 
-    // If we already have a mapping for this server entity id, update components instead
     auto it = remote_player_map_.find(server_ent_id);
     if (it != remote_player_map_.end()) {
         auto ent = it->second;
@@ -84,7 +83,6 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
 
     std::cout << "[PlayerMsg] Received PLAYER_SPAWN token=" << ps.player_token << " server_ent=" << ps.server_entity << std::endl;
 
-    // Avoid duplicate spawn: if mapping already exists for this player token or server entity, reuse it
     auto it_token = remote_player_map_.find(ps.player_token);
     if (it_token != remote_player_map_.end()) {
         local_player_ent_ = it_token->second;
@@ -113,7 +111,6 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
         local_player_ent_ = existing;
         std::cout << "[PlayerMsg] PLAYER_SPAWN: reusing existing local Player entity=" << static_cast<size_t>(existing) << std::endl;
 
-        // Update position/velocity components if present or create them
         float nx = ps.x;
         float ny = ps.y;
         auto* pos_arr = registry_.get_if<position>();
@@ -144,7 +141,6 @@ void PlayerHandler::on_player_spawn(const char* payload, size_t size) {
     float y = ps.y;
     auto factory = loader_.get_factory();
     if (factory) {
-        // Create full player with all components (matching InGameState::createPlayer)
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<velocity>(registry_, ent, 0.0f, 0.0f);
         factory->create_component<animation>(registry_, ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
@@ -207,7 +203,6 @@ void PlayerHandler::on_player_remote_spawn(const char* payload, size_t size) {
 
 void PlayerHandler::on_player_quit(const char* payload, size_t size) {
     using RType::Protocol::PlayerInfo;
-    // The server sends a small struct with the player_id to remove; we'll accept PlayerInfo or direct uint32
     uint32_t pid = 0;
     if (payload && size >= sizeof(uint32_t)) {
         // try PlayerInfo first
@@ -364,16 +359,13 @@ void PlayerHandler::on_position_update(const char* payload, size_t size) {
     PositionUpdate pu;
     memcpy(&pu, payload, sizeof(pu));
 
-    // Find the entity by player_token (entity_id is actually player_token)
     auto it = remote_player_map_.find(pu.entity_id);
     if (it == remote_player_map_.end()) {
-        // This might be our own entity or an unknown player
         return;
     }
 
     entity ent = it->second;
 
-    // Update position
     auto* pos_arr = registry_.get_if<position>();
     if (pos_arr && pos_arr->has(ent)) {
         position& pos = (*pos_arr)[ent];
@@ -381,7 +373,6 @@ void PlayerHandler::on_position_update(const char* payload, size_t size) {
         pos.y = pu.y;
     }
 
-    // Update velocity
     auto* vel_arr = registry_.get_if<velocity>();
     if (vel_arr && vel_arr->has(ent)) {
         velocity& vel = (*vel_arr)[ent];

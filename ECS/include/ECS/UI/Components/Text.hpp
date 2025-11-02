@@ -59,7 +59,6 @@ namespace UI {
         UIText(float x, float y, const std::string& text)
             : _text(text) {
             _position = {x, y};
-            // Size will be calculated based on text
             updateSize();
         }
 
@@ -68,7 +67,6 @@ namespace UI {
             _position = {x, y};
             _style.setFontSize(fontSize);
             _style.setTextColor(textColor);
-            // Size will be calculated based on text
             updateSize();
         }
 
@@ -99,11 +97,9 @@ namespace UI {
             _customRender = std::move(render_func);
         }
 
-        // Get calculated text size
         Vector2 getTextSize() const;
 
     protected:
-        // Virtual methods that can be overridden for custom styling
         virtual void drawTextShadow() const;
         virtual void drawTextContent() const;
         virtual Vector2 calculateTextPosition() const;

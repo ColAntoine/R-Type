@@ -29,7 +29,6 @@ void GravitySys::applyGravitySys(registry &r, float dt)
     if (!vel_arr || !pos_arr || !gravity_arr) return;
 
     for (auto [pos, vel, gravity, entity] : zipper(*pos_arr, *vel_arr, *gravity_arr)) {
-        // apply GravitySys to vertical velocity
         vel.vy += gravity._force * dt;
     }
 }

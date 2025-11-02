@@ -29,19 +29,14 @@ class Multiplayer {
         Multiplayer(ServerECS &ecs, int maxLobbies = 0, int maxPlayers = 2);
         ~Multiplayer();
 
-        // Allow GameServer to set the server pointer so Multiplayer can trigger broadcasts
         void set_udp_server(UdpServer* server);
 
-        // Handle a raw received packet (first byte is message_type; payload after)
         void handle_packet(const std::string &session_id, const std::vector<char> &data);
 
         // Spawn all connected players when game starts (forwarded to InGame)
         void spawn_all_players();
-        // Broadcast position updates for all player entities (called after position system runs)
         void broadcast_loop();
-        // Broadcast enemy spawn to all clients
         void broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y);
-        // Broadcast entity destruction to all clients
         void broadcast_entity_destroy(entity ent, uint8_t reason = 0);
 
     private:

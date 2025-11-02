@@ -33,7 +33,6 @@ class Lobby : public AGameState {
         virtual bool blocks_update() const override { return false; }
         virtual bool blocks_render() const override { return false; }
 
-        // Update the player list display with new data
         void update_player_list(const std::vector<RType::Protocol::PlayerInfo>& players);
 
     private:

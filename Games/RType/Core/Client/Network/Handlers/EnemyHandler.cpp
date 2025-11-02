@@ -34,13 +34,11 @@ void EnemyHandler::on_enemy_spawn(const char* payload, size_t size) {
 
     auto factory = loader_.get_factory();
     if (factory) {
-        // Create position and collider
         factory->create_component<position>(registry_, ent, x, y);
         factory->create_component<collider>(registry_, ent, 65.0f, 132.0f, -32.5f, -66.0f, false);
         factory->create_component<Enemy>(registry_, ent, static_cast<Enemy::EnemyAIType>(enemy_type));
         factory->create_component<Health>(registry_, ent, 15);
 
-        // Create animation based on enemy type (matching server EnemySpawnSystem logic)
         switch (static_cast<Enemy::EnemyAIType>(enemy_type)) {
             case Enemy::EnemyAIType::BASIC:
                 factory->create_component<animation>(registry_, ent,

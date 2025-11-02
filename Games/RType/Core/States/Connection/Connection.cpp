@@ -56,7 +56,6 @@ void Connection::setup_ui()
 
     auto &theme = ThemeManager::instance().getTheme();
 
-    // Create bar to split the panel
     auto bar = PanelBuilder()
         .centered(renderManager.scalePosY(0))
         .size(20, renderManager.scaleSizeH(90))
@@ -95,7 +94,6 @@ void Connection::setup_ui()
 
     auto ipInputEntity = _registry.spawn_entity();
     _registry.add_component(ipInputEntity, UI::UIComponent(ipInput));
-    // register and tag this entity for quick access
     _registry.register_component<Connection::IpFieldTag>();
     _registry.add_component<Connection::IpFieldTag>(ipInputEntity, Connection::IpFieldTag());
 

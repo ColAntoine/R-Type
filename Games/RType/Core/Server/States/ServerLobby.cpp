@@ -49,7 +49,6 @@ void ServerLobby::resume()
 
 void ServerLobby::update(float delta_time)
 {
-    // Update player list display periodically
     static float update_timer = 0.0f;
     update_timer += delta_time;
 
@@ -77,7 +76,6 @@ void ServerLobby::setup_ui()
     auto titleEntity = _registry.spawn_entity();
     _registry.add_component(titleEntity, UI::UIComponent(titleText));
 
-    // Create bar to split the panel (starts below the title)
     auto bar = PanelBuilder()
         .at(renderManager.scalePosX(40), renderManager.scalePosY(15))
         .size(20, renderManager.scaleSizeH(70))
@@ -118,7 +116,6 @@ void ServerLobby::update_player_list()
 {
     if (!udp_server_) return;
 
-    // Get current player list from UDP server
     auto client_list = udp_server_->generate_player_list();
 
     // Convert to vector for easier handling
@@ -132,7 +129,6 @@ void ServerLobby::update_player_list()
         current_players_ = players;
         rebuild_player_ui();
     } else {
-        // Check if any ready states changed
         bool changed = false;
         for (size_t i = 0; i < players.size(); ++i) {
             if (players[i].ready_state != current_players_[i].ready_state) {
@@ -152,7 +148,6 @@ void ServerLobby::rebuild_player_ui()
     auto &renderManager = RenderManager::instance();
     auto winInfos = renderManager.get_screen_infos();
 
-    // Clear existing player entry UI elements
     auto* ui_comps = _registry.get_if<UI::UIComponent>();
     auto* player_tags = _registry.get_if<PlayerEntryTag>();
     if (ui_comps && player_tags) {
@@ -165,7 +160,6 @@ void ServerLobby::rebuild_player_ui()
         }
     }
 
-    // Register component if not already done
     if (!player_tags) {
         _registry.register_component<PlayerEntryTag>();
     }

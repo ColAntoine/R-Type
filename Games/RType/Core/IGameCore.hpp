@@ -5,7 +5,6 @@ class IGameCore {
     public:
         virtual ~IGameCore() = default;
 
-        // Initialize resources. Return true on success.
         virtual bool init() = 0;
 
         // Main loop entry (blocking or non-blocking depending on implementation)

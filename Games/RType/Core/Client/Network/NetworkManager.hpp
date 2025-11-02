@@ -22,14 +22,12 @@ class NetworkManager {
         void start();
         void stop();
 
-        // Register a handler for a specific message type
         void register_handler(uint8_t msg_type, NetworkDispatcher::Handler h);
 
         // Convenience: register domain handlers (player/enemy)
         void register_default_handlers();
         // Post a job from network thread to be executed on main thread
         void post_to_main(std::function<void()> job);
-        // Process pending jobs (call from GameClient::update or run)
         void process_pending();
 
         // Access to handlers for state-specific callbacks

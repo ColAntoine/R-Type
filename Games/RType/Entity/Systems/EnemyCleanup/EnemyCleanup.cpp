@@ -20,7 +20,6 @@ void EnemyCleanupSystem::update(registry& r, float dt) {
     if (!enemies || !positions) return;
 
     std::vector<entity> to_destroy;
-    // Check for out-of-bounds enemies
     for (auto [enm, pos, index] : zipper(*enemies, *positions)) {
         bool should_destroy = false;
         // Out of bounds (left)
@@ -34,7 +33,6 @@ void EnemyCleanupSystem::update(registry& r, float dt) {
         }
     }
 
-    // Destroy entities
     for (entity e : to_destroy) {
         r.kill_entity(e);
     }

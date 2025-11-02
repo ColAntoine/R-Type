@@ -49,7 +49,6 @@ bool WinLoader::load_system(const std::string &so_path, SystemType type) {
         return false;
     }
 
-    // Create instance (raw pointer from the DLL)
     ISystem* raw = nullptr;
     try {
         raw = create_system();
@@ -70,7 +69,6 @@ bool WinLoader::load_system(const std::string &so_path, SystemType type) {
         if (p) destroy_system(p);
     });
 
-    // Store
     ALoader::LoadedSystem loaded_sys;
     loaded_sys.handle = reinterpret_cast<void*>(handle);
     loaded_sys.system = std::move(sys);
@@ -123,7 +121,6 @@ bool WinLoader::load_components(const std::string &so_path, registry &reg) {
         return false;
     }
 
-    // Register components and get factory
     try {
         register_components(reg);
         factory_ = get_factory();

@@ -29,7 +29,6 @@ class Browser : public AGameState {
 
     private:
         void join_room_callback();
-        // Keep spawned UI entities for instances so we can clear them when the list updates
         std::vector<entity> _instanceEntities;
         void rebuild_instance_ui(const std::vector<RType::Protocol::InstanceInfo>& list);
         // Event callback id for instance-connected UI action

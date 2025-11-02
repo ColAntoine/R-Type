@@ -17,7 +17,6 @@
 
 void StarBg::update(registry& r, float dt)
 {
-    // Initialize on first update (seed from registry)
     if (!initialized_) {
         seed_from_registry(r);
         initialized_ = true;
@@ -28,7 +27,6 @@ void StarBg::update(registry& r, float dt)
         generate_stars(r);
     }
 
-    // Update star positions with actual delta time
     update_stars(dt, r);
 
     // Render stars
@@ -40,7 +38,6 @@ void StarBg::seed_from_registry(registry& r) {
         rng_.seed(r.get_random_seed());
         std::cout << "[StarBg] Seeded RNG with: " << r.get_random_seed() << std::endl;
     } else {
-        // Fallback to random_device if no seed is set
         std::random_device rd;
         rng_.seed(rd());
         std::cout << "[StarBg] No registry seed found, using random seed" << std::endl;
@@ -98,7 +95,6 @@ void StarBg::render_stars() const
     auto& renderManager = RenderManager::instance();
 
     for (const auto& star : _stars) {
-        // Create a subtle twinkling effect
         float flicker = 0.8f + 0.2f * sinf(GetTime() * 3.0f + star.x);
         Color star_color = {
             static_cast<unsigned char>(star.brightness * flicker),

@@ -119,7 +119,6 @@ void HealthSys::checkAndKillPlayer(registry &r)
         entToKill.erase(std::unique(entToKill.begin(), entToKill.end()), entToKill.end());
 
         for (auto ent : entToKill) {
-            // Check if entity still exists before killing
             if (r.get_if<Health>() && r.get_if<Health>()->has(static_cast<size_t>(ent))) {
                 r.kill_entity(ent);
             }
