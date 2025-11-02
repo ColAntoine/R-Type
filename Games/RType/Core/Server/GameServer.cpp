@@ -6,6 +6,8 @@
 #include "ServerECS/Communication/Multiplayer.hpp"
 #include "ECS/Renderer/RenderManager.hpp"
 #include "Core/Server/States/ServerLobby.hpp"
+#include "Entity/Systems/EnemySpawnSystem/EnemySpawnSystem.hpp"
+#include "Entity/Systems/Health/Health.hpp"
 #include <asio.hpp>
 #include <iostream>
 #include <thread>
@@ -270,12 +272,31 @@ void GameServer::start_game()
 
         // Render systems (only if display mode)
         if (display_) {
+            loader.load_system("build/lib/systems/libsprite_system" + ext, ILoader::RenderSystem);
             loader.load_system("build/lib/systems/libanimation_system" + ext, ILoader::RenderSystem);
             loader.load_system("build/lib/systems/libgame_Draw" + ext, ILoader::RenderSystem);
         }
 
         systems_loaded_ = true;
         std::cout << "[GameServer] ECS systems loaded for InGame phase." << std::endl;
+        
+        // TODO: Set up broadcast callbacks for enemy spawn and entity destruction
+        // These are currently not working due to dynamic loading issues
+        // if (server_ecs_ && server_ecs_->GetMultiplayer()) {
+        //     auto* multiplayer = server_ecs_->GetMultiplayer();
+        //     
+        //     // Set up enemy spawn callback
+        //     set_global_enemy_spawn_callback([multiplayer](entity ent, uint8_t enemy_type, float x, float y) {
+        //         multiplayer->broadcast_enemy_spawn(ent, enemy_type, x, y);
+        //     });
+        //     
+        //     // Set up entity destroy callback
+        //     set_global_entity_destroy_callback([multiplayer](entity ent, uint8_t reason) {
+        //         multiplayer->broadcast_entity_destroy(ent, reason);
+        //     });
+        //     
+        //     std::cout << "[GameServer] Network broadcast callbacks configured." << std::endl;
+        // }
     }
 
     // Mark game as started and inform ServerECS so it can reject new clients

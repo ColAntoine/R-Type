@@ -122,6 +122,16 @@ void NetworkManager::register_default_handlers() {
         }
     );
 
+    // entity destroy
+    dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::ENTITY_DESTROY),
+        [this](const char* payload, size_t size) {
+            std::vector<char> data(payload, payload + size);
+            this->post_to_main([this, data = std::move(data)]() mutable {
+                player_handler_.on_entity_destroy(data.data(), data.size());
+            });
+        }
+    );
+
     // player leave
     dispatcher_.register_handler(static_cast<uint8_t>(GameMessage::PLAYER_LEAVE),
         [this](const char* payload, size_t size) {

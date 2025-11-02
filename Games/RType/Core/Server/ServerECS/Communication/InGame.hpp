@@ -40,6 +40,7 @@ public:
                                 sparse_set<position, std::allocator<position>> *pos_arr);
     void broadcast_shoot(const std::string& session_id, const entity& player_ent);
     void broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, float y);
+    void broadcast_entity_destroy(entity ent, uint8_t reason = 0);
 
 private:
     ServerECS &ecs_;

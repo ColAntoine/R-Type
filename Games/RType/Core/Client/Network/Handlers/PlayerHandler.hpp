@@ -23,6 +23,7 @@ class PlayerHandler {
         void on_client_list(const char* payload, size_t size);
         void on_player_quit(const char* payload, size_t size);
         void on_entity_create(const char* payload, size_t size);
+        void on_entity_destroy(const char* payload, size_t size);
         void on_player_spawn(const char* payload, size_t size);
         void on_player_remote_spawn(const char* payload, size_t size);
         void on_game_start(const char* payload, size_t size);

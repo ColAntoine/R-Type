@@ -131,4 +131,8 @@ void Multiplayer::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x,
     if (ingame_) ingame_->broadcast_enemy_spawn(ent, enemy_type, x, y);
 }
 
+void Multiplayer::broadcast_entity_destroy(entity ent, uint8_t reason) {
+    if (ingame_) ingame_->broadcast_entity_destroy(ent, reason);
+}
+
 } // namespace RType::Network

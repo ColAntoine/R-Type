@@ -371,4 +371,17 @@ void InGame::broadcast_enemy_spawn(entity ent, uint8_t enemy_type, float x, floa
               << " type=" << (int)enemy_type << " pos=(" << x << ", " << y << ")" << std::endl;
 }
 
+void InGame::broadcast_entity_destroy(entity ent, uint8_t reason) {
+    if (!udp_server_) return;
+
+    RType::Protocol::EntityDestroy ed{};
+    ed.entity_id = static_cast<uint32_t>(ent);
+    ed.reason = reason;
+
+    auto packet = RType::Protocol::create_packet(static_cast<uint8_t>(RType::Protocol::GameMessage::ENTITY_DESTROY), ed, RType::Protocol::PacketFlags::RELIABLE);
+    udp_server_->broadcast(reinterpret_cast<const char*>(packet.data()), packet.size());
+
+    std::cout << "[InGame] Broadcasted entity destroy: entity=" << ent << " reason=" << (int)reason << std::endl;
+}
+
 } // namespace RType::Network

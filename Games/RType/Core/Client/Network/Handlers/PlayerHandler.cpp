@@ -247,6 +247,31 @@ void PlayerHandler::on_player_quit(const char* payload, size_t size) {
     }
 }
 
+void PlayerHandler::on_entity_destroy(const char* payload, size_t size) {
+    using RType::Protocol::EntityDestroy;
+    if (!payload || size < sizeof(EntityDestroy)) {
+        std::cerr << "[PlayerMsg] Invalid ENTITY_DESTROY payload" << std::endl;
+        return;
+    }
+    
+    EntityDestroy ed;
+    memcpy(&ed, payload, sizeof(ed));
+    
+    std::cout << "[PlayerMsg] Received ENTITY_DESTROY entity_id=" << ed.entity_id << " reason=" << (int)ed.reason << std::endl;
+    
+    // Find the entity in our remote_player_map (could be an enemy or other entity)
+    auto it = remote_player_map_.find(ed.entity_id);
+    if (it != remote_player_map_.end()) {
+        entity ent = it->second;
+        std::cout << "[PlayerMsg] Destroying entity " << ent << " (server_id=" << ed.entity_id << ")" << std::endl;
+        registry_.kill_entity(ent);
+        remote_player_map_.erase(it);
+    } else {
+        // Entity might not be in our map (could have already been destroyed locally)
+        std::cout << "[PlayerMsg] ENTITY_DESTROY for unknown entity server_id=" << ed.entity_id << std::endl;
+    }
+}
+
 void PlayerHandler::on_client_list(const char* payload, size_t size) {
     using RType::Protocol::ClientListUpdate;
     using RType::Protocol::PlayerInfo;

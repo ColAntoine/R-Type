@@ -237,7 +237,7 @@ namespace RType::Network {
         }
 
         // Need at least 2 players and all connected players must be ready
-        if (connected_players > 1 && ready_players == connected_players) {
+        if (connected_players >= 1 && ready_players == connected_players) {
             // Create START_GAME message
             Protocol::StartGame start_game;
             start_game.timestamp = static_cast<uint32_t>(std::time(nullptr));

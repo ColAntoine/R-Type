@@ -147,7 +147,8 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
     auto velArr = r.get_if<velocity>();
     auto healthArr = r.get_if<Health>();
 
-    if (!pUpArr || !posArr || !colArr || !playerArr || !weaponArr || !velArr || !healthArr) return;
+    // We need at least powerups and basic components; player/remote check happens per-entity
+    if (!pUpArr || !posArr || !colArr || !weaponArr || !velArr || !healthArr) return;
 
     std::vector<size_t> entitiesToKill;
 
@@ -157,13 +158,12 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
         float p_top = pPos.y + pCol.offset_y;
         float p_bottom = pPos.y + pCol.offset_y + pCol.h;
 
-        for (auto [playerPos, playerCol, playerWeapon, playerVel, playerEntity] : zipper(*posArr, *colArr, *weaponArr, *velArr)) {
-                // Skip if this entity is the powerup itself
-                if (pEntity == playerEntity) continue;
+        bool powerup_collected = false;
 
-                // Only consider entities that are either a local Player or a remote_player representation
-                bool is_player = (playerArr && playerArr->has(playerEntity)) || (remoteArr && remoteArr->has(playerEntity));
-                if (!is_player) continue;
+        // Check collision with local Player entities
+        if (playerArr) {
+            for (auto [player, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*playerArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
+                if (pEntity == playerEntity) continue;
 
                 float pl_left = playerPos.x + playerCol.offset_x;
                 float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
@@ -178,9 +178,35 @@ void PowerUpSys::colisionPowerUps(registry &r, float dt)
                     entitiesToKill.push_back(static_cast<size_t>(pEntity));
                     auto animEnt = r.spawn_entity();
                     r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                    powerup_collected = true;
                     break;
                 }
             }
+        }
+
+        // If not collected yet, check collision with remote_player entities
+        if (!powerup_collected && remoteArr) {
+            for (auto [remote, playerPos, playerCol, playerWeapon, playerVel, playerHealth, playerEntity] : zipper(*remoteArr, *posArr, *colArr, *weaponArr, *velArr, *healthArr)) {
+                if (pEntity == playerEntity) continue;
+
+                float pl_left = playerPos.x + playerCol.offset_x;
+                float pl_right = playerPos.x + playerCol.offset_x + playerCol.w;
+                float pl_top = playerPos.y + playerCol.offset_y;
+                float pl_bottom = playerPos.y + playerCol.offset_y + playerCol.h;
+
+                bool overlap = !(p_right < pl_left || p_left > pl_right || p_bottom < pl_top || p_top > pl_bottom);
+
+                if (overlap) {
+                    int wave = getWave(r);
+                    applyPowerUps(playerWeapon, &playerVel, &playerHealth, pUp, wave);
+                    entitiesToKill.push_back(static_cast<size_t>(pEntity));
+                    auto animEnt = r.spawn_entity();
+                    r.emplace_component<PUpAnimation>(animEnt, true, _pUpText[pUp._pwType]);
+                    powerup_collected = true;
+                    break;
+                }
+            }
+        }
     }
 
     if (!entitiesToKill.empty()) {
