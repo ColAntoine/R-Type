@@ -1,746 +1,1018 @@
-# R-Type Client Technical Documentation
+# R-Type: Multiplayer Space Shooter
 
-## Overview
-The **R-Type Client** is a networked multiplayer game client built on a modern service-oriented architecture. It combines an Entity Component System (ECS) for game entities, a state machine for game flow, an event-driven communication system, and a service layer for cross-cutting concerns.
+Welcome to **R-Type**, a modern implementation of the classic arcade space shooter with real-time multiplayer support. Battle across waves of enemies, dodge projectiles, and survive with your friends in this intense action game!
 
-### Architecture Principles
-1. **Service-Oriented Architecture**:
-   - Core services (Input, Rendering, Networking) are managed through dependency injection
-   - Services are lifecycle-managed and communicate through events
+---
 
-2. **Event-Driven Design**:
-   - Decoupled communication between systems using an event manager
-   - Supports both immediate and queued event processing
+## 📖 Table of Contents
 
-3. **Entity Component System**:
-   - Game entities managed through the ECS framework (see `../../ECS/README.md`)
-   - Components define data, systems define behavior
+- [For Players](#-for-players)
+  - [Getting Started](#getting-started)
+  - [How to Play](#how-to-play)
+  - [Gameplay Features](#gameplay-features)
+  - [Controls](#-controls)
+  - [Multiplayer Guide](#multiplayer-guide)
+  - [Troubleshooting](#troubleshooting)
+- [For Developers](#-for-developers)
+  - [Architecture Overview](#architecture-overview)
+  - [Project Structure](#project-structure)
+  - [Setting Up Development Environment](#setting-up-development-environment)
+  - [Building from Source](#building-from-source)
+  - [Understanding the Code](#understanding-the-code)
+  - [Adding New Features](#adding-new-features)
+  - [Creating New Scenes](#creating-new-scenes)
+  - [Creating Plugins/Mods](#creating-pluginsmods)
 
-4. **State Machine**:
-   - Game flow managed through a state stack
-   - States: MainMenu → Lobby → WaitingLobby → InGame
-   - Clean state transitions with proper lifecycle management
+---
+
+# 🎮 For Players
+
+## Getting Started
+
+### Prerequisites
+- Windows 10+, macOS 10.14+, or Linux (Ubuntu 18.04+)
+- A stable internet connection for multiplayer
+
+### Installation
+
+1. **Download the latest release** from the [R-Type releases page](https://github.com/ColAntoine/R-Type/releases)
+2. **Extract the archive** to your preferred location
+3. **Find the game executable**: `r-type_client`
+
+### Quick Start - Play the Game
+
+Simply run the game client:
+```bash
+./r-type_client
+```
+
+The game will launch and automatically connect to the default server. You can then join a lobby and start playing!
+
+---
+
+## How to Play
+
+When you launch the game, you'll enter the **Main Menu** where you can:
+- **Play** — Start a new game
+- **Settings** — Adjust graphics, audio, and key bindings
+- **Quit** — Exit the game
+
+From the main menu, you can join a lobby with other players and start playing together. Battle through waves of enemies, collect upgrades, and try to survive as long as possible!
+
+---
+
+## Gameplay Features
+
+### Wave System
+- Enemies spawn in organized **waves**
+- Each wave increases in difficulty
+- Survive all waves to complete a level
+
+### Enemy Types
+- **Basic** — Standard enemies moving straight at you
+- **Sine Wave** — Weaving back and forth while approaching
+- **Fast** — High-speed attackers moving quickly
+- **Zigzag** — Erratic movement pattern, hard to predict
+- **Turret** — Stationary enemies that fire from distance
+- **Boss** — Powerful enemies with high health and special attacks
+
+### Weapons & Upgrades
+- **Hard Bullet** — Standard rapid-fire projectiles
+- **Big Bullet** — Heavy projectiles with increased damage (2x)
+- **Parabol Shot** — Projectiles with gravity, arc trajectory
+- **Explosion** — Burst of projectiles in all directions
+- **Speed Boost** — Increase your movement speed
+- **Fire Rate Boost** — Shoot more rapidly
+- **Damage Upgrade** — Increase projectile damage
+
+### Collision & Physics
+- Collide with obstacles to take damage
+- Survive longer = higher score
+- Use cover to protect yourself
+
+---
+
+## 🎮 Controls
+
+| Action | Key |
+|--------|-----|
+| Move Up | **W** |
+| Move Down | **S** |
+| Move Left | **A** |
+| Move Right | **D** |
+| Shoot | **SPACE** |
+| Pause/Menu | **ESC** |
+
+---
+
+## Multiplayer Guide
+
+### How It Works
+
+R-Type is a multiplayer-first game. When you launch the game, you automatically connect to the server. Simply join a lobby to play with others.
+
+**Features:**
+- **Real-time multiplayer** — Play with 2-8 players simultaneously
+- **Smooth networking** — Client-side prediction and interpolation minimize lag
+- **Shared progression** — All players face the same waves of enemies
+
+### Network Performance
+
+R-Type uses advanced networking techniques to ensure smooth gameplay:
+- Your controls are instantly responsive (client-side prediction)
+- Other players' positions are smoothly interpolated
+- Server corrections are subtle and unnoticeable
+
+**Recommended:**
+- **Ping**: < 150ms for best experience
+- **Connection**: Stable, low packet loss
+
+If you experience lag, try:
+1. Checking your internet connection
+2. Lowering graphics settings
+3. Closing other bandwidth-heavy applications
+
+---
+
+## Troubleshooting
+
+### Game Won't Start
+
+**Problem**: Game crashes on startup
+- Update your graphics drivers
+- Lower graphics quality in settings
+- Verify game files are not corrupted
+
+### Can't Connect to Server
+
+**Problem**: "Connection refused" error
+- Check your internet connection
+- Verify you can reach the server
+- Try restarting the game
+
+### Game Runs Slowly
+
+- Lower graphics settings (resolution, scale)
+- Close other applications in background
+- Check CPU/GPU temperatures
+- Update your graphics drivers
+
+### Multiplayer Issues
+
+**Players teleporting or desynchronizing**:
+- Restart the game
+- Check your internet connection for packet loss
+
+**High ping/latency**:
+- Close bandwidth-heavy applications
+- Try connecting via a wired connection instead of WiFi
+
+---
+
+# 🛠️ For Developers
+
+## Architecture Overview
+
+R-Type is built with a **modular, service-oriented architecture**:
+
+```
+┌──────────────────────────────────────────────┐
+│         Application Layer (Main Loop)        │
+├──────────────────────────────────────────────┤
+│       State Machine (Menus, Lobbies, Game)   │
+├──────────────────────────────────────────────┤
+│   Service Layer (Input, Render, Network)     │
+├──────────────────────────────────────────────┤
+│      Event System (Decoupled Messaging)      │
+├──────────────────────────────────────────────┤
+│  Entity Component System (ECS) - Game Logic  │
+│            (Powered by ECS Library)          │
+├──────────────────────────────────────────────┤
+│    Rendering Engine (Sprite Batch, UI)       │
+├──────────────────────────────────────────────┤
+│  Networking Client (UDP, Protocol Handling)  │
+└──────────────────────────────────────────────┘
+```
+
+### Key Design Principles
+
+- **Separation of Concerns** — Each module has a single responsibility
+- **Dependency Injection** — Services are injected, not global
+- **Event-Driven** — Systems communicate via events, not direct calls
+- **ECS-Based** — Game logic uses Entity-Component-System pattern
+- **Extensible** — Easy to add new features without modifying core code
 
 ---
 
 ## Project Structure
 
-### Core Architecture
-
-#### 1. `Application.hpp/cpp`
-- **Purpose**: Main application orchestrator
-- **Responsibilities**:
-  - Initializes all core systems (ECS, Services, States, Events)
-  - Manages the main game loop
-  - Coordinates communication between subsystems
-  - Handles application lifecycle (initialize, run, shutdown)
-- **Key Components**:
-  - `EventManager`: Central event bus for application-wide events
-  - `ServiceManager`: Dependency injection container for services
-  - `GameStateManager`: State machine for game flow
-  - `registry`: ECS registry for game entities
-  - `ILoader`: Dynamic library loader for ECS systems
-
-#### 2. `Core/EventManager.hpp/cpp`
-- **Purpose**: Event system backbone
-- **Responsibilities**:
-  - Type-safe event subscription and emission
-  - Supports immediate and queued event processing
-  - Decouples system communication
-- **Features**:
-  - Template-based event handling
-  - Event queue for deferred processing
-  - Multiple handlers per event type
-
-#### 3. `Core/Events.hpp`
-- **Purpose**: Defines all game events
-- **Event Categories**:
-  - **Input Events**: `KeyPressEvent`, `KeyReleaseEvent`, `MouseMoveEvent`, `MouseButtonEvent`
-  - **Player Events**: `PlayerMoveEvent`, `PlayerJoinEvent`, `PlayerLeaveEvent`
-  - **Enemy Events**: `EnemySpawnEvent`, `EnemyUpdateEvent`, `EnemyDestroyEvent`
-  - **Projectile Events**: `ProjectileSpawnEvent`, `ProjectileDestroyEvent`
-  - **Game Events**: `GameStartEvent`, `GameOverEvent`, `ScoreUpdateEvent`
-  - **Network Events**: `NetworkConnectedEvent`, `NetworkDisconnectedEvent`, `NetworkErrorEvent`
-
----
-
-### Service Layer
-
-#### 1. `Core/Services/ServiceManager.hpp/cpp`
-- **Purpose**: Dependency injection and service lifecycle manager
-- **Responsibilities**:
-  - Registers and manages service instances
-  - Provides type-safe service retrieval
-  - Coordinates service initialization and shutdown
-  - Updates all services each frame
-- **Pattern**: Service Locator with dependency injection
-
-#### 2. `Core/Services/Input/Input.hpp/cpp`
-- **Purpose**: Input service for handling user input
-- **Responsibilities**:
-  - Captures keyboard and mouse input
-  - Emits input events to the event system
-  - Maintains input state
-- **Integration**: Converts raw input to `KeyPressEvent`, `MouseMoveEvent`, etc.
-
-#### 3. `Core/Services/Render/Render.hpp/cpp`
-- **Purpose**: Rendering service using Raylib
-- **Responsibilities**:
-  - Window management
-  - Frame rendering coordination
-  - Camera management
-  - Debug rendering utilities
-- **Technology**: Built on Raylib graphics library
-
-#### 4. `Core/Services/Network/Network.hpp/cpp`
-- **Purpose**: Network communication service
-- **Responsibilities**:
-  - Manages connection to game server (see `../../../Network/`)
-  - Sends player actions to server
-  - Receives and processes server updates
-  - Handles network events (connection, disconnection, errors)
-- **Protocol**: Uses UDP for low-latency communication
- - **Protocol**: Uses UDP for low-latency communication
- - **Server Reference**: See `../../../Protocol.md` for protocol details
-
----
-
-### State Management
-
-#### 1. `Core/States/GameStateManager.hpp/cpp`
-- **Purpose**: State machine controller
-- **Responsibilities**:
-  - Manages state stack (push, pop, change)
-  - Handles state lifecycle (enter, exit, pause, resume)
-  - Processes pending state operations safely
-  - Maintains state factory registry
-- **Pattern**: State pattern with stack-based management
-
-#### 2. `Core/States/GameState.hpp`
-- **Purpose**: Base interface for all game states
-- **Interface**:
-  ```cpp
-  class IGameState {
-      virtual void on_enter() = 0;      // Called when state becomes active
-      virtual void on_exit() = 0;       // Called when state is removed
-      virtual void on_pause() = 0;      // Called when another state is pushed
-      virtual void on_resume() = 0;     // Called when top state is popped
-      virtual void update(float dt) = 0; // Called every frame
-      virtual void render() = 0;        // Called for rendering
-  };
-  ```
-
-#### 3. Game States
-
-##### `Core/States/MainMenu/MainMenu.hpp/cpp`
-- **Purpose**: Main menu state
-- **Features**:
-  - Server connection UI (IP/Port input)
-  - Player name input
-  - Play button to enter lobby
-  - Settings and quit options
-- **Transition**: MainMenu → Lobby (on Play)
-
-##### `Core/States/Lobby/Lobby.hpp/cpp`
-- **Purpose**: Room selection and creation
-- **Features**:
-  - Display available game rooms
-  - Create new room button
-  - Join existing room
-  - Refresh room list
-- **Transition**: Lobby → WaitingLobby (on room join/create)
-
-##### `Core/States/WaitingLobby/WaitingLobby.hpp/cpp`
-- **Purpose**: Pre-game waiting room
-- **Features**:
-  - Display connected players
-  - Ready/Unready system
-  - Room settings display
-  - Leave room button
-- **Transition**: WaitingLobby → InGame (when all ready)
-
-##### `Core/States/InGame/InGame.hpp/cpp`
-- **Purpose**: Main gameplay state
-- **Features**:
-  - Active gameplay
-  - ECS system updates
-  - Player control
-  - Enemy spawning and AI
-  - Collision detection
-  - Score tracking
-  - Network synchronization
-- **Transition**: InGame → MainMenu (on game over/quit)
-
-##### `Core/States/Loading/Loading.hpp/cpp`
-- **Purpose**: Asset loading screen
-- **Features**:
-  - Loading progress display
-  - Asset preloading
-  - Smooth transition to next state
-
----
-
-### Network Integration
-
-#### 1. `Core/Client/Client.hpp/cpp` (UDPClient)
-- **Purpose**: Low-level UDP network client
-- **Responsibilities**:
-  - Establishes UDP connection to server
-  - Sends packets to server
-  - Receives packets from server (separate thread)
-  - Manages connection state
-- **Threading**: Dedicated receive thread for non-blocking I/O
-- **Server Location**: See `../../../Network/` for server implementation
-
-#### 2. `Core/Systems/Network/Network.hpp/cpp`
-- **Purpose**: High-level network system
-- **Responsibilities**:
-  - Serializes game state to network messages
-  - Deserializes server updates to game events
-  - Handles protocol-level communication
-  - Manages client-side prediction and reconciliation
-- **Integration**: Bridges between ECS/Events and raw network packets
-
----
-
-### Entity Management
-
-#### Components (`Entity/Components/`)
-Game-specific components extending the base ECS:
-
-- **`Controllable/`**: Marks entities that can be controlled by local player
-- **`Drawable/`**: Contains rendering information (sprite, texture, color)
-- **`Enemy/`**: Enemy-specific data (type, behavior, AI state)
-- **`Health/`**: Health points and damage tracking
-- **`LifeTime/`**: Time-limited entities (projectiles, effects)
-- **`NetworkSync/`**: Network synchronization data (entity ID, owner)
-- **`Projectile/`**: Projectile-specific data (damage, speed, owner)
-- **`RemotePlayer/`**: Remote player entity data
-- **`Score/`**: Score tracking component
-- **`Spawner/`**: Entity spawner data (spawn rate, type)
-- **`Weapon/`**: Weapon system data (cooldown, projectile type)
-
-#### Systems (`Entity/Systems/`)
-Game-specific systems extending the base ECS:
-
-- **`Control/`**: Handles player input and translates to entity movement
-- **`Draw/`**: Renders all drawable entities to screen
-- **`EnemyAI/`**: Enemy behavior and movement patterns
-- **`EnemyCleanup/`**: Removes destroyed enemies from ECS
-- **`EnemySpawnSystem/`**: Spawns enemies based on game state
-- **`Health/`**: Processes damage and health-related logic
-- **`LifeTime/`**: Destroys entities after their lifetime expires
-- **`NetworkSyncSystem/`**: Synchronizes remote entities with server state
-- **`Shoot/`**: Handles weapon firing and projectile creation
-- **`Spawn/`**: Generic entity spawning system
-
----
-
-### User Interface
-
-#### 1. `UI/UIManager.hpp/cpp`
-- **Purpose**: UI component orchestrator
-- **Responsibilities**:
-  - Manages all UI components
-  - Handles UI input (mouse clicks, keyboard)
-  - Renders UI elements
-  - Component lifecycle management
-- **Pattern**: Composite pattern with named component registry
-
-#### 2. `UI/UIComponent.hpp`
-- **Purpose**: Base interface for UI components
-- **Interface**:
-  ```cpp
-  class IUIComponent {
-      virtual void update(float dt) = 0;
-      virtual void render() = 0;
-      virtual bool handle_input() = 0;  // Returns true if input consumed
-      virtual bool is_mouse_over(float x, float y) = 0;
-  };
-  ```
-
-#### 3. UI Components (`UI/Components/`)
-
-##### `UIButton.hpp/cpp`
-- **Purpose**: Interactive button component
-- **Features**:
-  - Click callbacks
-  - Hover states
-  - Customizable appearance
-  - Text label support
-
-##### `UIText.hpp/cpp`
-- **Purpose**: Text display component
-- **Features**:
-  - Multi-line text support
-  - Text alignment
-  - Font customization
-  - Color and style options
-
-##### `UIInputField.hpp/cpp`
-- **Purpose**: Text input component
-- **Features**:
-  - Keyboard input capture
-  - Text validation
-  - Placeholder text
-  - Password masking
-  - Character limits
-
-##### `UIPanel.hpp/cpp`
-- **Purpose**: Container component for grouping UI elements
-- **Features**:
-  - Background rendering
-  - Border support
-  - Child component management
-  - Layout positioning
-
----
-
-## Game Flow
-
-### 1. Application Startup
 ```
-main() 
-  → Application::initialize()
-    → Load ECS components library (libECS.so)
-    → Load ECS systems (Control, Draw, Health, etc.)
-    → Register services (Input, Render, Network)
-    → Initialize EventManager
-    → Register game states (MainMenu, Lobby, InGame, etc.)
-    → Push MainMenu state
-  → Application::run()
-    → Main game loop
+Games/RType/
+├── main_client.cpp                 # Entry point for the game client
+├── Application.hpp/cpp             # Main application orchestrator
+├── Core/
+│   ├── EventManager.hpp/cpp        # Event bus for inter-system communication
+│   ├── Events.hpp                  # Event type definitions
+│   ├── Services/
+│   │   ├── IService.hpp            # Service base interface
+│   │   ├── InputService.hpp/cpp    # Keyboard/mouse input handling
+│   │   ├── RenderService.hpp/cpp   # Rendering orchestration
+│   │   └── NetworkService.hpp/cpp  # Network client (send/receive)
+│   ├── States/
+│   │   ├── IGameState.hpp          # State machine interface
+│   │   ├── MainMenuState.hpp/cpp   # Main menu
+│   │   ├── LobbyState.hpp/cpp      # Lobby/matchmaking
+│   │   ├── GameState.hpp/cpp       # In-game play state
+│   │   └── PauseState.hpp/cpp      # Pause menu
+│   └── Systems/
+│       ├── InputSystem.hpp/cpp     # Processes keyboard input
+│       └── NetworkSystem.hpp/cpp   # Sends network updates
+│
+├── Entity/
+│   ├── Components/                 # Game-specific components
+│   │   ├── Health.hpp              # Health/shield system
+│   │   ├── Weapon.hpp              # Player weapons
+│   │   ├── Enemy.hpp               # Enemy behavior data
+│   │   ├── Movement.hpp            # Speed/direction modifiers
+│   │   └── ...more components
+│   └── Systems/                    # Game-specific systems
+│       ├── EnemyAISystem.hpp       # Enemy behavior logic
+│       ├── WeaponSystem.hpp        # Weapon firing/projectiles
+│       ├── HealthSystem.hpp        # Damage/death handling
+│       └── ...more systems
+│
+├── UI/
+│   ├── UIManager.hpp/cpp           # UI orchestration
+│   ├── Components/
+│   │   ├── Button.hpp              # Clickable buttons
+│   │   ├── Label.hpp               # Text display
+│   │   ├── ProgressBar.hpp         # Health bars
+│   │   └── ...more UI components
+│   └── Screens/
+│       ├── MainMenuScreen.hpp      # Menu UI layout
+│       ├── HUDScreen.hpp           # In-game HUD
+│       └── PauseScreen.hpp         # Pause menu UI
+│
+├── Assets/
+│   ├── Textures/
+│   │   ├── player.png
+│   │   ├── enemies.png
+│   │   └── ...sprites
+│   ├── Sounds/
+│   │   ├── shoot.wav
+│   │   ├── explosion.wav
+│   │   └── ...audio
+│   └── Fonts/
+│       └── arial.ttf
+│
+├── Networking.md                   # Detailed networking architecture
+├── README.md                       # This file
+├── Constants.hpp                   # Game constants/configuration
+└── build.sh                        # Build script for the game
 ```
 
-### 2. Main Game Loop
+### Directory Organization
+
+**Core/** — Framework & infrastructure (reusable across games)
+- States, Services, Events — Game flow management
+- Designed to be extended, not modified
+
+**Entity/** — Game-specific logic (unique to R-Type)
+- Components & Systems for R-Type mechanics
+- Where game-specific features are added
+
+**UI/** — User interface (game-specific)
+- Screens, layouts, interactive elements
+
+---
+
+## Setting Up Development Environment
+
+### Prerequisites
+
+- **C++17 compatible compiler**:
+  - GCC 7+ (Linux)
+  - Clang 5+ (macOS/Linux)
+  - MSVC 2017+ (Windows)
+- **CMake 3.10+** — Build system
+- **Git** — Version control
+- **vcpkg** — Package manager (dependency management)
+
+### Installing Dependencies
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/ColAntoine/R-Type.git
+cd R-Type
+
+# 2. Initialize vcpkg (handles all C++ dependencies)
+./external/vcpkg/bootstrap-vcpkg.sh  # Linux/macOS
+# or
+.\external\vcpkg\bootstrap-vcpkg.bat  # Windows
+
+# 3. Dependencies are automatically installed by CMake
 ```
-while (running) {
-    1. Handle Window Events
-    2. Update Services (Input, Network)
-    3. Process Event Queue
-    4. Update Active State
-    5. Update ECS Systems
-    6. Render State
-    7. Render UI
-    8. Frame Timing
+
+### IDE Setup
+
+#### Visual Studio Code
+1. Install extensions:
+   - C/C++ (Microsoft)
+   - CMake Tools (Microsoft)
+   - Better C++ Syntax
+
+2. Open the workspace:
+   ```bash
+   code .
+   ```
+
+3. Select CMake kit (compiler) when prompted
+
+#### Visual Studio (Windows)
+1. Open CMake as a project:
+   - File → Open → CMake
+   - Select `CMakeLists.txt`
+
+2. Build via the CMake menu
+
+#### CLion (JetBrains)
+1. Open the project
+2. CLion auto-detects CMake and vcpkg
+3. Build & run from the IDE
+
+---
+
+## Building from Source
+
+### Quick Build
+
+```bash
+# Build everything (server, client, ECS)
+make
+
+# Or manually:
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+cmake --build . --config Release
+```
+
+### Build Artifacts
+
+After building, you'll find:
+```
+build/
+├── r-type_client          # Game executable
+├── r-type_server          # Server executable
+├── lib/
+│   ├── libECS.so          # ECS library
+│   └── systems/           # Dynamically loaded systems
+└── Games/RType/
+    └── Assets/            # Game resources (copied automatically)
+```
+
+### Build Options
+
+```bash
+# Debug build (with symbols, slower)
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+
+# Release build (optimized, faster)
+cmake .. -DCMAKE_BUILD_TYPE=Release
+
+# Build specific target
+cmake --build . --target r-type_client
+```
+
+### Rebuilding After Changes
+
+```bash
+# Quick rebuild (incremental)
+cd build
+cmake --build .
+
+# Full clean rebuild
+cd build
+cmake --build . --target clean
+cmake --build .
+```
+
+---
+
+## Understanding the Code
+
+### Code Flow: Game Startup
+
+```cpp
+// main_client.cpp
+int main(int argc, char* argv[]) {
+    // 1. Parse arguments (server IP, port)
+    std::string server_ip = argv[1];    // e.g., "127.0.0.1"
+    int server_port = std::stoi(argv[2]); // e.g., 8080
+    
+    // 2. Initialize services
+    InputService input_service;
+    RenderService render_service;
+    NetworkService network_service(server_ip, server_port);
+    
+    // 3. Create event manager
+    EventManager event_manager;
+    
+    // 4. Create application
+    Application app(event_manager, input_service, render_service, network_service);
+    
+    // 5. Run main loop
+    app.run();  // Blocks until game exits
 }
 ```
 
-### 3. State Transition Example: Joining Game
-```
-MainMenu (User enters IP, clicks Play)
-  → Emit NetworkConnectEvent
-  → Network Service connects to server
-  → On connection success: Push Lobby state
-    
-Lobby (User clicks "Join Room")
-  → Send JOIN_ROOM message to server
-  → On success: Push WaitingLobby state
-  
-WaitingLobby (All players ready)
-  → Server sends GAME_START message
-  → Change to InGame state
-  → Load player entities
-  → Start game systems
-```
-
-### 4. Network Communication Flow
-```
-Client Action (e.g., Player moves)
-  → Control System detects input
-  → Updates local entity (client-side prediction)
-  → Emit PlayerMoveEvent
-  → Network System serializes event
-  → Send packet to server (see ../../../protocol.md)
-  
-Server Update Received
-  → Network Service receives packet
-  → Network System deserializes
-  → Emit appropriate event (PlayerMoveEvent, EnemySpawnEvent, etc.)
-  → Systems react to events
-  → Update ECS entities
-```
-
----
-
-## Integration with ECS Library (short)
-
-The R-Type client uses the shared ECS library for entity management. For core ECS concepts, component definitions and usage examples please refer to `../../ECS/README.md`.
-
-In short:
-- The client loads the ECS components library at startup and uses `ILoader` to load game systems when required.
-- Game-specific components and systems live under `Entity/Components/` and `Entity/Systems/`.
-
-
----
-
-## Network Protocol
-
-The client communicates with the server using a UDP-based protocol. For detailed protocol specification, see `../../../protocol.md`.
-
-### Key Message Types
-
-#### Client → Server
-- **CONNECT**: Initial connection request with player name
-- **DISCONNECT**: Graceful disconnection
-- **INPUT**: Player input state (movement, shooting)
-- **READY**: Player ready in lobby
-- **JOIN_ROOM**: Request to join a game room
-- **CREATE_ROOM**: Request to create a new room
-
-#### Server → Client
-- **PLAYER_JOIN**: New player connected
-- **PLAYER_LEAVE**: Player disconnected
-- **PLAYER_UPDATE**: Player position/state update
-- **ENEMY_SPAWN**: New enemy spawned
-- **ENEMY_UPDATE**: Enemy position/state update
-- **ENEMY_DESTROY**: Enemy destroyed
-- **PROJECTILE_SPAWN**: New projectile created
-- **PROJECTILE_DESTROY**: Projectile destroyed
-- **GAME_START**: Game session starting
-- **GAME_OVER**: Game session ended
-- **SCORE_UPDATE**: Player score changed
-
-### Network Synchronization Strategy
-
-1. **Client-Side Prediction**:
-   - Local player input is applied immediately to local entity
-   - Prevents input lag for responsive gameplay
-
-2. **Server Reconciliation**:
-   - Server authoritative for all entity states
-   - Server updates override client predictions
-   - Smooth interpolation to hide corrections
-
-3. **Entity Interpolation**:
-   - Remote entities (other players, enemies) are interpolated
-   - Reduces jitter from network updates
-   - Maintains smooth visual movement
-
----
-
-## Event-Driven Communication
-
-### Event Flow Example: Player Shoots
-
-```
-1. User presses SPACE
-   → Input Service detects key press
-   → Emit KeyPressEvent(KEY_SPACE)
-
-2. Control System receives KeyPressEvent
-   → Check if entity has weapon component
-   → Check weapon cooldown
-   → Create projectile entity
-   → Emit ProjectileSpawnEvent
-
-3. Network System receives ProjectileSpawnEvent
-   → Serialize projectile data
-   → Send SHOOT packet to server
-
-4. Server validates and broadcasts
-   → All clients receive PROJECTILE_SPAWN
-   → Network System deserializes
-   → Emit ProjectileSpawnEvent
-   → Systems create/update projectile entities
-```
-
----
-
-## Building and Running
-
-### Prerequisites
-- C++17 compiler
-- CMake 3.10+
-- Raylib (graphics library)
-- ECS library built (`../../ECS/libECS.so`)
-- Network server running (see `../../../Network/README.md`)
-
-### Build Instructions
-```bash
-# From R-Type root directory
-cd Games/RType
-mkdir build && cd build
-cmake ..
-make
-
-# Run client
-./r-type_client
-```
-
-### Configuration
-- Default server: `127.0.0.1:8080`
-- Configurable through Main Menu UI
-- Connection settings not persisted between sessions
-
----
-
-## Code Examples
-
-### Adding a New Game State
+### Code Flow: Main Loop
 
 ```cpp
-// 1. Create state class
-class NewState : public IGameState {
-public:
-    void on_enter() override {
-        // Initialize state resources
+// Application.cpp
+void Application::run() {
+    while (is_running) {
+        // 1. Handle input
+        input_service.update();  // Capture keyboard/mouse
+        
+        // 2. Process network
+        network_service.receive_updates();  // Get server updates
+        
+        // 3. Update game state
+        current_state->update(dt);  // Process game logic
+        
+        // 4. Render frame
+        render_service.begin_frame();
+            current_state->render();  // Draw everything
+        render_service.end_frame();   // Swap buffers
+        
+        // 5. Emit events
+        event_manager.emit_all();     // Process queued events
     }
+}
+```
+
+### Event System
+
+Events allow loose coupling between systems:
+
+```cpp
+// Subscribe to events (e.g., in GameState constructor)
+event_manager.subscribe("PLAYER_SHOT", [this](const Event& e) {
+    int weapon_type = e.get<int>("weapon");
+    spawn_projectile(weapon_type);
+});
+
+// Emit event (e.g., in InputSystem)
+if (input_service.is_key_pressed(KEY_SPACE)) {
+    Event shoot_event("PLAYER_SHOT");
+    shoot_event.set("weapon", current_weapon);
+    event_manager.emit(shoot_event);
+}
+```
+
+### ECS Usage
+
+The game uses an Entity-Component-System for game logic. See **[../../../ECS/README.md](../../../ECS/README.md)** for complete ECS documentation.
+
+Quick example:
+
+```cpp
+// Create a player entity
+entity player = registry.spawn_entity();
+registry.emplace_component<position>(player, 100.f, 200.f);
+registry.emplace_component<velocity>(player, 0.f, 0.f);
+registry.emplace_component<sprite>(player, "player.png");
+registry.emplace_component<weapon>(player, WeaponType::LASER);
+
+// Update position based on velocity
+auto* positions = registry.get_if<position>();
+auto* velocities = registry.get_if<velocity>();
+for (auto [pos, vel] : zipper(*positions, *velocities)) {
+    pos.x += vel.vx * dt;
+    pos.y += vel.vy * dt;
+}
+```
+
+### Service Layer
+
+Services are singletons that handle cross-cutting concerns:
+
+```cpp
+// InputService — Captures keyboard/mouse input
+if (input_service.is_key_pressed(KEY_W)) {
+    player_velocity.y = -PLAYER_SPEED;
+}
+
+// RenderService — Manages rendering
+render_service.draw_sprite(texture, x, y, scale);
+render_service.draw_text("Score: 1000", 10, 10, 24);
+
+// NetworkService — Sends/receives network messages
+network_service.send_position_update(player_x, player_y);
+Packet packet = network_service.receive();
+```
+
+### Networking Details
+
+For detailed networking architecture and client-side prediction, see **[Networking.md](Networking.md)**.
+
+Key concepts:
+- **Client-Side Prediction** — Local inputs feel responsive
+- **Server Reconciliation** — Server corrections are smooth
+- **Interpolation** — Remote player positions are smooth
+- **Reliable Messages** — Critical events always arrive
+
+---
+
+## Adding New Features
+
+### Adding a New Component
+
+Components are data containers for game entities:
+
+```cpp
+// File: Entity/Components/Shield.hpp
+#pragma once
+#include "ECS/Components/IComponent.hpp"
+
+struct shield : public IComponent {
+    float health;
+    float max_health;
+    bool active;
     
-    void on_exit() override {
-        // Cleanup state resources
+    shield(float max_hp = 100.f)
+        : health(max_hp), max_health(max_hp), active(true) {}
+};
+```
+
+Then register it in the ECS library. See **[../../../ECS/README.md](../../../ECS/README.md)** for full instructions.
+
+### Adding a New System
+
+Systems contain game logic:
+
+```cpp
+// File: Entity/Systems/ShieldSystem.hpp
+#pragma once
+#include "ECS/Systems/ISystem.hpp"
+#include "../Components/Shield.hpp"
+
+class ShieldSystem : public ISystem {
+public:
+    void update(registry& reg, float dt) override {
+        auto* shields = reg.get_if<shield>();
+        auto* sprites = reg.get_if<sprite>();
+        
+        for (auto [sh, spr] : zipper(*shields, *sprites)) {
+            if (sh.active) {
+                // Render shield visual
+                spr.tint = BLUE;
+            }
+        }
+    }
+};
+```
+
+### Adding a New State
+
+States manage game flow:
+
+```cpp
+// File: Core/States/GameOverState.hpp
+#pragma once
+#include "IGameState.hpp"
+
+class GameOverState : public IGameState {
+private:
+    int final_score;
+    
+public:
+    void enter() override {
+        // State initialization
+        ui_manager.show_game_over_screen(final_score);
     }
     
     void update(float dt) override {
-        // Update logic
+        // Update game over logic
+        if (input_service.is_key_pressed(KEY_SPACE)) {
+            state_machine.transition_to<MainMenuState>();
+        }
     }
     
     void render() override {
-        // Render logic
+        // Draw game over screen
     }
     
-    void on_pause() override {}
-    void on_resume() override {}
+    void exit() override {
+        // Clean up state
+    }
 };
-
-// 2. Register state in Application::initialize()
-_stateManager.register_state<NewState>("NewState");
-
-// 3. Transition to state
-_stateManager.push_state("NewState");
 ```
 
-### Creating a Custom Event
+### Adding a New Event Type
+
+Events enable loose coupling:
 
 ```cpp
-// 1. Define event in Events.hpp
-struct CustomEvent : Event {
-    int custom_data;
-    std::string message;
-    CustomEvent(int data, const std::string& msg) 
-        : custom_data(data), message(msg) {}
+// In Core/Events.hpp, add:
+enum class EventType {
+    PLAYER_HEALTH_CHANGED,
+    ENEMY_SPAWNED,
+    WEAPON_UPGRADED,
+    // Add new events here
+    GAME_PAUSED,
+    LEVEL_COMPLETED,
 };
 
-// 2. Subscribe to event
-event_manager_.subscribe<CustomEvent>([](const CustomEvent& e) {
-    std::cout << "Received: " << e.message << std::endl;
-});
+// In your system/state, emit the event:
+Event level_complete("LEVEL_COMPLETED");
+level_complete.set("level_number", current_level);
+level_complete.set("score", player_score);
+event_manager.emit(level_complete);
 
-// 3. Emit event
-event_manager_.emit(CustomEvent(42, "Hello World"));
+// Subscribe to it elsewhere:
+event_manager.subscribe("LEVEL_COMPLETED", [this](const Event& e) {
+    int level = e.get<int>("level_number");
+    show_level_complete_screen(level);
+});
 ```
 
 ### Adding a New Service
 
+Services handle cross-cutting concerns:
+
 ```cpp
-// 1. Create service implementing IService
+// File: Core/Services/AudioService.hpp
+#pragma once
+#include "IService.hpp"
+
 class AudioService : public IService {
 public:
-    void initialize() override {
-        // Load audio system
+    void play_sound(const std::string& sound_name) {
+        // Use AudioManager (from ECS)
+        AudioManager::instance().get_sfx().play(sound_name);
     }
     
-    void shutdown() override {
-        // Cleanup audio system
-    }
-    
-    void update(float delta_time) override {
-        // Update audio (if needed)
-    }
-    
-    void play_sound(const std::string& sound_id) {
-        // Play sound implementation
+    void set_master_volume(float volume) {
+        AudioManager::instance().set_master_volume(volume);
     }
 };
 
-// 2. Register service in Application::initialize()
-service_manager_.register_service<AudioService>();
+// In Application.cpp, add:
+AudioService audio_service;
+// ... then use it:
+audio_service.play_sound("shoot");
+```
 
-// 3. Use service anywhere
-auto& audio = service_manager_.get_service<AudioService>();
-audio.play_sound("explosion");
+### Adding UI Elements
+
+UI components display information:
+
+```cpp
+// File: UI/Components/EnemyRadar.hpp
+#pragma once
+#include "ECS/UI/UIComponent.hpp"
+
+class EnemyRadar : public UIComponent {
+public:
+    void render() override {
+        // Draw radar background
+        DrawRectangle(10, 10, 100, 100, DARK_GRAY);
+        
+        // Draw enemy positions
+        for (const auto& enemy : nearby_enemies) {
+            float radar_x = 10 + (enemy.x / world_width) * 100;
+            float radar_y = 10 + (enemy.y / world_height) * 100;
+            DrawCircle(radar_x, radar_y, 3, RED);
+        }
+    }
+};
 ```
 
 ---
 
-## Debugging and Development
+## Creating New Scenes
 
-### Debug Features
-- **Event Logging**: Enable verbose event logging in EventManager
-- **Network Packet Inspection**: Log all sent/received packets
-- **ECS Entity Viewer**: Display all entities and their components
-- **State Stack Viewer**: Show current state stack
+Scenes are levels/play areas. Create a new scene by:
+
+1. **Create Scene Configuration** — Define layout, enemies, obstacles
+2. **Create Scene Data Component** — Store scene-specific data
+3. **Create Scene Loading System** — Populate entities from config
+4. **Add Scene to Progression** — Include in level sequence
+
+### Example: Forest Level
+
+```cpp
+// File: Entity/Components/SceneData.hpp
+struct forest_scene_data {
+    int enemy_wave_count;
+    float tree_density;
+    bool has_boss;
+};
+
+// File: Entity/Systems/ForestSceneLoader.hpp
+class ForestSceneLoader {
+public:
+    static void load_scene(registry& reg) {
+        // Create terrain
+        for (int i = 0; i < 10; i++) {
+            create_tree(reg, i * 100, 200);
+        }
+        
+        // Create enemies
+        for (int i = 0; i < 5; i++) {
+            create_enemy(reg, EnemyType::BASIC, 400 + i * 200, 100);
+        }
+        
+        // Create boss
+        create_enemy(reg, EnemyType::BOSS, 500, -100);
+    }
+};
+
+// In GameState::load_scene():
+if (current_scene == Scene::FOREST) {
+    ForestSceneLoader::load_scene(registry);
+}
+```
+
+---
+
+## Creating Plugins/Mods
+
+Plugins extend R-Type with new content. Since R-Type uses a dynamic loading architecture, plugins are compiled as shared libraries and loaded at runtime.
+
+### Plugin System Architecture
+
+R-Type supports two types of plugins:
+
+1. **Component Plugins** — New game data types
+2. **System Plugins** — New game logic
+
+Both are compiled as shared libraries (`.so`, `.dll`, `.dylib`) and loaded via the ECS loader.
+
+### Creating a Component Plugin
+
+```cpp
+// File: plugins/my_component_plugin/MyComponent.hpp
+#pragma once
+#include "ECS/Components/IComponent.hpp"
+
+struct my_custom_component : public IComponent {
+    float value1;
+    int value2;
+    std::string data;
+    
+    my_custom_component() = default;
+    my_custom_component(float v1, int v2, const std::string& d)
+        : value1(v1), value2(v2), data(d) {}
+};
+```
+
+```cpp
+// File: plugins/my_component_plugin/plugin.cpp
+#include "MyComponent.hpp"
+#include "ECS/Registry.hpp"
+
+extern "C" {
+    // Called when plugin is loaded
+    void register_components(registry& reg) {
+        reg.register_component<my_custom_component>();
+    }
+}
+```
+
+### Creating a System Plugin
+
+```cpp
+// File: plugins/my_system_plugin/MySystem.hpp
+#pragma once
+#include "ECS/Systems/ISystem.hpp"
+#include "MyComponent.hpp"
+
+class MySystem : public ISystem {
+public:
+    void update(registry& reg, float dt) override {
+        auto* components = reg.get_if<my_custom_component>();
+        if (!components) return;
+        
+        for (auto [comp, idx] : zipper(*components)) {
+            // Update logic
+            comp.value1 += comp.value2 * dt;
+        }
+    }
+};
+```
+
+```cpp
+// File: plugins/my_system_plugin/plugin.cpp
+#include "MySystem.hpp"
+
+extern "C" {
+    // Called when plugin is loaded
+    ISystem* create_system() {
+        return new MySystem();
+    }
+    
+    void destroy_system(ISystem* sys) {
+        delete sys;
+    }
+}
+```
+
+### Building a Plugin
+
+```bash
+# Create plugin directory
+mkdir plugins/my_plugin
+cd plugins/my_plugin
+
+# Create CMakeLists.txt
+cat > CMakeLists.txt << 'EOF'
+cmake_minimum_required(VERSION 3.10)
+project(my_plugin_system)
+
+add_library(my_plugin_system SHARED plugin.cpp)
+target_link_libraries(my_plugin_system PRIVATE ECS)
+target_include_directories(my_plugin_system PRIVATE ${CMAKE_SOURCE_DIR}/ECS/include)
+
+set_target_properties(my_plugin_system PROPERTIES
+    PREFIX "lib"
+    SUFFIX ".so"
+)
+EOF
+
+# Add to main CMakeLists.txt
+# add_subdirectory(plugins/my_plugin)
+
+# Build
+mkdir build && cd build
+cmake ..
+cmake --build .
+```
+
+### Loading a Plugin
+
+```cpp
+// In Application or GameState initialization
+#include "ECS/LinuxLoader.hpp"
+
+PlatformLoader loader;
+registry reg;
+
+// Load components
+loader.load_components("./libECS.so", reg);
+
+// Load system plugins
+loader.load_system("./lib/systems/libmy_plugin_system.so", ILoader::LogicSystem);
+```
+
+### Plugin Guidelines
+
+- **Keep plugins independent** — Don't create hard dependencies on other plugins
+- **Document your plugin** — Include README with component/system descriptions
+- **Version your API** — Change major version if breaking changes
+- **Handle loading errors** — Return false or throw exception if loading fails
+- **Use consistent naming** — Prefix with plugin name (e.g., `my_plugin_component`)
+
+---
+
+## Debugging
+
+### Enable Debug Logging
+
+```cpp
+// In main_client.cpp, before app.run():
+#ifdef _DEBUG
+    EnableDebugLogging();
+    SetLogLevel(LogLevel::Verbose);
+#endif
+```
+
+### Using a Debugger
+
+#### GDB (Linux/macOS)
+```bash
+gdb ./r-type_client
+(gdb) run 127.0.0.1 8080
+(gdb) break Application.cpp:42
+(gdb) continue
+(gdb) print player_position
+(gdb) step
+```
+
+#### LLDB (macOS)
+```bash
+lldb ./r-type_client
+(lldb) run 127.0.0.1 8080
+(lldb) b Application.cpp:42
+(lldb) c
+(lldb) p player_position
+(lldb) s
+```
+
+#### Visual Studio (Windows)
+1. Set breakpoints in the code
+2. Press **F5** to start debugging
+3. Use the Debug toolbar to step, continue, watch variables
 
 ### Common Issues
 
-#### Connection Failed
-- Verify server is running (`../../../Network/r-type_server`)
-- Check IP address and port
-- Verify firewall settings
-- Check server logs for connection attempts
+**Game runs but networking doesn't work**
+- Check server is running
+- Verify firewall allows UDP port 8080
+- Check event subscriptions are registered before events are emitted
 
-#### Input Not Working
-- Ensure Input Service is initialized
-- Check event subscriptions
-- Verify Control System is loaded
-- Check if UI is consuming input
+**Frame rate is low**
+- Profile with a performance profiler
+- Check for expensive O(n²) operations (especially collision detection)
+- Use `PhysicsManager` spatial hash instead of naive collision
 
-#### Entities Not Rendering
-- Verify sprite component has valid texture path
-- Check if Draw System is loaded and updating
-- Ensure Render Service is initialized
-- Check camera positioning
-
-#### Network Desync
-- Check server authority implementation
-- Verify network interpolation settings
-- Review client-side prediction logic
-- Check packet loss and latency
-
----
-
-## Performance Considerations
-
-### Optimization Strategies
-
-1. **ECS Performance**:
-   - Systems iterate only over entities with required components
-   - Cache-friendly data layout via sparse sets
-   - Minimize component additions/removals during gameplay
-
-2. **Network Performance**:
-   - UDP for low latency
-   - Client-side prediction reduces perceived lag
-   - State delta compression (only send changes)
-   - Interest management (only sync relevant entities)
-
-3. **Rendering Performance**:
-   - Batch draw calls by texture
-   - Frustum culling for off-screen entities
-   - Sprite atlases to reduce texture switches
-   - LOD for distant entities
-
-4. **Event Performance**:
-   - Immediate mode for time-critical events
-   - Queued mode for batch processing
-   - Event handler caching
-   - Minimize event payload size
-
----
-
-## Architecture Advantages
-
-1. **Modularity**:
-   - Services are independent and interchangeable
-   - States encapsulate distinct game phases
-   - ECS separates data from behavior
-
-2. **Testability**:
-   - Services can be mocked for unit tests
-   - Event-driven design enables integration testing
-   - State transitions are deterministic
-
-3. **Scalability**:
-   - Easy to add new game states
-   - Simple to extend with new components/systems
-   - Services can be enhanced without affecting others
-
-4. **Maintainability**:
-   - Clear separation of concerns
-   - Event-driven reduces coupling
-   - State pattern organizes game flow
-
----
-
-## Future Improvements
-
-1. **Gameplay**:
-   - Power-ups and weapon upgrades
-   - Boss battles with complex patterns
-   - Multiplayer co-op mode
-   - Leaderboards and statistics
-
-2. **Technical**:
-   - Asset hot-reloading for faster iteration
-   - Replay system for debugging and sharing
-   - Server-side anti-cheat validation
-   - WebSocket fallback for restricted networks
-
-3. **User Experience**:
-   - Rebindable controls
-   - Graphics settings menu
-   - Audio settings and music
-   - Tutorial and help screens
-
-4. **Network**:
-   - Lag compensation improvements
-   - Server browser with filters
-   - Friend system and invites
-   - Reconnection handling
+**Entities not rendering**
+- Verify entities have both `position` and `sprite` components
+- Check sprite texture paths are correct
+- Verify `RenderService` is calling `end_frame()`
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please follow these guidelines:
+### Code Style
 
-1. **Code Style**:
-   - Follow existing code conventions
-   - Use meaningful variable names
-   - Add comments for complex logic
+- Use snake_case for variables and functions
+- Use PascalCase for classes and types
+- Use UPPER_CASE for constants
+- Use 4-space indentation
+- Write comments for non-obvious logic
 
-2. **Architecture**:
-   - New features should fit the service-oriented design
-   - Use events for cross-system communication
-   - Add new game logic as ECS systems when possible
+### Workflow
 
-3. **Testing**:
-   - Test with both local and remote servers
-   - Verify multiplayer synchronization
-   - Check edge cases (disconnect, lag, etc.)
+1. Create a feature branch
+   ```bash
+   git checkout -b feature/my-feature
+   ```
 
-4. **Documentation**:
-   - Update this README for architectural changes
-   - Document new events in Events.hpp
-   - Add comments to public APIs
+2. Make changes and commit
+   ```bash
+   git add .
+   git commit -m "feat: add new feature description"
+   ```
+
+3. Update documentation if needed
+
+4. Push and create a pull request
+   ```bash
+   git push origin feature/my-feature
+   ```
+
+### Testing
+
+Before submitting:
+```bash
+make clean      # Clean build
+make            # Full rebuild
+make test       # Run tests
+./r-type_client 127.0.0.1 8080  # Manual testing
+```
 
 ---
 
-## Related Documentation
+## Resources
 
-- **ECS Library**: `../../ECS/README.md` - Core entity management system
-- **Network Protocol**: `../../../protocol.md` - Client-server communication spec
-- **Server Architecture**: `../../../Network/README_NEW_ARCHITECTURE.md` - Server implementation
-- **Build System**: `../../README.md` - Project-wide build instructions
+- **[ECS Documentation](../../../ECS/README.md)** — Entity-Component-System API and patterns
+- **[Networking Guide](Networking.md)** — Client-side prediction, synchronization, rollback
+- **[Protocol Specification](../../../Protocol.md)** — Binary protocol details
+- **[Main Project README](../../../README.md)** — Project overview and quick start
+- **[UI Documentation](../../../ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md)** — UI system and UIBuilder API
+
+---
+
+## FAQ
+
+**Q: Can I create my own game using the ECS framework?**  
+A: Yes! See **[../README.md](../README.md)** for a game development guide.
+
+**Q: How do I add new weapon types?**  
+A: Create a `Weapon` component variant, a `WeaponSystem`, and network messages for the new weapon type.
+
+**Q: Can I modify the protocol?**  
+A: Be careful! Changing the protocol requires updates to both client and server. Document all changes in `Protocol.md`.
+
+**Q: How do I optimize collision detection?**  
+A: Use `PhysicsManager::instance()` spatial hashing. See **[ECS README](../../../ECS/README.md)** for details.
+
+**Q: Where do I report bugs?**  
+A: Open an issue on [GitHub](https://github.com/ColAntoine/R-Type/issues) with a detailed description and reproduction steps.
 
 ---
 
 ## License
 
-This project is part of the R-Type project at EPITECH.
-
----
-
-## Authors
-
-**R-Type Development Team**
-
-- Project Repository: [R-Type](https://github.com/ColAntoine/R-Type)
-- Organization: EPITECH
-
----
-
-## Acknowledgments
-
-- Inspired by classic R-Type arcade game
-- Built with modern C++ and software engineering practices
-- Service-oriented architecture for maintainability and scalability
-- Event-driven design for decoupled communication
+Part of the EPITECH R-Type curriculum project. Educational use only.
 
 ---
 
 <div align="center">
-  <strong>Built for multiplayer gaming excellence</strong>
+  <strong>Built with modern C++17 for high-performance gaming</strong>
   <br>
   <sub>© 2025 R-Type Team - EPITECH</sub>
 </div>

@@ -28,6 +28,8 @@ struct SpriteDrawCall {
 
 class SpriteBatch {
     public:
+        SpriteBatch() : sort_by_layer_(false), is_begun_(false) {}
+
         void begin();
         void draw(Texture2D* texture, Rectangle source, Rectangle dest,
                 Vector2 origin, float rotation, Color tint, int layer = 0);

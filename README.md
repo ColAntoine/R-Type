@@ -1,15 +1,302 @@
-# R-Type - Multiplayer Game
+<div align="center">
 
-A modern C++ implementation of the classic R-Type space shooter game with real-time multiplayer networking capabilities. Built with a clean, modular architecture featuring an Entity Component System, service-oriented client, and high-performance asynchronous server.
+# ⚔️ R-Type - Multiplayer Space Shooter
 
-## � Gameplay Video
+![C++](https://img.shields.io/badge/C%2B%2B-17-blue?logo=cplusplus)
+![License](https://img.shields.io/badge/license-EPITECH-green)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
+![Platform](https://img.shields.io/badge/platform-cross--platform-lightgrey)
 
-https://github.com/ColAntoine/R-Type/assets/Video/VideoBossRtype.mp4
+A **modern, high-performance** implementation of the classic R-Type space shooter with real-time multiplayer support. Built with clean architecture featuring **Entity-Component-System**, **service-oriented design**, and **asynchronous networking**.
 
-<video width="100%" controls>
-  <source src="Video/VideoBossRtype.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+[🎮 Play](#quick-start) • [📖 Documentation](#documentation) • [🛠️ Develop](#development) • [👥 Contribute](#contributing)
+
+</div>
+
+---
+
+## ✨ Features
+
+### Gameplay
+- ⚔️ **Real-time multiplayer** — 2-8 players simultaneously
+- 👾 **6 enemy types** with unique AI behaviors (Basic, Sine Wave, Fast, Zigzag, Turret, Boss)
+- 💥 **Dynamic weapon system** with multiple projectile types (Hard Bullets, Big Bullets, Parabol Shots, Explosions)
+- 🌊 **Wave-based progression** with increasing difficulty
+- 🎨 **Smooth animations** and visual effects
+- ⚡ **Power-ups** — Speed, Fire Rate, Damage upgrades
+
+### Engine & Architecture
+- 🏗️ **ECS Pattern** — Modular entity-component-system with dynamic plugin loading
+- 🔌 **Service-Oriented Design** — Dependency injection for scalability
+- ⚡ **Event-Driven Communication** — Decoupled systems
+- 🌐 **UDP Networking** — Low-latency real-time multiplayer
+- 📡 **Binary Protocol** — Custom KPN v1.0 efficient protocol
+- 🎮 **Client-Side Prediction** — Responsive controls with server reconciliation
+
+### Developer Experience
+- 📚 **Comprehensive Documentation** — For players and developers
+- 🛠️ **Plugin System** — Create custom components & systems
+- 🎓 **Well-Structured Code** — Clear separation of concerns
+- 🚀 **Cross-Platform** — Linux, macOS, Windows support
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+| Requirement | Version | Purpose |
+|---|---|---|
+| **C++ Compiler** | GCC 7+, Clang 5+, MSVC 2017+ | Compile C++17 code |
+| **CMake** | 3.10+ | Build system |
+| **Git** | Latest | Clone repository |
+| **vcpkg** | Latest | Dependency management |
+
+> **💡 Platform Support**: Linux, macOS, Windows
+
+### Installation & Build
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/ColAntoine/R-Type.git
+cd R-Type
+
+# 2. Initialize vcpkg (handles all C++ dependencies automatically)
+./external/vcpkg/bootstrap-vcpkg.sh  # Linux/macOS
+# or
+.\external\vcpkg\bootstrap-vcpkg.bat  # Windows
+
+# 3. Build the entire project
+make
+
+# 4. Run the game
+./r-type_client              # Launch game
+```
+
+> **Note**: First build may take time as vcpkg installs dependencies (Raylib, Asio, etc.)
+
+### Run Locally
+
+```bash
+# Terminal 1: Start server
+./r-type_server
+
+# Terminal 2+: Launch game clients
+./r-type_client
+./r-type_client
+```
+
+---
+
+## 📖 Documentation
+
+### For Players
+
+👉 **[Games/RType/README.md](Games/RType/README.md)** — Complete gameplay guide, controls, multiplayer setup
+
+### For Developers
+
+Choose your focus area:
+
+| Goal | Documentation |
+|---|---|
+| **Understand ECS architecture** | [📘 ECS/README.md](ECS/README.md) |
+| **Build with R-Type framework** | [📙 Games/RType/README.md](Games/RType/README.md) |
+| **Create a new game** | [📕 Games/README.md](Games/README.md) |
+| **Work on networking** | [📗 Games/RType/Networking.md](Games/RType/Networking.md) |
+| **Protocol details** | [📓 Protocol.md](Protocol.md) |
+| **UI system guide** | [📔 ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md) |
+
+---
+
+## 🏗️ Project Structure
+
+```
+R-Type/
+├── 📦 ECS/                           Entity-Component-System library (core engine)
+│   ├── include/ECS/                  Core ECS headers
+│   │   ├── Components/               Base components (position, velocity, sprite, etc.)
+│   │   ├── Systems/                  Base systems (animation, collision, etc.)
+│   │   ├── Renderer/                 Graphics rendering system
+│   │   ├── Physics/                  Physics & collision detection
+│   │   ├── Audio/                    Sound & audio system
+│   │   ├── AssetManager/             Asset loading & management
+│   │   ├── UI/                       UI building & components
+│   │   ├── Messaging/                Event/message system
+│   │   └── Registry.hpp              Entity & component management
+│   ├── src/                          ECS implementation & systems
+│   ├── test/                         ECS unit tests
+│   └── README.md                     ⭐ ECS technical documentation
+│
+├── 🎮 Games/                         Multi-game framework
+│   ├── RType/                        R-Type game implementation
+│   │   ├── Core/                     Framework foundation
+│   │   │   ├── Client/               Client-side logic
+│   │   │   ├── Server/               Server-side logic
+│   │   │   ├── States/               Game state machine
+│   │   │   ├── Config/               Configuration & constants
+│   │   │   └── KeyBindingManager/    Input handling
+│   │   ├── Entity/                   Game-specific ECS extensions
+│   │   │   ├── Components/           Game components (Enemy, Weapon, PowerUp, etc.)
+│   │   │   └── Systems/              Game systems (AI, Shooting, etc.)
+│   │   ├── UI/                       Game UI screens
+│   │   ├── Assets/                   Game assets & resources
+│   │   ├── main_client.cpp           Client entry point
+│   │   ├── main_server.cpp           Server entry point
+│   │   ├── Networking.md             ⭐ Networking guide
+│   │   └── README.md                 ⭐ Game documentation
+│   │
+│   ├── Pang/                         Example game (reference implementation)
+│   ├── test/                         Game tests
+│   └── README.md                     ⭐ Multi-game framework guide
+│
+├── 🌐 r-type_server                  Server executable (UDP/KPN)
+├── 🎮 r-type_client                  Client executable (Raylib)
+│
+├── 📋 Protocol.md                    ⭐ KPN v1.0 protocol specification
+├── CMakeLists.txt                    Root build configuration
+├── Makefile                          Build commands
+├── vcpkg.json                        Dependency manifest
+└── scripts/                          Build & utility scripts
+```
+
+### Core Components
+
+**ECS/ (Engine Foundation)**
+- `Registry.hpp` — Entity/Component management with SparseSet storage
+- `Components/` — Base components (Position, Velocity, Sprite, CollisionBox, etc.)
+- `Systems/` — Base systems (Animation, Physics, Rendering, etc.)
+- `Renderer/` — Raylib graphics abstraction
+- `Physics/` — Collision detection & response
+- `Audio/` — Sound management
+- `UI/` — Button, Text, Input UI components
+
+**Games/RType/ (Game Implementation)**
+- `Core/Client/` — Game client logic (state machine, input, rendering)
+- `Core/Server/` — Game server logic (connections, game simulation)
+- `Core/States/` — Game states (MainMenu, Lobby, WaitingLobby, InGame, etc.)
+- `Entity/Components/` — Enemy, Weapon, Player, PowerUp, etc.
+- `Entity/Systems/` — EnemySpawn, Shooting, Collision, etc.
+
+**Networking**
+- UDP-based server using Asio
+- Custom KPN v1.0 binary protocol (defined in Protocol.md)
+- Client-server synchronization
+- Lobby system for multiplayer
+
+---
+
+## 🔧 Development
+
+### Getting Started
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/ColAntoine/R-Type.git
+cd R-Type
+
+# 2. Build everything
+make
+
+# 3. Run locally
+./r-type_server      # Terminal 1
+./r-type_client      # Terminal 2+
+```
+
+### Directory Guide
+
+**Want to modify gameplay?**
+- 👾 Enemy behavior → `Games/RType/Entity/Systems/`
+- 💥 Weapons/projectiles → `Games/RType/Entity/Components/Weapon/`
+- ⚡ Power-ups → `Games/RType/Entity/Components/PowerUp/`
+
+**Want to extend the engine?**
+- 🏗️ Add components → `ECS/include/ECS/Components/`
+- ⚙️ Add systems → `ECS/src/` (or games can add custom systems)
+- 🎨 Rendering features → `ECS/src/Renderer/`
+
+**Want to work on networking?**
+- 🔌 Protocol changes → `Games/RType/Core/Client/` or `Core/Server/`
+- 📡 Message handling → See `Protocol.md`
+
+**Want to create a new game?**
+- 📁 Create `Games/YourGame/` following RType structure
+- 🎯 See [Games/README.md](Games/README.md) for framework overview
+
+---
+
+## 👥 Credits
+
+This project was developed by the **EPITECH R-Type Team**:
+
+- **💻 Core Team** — ColAntoine and the EPITECH community
+- **🎮 Game Design** — Classic arcade spirit with modern multiplayer twist
+- **📚 Documentation** — Comprehensive guides for players and developers
+
+---
+
+## 🚀 Contributing
+
+We welcome contributions! Whether you're a developer, game designer, or just enthusiastic:
+
+### How to Contribute
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Code** following our architecture patterns
+4. **Document** your changes
+5. **Test** thoroughly
+6. **Submit** a Pull Request
+
+### What We're Looking For
+
+- 🆕 **New Features** — Weapons, enemies, gameplay mechanics
+- 🐛 **Bug Fixes** — Found an issue? Help us fix it!
+- 📖 **Documentation** — Improve guides and code comments
+- ⚡ **Performance** — Optimize hot paths
+- 🌐 **Networking** — Enhance multiplayer experience
+- 🎨 **UI/UX** — Create beautiful interfaces
+
+### Code Style
+
+- Use `snake_case` for variables and functions
+- Use `PascalCase` for classes and types
+- Write comments for non-obvious logic
+- Follow existing architecture patterns
+- 4-space indentation
+
+---
+
+## 📋 Project Goals
+
+This project implements the **EPITECH R-Type curriculum** with:
+
+- ✅ Modern C++17 architecture
+- ✅ High-performance ECS engine
+- ✅ Real-time multiplayer networking
+- ✅ Binary protocol optimization
+- ✅ Cross-platform compatibility
+- ✅ Extensible framework for multiple games
+
+---
+
+## 📄 License
+
+This project is part of the **EPITECH curriculum**. Educational use only.
+
+<div align="center">
+
+**[⬆ back to top](#-r-type--multiplayer-space-shooter)**
+
+---
+
+Made with ❤️ by the R-Type Development Team
+
+**[🌍 GitHub](https://github.com/ColAntoine/R-Type)** • **[📚 EPITECH](https://www.epitech.eu/)**
+
+</div>
 
 ---
 
@@ -135,183 +422,224 @@ R-Type/
 - **CMake**: Build system with vcpkg integration
 - **C++17**: Modern C++ with RAII, templates, and smart pointers
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-- **C++17** compatible compiler (GCC 7+, Clang 5+, MSVC 2017+)
-- **CMake** 3.10+
-- **vcpkg** (handles all dependencies: Raylib, Asio, etc.)
 
-### Quick Build
+Before you begin, ensure you have the following installed:
+
+| Requirement | Version | Purpose |
+|---|---|---|
+| **C++ Compiler** | GCC 7+, Clang 5+, MSVC 2017+ | Compile C++17 code |
+| **CMake** | 3.10+ | Build system |
+| **Git** | Latest | Clone repository |
+| **vcpkg** | Latest | Dependency management |
+
+> **💡 Platform Support**: Linux, macOS, Windows
+
+### Installation & Build
 
 ```bash
-# Build all components (vcpkg will automatically install dependencies)
+# 1. Clone the repository
+git clone https://github.com/ColAntoine/R-Type.git
+cd R-Type
+
+# 2. Initialize vcpkg (handles all C++ dependencies automatically)
+./external/vcpkg/bootstrap-vcpkg.sh  # Linux/macOS
+# or
+.\external\vcpkg\bootstrap-vcpkg.bat  # Windows
+
+# 3. Build the entire project
 make
 
-# Run server
-./r-type_server
-
-# Run client
-./r-type_client
+# 4. Run the game
+./build/r-type_client --help
+./build/r-type_client              # Launch game
 ```
 
-### Detailed Documentation
+> **Note**: First build may take time as vcpkg installs dependencies (Raylib, Asio, etc.)
 
-For complete technical guides and architecture details:
-- **[ECS/README.md](ECS/README.md)** - ECS library API and usage
-- **[Games/RType/README.md](Games/RType/README.md)** - Client architecture (Services, States, Events)
-- **[Network/README.md](Network/README.md)** - Server architecture (Asio, Threading, Handlers)
-- **[protocol.md](protocol.md)** - Complete protocol specification (KPN v1.0)
-- **[Games/README.md](Games/README.md)** - Game development guide (create your own game)
-
-3. **Build the project**
-   ```bash
-   make build
-   # or manually:
-   mkdir build && cd build
-   cmake .. && cmake --build .
-   ```
-
-### Running the Game
-
-1. **Start the server**
-   ```bash
-   cd build
-   ./r-type_server
-   ```
-   Server runs on port 8080 by default.
-
-2. **Start client(s)**
-   ```bash
-   cd build
-   ./r-type_client [server_ip] [server_port]
-   # Example: ./r-type_client 127.0.0.1 8080
-   ```
-
-### Controls
-- **Arrow Keys**: Move your player
-- **ESC**: Quit the game
-
-## 🎯 Gameplay
-
-### Multiplayer Experience
-- Connect multiple clients to the same server
-- Each player appears as a red square on their own screen
-- Other players appear as purple squares
-- Real-time position synchronization ensures smooth multiplayer
-- Players automatically disconnect after 10 seconds of inactivity
-
-### Current Game Elements
-- **Player Entity**: Controllable red square (you)
-- **Remote Players**: Purple squares (other players)
-- **Static Obstacles**: Gray and green walls for collision testing
-- **Collision System**: Prevents players from overlapping with obstacles
-
-## 🔧 Development
-
-### Building Components
+### Run Locally
 
 ```bash
-# Build all components
-make                    # Server, client, and ECS library
+# Terminal 1: Start server
+./build/r-type_server
 
-# Build individual components
-cd ECS && ./build.sh    # Build ECS library and systems
-cd Network && make      # Build server only
-# Client built with root Makefile
+# Terminal 2+: Launch game clients
+./build/r-type_client --windowed
+./build/r-type_client --scale 1.5
 ```
-
-### Creating New Games
-
-See **[Games/README.md](Games/README.md)** for a complete guide on creating games using the ECS library and following the R-Type architecture pattern.
-
-### Adding Features to R-Type
-
-1. **New Components**: Add to `Games/RType/Entity/Components/`
-2. **New Systems**: Add to `Games/RType/Entity/Systems/`
-3. **New UI Elements**: Add to `Games/RType/UI/Components/`
-4. **New States**: Add to `Games/RType/Core/States/`
-5. **New Events**: Add to `Games/RType/Core/Events.hpp`
-
-Refer to **[Games/RType/README.md](Games/RType/README.md)** for detailed client architecture.
-
-### Network Protocol
-
-The server uses the **Keller Protocol Networking Standard (KPN v1.0)**, a custom binary protocol over UDP. See **[Protocol.md](Protocol.md)** for complete specification.
-
-Key message types:
-- **CONNECTION_REQUEST** (0x01): Client connects
-- **SERVER_ACCEPT** (0x02): Server assigns player ID
-- **POSITION_UPDATE** (0xC7): Real-time position sync
-- **SHOOT_REQUEST** (0x11): Player shoots
-- **DISCONNECT_REQUEST** (0x04): Client disconnects
-
-## 📚 Documentation
-
-Complete documentation is available throughout the project:
-
-### Core Components
-
-| Documentation | Path | Purpose |
-|---|---|---|
-| **ECS Framework** | [ECS/README.md](ECS/README.md) | Entity-Component-System architecture and usage |
-| **ECS Features** | [ECS/FEATURES.md](ECS/FEATURES.md) | Detailed feature list and capabilities |
-| **UI System** | [ECS/include/ECS/UI/README.md](ECS/include/ECS/UI/README.md) | UI components and systems guide |
-| **UIBuilder Guide** | [ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md) | Complete UIBuilder API reference with examples |
-
-### Game Development
-
-| Documentation | Path | Purpose |
-|---|---|---|
-| **Games Overview** | [Games/README.md](Games/README.md) | Multi-game framework and extensibility |
-| **R-Type Client** | [Games/RType/README.md](Games/RType/README.md) | Client architecture and gameplay systems |
-| **Pang Game** | [Games/Pang/README.md](Games/Pang/README.md) | Example game implementation using R-Type framework |
-
-### Networking & Protocol
-
-| Documentation | Path | Purpose |
-|---|---|---|
-| **Protocol Specification** | [Protocol.md](Protocol.md) | KPN v1.0 binary protocol complete reference |
-| **Networking Guide** | [Games/RType/Networking.md](Games/RType/Networking.md) | Client-server networking architecture |
-
-### Project Details
-
-| Documentation | Path | Purpose |
-|---|---|---|
-| **Project Subject** | [subject.md](subject.md) | EPITECH project requirements and specifications |
 
 ---
 
-### Quick Links to Key Documentation
+## 📖 Documentation
 
-- 🏗️ **Want to understand the architecture?** Start with [ECS/README.md](ECS/README.md)
-- 🎮 **Building a new game?** Read [Games/README.md](Games/README.md)
-- 🛠️ **Creating UI elements?** Check [ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md)
-- 🌐 **Implementing networking?** See [Games/RType/Networking.md](Games/RType/Networking.md)
-- 📡 **Understanding the protocol?** Review [Protocol.md](Protocol.md)
-- 🎯 **Game development?** Explore [Games/RType/README.md](Games/RType/README.md)
+### For Players
 
-## 📋 Project Requirements
+👉 **[Games/RType/README.md](Games/RType/README.md)** — Complete gameplay guide, controls, multiplayer setup
 
-This project implements the EPITECH R-Type requirements:
-- ✅ **Modern Architecture**: ECS library + Service-Oriented client + Async server
-- ✅ **UDP Networking**: High-performance real-time multiplayer (KPN protocol)
-- ✅ **Binary Protocol**: Custom efficient network protocol with minimal overhead
-- ✅ **ECS Pattern**: Entity-Component-System with dynamic library loading
-- ✅ **Modular Design**: Clear separation of concerns (ECS/Games/Network)
-- ✅ **Cross-platform**: CMake build system with vcpkg integration
-- ✅ **Multiplayer**: Simultaneous player support with state synchronization
-- ✅ **Extensibility**: Framework for creating new games (see Games/README.md)
+### For Developers
 
-## 🤝 Contributing
+Choose your focus area:
 
-Contributions are welcome! Please:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Follow existing code style and architecture patterns
-4. Update relevant documentation (ECS/, Games/, Network/ READMEs)
-5. Commit changes and open a Pull Request
+| Goal | Documentation |
+|---|---|
+| **Understand ECS architecture** | [📘 ECS/README.md](ECS/README.md) |
+| **Build with R-Type framework** | [📙 Games/RType/README.md](Games/RType/README.md) |
+| **Create a new game** | [📕 Games/README.md](Games/README.md) |
+| **Work on networking** | [📗 Games/RType/Networking.md](Games/RType/Networking.md) |
+| **Protocol details** | [📓 Protocol.md](Protocol.md) |
+| **UI system guide** | [📔 ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md](ECS/include/ECS/UI/UIBuilder_DOCUMENTATION.md) |
+
+---
+
+## 🏗️ Architecture
+
+### Project Layout
+
+```
+R-Type/
+├── 📦 ECS/                      Entity-Component-System library (core engine)
+├── 🎮 Games/
+│   ├── RType/                   R-Type game implementation
+│   └── README.md                Game development guide
+├── 🌐 Network/                  Server implementation (Asio-based)
+└── CMakeLists.txt               Build configuration
+```
+
+### Core Technologies
+
+- **🛠️ ECS Engine**: Custom Entity-Component-System with dynamic plugin loading
+- **⚡ Networking**: Asio-based UDP server + KPN v1.0 binary protocol
+- **🎨 Graphics**: Raylib (cross-platform rendering & input)
+- **🏗️ Build**: CMake + vcpkg (dependency management)
+- **💾 Language**: Modern C++17 with RAII & smart pointers
+
+## ✨ Features
+
+### Gameplay
+- ⚔️ **Real-time multiplayer** — 2-8 players simultaneously
+- 🎯 **6 enemy types** with unique AI behaviors
+- 💥 **Dynamic weapon system** with upgrades & power-ups
+- 🌊 **Wave-based progression** with increasing difficulty
+- 🎨 **Smooth animations** and particle effects
+
+### Engine & Architecture
+- 🏗️ **ECS Pattern** — Modular entity-component-system with dynamic plugins
+- 🔌 **Service-Oriented** — Dependency injection for scalability
+- ⚡ **Event-Driven** — Decoupled communication between systems
+- 🌐 **UDP Networking** — Low-latency real-time multiplayer
+- 📡 **Binary Protocol** — Custom KPN v1.0 efficient protocol
+- 🎮 **Client-Side Prediction** — Responsive controls with server reconciliation
+
+### Developer Experience
+- 📚 **Comprehensive Documentation** — For players and developers
+- 🛠️ **Plugin System** — Create custom components & systems
+- 🎓 **Well-Structured Code** — Clear separation of concerns
+- 🚀 **Cross-Platform** — Linux, macOS, Windows support
+
+---
+
+## 🔧 Development
+
+### Getting Started with Development
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/ColAntoine/R-Type.git
+cd R-Type
+
+# 2. Build
+make
+
+# 3. Start coding!
+# Add features to Games/RType/Entity/Components/
+# Create new systems in Games/RType/Entity/Systems/
+# Or build a completely new game in Games/
+```
+
+### Development Workflows
+
+**Want to...**
+
+- 🎮 **Add a new weapon type?** → Create a system in `Games/RType/Entity/Systems/Shoot/`
+- 👾 **Add new enemy AI?** → Extend `Entity/Components/Enemy/`
+- 🎨 **Build new UI?** → Use `Games/RType/UI/` components
+- 🌐 **Improve networking?** → Work with `Core/Client/Network/`
+- 🎯 **Create a new game?** → See [Games/README.md](Games/README.md)
+- 🔧 **Extend the ECS?** → Contribute to [ECS/README.md](ECS/README.md)
+
+See [Games/RType/README.md](Games/RType/README.md) for detailed developer guide.
+
+---
+
+## 👥 Credits
+
+This project was developed by the **EPITECH R-Type Team**:
+
+- **💻 Developers** — ColAntoine, Sumerinsuyu, KllrMaxime, Onillpyd and gabriel-thuus
+- **🎮 Game Design** — Classic arcade spirit with modern multiplayer twist
+- **📚 Documentation** — Comprehensive guides for players and developers
+
+---
+
+## � Contributing
+
+We welcome contributions! Whether you're a developer, game designer, or just enthusiastic:
+
+### How to Contribute
+
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Code** following our architecture patterns
+4. **Document** your changes
+5. **Test** thoroughly
+6. **Submit** a Pull Request
+
+### What We're Looking For
+
+- 🆕 **New Features** — Weapons, enemies, gameplay mechanics
+- 🐛 **Bug Fixes** — Found an issue? Help us fix it!
+- 📖 **Documentation** — Improve guides and code comments
+- ⚡ **Performance** — Optimize hot paths
+- 🌐 **Networking** — Enhance multiplayer experience
+- 🎨 **UI/UX** — Create beautiful interfaces
+
+### Code Style
+
+- Use `snake_case` for variables and functions
+- Use `PascalCase` for classes and types
+- Write comments for non-obvious logic
+- Follow existing architecture patterns
+- 4-space indentation
+
+---
+
+## 📋 Project Goals
+
+This project implements the **EPITECH R-Type curriculum** with:
+
+- ✅ Modern C++17 architecture
+- ✅ High-performance ECS engine
+- ✅ Real-time multiplayer networking
+- ✅ Binary protocol optimization
+- ✅ Cross-platform compatibility
+- ✅ Extensible framework
+
+---
 
 ## 📄 License
 
-This project is part of the EPITECH curriculum. Educational use only.
+This project is part of the **EPITECH curriculum**. Educational use only.
+
+<div align="center">
+
+**[⬆ back to top](#-r-type--multiplayer-space-shooter)**
+
+---
+
+Made with ❤️ by the R-Type Development Team
+
+**[🌍 GitHub](https://github.com/ColAntoine/R-Type)** • **[📚 EPITECH](https://www.epitech.eu/)**
+
+</div>
