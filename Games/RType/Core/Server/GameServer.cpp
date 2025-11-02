@@ -102,9 +102,9 @@ bool GameServer::init()
 
 
     if (display_) {
-        // Initialize rendering for server UI (lobby). Game render systems are
-        // also loaded when the game actually starts.
-        RenderManager::instance().init("R-Type Server", scale_, !windowed_);
+        // Initialize rendering for server UI (lobby) with FIXED 1920x1080 resolution
+        // Force scale to 1.0 to ignore actual screen size and use base resolution
+        RenderManager::instance().init("R-Type Server", 1.0f, !windowed_);
         // Register and setup lobby state
         register_states();
         state_manager_.push_state("ServerLobby");
@@ -256,7 +256,7 @@ void GameServer::start_game()
     // Load server logic and render systems now that we are entering InGame
     if (server_ecs_ && !systems_loaded_) {
         auto &loader = server_ecs_->GetILoader();
-        // Logic systems
+        // Logic systems - ORDER MATTERS! Must match client InGame.cpp
         loader.load_system("build/lib/systems/libposition_system" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libcollision_system" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_Control" + ext, ILoader::LogicSystem);
@@ -264,14 +264,21 @@ void GameServer::start_game()
         loader.load_system("build/lib/systems/libgame_GravitySys" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_EnemyCleanup" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_EnemyAI" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
+
+        // EnemySpawnSystem must run BEFORE GameLogic/BossSys
         loader.load_system("build/lib/systems/libgame_EnemySpawnSystem" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
-        loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
+
+        loader.load_system("build/lib/systems/libgame_LifeTime" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_Health" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_ParabolSys" + ext, ILoader::LogicSystem);
         loader.load_system("build/lib/systems/libgame_FollowingSys" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_WaveSys" + ext, ILoader::LogicSystem);
+        loader.load_system("build/lib/systems/libgame_PowerUpSys" + ext, ILoader::LogicSystem);
+
+        // GameLogic must run BEFORE BossSys
+        loader.load_system("build/lib/systems/libgame_GameLogic" + ext, ILoader::LogicSystem);
+        // BossSys runs after GameLogic so it can process newly spawned bosses
+        loader.load_system("build/lib/systems/libgame_BossSys" + ext, ILoader::LogicSystem);
 
 
 

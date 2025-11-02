@@ -7,8 +7,11 @@
 #include "ECS/Components/Velocity.hpp"
 #include "ECS/Components/Collider.hpp"
 #include "ECS/Components/Animation.hpp"
+#include "ECS/Renderer/RenderManager.hpp"
 #include "Entity/Components/Weapon/Weapon.hpp"
 #include "Entity/Components/Player/Player.hpp"
+#include "Entity/Components/Health/Health.hpp"
+#include "Entity/Components/Controllable/Controllable.hpp"
 #include "Constants.hpp"
 #include <iostream>
 #include <chrono>
@@ -253,15 +256,23 @@ void InGame::spawn_all_players() {
         // New player: spawn entity and attach needed components with computed spawn pos
         entity player_ent = ecs_.GetRegistry().spawn_entity();
         if (ecs_.get_factory()) {
-            ecs_.get_factory()->create_component<position>(ecs_.GetRegistry(), player_ent, spawn_x, spawn_y);
-            ecs_.get_factory()->create_component<velocity>(ecs_.GetRegistry(), player_ent, 0.0f, 0.0f);
-            ecs_.get_factory()->create_component<InputBuffer>(ecs_.GetRegistry(), player_ent);
-            ecs_.get_factory()->create_component<animation>(ecs_.GetRegistry(), player_ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 0.25f, 0.25f, 0, true);
-            ecs_.get_factory()->create_component<collider>(ecs_.GetRegistry(), player_ent, COLLISION_WIDTH, COLLISION_HEIGHT, -COLLISION_WIDTH/2, -COLLISION_HEIGHT/2);
-            ecs_.get_factory()->create_component<Weapon>(ecs_.GetRegistry(), player_ent);
-            ecs_.get_factory()->create_component<Health>(ecs_.GetRegistry(), player_ent);
-            ecs_.get_factory()->create_component<Score>(ecs_.GetRegistry(), player_ent);
-            ecs_.get_factory()->create_component<Player>(ecs_.GetRegistry(), player_ent);
+            auto& registry = ecs_.GetRegistry();
+
+            ecs_.get_factory()->create_component<position>(registry, player_ent, spawn_x, spawn_y);
+            ecs_.get_factory()->create_component<velocity>(registry, player_ent, 0.0f, 0.0f);
+            ecs_.get_factory()->create_component<InputBuffer>(registry, player_ent);
+            ecs_.get_factory()->create_component<animation>(registry, player_ent, std::string(RTYPE_PATH_ASSETS) + "dedsec_eyeball-Sheet.png", 400.0f, 400.0f, 
+                0.25f, 0.25f, 0, true);
+            ecs_.get_factory()->create_component<collider>(registry, player_ent,
+                COLLISION_WIDTH,
+                COLLISION_HEIGHT,
+                -COLLISION_WIDTH / 2.0f,
+                -COLLISION_HEIGHT / 2.0f);
+            ecs_.get_factory()->create_component<controllable>(registry, player_ent, 300.0f);
+            ecs_.get_factory()->create_component<Weapon>(registry, player_ent);
+            ecs_.get_factory()->create_component<Health>(registry, player_ent);
+            ecs_.get_factory()->create_component<Score>(registry, player_ent);
+            ecs_.get_factory()->create_component<Player>(registry, player_ent);
         }
         ecs_.session_entity_map_[session_id] = player_ent;
 
