@@ -95,7 +95,8 @@ void BossSys::spawn(registry &r)
             // _bossWeapons[2],
             _bossWeapons[wave > 5 ? 5 : wave],
             BOSS_BASE_FIRERATE * static_cast<float>(wave),
-            BOSS_BASE_DAMAGE * static_cast<float>(wave),
+            // BOSS_BASE_DAMAGE * static_cast<float>(wave),
+            100.f,
             BOSS_BASE_PROJ_SPEED * static_cast<float>(wave),
             -1,
             true

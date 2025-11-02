@@ -79,12 +79,9 @@ void InGameExitState::setup_ui()
         .onClick([this]() {
             std::cout << "[InGameExit] YES button pressed - exiting to menu" << std::endl;
             if (_stateManager) {
-                _stateManager->pop_state();  // Remove InGameExit
-                _stateManager->pop_state();  // Remove InGameHud
-                _stateManager->pop_state();  // Remove InGame
-                _stateManager->pop_state();  // Remove InGameBackground
-                _stateManager->push_state("MenusBG", false);
-                _stateManager->push_state("MainMenu", false);
+                _stateManager->clear_states();
+                _stateManager->push_state("MenusBackground");
+                _stateManager->push_state("MainMenu");
             }
         })
         .build(winInfos.getWidth(), winInfos.getHeight());
@@ -106,7 +103,7 @@ void InGameExitState::setup_ui()
         .onClick([this]() {
             std::cout << "[InGameExit] NO button pressed - back to game" << std::endl;
             if (_stateManager) {
-                _stateManager->pop_state();  // Remove InGameExit, back to InGame
+                _stateManager->pop_state();
             }
         })
         .build(winInfos.getWidth(), winInfos.getHeight());

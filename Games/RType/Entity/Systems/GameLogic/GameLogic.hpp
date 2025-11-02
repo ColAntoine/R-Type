@@ -13,6 +13,7 @@
 #include "Entity/Components/Enemy/Enemy.hpp"
 #include "Entity/Components/Health/Health.hpp"
 #include "Entity/Components/Boss/Boss.hpp"
+#include "Entity/Components/Player/Player.hpp"
 
 #include "ECS/Registry.hpp"
 #include "ECS/Zipper.hpp"
@@ -26,6 +27,7 @@ public:
 private:
     void updateScore(registry &r);
     void updateState(registry &r);
+    void checkPlayerDeath(registry &r);
 
     /* Boss spawn */
     void killAllEnemy(registry &r);
@@ -33,6 +35,7 @@ private:
 
     Score _gameScore{0};
     int _lastBossSpawnScore = -1;
+    bool _gameOverEmitted = false;
 };
 
 #if defined(_WIN32)
