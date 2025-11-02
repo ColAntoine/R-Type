@@ -8,10 +8,6 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
-// Must be before raylib.h to avoid Windows GDI conflicts
-#define NOGDI
-#define NOMINMAX
-
 #include "ECS/Messaging/MessagingManager.hpp"
 #include "ECS/Messaging/Events/Event.hpp"
 #include "ECS/Messaging/MessageQueue.hpp"

@@ -266,6 +266,8 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib/ui)
 # ------------------------------------------------------------------
 # Tests with doctest
 # ------------------------------------------------------------------
+if (UNIX AND NOT APPLE)
+
 find_package(doctest CONFIG QUIET)
 
 if(doctest_FOUND)
@@ -368,6 +370,7 @@ if(doctest_FOUND)
 else()
     message(WARNING "doctest not found. Unit tests will NOT be built.")
     message(STATUS "To install doctest: vcpkg install doctest")
+endif()
 endif()
 
 # ------------------------------------------------------------------
